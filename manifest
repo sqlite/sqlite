@@ -1,5 +1,5 @@
-C Merge\stest\scases\sfixes\sfrom\strunk
-D 2026-09-19T11:10:12.250
+C Fix\stest\scases\sdue\sto\simproved\serror\smessages\sfrom\sthis\sbranch.
+D 2026-09-19T13:35:57.433
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -568,7 +568,7 @@ F ext/session/sessioncorrupt.test e4e4c346415b09f3354a1ade13d25cf08bb073beb750eb
 F ext/session/sessiondiff.test e89f7aedcdd89e5ebac3a455224eb553a171e9586fc3e1e6a7b3388d2648ba8d
 F ext/session/sessionfault.test c2b43d01213b389a3f518e90775fca2120812ba51e50444c4066962263e45c11
 F ext/session/sessionfault2.test b0d6a7c1d7398a7e800d84657404909c7d385965ea8576dc79ed344c46fbf41c
-F ext/session/sessionfault3.test aea5331fa6dbe5ca4e19826605e624c0e1767545411479f27c5ef82b41046925
+F ext/session/sessionfault3.test eb981a9f1165132d405952f593998e65ddd140805624906b799678588b385890
 F ext/session/sessioninvert.test 7ccb7609a2c11e4e13e606df439bf3d484ba8e455d0bd3aa8d4828a940e1a242 x
 F ext/session/sessionmem.test f2a735db84a3e9e19f571033b725b0b2daf847f3f28b1da55a0c1a4e74f1de09
 F ext/session/sessionnoact.test 2cf060c12a7a23e663f0ec796561e58638c5c10a846653d37be886414b06ddc9
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 72005af24ddebbee80a7bc5f802b2d745f8a99a2cc29a2ea3a37428162626b8f 977e0faac735409fd06d61851a30686b471bcfc3f1dcfba2debe2b4a3d42b5e8
-R ae3927c54b5f9c53b04e1a6efd0184f4
+P 02b47eb9b7109837d3e60b54943d46c9069da3b9f4cbf0ae272ff1de497fe200
+R d69ebc688f24bb254304ac17e263a942
 U drh
-Z 40d7e3c5d0244a981b4d00b141fc3567
+Z f12afe02d55a7218d434ff33150ea4f7
 # Remove this line to create a well-formed Fossil manifest.
