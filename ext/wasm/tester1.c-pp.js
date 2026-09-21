@@ -1651,6 +1651,42 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert(this.progressHandlerCount>0
                  || wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK'),
                  "Expecting progress callback.");
+
+        st.finalize();
+
+        /**
+           Ensure that Stmt.get(object|array, non-undefined-type-id)
+           coerces all result columns to the specied type. Prior to
+           3.54 the second argument was ignored for the object|array
+           cases, causing all columns in the query to use their
+           db-determined type. That is incidentally the right thing
+           for 99.99% of use cases, but now clients may coerce them if
+           they like.
+        */
+        st = this.db.prepare(
+          "select '1' one, '2.2' two, 3 three"
+        );
+        T.assert( st.step() );
+        const li = st.get([], capi.SQLITE_INTEGER);
+        st.reset();
+        T.assert(3===li.length)
+          .assert(1===li[0])
+          .assert(2===li[1])
+          .assert(3===li[2]);
+        T.assert( st.step() );
+        li.length = 0;
+        st.get(li, capi.SQLITE_TEXT);
+        st.reset();
+        T.assert(3===li.length)
+          .assert('1'===li[0])
+          .assert('2.2'===li[1])
+          .assert('3'===li[2]);
+        T.assert( st.step() );
+        const ob = st.get(Object.create(null), capi.SQLITE_INTEGER);
+        st.reset();
+        T.assert(1===ob.one)
+          .assert(2===ob.two)
+          .assert(3===ob.three);
       }finally{
         rc = st.finalize();
       }
