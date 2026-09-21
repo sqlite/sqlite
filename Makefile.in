@@ -188,6 +188,13 @@ T.lib = @TARGET_LIBEXT@
 # built.
 #
 HAVE_TCL = @HAVE_TCL@
+@if LDFLAGS_RPATH
+# https://sqlite.org/forum/forumpost/fa8f7d00ea748982
+# and notes in ./main.mk.
+ENABLE_RPATH = 1
+@else
+ENABLE_RPATH = 0
+@endif
 
 #
 # $(TCLSH_CMD) is the command to use for tclsh - normally just

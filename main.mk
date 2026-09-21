@@ -298,6 +298,13 @@ TCL_CONFIG_SH ?=
 #
 HAVE_WASI_SDK ?= 0
 #
+# $(ENABLE_RPATH) tells libtclsqlite3 whether to use an -rpath
+# flag. By default it does for historical compatibility. In the
+# canonical build configure --disable-rpath disables the use of rpath.
+#
+ENABLE_RPATH ?= 1
+
+#
 # ... and many, many more. Sane defaults are selected where possible.
 #
 # With the above-described defined, the rest of this make script will
@@ -1645,14 +1652,21 @@ pkgIndex.tcl-1: pkgIndex.tcl
 pkgIndex.tcl-0 pkgIndex.tcl-:
 tcl: pkgIndex.tcl-$(HAVE_TCL)
 
+#
+# Tcl's proper rpath is defined as TCL_LD_SEARCH_FLAGS in
+# tclConfig.sh, but it's defined in such a way as to be useless for a
+# _static_ makefile like this one, so we're _guessing_ that the linker
+# supports the -rpath flag in the form hard-coded here.
+#
+libtclsqlite3.rpath-0    =
+libtclsqlite3.rpath-1    = -Wl,-rpath,$$TCLLIBDIR
+libtclsqlite3.rpath-     = $(libtclsqlite3.rpath-1)
+
 $(libtclsqlite3.DLL): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
 	$(T.tcl.env.source); \
 	$(T.link.shared) -o $@ tclsqlite.o \
 		$$TCL_INCLUDE_SPEC $$TCL_STUB_LIB_SPEC $(LDFLAGS.libsqlite3) \
-		$(LIBOBJ) -Wl,-rpath,$$TCLLIBDIR
-# ^^^ that rpath bit is defined as TCL_LD_SEARCH_FLAGS in
-# tclConfig.sh, but it's defined in such a way as to be useless for a
-# _static_ makefile.
+		$(LIBOBJ) $(libtclsqlite3.rpath-$(ENABLE_RPATH))
 $(libtclsqlite3.DLL)-1: $(libtclsqlite3.DLL)
 $(libtclsqlite3.DLL)-0 $(libtclsqlite3.DLL)-:
 libtcl: $(libtclsqlite3.DLL)-$(HAVE_TCL)
