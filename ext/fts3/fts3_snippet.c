@@ -1471,9 +1471,8 @@ void sqlite3Fts3Snippet(
     return;
   }
 
-  /* Limit the snippet length to 64 tokens. */
-  if( nToken<-64 ) nToken = -64;
-  if( nToken>+64 ) nToken = +64;
+  /* The snippet length should already have been limited to 64 tokens. */
+  assert( nToken>=-64 && nToken<=64 );
 
   for(nSnippet=1; 1; nSnippet++){
 
