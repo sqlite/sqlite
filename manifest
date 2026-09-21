@@ -1,5 +1,5 @@
-C Fix\struncation\sof\s64-bit\sinteger\svalues\spassed\sto\sthe\sfts3\ssnippet()\sfunction.\sReport\s[bugs:/info/2026-09-21T02:41:49Z\s|\s2026-09-21T02:41:49Z].
-D 2026-09-21T11:14:14.628
+C Do\snot\sallow\sthe\sarguments\sof\stable-valued-functions\sto\sthe\sleft\sof\sa\sLEFT\sJOIN\sto\srefer\sto\stables\sto\sthe\sright\sof\sthe\sLEFT\sJOIN.\sFix\sfor\s[bugs:/info/2026-09-20T09:57:48Z\s|\s2026-09-20T09:57:48Z].
+D 2026-09-21T15:45:19.229
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -743,7 +743,7 @@ F src/printf.c 1ee57184d4b8f36333f6b5a9904984594b977798aaeee76a39103a99436e794c
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 0e0990f60c93db38c735d85e5d1741130e72dd0670aec204b5a39118b53c8044
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c 9943a496f5847fe66cd74b7fb4270d6ec4d10a5112369cec6fde02baacbc742f
+F src/select.c 5859a4a19581d91fb2c3a818c18ad45de6906434aeaf0c4b74ca5f58295cb432
 F src/shell.c.in eb8147a0f711beacfbb745df4f9945a22b74910b668187738ae1cff740c3e4ce
 F src/sqlite.h.in 5941ea0c99996ecc54ff02835e89d12fd6195fa92b285f73b55a55fdcd90efe9
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
@@ -1380,7 +1380,7 @@ F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba01143
 F test/json105.test 9900caa21888289873bc6c14f5ee41213d28ac9b7ca3395f8afb73d540e80f66
 F test/json106.test 4aed3afd16549045d198a8d9cea00deea96e1f2ecf55864dce96cac558b8abef
 F test/json107.test 59054e815c8f6b67d634d44ace421cf975828fb5651c4460aa66015c8e19d562
-F test/json108.test 0a5f1e2d4b35a1bc33052563d2a5ede03052e2099e58cb424547656c898e0f49
+F test/json108.test eab1859b19138ee03acd4415751308fc3849943c669a06b515bba658b96b55c3
 F test/json109.test 441cea5d73c24a1a34d284101740dfae5a082237c048c8a66b03aeebe5e3643e
 F test/json501.test b95e2d14988b682a5cadf079dd6162f0f85fb74cd59c6b1f1624110104a974eb
 F test/json502.test 4ef68e4f272dfb083d4cbceb4e9e51d67ec1186a185e0c13637c50a4dc2f9796
@@ -2221,8 +2221,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 24bddf2aff01962a35c42422e322c12582ea77e2c7ddd5f8754d12c454ce8a1d
-R 0dca8303df31dd4bdc36b1ab4335fc7a
+P b0919c9687f01240c89171e1607816b603450e5bed37c468860298b2ccc11a81
+R 6e88380627aa4f06b3da06b2bf2b0b5a
+T *branch * tvf-left-join-fix
+T *sym-tvf-left-join-fix *
+T -sym-trunk *
 U dan
-Z 5a14fcf0b658febd6f60e566c2e8f471
+Z 07d2fcc35a26ceb7384f0efaa93d548f
 # Remove this line to create a well-formed Fossil manifest.
