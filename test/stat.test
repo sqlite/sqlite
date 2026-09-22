@@ -319,10 +319,26 @@ do_execsql_test 8.5 {
 
 #-------------------------------------------------------------------------
 reset_db
-breakpoint
 do_catchsql_test 9.1 {
   CREATE TABLE dbstat(x, y);
   DROP TABLE nosuchdb.dbstat;
 } {/1 {(no such table: nosuchdb.dbstat|table dbstat may not be dropped)}/}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 10.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES( hex(randomblob(2000)) );
+}
+
+do_execsql_test 10.1 {
+  PRAGMA page_count
+} {5}
+
+do_execsql_test 10.2 {
+  SELECT pageno, pgoffset FROM dbstat
+} {1 0  2 1024  3 2048  4 3072  5 4096}
 
 finish_test
