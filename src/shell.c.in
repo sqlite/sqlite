@@ -10488,7 +10488,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
     sqlite3_exec(p->db, "RELEASE dump;", 0, 0, 0);
     if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
-      cli_puts(p->nErr?"ROLLBACK; -- due to errors\n":"COMMIT;\n", p->out);
+      cli_puts(p->nErr?";\nROLLBACK; -- due to errors\n":"COMMIT;\n", p->out);
     }
     p->shellFlgs = savedShellFlags;
     modeFree(&p->mode);
