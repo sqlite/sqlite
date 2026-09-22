@@ -1,5 +1,5 @@
-C Fix\scalculation\sof\sthe\svirtual\stable\sdbstat.pgoffset\sfield\sfor\soverflow\spages.\sReport\s[bugs:/info/2026-09-22T01:43:42Z\s|\s2026-09-22T01:43:42Z].
-D 2026-09-22T10:30:05.552
+C Add\smore\sprecision\slimitations\son\swidth\sand\sprecision\sin\sthe\sprintf()\nlogic.\s\sChanges\sare\snot\sactually\sneeded\sthough,\sso\sthey\sare\sparked\non\sthis\sbranch.
+D 2026-09-22T12:29:24.550
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -739,7 +739,7 @@ F src/pcache.h 00c5797ddf546ee0fe2828d7f75d1afbf1b40ba054f362905326c5ccca15e60c
 F src/pcache1.c 6bc38b44961f767985ae5022fb7887eda206040f57475812473929c702f6799d
 F src/pragma.c 959c32cfd1fb186546e5c4d4383258cc709596b2acdac72ef5ce6a27b9486bf2
 F src/prepare.c 8954bb69defe377cd6a926f8c61d8215ea4f1974838d3ec6f22681a2c0a2939f
-F src/printf.c 1ee57184d4b8f36333f6b5a9904984594b977798aaeee76a39103a99436e794c
+F src/printf.c 7fa4fc8207a68b83da617808b085ab4b55ae3d24e1595a4fabe517f1d3e859e3
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 0e0990f60c93db38c735d85e5d1741130e72dd0670aec204b5a39118b53c8044
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
@@ -2221,8 +2221,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c9b4695ffae5a3388a49643d6819355851a0fda362cdaf140c59fc934759dcac
-R 2de9ad48ba971967086ffbac1c95edd0
-U dan
-Z 3806d900c1b1eed893ac70350553786e
+P 4f4ca57309c82d9e2e090cf3accb83d4ee2868de2a7626d7afc30ff4c8351695
+R 00ff8f5cc0f00dcd8cc1c8cea3626c16
+T *branch * limit-printf-precision
+T *sym-limit-printf-precision *
+T -sym-trunk *
+U drh
+Z a15cb117326d5c2073b07de40136d3d0
 # Remove this line to create a well-formed Fossil manifest.

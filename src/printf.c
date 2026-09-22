@@ -187,10 +187,41 @@ static char *printfTempBuf(sqlite3_str *pAccum, sqlite3_int64 n){
 #define etBUFSIZE SQLITE_PRINT_BUF_SIZE  /* Size of the output buffer */
 
 /*
-** Hard limit on the precision of floating-point conversions.
+** The SQLITE_PRINTF_PRECISION_LIMIT compile-time option defines the
+** maximum value for the width and/or precision of a conversion.  If
+** the width or precision exceeds this value, some smaller value is
+** substituted.  For width, the smaller value is 0.  For precision,
+** the OVERFLOW_PRECISION_LIMIT value is used.
+**
+** Floating point numbers have a secondary precision limit that
+** is typically smaller still.
+**
+** Deployments of SQLite in which a hostile agent might be able
+** to inject arbitrary format strings should probably set
+** SQLITE_PRINTF_PRECISION_LIMIT to a much smaller value (say 1000)
+** to prevent memory-exhaustion attacks.
 */
 #ifndef SQLITE_PRINTF_PRECISION_LIMIT
-# define SQLITE_FP_PRECISION_LIMIT 100000000
+# define SQLITE_PRINTF_PRECISION_LIMIT 2147483647
+# define SQLITE_FP_PRECISION_LIMIT      100000000
+#elif SQLITE_PRINTF_PRECISION_LIMIT>2147483647
+# error "Maximum precision limit is 2147483647"
+#endif
+
+/* OVERFLOW_PRECISION_LIMIT is the precision used if the value of
+** the precision exceeds the SQLITE_PRINTF_PRECISION_LIMIT.
+**
+** The SQLITE_PRINTF_PRECISION_LIMIT is normally quite large - far
+** larger than is reasonable for a real printf() statement.  If the
+** specified precision overflowed, the documented behavior is to
+** use some smaller precision, where "smaller" is unspecified.
+** We want to keep the smaller precision relatively small to
+** facilitate testing.
+*/
+#if SQLITE_PRINTF_PRECISION_LIMIT<1000
+# define OVERFLOW_PRECISION_LIMIT SQLITE_PRINTF_PRECISION_LIMIT
+#else
+# define OVERFLOW_PRECISION_LIMIT 1000
 #endif
 
 /* Forward reference */
@@ -294,17 +325,16 @@ void sqlite3_str_vappendf(
         }
         case '1': case '2': case '3': case '4': case '5':
         case '6': case '7': case '8': case '9': {
-          unsigned wx = c - '0';
+          i64 wx = c - '0';
           while( (c = *++fmt)>='0' && c<='9' ){
             wx = wx*10 + c - '0';
+            if( wx>SQLITE_PRINTF_PRECISION_LIMIT ){
+              while( (c = *++fmt)>='0' && c<='9' ){}
+              wx = 0;
+              break;
+            }
           }
-          testcase( wx>0x7fffffff );
-          width = wx & 0x7fffffff;
-#ifdef SQLITE_PRINTF_PRECISION_LIMIT
-          if( width>SQLITE_PRINTF_PRECISION_LIMIT ){
-            width = SQLITE_PRINTF_PRECISION_LIMIT;
-          }
-#endif
+          width = (int)wx;
           if( c!='.' && c!='l' ){
             done = 1;
           }else{
@@ -313,20 +343,23 @@ void sqlite3_str_vappendf(
           break;
         }
         case '*': {
+          i64 wx;
           if( bArgList ){
-            width = (int)getIntArg(pArgList);
+            wx = getIntArg(pArgList);
           }else{
-            width = va_arg(ap,int);
+            wx = va_arg(ap,int);
           }
-          if( width<0 ){
+          if( wx>SQLITE_PRINTF_PRECISION_LIMIT ){
+            wx = 0;
+          }else if( wx<0 ){
             flag_leftjustify = 1;
-            width = width >= -2147483647 ? -width : 0;
+            if( wx<-SQLITE_PRINTF_PRECISION_LIMIT ){
+              wx = 0;
+            }else{
+              wx = -wx;
+            }
           }
-#ifdef SQLITE_PRINTF_PRECISION_LIMIT
-          if( width>SQLITE_PRINTF_PRECISION_LIMIT ){
-            width = SQLITE_PRINTF_PRECISION_LIMIT;
-          }
-#endif
+          width = (int)wx;
           if( (c = fmt[1])!='.' && c!='l' ){
             c = *++fmt;
             done = 1;
@@ -334,31 +367,39 @@ void sqlite3_str_vappendf(
           break;
         }
         case '.': {
+          i64 px;
           c = *++fmt;
           if( c=='*' ){
             if( bArgList ){
-              precision = (int)getIntArg(pArgList);
+              px = getIntArg(pArgList);
             }else{
-              precision = va_arg(ap,int);
+              px = va_arg(ap,int);
             }
-            if( precision<0 ){
-              precision = precision >= -2147483647 ? -precision : -1;
+            if( px<0 ){
+              if( px >= -SQLITE_PRINTF_PRECISION_LIMIT ){
+                precision = -px;
+              }else{
+                assert( precision==-1 );
+              }
+            }else if( px<SQLITE_PRINTF_PRECISION_LIMIT ){
+              precision = (int)px;
+            }else{
+              precision = OVERFLOW_PRECISION_LIMIT;
             }
             c = *++fmt;
           }else{
-            unsigned px = 0;
+            px = 0;
             while( c>='0' && c<='9' ){
               px = px*10 + c - '0';
               c = *++fmt;
+              if( px>SQLITE_PRINTF_PRECISION_LIMIT ){
+                while( c>='0' && c<='9' ){ c = *++fmt; }
+                px = OVERFLOW_PRECISION_LIMIT;
+                break;
+              }
             }
-            testcase( px>0x7fffffff );
-            precision = px & 0x7fffffff;
+            precision = (int)px;
           }
-#ifdef SQLITE_PRINTF_PRECISION_LIMIT
-          if( precision>SQLITE_PRINTF_PRECISION_LIMIT ){
-            precision = SQLITE_PRINTF_PRECISION_LIMIT;
-          }
-#endif
           if( c=='l' ){
             --fmt;
           }else{
