@@ -843,4 +843,32 @@ foreach {id v} {
   " 1
 }
 
+# Bug 2026-09-23T02:37:39Z
+#
+# The reported is troubled by the long-standing behavior that integer
+# coordinates to rtree_i32 are truncated to 32-bits.  So, instead of
+# truncating, cap the values to the minimum and maximum 32-bit signed
+# integers.
+#
+reset_db
+do_execsql_test 26.1 {
+   CREATE VIRTUAL TABLE t1 USING rtree_i32(id,a,b);
+}
+foreach {id a b ok} {
+  2  2147483647  2147483648  1
+  3  2147483000  4294967296  1
+  4 -2147483649 -2147483648  1
+  5  4294967296          10  0
+  6  8589934592           5  0
+  7  2147483648 -2147483647  0
+  8          20          10  0
+} {
+  if {$ok} {
+    do_execsql_test 26.$i "INSERT INTO t1 VALUES($id,$a,$b);" {}
+  } else {
+    do_catchsql_test 26.$i "INSERT INTO t1 VALUES($id,$a,$b);" \
+      {1 {rtree constraint failed: t1.(a<=b)}}
+  }
+}
+
 finish_test

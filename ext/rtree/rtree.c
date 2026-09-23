@@ -627,6 +627,18 @@ static int writeInt64(u8 *p, i64 i){
 }
 
 /*
+** Translate pVal into a 32-bit integer.  If pVal is an integer
+** that is larger than 32 bits, the cap it at the largest or
+** smallest 32-bit integer.
+*/
+static int rtreeValueInt32(sqlite3_value *pVal){
+  i64 v64 = sqlite3_value_int64(pVal);
+  if( v64>2147483647 ) return 2147483647;
+  if( v64<-2147483648 ) return -2147483648;
+  return (int)v64;
+}
+
+/*
 ** Increment the reference count of node p.
 */
 static void nodeReference(RtreeNode *p){
@@ -3195,8 +3207,8 @@ static int rtreeUpdate(
 #endif
     {
       for(ii=0; ii<nn; ii+=2){
-        cell.aCoord[ii].i = sqlite3_value_int(aData[ii+3]);
-        cell.aCoord[ii+1].i = sqlite3_value_int(aData[ii+4]);
+        cell.aCoord[ii].i = rtreeValueInt32(aData[ii+3]);
+        cell.aCoord[ii+1].i = rtreeValueInt32(aData[ii+4]);
         if( cell.aCoord[ii].i>cell.aCoord[ii+1].i ){
           rc = rtreeConstraintError(pRtree, ii+1);
           goto constraint;
@@ -3798,12 +3810,14 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   int nData;
   int errCode;
   sqlite3_str *pOut;
+  i64 nDim64;
 
   UNUSED_PARAMETER(nArg);
   memset(&node, 0, sizeof(RtreeNode));
   memset(&tree, 0, sizeof(Rtree));
-  tree.nDim = (u8)sqlite3_value_int(apArg[0]);
-  if( tree.nDim<1 || tree.nDim>5 ) return;
+  nDim64 = sqlite3_value_int64(apArg[0]);
+  if( nDim64<1 || nDim64>5 ) return;
+  tree.nDim = (u8)nDim64;
   tree.nDim2 = tree.nDim*2;
   tree.nBytesPerCell = 8 + 8 * tree.nDim;
   node.zData = (u8 *)sqlite3_value_blob(apArg[1]);
