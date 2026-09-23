@@ -741,24 +741,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           else if(1===nBuf){
             wasm.poke(zBuf, 0);
             return nV;
-          }
-          if( nBuf+1<nV ){
+          }else if( nBuf<nV ){
             toss3(capi.SQLITE_RANGE,
                   "xRcrdRead()",jzClass,jXKey,
                   "input buffer is too small: need",
                   nV,"but have",nBuf);
+          }else if( nBuf > nV + 1 ){
+            nBuf = nV + 1;
           }
           if( 0 ){
             debug("xRcrdRead", nBuf, zClass, wasm.cstrToJs(zClass),
                   wasm.cstrToJs(zKey), nV, jV, store);
           }
-          const zV = cache.memBuffer(0);
+          const nCopy = nV<nBuf ? nV : nBuf-1;
           const heap = wasm.heap8();
-          for (let i = 0; i < nV; ++i) {
+          for (let i = 0; i < nCopy; ++i) {
             heap[wasm.ptr.add(zBuf, i)] = jV.codePointAt(i) & 0xff;
           }
-          heap[wasm.ptr.add(zBuf, nV)] = 0;
-          return nBuf;
+          heap[wasm.ptr.add(zBuf, nCopy)] = 0;
+          return nCopy;
         }catch(e){
           error("kvrecordRead()",e);
           cache.setError(e);
