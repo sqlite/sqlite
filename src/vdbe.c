@@ -5661,7 +5661,7 @@ case OP_SeekRowid: {        /* jump0, in3, ncycle */
     }else
     if( (x.flags & MEM_Real)==0
      || x.u.r < -9223372036854775808.0
-     || x.u.r > 9223372036854775807.0
+     || x.u.r > 9223372036854774784.0
      || (double)(iKey = sqlite3RealToI64(x.u.r))!=x.u.r
     ){
       goto jump_to_p2;
