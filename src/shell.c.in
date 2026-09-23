@@ -622,7 +622,7 @@ static const ModeInfo aModeInfo[] = {
   { "c",        4,     1,    10,   5,    5,    4,   1,   12,    0,  0 },
   { "column",   0,     0,    9,    1,    1,    0,   3,   2,     2,  0 },
   { "count",    0,     0,    0,    0,    0,    0,   0,   3,     0,  0 },
-  { "csv",      4,     5,    9,    3,    3,    0,   1,   12,    0,  0 },
+  { "csv",      4,     5,    9,    3,    3,    0,   1,   4,     0,  0 },
   { "html",     0,     0,    9,    4,    4,    0,   3,   7,     0,  0 },
   { "insert",   0,     0,    10,   2,    2,    0,   1,   8,     0,  0 },
   { "jatom",    4,     1,    11,   6,    6,    0,   1,   12,    0,  0 },
@@ -8709,8 +8709,8 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            truncated. Zero means "no limit".
 **   --colsep STRING          Use STRING as the column separator
 **   --escape ESC             Enable/disable escaping of control characters
-**                            found in the output. ESC can be "off", "ascii",
-**                            or "symbol".
+**                            found in the output. ESC can be "auto", "off",
+**                            "ascii", or "symbol".  Default is "auto"
 **   --fpfmt STRING           String is a printf-style format string used to
 **                            render floating-point values.
 **   --ifmt STRING            String is a printf-style format string used to
@@ -8878,14 +8878,14 @@ static int dotCmdMode(ShellState *p){
       if( (++i)>=nArg ){
         dotCmdError(p, i-1, "missing argument", 0);
         return 1;
-      }                       /*  0     1       2  <-- One less than QRF_ESC_ */
-      k = pickStr(azArg[i],&zErr,"off","ascii","symbol","");
+      }                       /* 0        1     2       3 */
+      k = pickStr(azArg[i],&zErr,"auto", "off","ascii","symbol","");
       if( k<0 ){
         dotCmdError(p, i, "unknown escape type", "%s", zErr);
         sqlite3_free(zErr);
         return 1;
       }
-      p->mode.spec.eEsc = k+1;
+      p->mode.spec.eEsc = k;
       chng = 1;
     }else if( optionMatch(z,"limits") ){
       if( (++i)>=nArg ){
