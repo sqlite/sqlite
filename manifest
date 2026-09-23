@@ -1,5 +1,5 @@
-C In\sPRAGMA\sintegrity_check,\sdouble\sthe\sspace\savailable\sfor\schecking\sthat\nevery\sbyte\sof\sa\spage\sis\sused\sonly\sonce\sas\sa\ssafety\smargin\sto\sdeal\swith\nunforeseen\skinds\sof\sdatabase\scorruption.
-D 2026-09-10T20:10:58.621
+C Cherrypick\sJS\skvvfs\sfixes\sfrom\s[ce09bfe406728312]\s(superfluous\swrites)\sand\s[c43287d8855b3f9a]\s(a\spotential\sbuffer\sovewwrite).
+D 2026-09-23T14:15:06.364
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -604,7 +604,7 @@ F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1fa34e9b0e3b90a8898e4f700d7125e44c818
 F ext/wasm/api/sqlite3-license-version-header.js 98d90255a12d02214db634e041c8e7f2f133d9361a8ebf000ba9c9af4c6761cc
 F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js 25e31482b04293a33d7599f1459eb552b3eb36ca10c02c816122d3308bf80cb2
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
-F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 96f79583dc12f836eadf3c6430a0beaed859306b67e8fd7b0fada8d22cc2393f
+F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js e3758c4ef4375e4b65e847c7444532a3a15389855599cd33233fb4aff4bdfcd4
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 1c742ed92c0515c8ef97d2b132feb01168252bfd847fed5d52607d8a42d23c6a
 F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 3dbd918ef037cd8fa9c7b4dccb3c8637b228638654c429e7df6acab5981c75e2
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 3da8fe72dc9e76614a9c102b92e777ce03f81d788b607701c828d8fcbac44b06
@@ -2206,9 +2206,10 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 65a1a9138873de07df60bbd55e461b922230b645c6f5b6230233585f90208105
-Q +0c173d54b1bab44748f0010ec7aa5bd79891aa9aaea91d2996c6f0d3f859d1a8
-R d78eb2e19c4ff7f12e1e3c10167180c6
-U drh
-Z 0b99832852cb4a7818d32f40dc2e1031
+P f28d770d87531499f11b8a5e458714af53cc6f5b3c972b37f1a021a10e4b4787
+Q +c43287d8855b3f9a4621545793ecb2a89ef456d563d8377f2b243812e6acb2b3
+Q +ce09bfe406728312761a9f227b3f82cbee7cc176dddac1a499e10480a7ee2c1c
+R 99d79359a0f4edb87c2620ab81c6bc69
+U stephan
+Z 7387f9a8b34b97f7d5c18d8e58c3e019
 # Remove this line to create a well-formed Fossil manifest.
