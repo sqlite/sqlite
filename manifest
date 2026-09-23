@@ -1,5 +1,5 @@
-C An\sattempt\sto\simprove\sthe\shandling\sof\srowid\slookups\susing\svery\nlarge\sfloating\spoint\svalues.
-D 2026-09-23T11:37:04.264
+C Improved\scomment\son\sthe\sprevious\scheck-in.
+D 2026-09-23T12:15:13.694
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -810,7 +810,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c cfdf9c6e5323af886d5ce766709da607ba1d14193ad3a15f4f462a45420e8211
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 09ea7756a26473a5b92363ea7663a25b0bb1511f492f30cf660871b760fdddc6
+F src/vdbe.c 076f4de32c507a713cb2d666d6bc6836c3b5637fec1159d2ef39328f73989377
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 68e5ab63f184f2871780c83ce78b425d0360869611baea4c65575f91f76ac1d3
 F src/vdbeapi.c 5f5f86d4642ce1927b4b45a6b87a978ef6b11c8420e6ce440695177618fc25d0
@@ -2221,11 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c6b035ceffb7771e5fa9b1b1efc1544b0d7eea6d0576f257c836c82c4122d58d
-R b400e10461096f9185c46b25b7a8cc61
-T *branch * large-realint-keys
-T *sym-large-realint-keys *
-T -sym-tvf-left-join-fix *
+P 881da860d6048106a50cfec463bd64ee2773baa996129dab369939252f8fcf48
+R d4e0a1feadf0f2aef76eee512a06d7b6
 U drh
-Z 532ce1b8bff9225fcb71b059ee6b4991
+Z 8422717a989d026803842f8f03cdc3bc
 # Remove this line to create a well-formed Fossil manifest.
