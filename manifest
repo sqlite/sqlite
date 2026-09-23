@@ -1,5 +1,5 @@
-C Improved\soutput\swhen\serrors\soccur\sduring\s".dump"\sin\sthe\sCLI.
-D 2026-09-22T19:39:43.935
+C Fix\sa\spossible\sdouble-free\sin\sthe\s(unused)\ssqlite3_intck_test_sql()\ntest\sinterface\sto\sthe\sintck\sextension.\n[bugs:/info/2026-09-22T22:05:25Z|Bug\s2026-09-22T22:05:25Z]
+D 2026-09-23T01:29:05.326
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -290,7 +290,7 @@ F ext/intck/intck_common.tcl a61fd2697ae55b0a3d89847ca0b590c6e0d8ff64bebb70920d9
 F ext/intck/intckbusy.test d5ed4ef85a4b1dc1dee2484bd14a4bb68529659cca743327df0c775f005fa387
 F ext/intck/intckcorrupt.test f6c302792326fb3db9dcfc70b554c55369bc4b52882eaaf039cfe0b74c821029
 F ext/intck/intckfault.test cff3f75dff74abb3edfcb13f6aa53f6436746ab64b09fe5e2028f051e985efab
-F ext/intck/sqlite3intck.c c06ae13326e4b5cb4a207d9b82280d12a19ce69d3281196217035e12c3a5af3a
+F ext/intck/sqlite3intck.c fee77715c08fc10d755dd2da8cde67fd2a31843e454c09121e6c606cbf2c0692
 F ext/intck/sqlite3intck.h 2b40c38e7063ab822c974c0bd4aed97dabb579ccfe2e180a4639bb3bbef0f1c9
 F ext/intck/test_intck.c 4f9eaadaedccb9df1d26ba41116a0a8e5b0c5556dc3098c8ff68633adcccdea8
 F ext/jni/GNUmakefile 8a94e3a1953b88cf117fb2a5380480feada8b4f5316f02572cab425030a720b4
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 03e14c500214f182d1bf37127aa0e0eea417115cd76d641c855f4156952da9d5
-R b8fa884c1c775d419e3b0ea200d64f17
+P c49c3890bb4c993057186fa5294cd8c551f47d27cc4b4e73c96118a30462bb16
+R 9f38820c6577081c4888bd38d43ebfa7
 U drh
-Z c825c601391b9e973410ab3ca97f56dc
+Z 20c1311f8cde41ef13aa70af91468654
 # Remove this line to create a well-formed Fossil manifest.
