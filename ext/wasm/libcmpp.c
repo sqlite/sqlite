@@ -73,12 +73,13 @@
 ** One may see mentions of %amalgamation and %lite in some comments in
 ** this file and its implementation files. Those are preprocessor
 ** directives for this very preprocessor, used by the build process to
-** filter out certain API features to produce its amalgamation build
+** filter out certain pieces to produce its amalgamation build
 ** and (derived from that) the "lite" build. Their placement is
 ** significant, especially when they're embedded within a multi-line C
 ** macro or at the end of the line with a C directive. In normal
 ** builds they're innocuous, but when passed through the "lightener"
-** process, they activate (see Makefile.in keyword "%lite").
+** process, they activate (see Makefile.in keyword "%lite" and
+** tool/libcmpp.c-pp.[ch]).
 */
 /**
    License note: the license headers have been stripped from other
@@ -158,8 +159,8 @@ typedef struct cmpp_arg cmpp_arg;
 
    where pp is the name of the sole argument to the registration
    callback. After that is done, the cmpp_...() APIs may be used via
-   the macros defined below, all of which route through the thunk
-   object.
+   the macros defined elsewhere in this header, all of which route
+   through the thunk object.
 */
 #if defined(CMPP_API_THUNK) || defined(CMPP_API_THUNK_NAME)
 #  if !defined(CMPP_API_THUNK)
@@ -384,20 +385,19 @@ typedef int (*cmpp_flush_f)(void * state);
    with the most).
 */
 struct cmpp {
-
   /**
      API thunk object to support use via loadable modules. Client code
      does not normally need to access this member, but it's exposed
      here to give loadable modules more flexibility in how they use
      the thunk.
 
-     This pointer is _always_ the same singleton object. The library
-     never exposes a cmpp object with a NULL api member.
+     This pointer is _always_ the same singleton object and the
+     library never exposes a cmpp object with a NULL api member.
   */
   cmpp_api_thunk const * const api;
 
   /**
-     Private internal state.
+     Private internal state. Owned by this object.
   */
   cmpp__pimpl * const pimpl;
 };
@@ -2077,7 +2077,13 @@ enum cmpp_tizer_next_e {
      newlines are EOL tokens, sometimes they're spaces, and it's up to
      the caller to specify which is which.
   */
-  cmpp_tizer_next_SKIP_NL = 0x01
+  cmpp_tizer_next_SKIP_NL = 0x01,
+  /**
+     Tells cmpp_tizer_next() to skip over C-style comments. They may
+     span lines. For contexts where newlines end tokenization, the
+     newlines within a comment are not considered newlines.
+  */
+  cmpp_tizer_next_SKIP_C_COMMENTS = 0x02
 
   /**
     TODO: a flag which triggers the workaround
@@ -2186,8 +2192,9 @@ CMPP_EXPORT bool cmpp_token_is_group(cmpp_token const * t);
 CMPP_EXPORT bool cmpp_token_is_string(cmpp_token const * t);
 
 /**
-   If z is within tz's full input range (including parents), this sets
-   tz's error position to z. If z is 0 then the error position is cleared.
+   If z is 0 then the error position is cleared. Else if z is within
+   tz's full input range (including parents), this sets tz's error
+   position to z. Else this has no side effect.
 
    To be clear: this does not put the tokenizer into an error
    state. This records the given position for the sake of any
@@ -2196,15 +2203,6 @@ CMPP_EXPORT bool cmpp_token_is_string(cmpp_token const * t);
    be used for error reporting if something goes wrong in a following
    step. The overwhelming majority of the time, this will precisely
    pinpoint the location of an error.
-
-   Special cases:
-
-   1) To simplify certain uses, tz may be null, in which case this is
-      a no-op. That behavior is questionable, though - why was it added?
-
-   2) If z is not in tz's input range then tz's error pos is set to
-      its current token. The API _may_ assert() or otherwise fail
-      fatally for that case, as it should not be used that way.
 */
 CMPP_EXPORT void cmpp_tizer_errpos_set(cmpp_tizer *tz, unsigned char const *z);
 
@@ -3107,15 +3105,6 @@ CMPP_EXPORT int cmpp_dx_errf(cmpp_dx *dx, int rc,
 */
 CMPP_EXPORT int cmpp_dx_errfv(cmpp_dx *dx, int rc, char const *zFmt,
                                  va_list vargs);
-
-
-/**
-   Evaluates to true if dx->pp has error state, else false. If this
-   function returns true, cmpp_f() implementations are required to
-   stop working, clean up any local resources, and return. Continuing
-   to use dx when it's in an error state may exacerbate the problem.
-*/
-#define cmpp_dx_err_check(DX) cmpp_err_has((DX)->pp)
 
 /**
    Scans dx to the next directive line, emitting all input before that
@@ -4561,7 +4550,7 @@ CMPP_EXPORT int cmpp_kav_each(
    here. If cmpp_kav_each_F_EXPAND_VAL is not in the flags then the
    callback receives the same string for both the key and value.
 */
-CMPP_EXPORT int cmpp_str_each(
+XCMPP_EXPORT int cmpp_str_each(
   cmpp * pp,
   unsigned char const *zBegin,
   cmpp_strlen_t nIn,
@@ -4848,202 +4837,33 @@ CMPP_EXPORT cmpp_size_t cmpp_strlenu(unsigned char const *z, cmpp_strlen_t n);
 */
 CMPP_EXPORT bool cmpp_simple_truth(unsigned char const *z, cmpp_strlen_t n);
 
+/**
+   If [z,n) is unambiguously a base-10 int, sets *pOut (if not NULL)
+   to that value and returns true, else returns false.
+*/
+CMPP_EXPORT bool cmpp_is_int(unsigned char const *z, unsigned n,
+                             int *pOut);
+/** 64-bit counterpart of cmpp__is_int(). */
+CMPP_EXPORT bool cmpp_is_int64(unsigned char const *z, unsigned n,
+                               int64_t *pOut);
+
+
 
 
 /**
    The current cmpp_api_thunk::apiVersion value.  See
    cmpp_api_thunk_map.
 */
-#define cmpp_api_thunk_version 20260921
+#define cmpp_api_thunk_version 20260923
 
-/** The lite build's much-trimmed thunk. */
+/**
+   This stub object is provided for cmpp interface compatibility with
+   loadable-module-capable builds, but that feature is stripped from
+   this build.
+*/
 struct cmpp_api_thunk {
   uint32_t const thunkVersion;
-  /** cmpp_dx_err_check() is implemented in terms of this, so it must
-      be in the lite build.*/
-  int (*err_has)(cmpp const *);
 };
-
-
-#if defined(CMPP_API_THUNK)
-/**
-   cmpp_api_init() must be invoked from the module's registration
-   function, passed the only argument to that function. It sets the
-   global symbol CMPP_API_THUNK_NAME to its argument. From that point
-   on, the thunk's API is accessible via cmpp_foo macros which proxy
-   theThunk->foo.
-
-   It is safe to call this from, e.g. a cmpp_f() implementation, as
-   it will always have the same pointer, so long as it is not passed
-   NULL, which would make the next cmpp_...() call segfault.
-*/
-#  if !defined(CMPP_API_THUNK__assigned)
-#    define CMPP_API_THUNK__assigned
-#    define cmpp_api_init(PP) CMPP_API_THUNK_NAME = (PP)->api
-#  else
-#    define cmpp_api_init(PP) (void)(PP)/*CMPP_API_THUNK_NAME*/
-#  endif /* CMPP_API_THUNK__assigned */
-
-/* What follows was generated with cmpp:
-   #pragma api-thunk
-
-   A chicken/egg sitation. We build the library to generate this and
-   then use the lib to emit it and paste it back into the lib's
-   header. Then we build the library (because it's .c file is older
-   than its .h).
-*/
-#  define cmpp_arg_cleanup CMPP_API_THUNK_NAME->arg_cleanup
-#  define cmpp_arg_consume_as_file CMPP_API_THUNK_NAME->arg_consume_as_file
-#  define cmpp_arg_cstr2 CMPP_API_THUNK_NAME->arg_cstr2
-#  define cmpp_arg_cstr CMPP_API_THUNK_NAME->arg_cstr
-#  define cmpp_arg_equals CMPP_API_THUNK_NAME->arg_equals
-#  define cmpp_arg_parse CMPP_API_THUNK_NAME->arg_parse
-#  define cmpp_arg_reuse CMPP_API_THUNK_NAME->arg_reuse
-#  define cmpp_args_cleanup CMPP_API_THUNK_NAME->args_cleanup
-#  define cmpp_args_parse CMPP_API_THUNK_NAME->args_parse
-#  define cmpp_arg_strdup CMPP_API_THUNK_NAME->arg_strdup
-#  define cmpp_arg_interpolate CMPP_API_THUNK_NAME->arg_interpolate
-#  define cmpp_array_reserve CMPP_API_THUNK_NAME->array_reserve
-#  define cmpp_atdelim_get CMPP_API_THUNK_NAME->atdelim_get
-#  define cmpp_atdelim_pop CMPP_API_THUNK_NAME->atdelim_pop
-#  define cmpp_atdelim_push CMPP_API_THUNK_NAME->atdelim_push
-#  define cmpp_atdelim_set CMPP_API_THUNK_NAME->atdelim_set
-#  define cmpp_atpol_from_str CMPP_API_THUNK_NAME->atpol_from_str
-#  define cmpp_atpol_get CMPP_API_THUNK_NAME->atpol_get
-#  define cmpp_atpol_pop CMPP_API_THUNK_NAME->atpol_pop
-#  define cmpp_atpol_push CMPP_API_THUNK_NAME->atpol_push
-#  define cmpp_atpol_set CMPP_API_THUNK_NAME->atpol_set
-#  define cmpp_b_append4 CMPP_API_THUNK_NAME->b_append4
-#  define cmpp_b_append4_str CMPP_API_THUNK_NAME->b_append4_str
-#  define cmpp_b_append_ch CMPP_API_THUNK_NAME->b_append_ch
-#  define cmpp_b_append_i32 CMPP_API_THUNK_NAME->b_append_i32
-#  define cmpp_b_append_i64 CMPP_API_THUNK_NAME->b_append_i64
-#  define cmpp_b_append CMPP_API_THUNK_NAME->b_append
-#  define cmpp_b_append_str CMPP_API_THUNK_NAME->b_append_str
-#  define cmpp_b_borrow CMPP_API_THUNK_NAME->b_borrow
-#  define cmpp_b_chomp CMPP_API_THUNK_NAME->b_chomp
-#  define cmpp_b_clear CMPP_API_THUNK_NAME->b_clear
-#  define cmpp_b_cmp CMPP_API_THUNK_NAME->b_cmp
-#  define cmpp_b_reserve3 CMPP_API_THUNK_NAME->b_reserve3
-#  define cmpp_b_reserve CMPP_API_THUNK_NAME->b_reserve
-#  define cmpp_b_return CMPP_API_THUNK_NAME->b_return
-#  define cmpp_b_reuse CMPP_API_THUNK_NAME->b_reuse
-#  define cmpp_b_swap CMPP_API_THUNK_NAME->b_swap
-#  define cmpp_b_unescape CMPP_API_THUNK_NAME->b_unescape
-#  define cmpp_check_oom CMPP_API_THUNK_NAME->check_oom
-#  define cmpp_chomp CMPP_API_THUNK_NAME->chomp
-#  define cmpp_count_nl CMPP_API_THUNK_NAME->count_nl
-#  define cmpp_ctor CMPP_API_THUNK_NAME->ctor
-#  define cmpp_d_autoloader_set CMPP_API_THUNK_NAME->d_autoloader_set
-#  define cmpp_d_autoloader_take CMPP_API_THUNK_NAME->d_autoloader_take
-#  define cmpp_define_legacy CMPP_API_THUNK_NAME->define_legacy
-#  define cmpp_define_shadow CMPP_API_THUNK_NAME->define_shadow
-#  define cmpp_define_unshadow CMPP_API_THUNK_NAME->define_unshadow
-#  define cmpp_define_v2 CMPP_API_THUNK_NAME->define_v2
-#  define cmpp_delimiter_get CMPP_API_THUNK_NAME->delimiter_get
-#  define cmpp_delimiter_pop CMPP_API_THUNK_NAME->delimiter_pop
-#  define cmpp_delimiter_push CMPP_API_THUNK_NAME->delimiter_push
-#  define cmpp_delimiter_set CMPP_API_THUNK_NAME->delimiter_set
-#  define cmpp_d_register CMPP_API_THUNK_NAME->d_register
-#  define cmpp_dtor CMPP_API_THUNK_NAME->dtor
-#  define cmpp_dx_args_clone CMPP_API_THUNK_NAME->dx_args_clone
-#  define cmpp_dx_args_parse CMPP_API_THUNK_NAME->dx_args_parse
-#  define cmpp_dx_consume_b CMPP_API_THUNK_NAME->dx_consume_b
-#  define cmpp_dx_consume CMPP_API_THUNK_NAME->dx_consume
-#  define cmpp_dx_consume_v2 CMPP_API_THUNK_NAME->dx_consume_v2
-#  define cmpp_dx_current CMPP_API_THUNK_NAME->dx_current
-#  define cmpp_dx_delim CMPP_API_THUNK_NAME->dx_delim
-#  define cmpp_dx_errf CMPP_API_THUNK_NAME->dx_errf
-#  define cmpp_dx_errfv CMPP_API_THUNK_NAME->dx_errfv
-#  define cmpp_dx_next CMPP_API_THUNK_NAME->dx_next
-#  define cmpp_dx_pos_restore CMPP_API_THUNK_NAME->dx_pos_restore
-#  define cmpp_dx_pos_save CMPP_API_THUNK_NAME->dx_pos_save
-#  define cmpp_dx_process CMPP_API_THUNK_NAME->dx_process
-#  define cmpp_dx_src_pos_info CMPP_API_THUNK_NAME->dx_src_pos_info
-#  define cmpp_errf CMPP_API_THUNK_NAME->errf
-#  define cmpp_errfv CMPP_API_THUNK_NAME->errfv
-#  define cmpp_err_get CMPP_API_THUNK_NAME->err_get
-#  define cmpp_err_has CMPP_API_THUNK_NAME->err_has
-#  define cmpp_errinfo_dtor CMPP_API_THUNK_NAME->errinfo_dtor
-#  define cmpp_errinfo_reuse CMPP_API_THUNK_NAME->errinfo_reuse
-#  define cmpp_errinfo_setf CMPP_API_THUNK_NAME->errinfo_setf
-#  define cmpp_errinfo_set CMPP_API_THUNK_NAME->errinfo_set
-#  define cmpp_errinfo_setv CMPP_API_THUNK_NAME->errinfo_setv
-#  define cmpp_err CMPP_API_THUNK_NAME->err
-#  define cmpp_errno_rc CMPP_API_THUNK_NAME->errno_rc
-#  define cmpp_fclose CMPP_API_THUNK_NAME->fclose
-#  define cmpp_f_dangling_closer CMPP_API_THUNK_NAME->f_dangling_closer
-#  define cmpp_flush_f_FILE CMPP_API_THUNK_NAME->flush_f_FILE
-#  define cmpp_fopen CMPP_API_THUNK_NAME->fopen
-#  define cmpp_include_dir_add CMPP_API_THUNK_NAME->include_dir_add
-#  define cmpp_input_f_fd CMPP_API_THUNK_NAME->input_f_fd
-#  define cmpp_input_f_FILE CMPP_API_THUNK_NAME->input_f_FILE
-#  define cmpp_is_legal_key CMPP_API_THUNK_NAME->is_legal_key
-#  define cmpp_is_safemode CMPP_API_THUNK_NAME->is_safemode
-#  define cmpp_isspace CMPP_API_THUNK_NAME->isspace
-#  define cmpp_kav_each CMPP_API_THUNK_NAME->kav_each
-#  define cmpp_malloc CMPP_API_THUNK_NAME->malloc
-#  define cmpp_mfree CMPP_API_THUNK_NAME->mfree
-#  define cmpp_module_dir_add CMPP_API_THUNK_NAME->module_dir_add
-#  define cmpp_module_load CMPP_API_THUNK_NAME->module_load
-#  define cmpp_mrealloc CMPP_API_THUNK_NAME->mrealloc
-#  define cmpp_out_expand CMPP_API_THUNK_NAME->out_expand
-#  define cmpp_outf CMPP_API_THUNK_NAME->outf
-#  define cmpp_outfv CMPP_API_THUNK_NAME->outfv
-#  define cmpp_outputer_cleanup_f_b CMPP_API_THUNK_NAME->outputer_cleanup_f_b
-#  define cmpp_outputer_cleanup_f_FILE CMPP_API_THUNK_NAME->outputer_cleanup_f_FILE
-#  define cmpp_outputer_cleanup CMPP_API_THUNK_NAME->outputer_cleanup
-#  define cmpp_outputer_flush CMPP_API_THUNK_NAME->outputer_flush
-#  define cmpp_outputer_out CMPP_API_THUNK_NAME->outputer_out
-#  define cmpp_outputer_set CMPP_API_THUNK_NAME->outputer_set
-#  define cmpp_output_f_b CMPP_API_THUNK_NAME->output_f_b
-#  define cmpp_output_f_fd CMPP_API_THUNK_NAME->output_f_fd
-#  define cmpp_output_f_FILE CMPP_API_THUNK_NAME->output_f_FILE
-#  define cmpp_out_raw CMPP_API_THUNK_NAME->out_raw
-#  define cmpp_path_search CMPP_API_THUNK_NAME->path_search
-#  define cmpp_pclose CMPP_API_THUNK_NAME->pclose
-#  define cmpp_popen_args CMPP_API_THUNK_NAME->popen_args
-#  define cmpp_popen CMPP_API_THUNK_NAME->popen
-#  define cmpp_popenv CMPP_API_THUNK_NAME->popenv
-#  define cmpp_process_argv CMPP_API_THUNK_NAME->process_argv
-#  define cmpp_process_argv_usage CMPP_API_THUNK_NAME->process_argv_usage
-#  define cmpp_process_file CMPP_API_THUNK_NAME->process_file
-#  define cmpp_process_stream CMPP_API_THUNK_NAME->process_stream
-#  define cmpp_process_string CMPP_API_THUNK_NAME->process_string
-#  define cmpp_reset CMPP_API_THUNK_NAME->reset
-#  define cmpp_skip_snl_trailing CMPP_API_THUNK_NAME->skip_snl_trailing
-#  define cmpp_skip_snl CMPP_API_THUNK_NAME->skip_snl
-#  define cmpp_skip_space_trailing CMPP_API_THUNK_NAME->skip_space_trailing
-#  define cmpp_skip_space CMPP_API_THUNK_NAME->skip_space
-#  define cmpp_slurp CMPP_API_THUNK_NAME->slurp
-#  define cmpp_sp_begin CMPP_API_THUNK_NAME->sp_begin
-#  define cmpp_sp_commit CMPP_API_THUNK_NAME->sp_commit
-#  define cmpp_sp_rollback CMPP_API_THUNK_NAME->sp_rollback
-#  define cmpp_stream CMPP_API_THUNK_NAME->stream
-#  define cmpp_strlen CMPP_API_THUNK_NAME->strlen
-#  define cmpp_strlenu CMPP_API_THUNK_NAME->strlenu
-#  define cmpp_tt_cstr CMPP_API_THUNK_NAME->tt_cstr
-#  define cmpp_undef CMPP_API_THUNK_NAME->undef
-#  define cmpp_unpol_from_str CMPP_API_THUNK_NAME->unpol_from_str
-#  define cmpp_unpol_get CMPP_API_THUNK_NAME->unpol_get
-#  define cmpp_unpol_pop CMPP_API_THUNK_NAME->unpol_pop
-#  define cmpp_unpol_push CMPP_API_THUNK_NAME->unpol_push
-#  define cmpp_unpol_set CMPP_API_THUNK_NAME->unpol_set
-#  define cmpp_version CMPP_API_THUNK_NAME->version
-#  define cmpp_args_empty (*CMPP_API_THUNK_NAME->args_empty)
-#  define cmpp_b_empty (*CMPP_API_THUNK_NAME->b_empty)
-#  define cmpp_d_autoloader_empty (*CMPP_API_THUNK_NAME->d_autoloader_empty)
-#  define cmpp_errinfo_empty (*CMPP_API_THUNK_NAME->errinfo_empty)
-#  define cmpp_outputer_b (*CMPP_API_THUNK_NAME->outputer_b)
-#  define cmpp_popen_t_empty (*CMPP_API_THUNK_NAME->popen_t_empty)
-
-#else /* no CMPP_API_THUNK */
-/**
-   cmpp_api_init() is a no-op when not including a file-local API
-   thunk.
-*/
-#  define cmpp_api_init(PP) (void)0
-#endif /* CMPP_API_THUNK */
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -5680,10 +5500,7 @@ struct CmppDList_entry {
   /** this->d.name.z points to this, which is owned by the CmppDList
       which manages this object. */
   char * zName;
-  /* Potential TODO: move d->id into here. That doesn't eliminate our
-     dependency on it, though. */
   cmpp_d d;
-  //cmpp_d_reg reg;
 };
 typedef struct CmppDList_entry CmppDList_entry;
 #define CmppDList_entry_empty_m {0,cmpp_d_empty_m/*,cmpp_d_reg_empty_m*/}
@@ -5956,35 +5773,6 @@ struct cmpp__pimpl {
     /*E(insTtype,                                      \
       "INSERT INTO " CMPP__DB_MAIN_NAME ".ttype"       \
       "(t,n,s) VALUES(?1,?2,?3)")*/                    \
-    E(jsonVal,                                         \
-      /* JSON-able to something we can use. */         \
-      "SELECT json(?1)->>'$'")                         \
-    E(jsonGet,                                         \
-      "SELECT json(?1)->>?2")                          \
-    E(jsonGetString,                                   \
-      "SELECT json(?1)->?2")                           \
-    E(jsonSet,                                         \
-      "SELECT jsonb_set(?1,?2,"                        \
-      " CASE WHEN json_valid(?3,6) THEN "              \
-      " jsonb(?3) ELSE ?3 END"                         \
-      ")")                                             \
-    E(jsonArrayLen,                                    \
-      "SELECT CASE WHEN json_valid(?1,6) THEN "        \
-      "json_array_length(?1) ELSE -1 END")             \
-    E(jsonArrayGet,                                    \
-      "SELECT jsonb_get(?1,('$['||?2||']')))")         \
-    E(jsonArrayAppend,                                 \
-      "SELECT jsonb_set(?1,'$[#]',"                    \
-      "CASE WHEN json_valid(?2,6) WHEN jsonb(?2) "     \
-      "ELSE ?2 END)")                                  \
-    E(jsonArraySet,                                    \
-      "SELECT jsonb_set(?1,('$['||?2||']')),"          \
-      "CASE WHEN json_valid(?3,6) WHEN jsonb(?3) "     \
-      "ELSE ?3 END)")                                  \
-    E(itchClearFrame,                                  \
-      /* Delete all vars for a frame */                \
-      "DELETE FROM " CMPP__DB_MAIN_NAME ".itch_v "     \
-      "WHERE i=?1 AND f=?2")                           \
     E(selPathSearch,                                   \
       /*sqlite.org/forum/forumpost/840c98a8e87c2207*/  \
       "WITH path(basename, sep, ext, path) AS (\n"     \
@@ -6024,9 +5812,7 @@ struct cmpp__pimpl {
       "from pathsplit, thefile\n"                      \
       "where r<>'' and cmpp_file_exists(fn)\n"         \
       "order by i\n"                                   \
-      "limit 1;")
-    /* trivia: selPathSearch (^^^) was initially generated using
-       cmpp's #c-code directive. */
+      "limit 1;")                                      \
 
 #define E(N,S) sqlite3_stmt * N;
     CmppStmt_map(E)
@@ -6660,14 +6446,6 @@ CMPP_PRIVATE cmpp_argOp const * cmpp_argOp_for_tt(cmpp_tt_e tt);
 
 
 
-/**
-   If [z,n) is unambiguously a base-10 int, sets *pOut (if not NULL)
-   to that value and returns true, else returns false.
-*/
-CMPP_PRIVATE bool cmpp__is_int(unsigned char const *z, unsigned n,
-                               int *pOut);
-/** 64-bit counterpart of cmpp__is_int(). */
-CMPP_PRIVATE bool cmpp__is_int64(unsigned char const *z, unsigned n, int64_t *pOut);
 CMPP_PRIVATE char const * cmpp__atpol_name(cmpp *pp, cmpp_atpol_e p);
 //CMPP_PRIVATE char const * cmpp__unpol_name(cmpp *pp, cmpp_unpol_e p);
 
@@ -6886,7 +6664,6 @@ static const cmpp__delim delimAtDefault = {
 
 static const cmpp_api_thunk cmppApiMethods = {
   .thunkVersion = cmpp_api_thunk_version,
-  .err_has = cmpp_err_has
 };
 
 CMPP__EXPORT(bool, cmpp_isspace)(int ch){
@@ -7179,6 +6956,7 @@ static CmppDList_entry * CmppDList_append(cmpp *pp, CmppDList *li);
 static void CmppDList_unappend(CmppDList *li);
 /** Resets li's list for re-use but does not free it. Returns li. */
 //static CmppDList * CmppDList_reuse(CmppDList *li);
+/** Searches li for a matching NUL-terminated name. */
 static CmppDList_entry * CmppDList_search(CmppDList const * li,
                                           char const *zName);
 
@@ -8171,8 +7949,9 @@ CMPP__EXPORT(void, cmpp_atdelim_get)(cmpp const * const pp,
   if( zOpen ) *zOpen = (char const *)d->open.z;
 }
 
-bool cmpp__is_int(unsigned char const *z, unsigned n,
-                  int *pOut){
+CMPP__EXPORT(bool, cmpp_is_int)(unsigned char const *z, unsigned n,
+                                int *pOut){
+  if( n > 10 ) return false;
   char const * zz = (char *)z;
   char /*const sigh*/* zEnd = 0;
   int32_t d = strtol(zz, &zEnd, 10);
@@ -8183,7 +7962,9 @@ bool cmpp__is_int(unsigned char const *z, unsigned n,
   return false;
 }
 
-bool cmpp__is_int64(unsigned char const *z, unsigned n, int64_t *pOut){
+CMPP__EXPORT(bool, cmpp_is_int64)(unsigned char const *z, unsigned n,
+                                   int64_t *pOut){
+  if( n > 20 ) return false;
   char const * zz = (char *)z;
   char /*const sigh*/ * zEnd = 0;
   int64_t d = strtoll(zz, &zEnd, 10);
@@ -8714,7 +8495,7 @@ static int cmpp__dx_delim_search(cmpp_dx * const dx, bool * gotOne){
     cmpp_tizer_init(&tz, &pi->err, z, (zEnd-z));
     int tzrc;
     unsigned int nTok = 0;
-    cmpp_tizer_foreach3(&tz, tzrc, 0){
+    cmpp_tizer_foreach3(&tz, tzrc, cmpp_tizer_next_SKIP_C_COMMENTS){
 #if 0
       if( 0 ){
         g_warn("tok=%s %.*s", cmpp_tt_cstr(tz.token.ttype),
@@ -8958,7 +8739,8 @@ CmppDList_entry * CmppDList_append(cmpp *pp, CmppDList *li){
 
 CmppDList_entry * CmppDList_search(CmppDList const * li,
                                        char const *zName){
-  if( li->n > 2 ){
+  if( li->n > 32 ){
+    /* ^^^^^^^^^ See notes itch.c:cmpp_itch_enum_search() */
     CmppDList_entry const key = {
       .d = {
         .name = {
@@ -8971,14 +8753,12 @@ CmppDList_entry * CmppDList_search(CmppDList const * li,
     CmppDList_entry ** pRv
       = bsearch(&pKey, li->list, li->n, sizeof(li->list[0]),
                 CmppDList_entry_cmp_pp);
-    //g_warn("search in=%s out=%s", zName, (pRv ? (*pRv)->d.name.z : "<null>"));
     return pRv ? *pRv : 0;
   }else{
     cmpp_size_t const nName = cmpp__strlen(zName, -1);
     for( cmpp_size_t i = 0; i < li->n; ++i ){
       CmppDList_entry * const e = li->list[i];
       if( nName==e->d.name.n && 0==strcmp(zName, e->d.name.z) ){
-        //g_warn("search in=%s out=%s", zName, e->d.name.z);
         return e;
       }
     }
@@ -9388,6 +9168,8 @@ end:
       r->dtor( r->state );
     }
   }else{
+    /* TODO (2026-09-22): delay sort under search. Except then
+       the list is const. */
     CmppDList_sort(&pp->pimpl->d.list);
     if( dOut ){
       *dOut = &e1->d;
@@ -12033,6 +11815,8 @@ int cmpp__db_rc(cmpp *pp, int dbRc, char const *zMsg){
     case SQLITE_DONE:
     case SQLITE_ROW:
       return 0;
+    case SQLITE_NOMEM:
+      return CMPP_RC_OOM;
     default:
       return cmpp_errf(
         pp, cmpp__db_errcode(pp->pimpl->db.dbh, dbRc),
@@ -12136,7 +11920,7 @@ static int cmpp__define_legacy(cmpp *pp, const char * zKey, char const *zVal,
   switch( ttype ){
     case cmpp_tt_None:
       if(kvp.v.n){
-        if( cmpp__is_int64(kvp.v.z, kvp.v.n, &intCheck) ){
+        if( cmpp_is_int64(kvp.v.z, kvp.v.n, &intCheck) ){
           ttype = cmpp_tt_IntDec;
           if( '+'==*kvp.v.z ){
             ++kvp.v.z;
@@ -12153,7 +11937,7 @@ static int cmpp__define_legacy(cmpp *pp, const char * zKey, char const *zVal,
       }
       break;
     case cmpp_tt_IntDec:
-      if( !cmpp__is_int64(kvp.v.z, kvp.v.n, &intCheck) ){
+      if( !cmpp_is_int64(kvp.v.z, kvp.v.n, &intCheck) ){
         ttype = cmpp_tt_DbString;
       }
       break;
@@ -14102,7 +13886,7 @@ static void cmpp_f_delimiter(cmpp_f_args const * args){
       else cmpp_delimiter_set(args->pp, z);
     }
   }
-  if( !cmpp_dx_err_check(dx) ){
+  if( !cmpp_err_has(dx->pp) ){
     if( args->isDxCall ){
       cmpp__delim const * const del = cmpp__dx_delim(dx);
       if( del ) cmpp_out_raw(args->pp, del->open.z, del->open.n);
@@ -14524,7 +14308,7 @@ static void cmpp_f_sum(cmpp_f_args const * args){
     cmpp_arg const * arg = args->argv[i];
     rc = cmpp_arg_interpolate(args->pp, arg, cmpp_b_reuse(b),
                        cmpp_arg_interpolate_BRACE_CALL);
-    if( 0==rc && cmpp__is_int64(b->z, b->n, &nn) ){
+    if( 0==rc && cmpp_is_int64(b->z, b->n, &nn) ){
       nTotal += nn;
     }
   }
@@ -14561,7 +14345,7 @@ static void cmpp_f_arg(cmpp_f_args const * args){
   }
   //g_warn("argc=%d", dx->args.argc);
   cmpp_b * const b = cmpp_b_borrow(args->pp);
-  for( ; arg && !cmpp_dx_err_check(dx); arg = arg->next ){
+  for( ; arg && !cmpp_err_has(args->pp); arg = arg->next ){
 #define FLAG(X)if( cmpp_arg_isflag_c(arg, X) )
     FLAG("-raw") {
       a2bFlags = cmpp_arg_interpolate_FORCE_STRING;
@@ -14620,13 +14404,13 @@ static void cmpp_f_join(cmpp_f_args const * args){
   for( cmpp_arg const * arg = dx->args.arg0; arg
          && !b->errCode
          && !bSep->errCode
-         && !cmpp_dx_err_check(dx);
+         && !cmpp_err_has(args->pp);
        arg = arg->next ){
 #define FLAG(X)if( cmpp_arg_isflag_c(arg, X) )
     FLAG("-s"){
       if( !arg->next ){
-        cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                        "Missing SEPARATOR argument to -s.");
+        cmpp_errf(args->pp, CMPP_RC_MISUSE,
+                  "Missing SEPARATOR argument to -s.");
         break;
       }
       cmpp_arg_interpolate(args->pp, arg->next,
@@ -14647,7 +14431,7 @@ static void cmpp_f_join(cmpp_f_args const * args){
     }
     cmpp_out_raw(args->pp, b->z, b->n);
   }
-  if( !cmpp_dx_err_check(dx) ){
+  if( !cmpp_err_has(args->pp) ){
     if( !n ){
       cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                       "Expecting at least one argument.");
@@ -14748,13 +14532,12 @@ missing_arg:
    #cmp LHS op RHS
 */
 static void cmpp_f_cmp(cmpp_f_args const * args){
-  cmpp_dx * const dx = args->dx;
   cmpp_b * const bL = cmpp_b_borrow(args->pp);
   cmpp_b * const bR = cmpp_b_borrow(args->pp);
   cmpp_flag32_t a2bFlags = cmpp_arg_interpolate_BRACE_CALL;
   if( !bL || !!bR ) goto end;
-  for( cmpp_arg const * arg = dx->args.arg0; arg
-         && !cmpp_dx_err_check(dx);
+  for( cmpp_arg const * arg = args->dx->args.arg0; arg
+         && !cmpp_err_has(args->pp);
        arg = arg->next ){
     if( !bL->z ){
       cmpp_arg_interpolate(args->pp, arg, bL, a2bFlags);
@@ -14767,10 +14550,9 @@ static void cmpp_f_cmp(cmpp_f_args const * args){
     break;
   }
 
-  if( cmpp_dx_err_check(dx) ) goto end;
+  if( cmpp_err_has(args->pp) ) goto end;
   if( !bL->z || !bR->z ){
-    cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                    "Usage: LHS RHS");
+    cmpp_errf(args->pp, CMPP_RC_MISUSE, "Usage: LHS RHS");
     goto end;
   }
   assert( bL->z );
@@ -15782,7 +15564,7 @@ int cmpp__args_evalToInt(cmpp * const pp,
       case cmpp_tt_StringDQ:
       case cmpp_tt_StringSQ:
         checkConsecutiveNonOps;
-        if( !cmpp__is_int(arg->z, arg->n, &result) ){
+        if( !cmpp_is_int(arg->z, arg->n, &result) ){
           /* This is mostly for and/or ops. glob will reach back and
              grab arg->z. */
           result = 0;
@@ -15805,7 +15587,7 @@ int cmpp__args_evalToInt(cmpp * const pp,
         checkConsecutiveNonOps;
         cmpp_b b = cmpp_b_empty;
         if( 0==cmpp_call_str(pp, arg->z, arg->n, &b, 0) ){
-          cmpp__is_int(b.z, b.n, &result);
+          cmpp_is_int(b.z, b.n, &result);
         }
         cmpp_b_clear(&b);
         break;
@@ -15880,7 +15662,7 @@ static void cmpp__t2a_ttype_set(cmpp_token const *tok,
       //g_warn("ttop %s", cmpp_tt_cstr(ttop));
       arg->ttype = ttop;
     }
-    /*else if( cmpp__is_int64(arg->z, arg->n, 0) ){
+    /*else if( cmpp_is_int64(arg->z, arg->n, 0) ){
       arg->ttype = cmpp_tt_IntDec;
     }*/
   }
@@ -15941,7 +15723,8 @@ CMPP__EXPORT(int, cmpp_args_parse)(cmpp * const pp,
                zInBegin);
   pArgs->arg0 = NULL;
   pArgs->argc = 0;
-  cmpp_flag32_t const tFlags = cmpp_tizer_next_SKIP_NL;
+  cmpp_flag32_t const tFlags = cmpp_tizer_next_SKIP_NL
+    | cmpp_tizer_next_SKIP_C_COMMENTS;
   for( int i = 0; (0==(rc=cmpp_tizer_next(&tz,tFlags)))
          && cmpp_tt_EOF!=tok->ttype
          ; ++i){
@@ -16125,7 +15908,8 @@ CMPP__EXPORT(int,cmpp_arg_parse)(
                   (zInEnd-*pzIn));
   unsigned char * zo = *pzOut;
   int rc = 0;
-  cmpp_flag32_t const tnFlags = cmpp_tizer_next_SKIP_NL;
+  cmpp_flag32_t const tnFlags = cmpp_tizer_next_SKIP_NL
+    | cmpp_tizer_next_SKIP_C_COMMENTS;
   cmpp_arg_reuse( pOut );
   pOut->z = zo;
   rc = cmpp_tizer_next(&tz, tnFlags);
@@ -16173,7 +15957,7 @@ int cmpp__arg_toBool(cmpp * const pp, cmpp_arg const *arg,
 
     case cmpp_tt_IntDec:
       *pNext = arg->next;
-      cmpp__is_int(arg->z, arg->n, pResult)/*was already validated*/;
+      cmpp_is_int(arg->z, arg->n, pResult)/*was already validated*/;
       break;
 
     case cmpp_tt_StringBT:
@@ -16181,7 +15965,7 @@ int cmpp__arg_toBool(cmpp * const pp, cmpp_arg const *arg,
     case cmpp_tt_StringSQ:{
       int rc = 0;
       *pNext = arg->next;
-      if( cmpp__is_int(arg->z, arg->n, &rc) ){
+      if( cmpp_is_int(arg->z, arg->n, &rc) ){
         *pResult = rc;
       }else{
         *pResult = arg->n>0 && 0!=memcmp("0\0", arg->z, 2);
@@ -16681,7 +16465,7 @@ int cmpp_arg_consume_as_file(
     }else{
       rc = cmpp_stream(cmpp_input_f_FILE, fp, out.out, out.state);
     }
-    if( rc && !cmpp_dx_err_check(dx) ){
+    if( rc && !cmpp_err_has(dx->pp) ){
       /* Propagate error. */
       cmpp_dx_errf(dx, rc, "Unknown error streaming file [%s].",
                       bFile->z);
@@ -17869,8 +17653,8 @@ int sqlite3_series_init(
 **  * May you share freely, never taking more than you give.
 **
 ************************************************************************
-** This file houses what may become the next argument tokenizer for
-** the library.
+** This file houses the low-level tokenizer used by cmpp directives
+** and cmpp_itch callbacks.
 */
 
 #include <ctype.h>
@@ -18035,20 +17819,19 @@ CMPP__EXPORT(sqlite3_str *, cmpp_tizer_err_prefix_t)(cmpp_tizer const *tz,
 
 CMPP__EXPORT(void, cmpp_tizer_errpos_set)(cmpp_tizer *tz,
                                           unsigned char const *z){
-  if( tz ){
-    if( z ){
-      unsigned char const * zB = 0;
-      unsigned char const * zE = 0;
-      cmpp_tizer_full_range(tz, &zB, &zE);
-      if( z>=zB && zE<=z ){
-        tz->errToken = cmpp_token_empty;
-        tz->errToken.z = tz->errToken.zInner = z;
-      }else{
-        tz->errToken = tz->token;
-      }
-    }else{
+  if( z ){
+    unsigned char const * zB = 0;
+    unsigned char const * zE = 0;
+    cmpp_tizer_full_range(tz, &zB, &zE);
+    if( z>=zB && zE<=z ){
       tz->errToken = cmpp_token_empty;
-    }
+      tz->errToken.z = tz->errToken.zInner = z;
+    }/*else{
+     // This mis-identifies positions of interpolation errors.
+     tz->errToken = tz->token;
+     }*/
+  }else{
+    tz->errToken = cmpp_token_empty;
   }
 }
 
@@ -18142,13 +17925,15 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
   unsigned char const * zEsc = 0;
   bool keepGoing = true;
   int rc = 0;
+  bool const skipNL = cmpp_tizer_next_SKIP_NL & flags;
+  bool const skipCComments = cmpp_tizer_next_SKIP_C_COMMENTS & flags;
 
   tz->errToken = cmpp_token_empty;
   assert( cmpp_tt_None==0 && "API requirement" );
   assert( tz->zPos < tz->zEnd && "Expected from cmpp_tizer_next()" );
   assert( 0==tok->n && "Expected from cmpp_tizer_next()" );
   assert( tz->zPos == tok->z && "Expected from cmpp_tizer_next()" );
-  if( cmpp_tizer_next_SKIP_NL & flags ){
+  if( skipNL ){
     assert( !cmpp_isspace(*z) && '\n'!=*z
             && tz->zPos==tok->z && "Expected from cmpp_tizer_next()" );
   }
@@ -18159,10 +17944,33 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
 #define maybeSetTtype(T) if(!tok->ttype) tok->ttype= cmpp_tt_ ## T
   while( z<zEnd && 0==rc && keepGoing ){
     switch( *z ){
+      case '/':
+        if( tok->ttype || !skipCComments || zEsc
+            || z+1==zEnd || '*'!=z[1] ){
+          goto do_word;
+        }
+        /* Skip C-style comments */
+        z += 2;
+        while( z+1<zEnd && '*'!=*z && '/'!=z[1] ){
+          ++z;
+        }
+        if( z==zEnd || '*'!=*z ){
+          cmpp_tizer_errpos_set(tz, tok->z);
+          rc = cmpp_tizer_err_setf(tz, CMPP_RC_SYNTAX,
+                                   "Did not find closing */ for ",
+                                   "C comment.");
+          break;
+        }
+        assert( z+1<zEnd && '*'==*z && '/'==z[1] );
+        z += 2;
+        //g_warn("C comment: %.*s", (int)(z-tok->z), tok->z);
+        tok->z = z;
+        break;
       case '!':
         /* This is a consolation for older cmpp_arg code: a run of '!'
            is tagged as OpNot and the expression engine is responsible
-           for dealing with it. */
+           for dealing with it by reducing it to a single NOT or NOT
+           NOT operation. */
         if( zEsc ){
           maybeSetTtype(Word);
           zEsc = 0;
@@ -18268,7 +18076,7 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
               goto continue_comment;
             }
             ++z /* consume \n */;
-            if( cmpp_tizer_next_SKIP_NL & flags ){
+            if( skipNL ){
               tok->z = z;
               tok->ttype = 0;
             }else{
@@ -18309,7 +18117,7 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
           keepGoing = false;
           tz->atBOX = true;
           break;
-        }else if( cmpp_tizer_next_SKIP_NL & flags ){
+        }else if( skipNL ){
           tok->z = ++z;
           tok->ttype = 0;
           tz->atBOX = true;
@@ -18328,7 +18136,7 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
           /* Terminate pending token here */
           keepGoing = false;
         }else{
-          assert( tz->atBOX );
+          //assert( tz->atBOX );
           tok->z = ++z;
         }
         //assert( !tz->atBOX );

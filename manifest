@@ -1,5 +1,5 @@
-C Change\sthe\sbehavior\sof\srtree_i32\ssuch\sthat\scoordinate\sinputs\sthat\sare\noutside\sthe\srange\sof\ssigned\s32-bit\sintegers\sare\sconverted\sinto\sthe\snearest\nrepresentable\ssigned\s32-bit\sinteger\srather\sthan\sjust\sbeing\struncated\nto\s32-bits.\sThe\sprior\sbehavior\sof\struncating\sis\swhat\sprogrammers\sexpected\nyears\sago,\sbut\sapparently\sthe\snew\sgeneration\sof\sprogrammers\sexpects\sthe\nvalues\sto\sbe\scapped\sat\sthe\snearest\srepresentable\svalue.\nWe\scould\sargue\sabout\swhich\sis\smore\s"correct",\sbut\sit\sseems\seasier\sto\njust\sdo\swhat\sthe\syounglings\sexpect.\nThe\sdocumentation\sis\sambiguous\sabout\swhat\sto\sdo\sin\sthis\scase,\nso\sthis\sis\snot\sa\sbreaking\schange.\n[bugs:/info/2026-09-23T02:37:39Z|Bug\s2026-09-23T02:37:39Z].
-D 2026-09-23T09:34:08.936
+C Preprocessor:\sremove\smore\snot-relevant-to-this-copy\spieces\sand\sadd\ssupport\sfor\sC-style\scomments\sin\sdirective\sarguments.
+D 2026-09-23T10:06:30.303
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -637,7 +637,7 @@ F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73
 F ext/wasm/index.html 5bf6cf1b0a3c8b9f5f54d77f2219d7ae87a15162055ce308109c49b1dcab4239
 F ext/wasm/jaccwabyt/jaccwabyt.js 4e2b797dc170851c9c530c3567679f4aa509eec0fab73b466d945b00b356574b
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
-F ext/wasm/libcmpp.c dc0746f358190fa7e8ecc10cfc59deaf493d8d6f70200b162730b2ff3eabf731
+F ext/wasm/libcmpp.c 9a87f4d3ca91fdf2dbb87cffacc641b78aeb16fbc4da0240f5c5bf88dc150c90
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
 F ext/wasm/mkwasmbuilds.c 74a74a4e96e67cdb132f701140d53c677b2871fc49d2cdd143064f01329a3e51
 F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3b1e5538da0ec57ae456e3a5293746b8fb34451f57d0049cc51dd72eb2f89d6e
-R ff43d5b5dbff8e26354d9d8718762ce8
-U drh
-Z 1f42ab775879a4386048e043629e979f
+P d046d5f4c6855227f14349d60709a9dcbe27a909ebbb364b7c0ef55db0dbacdf
+R 00709c9654233a3d0e4cf3d86ab7d9b7
+U stephan
+Z 0074a66e231443a471d7f0205231ab04
 # Remove this line to create a well-formed Fossil manifest.
