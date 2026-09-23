@@ -1,5 +1,5 @@
-C Avoid\sa\spotential\scrash\sby\schecking\sthe\sarguments\sto\ssqlite_expert_rem()\s(part\sof\sthe\s"expert"\sextension).\sThis\sfunction\swas\snormally\sonly\scalled\sinternally,\sbut\sa\ssufficiently\sdetermined\sattacker\scould\salso\sfind\sa\sway.\sReport\s[bugs:/info/2026-09-23T10:50:15Z\s|\s2026-09-23T10:50:15Z].
-D 2026-09-23T11:31:44.953
+C Minor\sadjustment\sto\s[987ba5a3dc5f2a22]\sto\sdeal\swith\sa\scorner\scase\sinvolving\nthe\smaximum\sinteger.\n[bugs:/info/2026-09-23T03:07:00Z|Bug\s2026-09-23T03:07:00Z].
+D 2026-09-23T12:27:03.610
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -810,7 +810,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c cfdf9c6e5323af886d5ce766709da607ba1d14193ad3a15f4f462a45420e8211
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c a3bf71b5fc69cc0b7bf87fb8b35a1faf9ccf524e7c2e8a90c3c7a47a7728d90e
+F src/vdbe.c 076f4de32c507a713cb2d666d6bc6836c3b5637fec1159d2ef39328f73989377
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 68e5ab63f184f2871780c83ce78b425d0360869611baea4c65575f91f76ac1d3
 F src/vdbeapi.c 5f5f86d4642ce1927b4b45a6b87a978ef6b11c8420e6ce440695177618fc25d0
@@ -1335,7 +1335,7 @@ F test/intarray.test 095e2a13ccb3a37735a4134c5bd3f2b46a21d1a02f6a8b61e9dc6a85adb
 F test/intck01.sql cc67c49bb0dbffd8ede29d3e095ba2b758eaa3907eeeca3fd44048a01c4071d3
 F test/interrupt.test ac1ef50ec9ab8e4f0e17c47629f82539d4b22558904e321ed5abea2e6187da7a
 F test/interrupt2.test 7eaa40a975d950826cd56e6c37f0f0629adfa2d1a8d3333aff0ff7cf86069963
-F test/intpkey.test e8feb8326089e78bfb6bfe03c2005c920b87417a692f33369ae953692c51c8d9
+F test/intpkey.test b01eaec83b7ba9e249ef591a78c9e419bbdb2d27e148cce1a30dbebb56e21b3d
 F test/intreal.test 0f77b6931491ee0e47d2d849a8cc82b8e5fdcceb43ade1ac4cc80005c2479e96
 F test/io.test d267fdc8915444a45e19841489033ebe70bb69f6db605b00df70be16b2a80f59
 F test/ioerr.test 78552a95d53b9674d85f63bdf3d76a8df70b4d5dba5a6a1b8a1d60f166cd2c6b
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e9e341013f770a82a60ca947f1b3471370fc2ad9f7feb9dd5f86f61d9d8e3315
-R c5e5037182b30bc41d983c538eb2ba5f
-U dan
-Z d1a48d2d62a9d7c411088b6583cdc5d5
+P 3529f81f53f4b6da6fde23b6d149c7874954f552a51a0c4009394b297a31c95f 4ee6d72487e08f994b02340ec50eb53f7f7e54f698b32d4696b405499782a4c3
+R 99ac10fb1bc535d2864359784292cb2a
+U drh
+Z 92ff1ef1515d9487263539b8dfbe7bcd
 # Remove this line to create a well-formed Fossil manifest.
