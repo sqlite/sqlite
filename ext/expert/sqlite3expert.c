@@ -1582,7 +1582,10 @@ static void idxRemFunc(
   assert( argc==2 );
 
   iSlot = sqlite3_value_int(argv[0]);
-  assert( iSlot<p->nSlot );
+  if( iSlot<0 || iSlot>=p->nSlot ){
+    sqlite3_result_error(pCtx, "index out of range.", -1);
+    return;
+  }
   pSlot = &p->aSlot[iSlot];
 
   switch( pSlot->eType ){

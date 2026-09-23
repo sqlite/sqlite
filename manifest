@@ -1,5 +1,5 @@
-C Do\snot\sallow\sthe\sarguments\sof\stable-valued-functions\sto\sthe\sleft\sof\sa\sLEFT\sJOIN\sto\srefer\sto\stables\sto\sthe\sright\sof\sthe\sLEFT\sJOIN.\sFix\sfor\s[bugs:/info/2026-09-20T09:57:48Z\s|\s2026-09-20T09:57:48Z].
-D 2026-09-23T11:12:41.196
+C Avoid\sa\spotential\scrash\sby\schecking\sthe\sarguments\sto\ssqlite_expert_rem()\s(part\sof\sthe\s"expert"\sextension).\sThis\sfunction\swas\snormally\sonly\scalled\sinternally,\sbut\sa\ssufficiently\sdetermined\sattacker\scould\salso\sfind\sa\sway.\sReport\s[bugs:/info/2026-09-23T10:50:15Z\s|\s2026-09-23T10:50:15Z].
+D 2026-09-23T11:31:44.953
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -72,8 +72,8 @@ F doc/wal-lock.md 7db0cd61e2000b545b78ce89b0c2a9a8dd8d64c097839258ac10d7c5c4156e
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 9f4d6751981bf5dda7b7480f6f878659d032a47fe74d84f31f80fdc05d6cad78
-F ext/expert/expert1.test 5292f9f488ca396fa0973e8ed5d26914bc29a0cdb5979db3d9e05416f30858c3
-F ext/expert/sqlite3expert.c 1a5296245bf80c201b2f5fa5947ef54a7d2b7e90428cb86240dd18076242ec1f
+F ext/expert/expert1.test f9931fb1b469aef5dc8205e71009a9ddfd450ffa462067b735485a45810ca040
+F ext/expert/sqlite3expert.c d9708dcb888a652045cfef7ee949fd8fea6623a3c07590c1a208e82cf9851511
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c c395134bd6d4efa594a7d26578a1cb624c4027b79b4b5fcd44736c5ef1f5f725
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -2221,9 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 55c634d96d390ca52c38c58c66be680c1883d799427ddf23a2501d12e7be07d3 c6b035ceffb7771e5fa9b1b1efc1544b0d7eea6d0576f257c836c82c4122d58d
-R 8bc8e5ce668cff0e70062e93e98570c0
-T +closed c6b035ceffb7771e5fa9b1b1efc1544b0d7eea6d0576f257c836c82c4122d58d
+P e9e341013f770a82a60ca947f1b3471370fc2ad9f7feb9dd5f86f61d9d8e3315
+R c5e5037182b30bc41d983c538eb2ba5f
 U dan
-Z 0e9169a08e0e75157ba68852dd5eac94
+Z d1a48d2d62a9d7c411088b6583cdc5d5
 # Remove this line to create a well-formed Fossil manifest.
