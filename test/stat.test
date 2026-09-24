@@ -337,6 +337,7 @@ do_execsql_test 10.1 {
   PRAGMA page_count
 } {5}
 
+register_dbstat_vtab db
 do_execsql_test 10.2 {
   SELECT pageno, pgoffset FROM dbstat
 } {1 0  2 1024  3 2048  4 3072  5 4096}
