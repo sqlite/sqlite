@@ -918,7 +918,17 @@ static int nodeWrite(Rtree *pRtree, RtreeNode *pNode){
     sqlite3_bind_null(p, 2);
     if( pNode->iNode==0 && rc==SQLITE_OK ){
       pNode->iNode = sqlite3_last_insert_rowid(pRtree->db);
-      nodeHashInsert(pRtree, pNode);
+      if( pNode->iNode==0 ){
+        /* If the SQL statement has succeeded but sqlite3_last_insert_rowid()
+        ** returns 0, then the shadow table schema has been corrupted somehow
+        ** (e.g. the %_node table has been replaced by a WITHOUT ROWID table).
+        ** It would be dangerous to continue in this case as the hash table
+        ** implementation assumes iNode==0 means that the node is not part
+        ** of the hash table. */
+        rc = SQLITE_CORRUPT_VTAB;
+      }else{
+        nodeHashInsert(pRtree, pNode);
+      }
     }
   }
   return rc;

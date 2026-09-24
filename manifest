@@ -1,5 +1,5 @@
-C Avoid\smarking\slittle-known\sextension\sfunction\snext_char()\sas\sSQLITE_INNOCUOUS\sby\sdefault.
-D 2026-09-24T17:09:56.402
+C Avoid\sa\suse-after-free\sproblem\sin\srtree\striggered\sby\san\sattacker\smanipulating\sthe\sshadow\stable\sschema\sto\sensure\ssqlite3_last_insert_rowid()\sreturns\s0\safter\scertain\sINSERTs.\sProblem\sreported\sby\sClaude\sand\sAda\sLogics.
+D 2026-09-24T20:14:31.100
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -496,7 +496,7 @@ F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c e389a95f88438668787f8276a00c2409545c35e2893d16c6c599f0e5310ab3be
-F ext/rtree/rtree.c 37036c0cb132d7c74476160aebbe4be1318e17b0d1f51b7f9c41ef0ce4f9d683
+F ext/rtree/rtree.c b8b0da37575926570672d163b8ce6f4556e51cdcd0ce072d0e70a0711b57258a
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test c41b234b5267bdf6244b6d6ed9c3f083fe20a1f6f13ec089c124f585001a61e1
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -515,7 +515,7 @@ F ext/rtree/rtreeE.test e65d3fc625da1800b412fc8785817327d43ccfec5f5973912d8c9e47
 F ext/rtree/rtreeF.test 81ffa7ef51c4e4618d497a57328c265bf576990c7070633b623b23cd450ed331
 F ext/rtree/rtreeG.test 1b9ca6e3effb48f4161edaa463ddeaa8fca4b2526d084f9cbf5dbe4e0184939c
 F ext/rtree/rtreeH.test c304651ee87dbb60296366d2c802f3043c3d00506c79a5c85bd20f2c9274498b
-F ext/rtree/rtreeI.test 608e77f7fde9be5a12eae316baef640fffaafcfa90a3d67443e78123e19c4ca4
+F ext/rtree/rtreeI.test 5aea750ec551adeb6138ad111184d886e5789fee5493c01f9b1e9bd871e2c859
 F ext/rtree/rtreeJ.test 93227ccd4d6c328f5ac46a902b8880041509dd2d68f6ce71560f0d8ab5bb507a
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 202ca70df1f0645ef9d5a2170e62d378a28098d9407f0569e85c9c1cf1bd020a
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bc7641d1f190e0dc76589a3b61d85968eb33fd7832a7b2838e38edae7e615b03
-R f51878e416378266f9c901361c6941dd
+P 481a1df638aeef163022523f8de590c265f64d078eb070cf262995e8ecb0f690
+R 761b664800b760a92a7139761df5f5d2
 U dan
-Z 5c497df8da96586032b1c75b7fa8f992
+Z cf822e0b49e3247c0fea18489e680ae5
 # Remove this line to create a well-formed Fossil manifest.
