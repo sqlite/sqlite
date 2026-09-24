@@ -196,11 +196,12 @@ static void findNextChars(nextCharContext *p){
 
 
 /*
-** next_character(A,T,F,W)
+** next_character(A,T,F,W[,C])
 **
 ** Return a string composted of all next possible characters after
 ** A for elements of T.F.  If W is supplied, then it is an SQL expression
-** that limits the elements in T.F that are considered.
+** that limits the elements in T.F that are considered. Optional argument
+** is a collation sequence name.
 */
 static void nextCharFunc(
   sqlite3_context *context,
@@ -299,20 +300,22 @@ int sqlite3_nextchar_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
+  int nArg;
+
+  /* Normally, this function should not be marked as innocuous, because
+  ** it is vulnerable to SQL injection attacks.  */
+#ifdef SQLITE_NEXT_CHAR_INNOCUOUS
+  const int flags = SQLITE_UTF8|SQLITE_INNOCUOUS;
+#else
+  const int flags = SQLITE_UTF8;
+#endif
+
   SQLITE_EXTENSION_INIT2(pApi);
+
   (void)pzErrMsg;  /* Unused parameter */
-  rc = sqlite3_create_function(db, "next_char", 3,
-                               SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                               nextCharFunc, 0, 0);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "next_char", 4,
-                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 nextCharFunc, 0, 0);
-  }
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "next_char", 5,
-                                 SQLITE_UTF8|SQLITE_INNOCUOUS, 0,
-                                 nextCharFunc, 0, 0);
+  for(nArg=3; rc==SQLITE_OK && nArg<=5; nArg++){
+    rc = sqlite3_create_function(
+        db, "next_char", nArg, flags, 0, nextCharFunc, 0, 0);
   }
   return rc;
 }
