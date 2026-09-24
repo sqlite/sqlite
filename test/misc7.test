@@ -570,4 +570,27 @@ if {$::tcl_platform(platform) eq "unix"
   } {}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+foreach {tn rp} {
+  1 45 
+  2 4294967295
+  3 4294967296
+  4 4294967297
+} {
+  reset_db
+  set rp [expr $rp]
+  do_execsql_test 24.$tn.1 {
+    CREATE TABLE t1(a, b, c);
+    PRAGMA writable_schema = 1;
+    UPDATE sqlite_schema SET rootpage = $rp;
+  }
+  db close
+  sqlite3 db test.db
+
+  do_catchsql_test 24.$tn.2 {
+    SELECT * FROM t1
+  } {1 {malformed database schema (t1) - invalid rootpage}}
+}
+
 finish_test
