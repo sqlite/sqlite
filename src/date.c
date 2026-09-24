@@ -233,6 +233,7 @@ static int parseHhMmSs(const char *zDate, DateTime *p){
   }else{
     s = 0;
   }
+  if( h==24 && (m!=0 || s!=0 || ms!=0.0) ) return 1;
   p->validJD = 0;
   p->rawS = 0;
   p->validHMS = 1;
@@ -269,6 +270,10 @@ static void computeJD(DateTime *p){
     Y = 2000;  /* If no YMD specified, assume 2000-Jan-01 */
     M = 1;
     D = 1;
+    if( p->validHMS && p->h==24 ){
+      p->h = 0;
+      D = 2;
+    }
   }
   if( Y<-4713 || Y>9999 || p->rawS ){
     datetimeError(p);
@@ -307,6 +312,10 @@ static void computeFloor(DateTime *p){
   assert( p->validYMD || p->isError );
   assert( p->D>=0 && p->D<=31 );
   assert( p->M>=0 && p->M<=12 );
+  if( p->validHMS && p->h==24 ){
+    p->h = 0;
+    p->D++;
+  }
   if( p->D<=28 ){
     p->nFloor = 0;
   }else if( (1<<p->M) & 0x15aa ){
