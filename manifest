@@ -1,5 +1,5 @@
-C Fix\stest\scase\sinaccuracy\sintroduced\sby\s[4f4ca57309c82d9e].
-D 2026-09-24T10:37:53.862
+C Work\saround\squirks\sin\sMSVC\sassociated\swith\s[d046d5f4c6855].
+D 2026-09-24T10:55:16.787
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -496,7 +496,7 @@ F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c e389a95f88438668787f8276a00c2409545c35e2893d16c6c599f0e5310ab3be
-F ext/rtree/rtree.c 9a6675bfc9fb527e0b63e6b5412ce5eb948ce79f5c8b11f8e7e299a9885737a6
+F ext/rtree/rtree.c 37036c0cb132d7c74476160aebbe4be1318e17b0d1f51b7f9c41ef0ce4f9d683
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test c41b234b5267bdf6244b6d6ed9c3f083fe20a1f6f13ec089c124f585001a61e1
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0f5ddd0041208c6e1fdb399700bbd892f9d06b17d64d8b1a30c9fced7b574f55
-R 6435e12485e7adb6aa7101bb94bb45d1
+P 1b097b30ac1009073bec72f67b3bcbe55478795149017ed3c72a32ab652bf4f7
+R 784cc65e2b2092197666f0ee6ce533d4
 U drh
-Z f584132b487eacd5a8afcfd1a9fc5d8b
+Z 506ba936b7fe1d43c3f39a1a687f137e
 # Remove this line to create a well-formed Fossil manifest.

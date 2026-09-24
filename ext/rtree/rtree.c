@@ -634,7 +634,7 @@ static int writeInt64(u8 *p, i64 i){
 static int rtreeValueInt32(sqlite3_value *pVal){
   i64 v64 = sqlite3_value_int64(pVal);
   if( v64>2147483647 ) return 2147483647;
-  if( v64<-2147483648 ) return -2147483648;
+  if( v64<-2147483648LL ) return (int)-2147483648LL;
   return (int)v64;
 }
 
