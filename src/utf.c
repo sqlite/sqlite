@@ -168,9 +168,7 @@ int sqlite3AppendOneUtf8Character(char *zOut, u32 v){
     while( zIn<zTerm && (*zIn & 0xc0)==0x80 ){             \
       c = (c<<6) + (0x3f & *(zIn++));                      \
     }                                                      \
-    if( c<0x80                                             \
-        || (c&0xFFFFF800)==0xD800                          \
-        || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }        \
+    if( c<0x80 || (c&0xFFFFF800)==0xD800 ){  c = 0xFFFD; } \
   }
 u32 sqlite3Utf8Read(
   const unsigned char **pz    /* Pointer to string from which to read char */
@@ -186,9 +184,7 @@ u32 sqlite3Utf8Read(
     while( (*(*pz) & 0xc0)==0x80 ){
       c = (c<<6) + (0x3f & *((*pz)++));
     }
-    if( c<0x80
-        || (c&0xFFFFF800)==0xD800
-        || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }
+    if( c<0x80 || (c&0xFFFFF800)==0xD800 ){  c = 0xFFFD; }
   }
   return c;
 }
@@ -588,7 +584,6 @@ void sqlite3UtfSelfTest(void){
     c = sqlite3Utf8Read((const u8**)&z);
     t = i;
     if( i>=0xD800 && i<=0xDFFF ) t = 0xFFFD;
-    if( (i&0xFFFFFFFE)==0xFFFE ) t = 0xFFFD;
     assert( c==t );
     assert( (z-zBuf)==n );
   }
