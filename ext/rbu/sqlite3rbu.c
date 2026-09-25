@@ -1418,15 +1418,27 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
 
     /* Check that all non-HIDDEN columns in the destination table are also
     ** present in the input table. Populate the abTblPk[], azTblType[] and
-    ** aiTblOrder[] arrays at the same time.  */
+    ** aiTblOrder[] arrays at the same time.
+    **
+    ** RBU does not support tables with GENERATED columns. If the target
+    ** table has any, return an error.  */
     if( p->rc==SQLITE_OK ){
-      p->rc = prepareFreeAndCollectError(p->dbMain, &pStmt, &p->zErrmsg, 
-          sqlite3_mprintf("PRAGMA table_info(%Q)", pIter->zTbl)
+      p->rc = prepareFreeAndCollectError(p->dbMain, &pStmt, &p->zErrmsg,
+          sqlite3_mprintf("PRAGMA table_xinfo(%Q)", pIter->zTbl)
       );
     }
     while( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
       const char *zName = (const char*)sqlite3_column_text(pStmt, 1);
-      if( zName==0 ) break;  /* An OOM - finalize() below returns S_NOMEM */
+      int eHidden = sqlite3_column_int(pStmt, 6);
+      if( zName==0 ) break;       /* An OOM. Bail out */
+      if( eHidden==1 ) continue;  /* Hidden column. Ignore */
+      if( eHidden!=0 ){
+        p->rc = SQLITE_ERROR;
+        p->zErrmsg = sqlite3_mprintf(
+            "generated columns not supported: %s.%s", pIter->zTbl, zName
+        );
+        break;
+      }
       for(i=iOrder; i<pIter->nTblCol; i++){
         if( 0==strcmp(zName, pIter->azTblCol[i]) ) break;
       }
