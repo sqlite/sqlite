@@ -2279,7 +2279,7 @@ static char *rbuObjIterGetIndexWhere(sqlite3rbu *p, RbuObjIter *pIter){
           char c = zSql[i];
 
           /* If necessary, grow the pIter->aIdxCol[] array */
-          if( iIdxCol==nIdxAlloc ){
+          if( iIdxCol>=(nIdxAlloc-1) ){
             RbuSpan *aIdxCol = (RbuSpan*)sqlite3_realloc64(
                 pIter->aIdxCol, nIdxAlloc*sizeof(RbuSpan) + 16*sizeof(RbuSpan)
             );

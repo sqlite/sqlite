@@ -172,5 +172,46 @@ catch {db close}
 catch {tvfs delete}
 
 #-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  BEGIN;
+    CREATE TABLE t1 (c1 INTEGER PRIMARY KEY, 
+      c2 TEXT, c3 TEXT, c4 TEXT, c5 TEXT, 
+      c6 TEXT, c7 TEXT, c8 TEXT, c9 TEXT, 
+      c10 TEXT, c11 TEXT, c12 TEXT, c13 TEXT, 
+      c14 TEXT, c15 TEXT, c16 TEXT, c17 TEXT
+    );
+    CREATE INDEX idx1 ON t1(
+      c1, c2, c3, c4, c5, c6, c7, c8, 
+      c9, c10, c11, c12, c13, c14, c15, c16, 
+      c17
+    );
+  COMMIT;
+}
+
+do_test 4.1 {
+  forcedelete rbu.db
+  sqlite3 rbu rbu.db
+  rbu eval {
+    BEGIN;
+      CREATE TABLE data_t1 (c1 INTEGER, 
+          c2 TEXT, c3 TEXT, c4 TEXT, c5 TEXT, 
+          c6 TEXT, c7 TEXT, c8 TEXT, c9 TEXT, 
+          c10 TEXT, c11 TEXT, c12 TEXT, c13 TEXT, 
+          c14 TEXT, c15 TEXT, c16 TEXT, c17 TEXT, 
+          rbu_control INTEGER
+      );
+      INSERT INTO data_t1 VALUES(100,'v_c2','v_c3','v_c4','v_c5','v_c6','v_c7','v_c8','v_c9','v_c10','v_c11','v_c12','v_c13','v_c14','v_c15','v_c16','v_c17',0);
+    COMMIT;
+  }
+  rbu close
+} {}
+
+do_test 4.2 {
+  sqlite3rbu rbu test.db rbu.db
+  while {"SQLITE_OK"==[rbu step]} { }
+  rbu close
+} {SQLITE_DONE}
+
 
 finish_test
