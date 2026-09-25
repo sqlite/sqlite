@@ -705,5 +705,33 @@ do_execsql_test 28.0 {
   SELECT rowid FROM t5 WHERE t5 MATCH 'x*';
 } {-9223372036854775807 2147483647}
 
+#-------------------------------------------------------------------------
+reset_db
+fts5_aux_test_functions db
+
+do_execsql_test 29.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, c, content='', contentless_delete=1);
+  INSERT INTO t1(rowid, a, b, c) VALUES(1, 'hello world', 'foo bar', 'baz qux');
+  INSERT INTO t1(rowid, a, b, c) VALUES(2, 'hello world', 'foo bar', 'baz qux');
+  INSERT INTO t1(rowid, a, b, c) VALUES(3, 'hello world', 'foo bar', 'baz qux');
+
+  UPDATE t1_docsize SET sz = X'02' WHERE id = 1;
+}
+
+do_execsql_test 29.1 {
+  DELETE FROM t1 WHERE rowid=3;
+  SELECT rowid, fts5_test_columntotalsize( t1 ) FROM t1('baz');
+} {1 {4 4 4} 2 {4 4 4}}
+
+do_catchsql_test 29.2 {
+  DELETE FROM t1 WHERE rowid=1
+} {1 {database disk image is malformed}}
+
+do_execsql_test 29.2 {
+  SELECT rowid, fts5_test_columntotalsize( t1 ) FROM t1('baz');
+} {1 {4 4 4} 2 {4 4 4}}
+
+
+
 finish_test
 

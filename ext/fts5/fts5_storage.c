@@ -707,9 +707,12 @@ static int fts5StorageContentlessDelete(Fts5Storage *p, i64 iDel){
         const u8 *aBlob = sqlite3_column_blob(pLookup, 0);
         int nBlob = sqlite3_column_bytes(pLookup, 0);
         int ii;
-        fts5StorageDecodeSizeArray(aCol, p->pConfig->nCol, aBlob, nBlob);
-        for(ii=0; ii<p->pConfig->nCol; ii++){
-          p->aTotalSize[ii] -= aCol[ii];
+        if( fts5StorageDecodeSizeArray(aCol, p->pConfig->nCol, aBlob, nBlob) ){
+          rc = SQLITE_CORRUPT_VTAB;
+        }else{
+          for(ii=0; ii<p->pConfig->nCol; ii++){
+            p->aTotalSize[ii] -= aCol[ii];
+          }
         }
         sqlite3_free(aCol);
       }
