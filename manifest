@@ -1,5 +1,5 @@
-C Fix\ssome\scases\swhere\sfts3\sintegrity-check\swas\snot\sdetecting\scorrupt\sdatabases.\sReport\s[bugs:/info/2026-09-25T11:18:11Z\s|\s2026-09-25T11:18:11Z].
-D 2026-09-25T14:55:16.206
+C Fix\s8\sbyte\sbuffer\soverwrite\sthat\scould\soccur\swhen\sapplying\sRBU\supdates\sto\sdatabases\scontaining\sindexes\swith\smore\sthan\s16\scolumns.\sReport\s[bugs:/info/2026-09-25T11:18:49Z\s|\s2026-09-25T11:18:49Z].
+D 2026-09-25T15:12:14.226
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -458,7 +458,7 @@ F ext/rbu/rbufault2.test 8cc8f6298d2d7d20080b2c77e65b607af8b89839f9d87c0972b27e6
 F ext/rbu/rbufault3.test d14ff46e050816ce43c4ed320a0927712636ac11bf48bfc5f74601f183af5445
 F ext/rbu/rbufault4.test 39fbf093b7e16aae85dc309262ec570d217a1578538c1c74dd621e5451c083d6
 F ext/rbu/rbufts.test df754d2f96c22d1da8b5d685b4a4a49863971920856d17620cef724e3a9b6edd
-F ext/rbu/rbumisc.test 6641749e42c83062824c86b3d03a47f8ec35760f341bc023f53e612655b0a8af
+F ext/rbu/rbumisc.test d7c09eb4fd38363b123f5bfe87e7bde4d59277b25ce3e4169e3edb911fea6e5b
 F ext/rbu/rbumulti.test 6f6cdd9b3775108aada5216762cbbd7b5d5caa7cb620b3e6e1b8ace81286a2e0
 F ext/rbu/rbupartial.test 4ed7789f47128c8aa7ff58445face8a070cef852993afe03c863913f3cea8729
 F ext/rbu/rbupass.test 2ee86581a441f3b4b449b99a2dc203d5d6a08750dd2ee9ab6a02743e238d3c8a
@@ -472,7 +472,7 @@ F ext/rbu/rbuvacuum.test e3585cfda220038e8186c583e9bd2aaa9eccd0a5c2e40ed861de3c9
 F ext/rbu/rbuvacuum2.test 1a9bd41f127be2826de2a65204df9118525a8af8d16e61e6bc63ba3ac0010a23
 F ext/rbu/rbuvacuum3.test 3ce42695fdf21aaa3499e857d7d4253bc499ad759bcd6c9362042c13cd37d8de
 F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69eefaebb205
-F ext/rbu/sqlite3rbu.c e2df7c1e15b439e17b1bb176f935fe8907d1d762faadaa8844301a2985ea2f1d
+F ext/rbu/sqlite3rbu.c 6c48e04f3b9537a38b9f4a0107a029ec3edfdfda4f002061804bddd1bac9d229
 F ext/rbu/sqlite3rbu.h e3a5bf21e09ca93ce4e8740e00d6a853e90a697968ec0ea98f40826938bdb68e
 F ext/rbu/test_rbu.c 8b6e64e486c28c41ef29f6f4ea6be7b3091958987812784904f5e903f6b56418
 F ext/recover/dbdata.c 10d3c56968a9af6853722a47280805ad1564714d79ea45ac6f7da14bb57fd137
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6a9e1415659f9e75940b3c3a6f6e123f61c5e9e2a7a612693ee395d7b7567bef
-R 514c99232b47a7f971b312fbe04241ab
+P 9b23f99212f49587c5f0b025e90fdd2e844437fbb76fc11c26062df7bcff765c
+R 7b5ebb1abd7c425866af6a7024ec4aad
 U dan
-Z b4b62298ad7890c8cd5923020fd25c0e
+Z 9c9c3d6cd6d6940d7582cc6975ad20c7
 # Remove this line to create a well-formed Fossil manifest.
