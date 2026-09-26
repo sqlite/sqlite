@@ -1171,7 +1171,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             //| capi.SQLITE_OPEN_DELETEONCLOSE
                   | capi.SQLITE_OPEN_MAIN_DB;
             const pOut = wasm.scopedAlloc(8);
-            const dbFile = "/sanity/check/file"+randomFilename(8);
+            const dbFile = "/sanity/check/file"+opfsUtil.randomFilename(8);
             const zDbFile = wasm.scopedAllocCString(dbFile);
             let rc;
             state.s11n.serialize("This is ä string.");
