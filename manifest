@@ -1,5 +1,5 @@
-C Never\slet\sthe\sSQLITE_FP_PRECISION_LIMIT\sexceed\s100\smillion.\n[bugs:/info/2026-09-26T07:06:12Z|Bug\s2026-09-26T07:06:12Z]
-D 2026-09-26T09:51:41.345
+C New\sassert()s\sadded\sto\sdemonstrate\sthat\scalls\sto\ssqlite3_aggregate_context()\nwithin\san\sxInverse()\scallback\snever\sreturn\sNULL.
+D 2026-09-26T11:01:47.220
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -829,7 +829,7 @@ F src/where.c 717331794a92c00151b080c2c44de592720d26d03ea50de34e3fab05ab09ba61
 F src/whereInt.h f039ad303bc2913de673e431821ef8db3b619d249e6e5548d90072a684e72285
 F src/wherecode.c 1c4e9adfdb24228c1b3fbd06b4a84000fcfbc5519e828f212e6704a0b7189119
 F src/whereexpr.c 76f72a95c5cf0e8a8edb679ca4fb7afa17ba45ff4effe73c414266510109e701
-F src/window.c de9948416a216c7ef970337d8eb5228fcb3c6e67c9989a1d21c49201d8aa0242
+F src/window.c 566d0f2e9cc843f5cd5b22c861862ef4d10f6040ddf6b13c97bf39950ec2fc2a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
 F test/affinity3.test 9b7d1133e11d5edd7805573c4ab6f3ba73b0b74a1f280d5b130d4bf3506a93ff
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P fc4e246dc26f3e3872dde42ceefcea70ba4158a92ba94361656b2ca0f4e3ef92
-R a4b7af01319a95082b0b26572289d415
+P ba6f5fb7b8fa9b6862ef7bda64483942182e214a2fb13c6288c48762a0372fef
+R c3300afb54aefa3940a19888bb2728b4
 U drh
-Z 01f435529c7ce7ba3e58c2651b3ab23e
+Z 571ed1672f8d7556dd1dc44db371c999
 # Remove this line to create a well-formed Fossil manifest.
