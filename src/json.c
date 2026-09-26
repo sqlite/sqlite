@@ -2644,7 +2644,10 @@ static u32 jsonTranslateBlobToPrettyText(
         while( pOut->eErr==0 ){
           jsonPrettyIndent(pPretty);
           j = jsonTranslateBlobToPrettyText(pPretty, j);
-          if( j>=iEnd ) break;
+          if( j>=iEnd ){
+            if( j>iEnd ) pOut->eErr |= JSTRING_MALFORMED;
+            break;
+          }
           jsonAppendRawNZ(pOut, ",\n", 2);
         }
         jsonAppendChar(pOut, '\n');

@@ -1,5 +1,5 @@
-C New\sassert()s\sadded\sto\sdemonstrate\sthat\scalls\sto\ssqlite3_aggregate_context()\nwithin\san\sxInverse()\scallback\snever\sreturn\sNULL.
-D 2026-09-26T11:01:47.220
+C Improvements\sto\sdetection\sof\sinvalid\sJSONB\sin\sthe\sjson_pretty()\sfunction.\nThis\sis\san\senhancement,\snot\sa\sbug\sfix,\sas\sjson_pretty()\sdoes\snot\sguarantee\ndetection\sof\sinvalid\sJSONB,\sas\slong\sas\sthe\sinvalid\sJSONB\sdoes\snot\scause\sa\nmemory\serror.\n[bugs:/info/2026-09-25T15:59:04Z|Bug\s2026-09-25T15:59:04Z].\nTest\scases\sin\sTH3.
+D 2026-09-26T11:21:43.931
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -704,7 +704,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 5cb15147c8583d0fc4748e1c12ea6f38c9deaeefa147a4d8d379fd9bc81fee9a
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 68b898cb17607b36fa751b8985da06531932c502d77186f82842817286c7fd03
-F src/json.c a835e92b6a5b2184465b910163257155b09e19871a9cf822c261c745706fd922
+F src/json.c 98b654f8316e76bdff4eaf915ba6b95335a8b77e0bcd650a107c7ac86fb16080
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 5cd4cd7ec6e1a46416806899086363fbf95eecd3bfb9a388b436c9a77243c902
 F src/main.c 5e366de50caa6083b0f28ca342970bff909c8086382c21f1cd7b8d92fa7b3590
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ba6f5fb7b8fa9b6862ef7bda64483942182e214a2fb13c6288c48762a0372fef
-R c3300afb54aefa3940a19888bb2728b4
+P d28a4b4167c277e3e58d20dba7ec1880e235446ce99a959d2e9397707b621b1f
+R 9f5b5962e08d1021cd3b440ad03abbc2
 U drh
-Z 571ed1672f8d7556dd1dc44db371c999
+Z 4badde9101a831f457b9bd2b4012b8e9
 # Remove this line to create a well-formed Fossil manifest.
