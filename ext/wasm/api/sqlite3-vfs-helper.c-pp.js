@@ -52,16 +52,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      "vfs", each of which is itself an object with following properties:
 
      - `struct`: an sqlite3.StructBinder.StructType-type struct. This
-       must be a populated (except for the methods) object of type
+       must be a populated object (except for the methods) of type
        sqlite3_io_methods (for the "io" entry) or sqlite3_vfs (for the
        "vfs" entry).
 
      - `methods`: an object mapping sqlite3_io_methods method names
        (e.g. 'xClose') to JS implementations of those methods. The JS
        implementations must be call-compatible with their native
-       counterparts.
+       counterparts. That is: they must accept and return WASM data
+       types.
 
-     For each of those object, this function passes its (`struct`,
+     For each of those objects, this function passes its (`struct`,
      `methods`, (optional) `applyArgcCheck`) properties to
      installMethods().
 
