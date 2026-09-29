@@ -5296,7 +5296,7 @@ static u64 fts3ChecksumIndex(
           }
         }else{
           iPos += (iVal - 2);
-          if( iPos<0 || iPos>0x7FFFFFFF ){
+          if( iPos>0x7FFFFFFF ){
             rc = SQLITE_CORRUPT_VTAB;
             break;
           }else{
