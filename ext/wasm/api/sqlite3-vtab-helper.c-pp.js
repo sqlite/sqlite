@@ -76,8 +76,23 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      Internal factory function for xVtab and xCursor impls.
+
+     methodName is the JS-string name of the wrapper.  StructType must
+     be a jaccwabyt StructType constructor.
   */
   const __xWrapFactory = function(methodName,StructType){
+    /**
+       If called with no arguments: creates a new StructType,
+       records its pointer-to-object mapping, and returns
+       it.
+
+       If called with arguments, ptr must (A) be a StructType object
+       or (B) a WASM point (which is assumed to be a native pointer
+       for a StructType instance). For (A), it behaves like the
+       no-args case and returns its first argument. For B then it
+       fetches the associated StructType object and returns it,
+       unmapping that object if removeMapping is true.
+    */
     return function(ptr,removeMapping=false){
       if(0===arguments.length) ptr = new StructType;
       if(ptr instanceof StructType){
@@ -141,11 +156,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
          sqlite3_vtab: to be called from sqlite3_module methods which
          take a (sqlite3_vtab*) pointer _except_ for
-         xDestroy()/xDisconnect(), in which case unget() or dispose().
+         xDestroy()/xDisconnect(), which should use unget() or dispose().
 
          sqlite3_vtab_cursor: to be called from any sqlite3_module methods
          which take a `sqlite3_vtab_cursor*` argument except xClose(),
-         in which case use unget() or dispose().
+         which should use unget() or dispose().
 
          Rule to remember: _never_ call dispose() on an instance
          returned by this function.
@@ -206,7 +221,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      Given an sqlite3_module method name and error object, this
-     function returns sqlite3.capi.SQLITE_NOMEM if (e instanceof
+     function returns sqlite3.capi.SQLITE_NOMEM if (err instanceof
      sqlite3.WasmAllocError), else it returns its second argument. Its
      intended usage is in the methods of a sqlite3_vfs or
      sqlite3_module:
@@ -247,6 +262,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     else if(err instanceof sqlite3.SQLite3Error) rc = err.resultCode;
     return rc || capi.SQLITE_ERROR;
   };
+  /**
+     Used by vtab.xError to report errors if it is a function. Clients
+     are free to replace this with their own function, or to a
+     non-function to disable it.
+  */
   vtab.xError.errorReporter = 1 ? sqlite3.config.error.bind(sqlite3.config) : false;
 
   /**
@@ -254,8 +274,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      implementations. It must be passed the final argument to one of
      those methods (an output pointer to an int64 row ID) and the
      value to store at the output pointer's address. Returns the same
-     as wasm.poke() and will throw if the 1st or 2nd arguments
-     are invalid for that function.
+     as wasm.poke() and will throw if the 1st or 2nd arguments are
+     invalid for that function.
 
      Example xRowid impl:
 
@@ -284,9 +304,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        are not mapped as-is, but are instead wrapped inside wrappers
        which translate exceptions into result codes of SQLITE_ERROR or
        SQLITE_NOMEM, depending on whether the exception is an
-       sqlite3.WasmAllocError. In the case of the xConnect and xCreate
-       methods, the exception handler also sets the output error
-       string to the exception's error string.
+       sqlite3.WasmAllocError.
 
      - OPTIONAL `struct`: a sqlite3.capi.sqlite3_module() instance. If
        not set, one will be created automatically. If the current
@@ -302,8 +320,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      If `catchExceptions` is false, it is up to the client to ensure
      that no exceptions escape the methods, as doing so would move
      them through the C API, leading to undefined
-     behavior. (vtab.xError() is intended to assist in reporting
-     such exceptions.)
+     behavior. vtab.xError() is intended to assist in reporting
+     such exceptions.
 
      Certain methods may refer to the same implementation. To simplify
      the definition of such methods:
@@ -331,7 +349,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      translated to 0 if the function returns a falsy value (e.g. if it
      does not have an explicit return). If `catchExceptions` is _not_
      active, the method implementations must explicitly return integer
-     values.
+     values (because this method does not wrap such calls to coerce
+     returns to integers).
 
      Throws on error. On success, returns the sqlite3_module object
      (`this` or `opt.struct` or a new sqlite3_module instance,
