@@ -1517,6 +1517,122 @@ static int whereExprIsReady(
 }
 
 /*
+** Find the best address for an inner loop to jump to if its join
+** constraint matches no rows.
+**
+** This is an optimization.  The default behavior is to continue with
+** the inner-most of the outer loops.  But if the join constraint is not
+** influenced by the inner-most outer loop, we might as well skip that
+** loop too, and continue with the second inner-most outer loop.  And
+** so forth through subsequent outer loops.
+**
+** Return 0 to use the default behavior (continue with the inner-most
+** outer loop.  Or return an optimized address to jump to instead if
+** we can do better.
+**
+** Conditions for returning non-zero:
+**
+**    1.   The SQLITE_JoinMiss optimization must be enabled.
+**
+**    2.   The iLevel loop must have at least two outer loops, otherwise
+**         this optimization is pointless.
+**
+**    3.   We are not attempting to do one-pass
+**
+**    4.   The join constraints may not contain subqueries
+**
+** If the inner-most outer loop that influences iLevel is also the
+** only loop that influences iLevel, and if that loop uses an
+** automatic index, then also arrange to delete the currently used
+** entry from that automatic index, since we know that it can never
+** be successful.
+**
+** This optimization inspired by the paper:  "TreeTracker Join: Simple,
+** Optimal, Fast" by Hu, Wang, and Miranker, 2025.
+*/
+static int findNoMatchContinuation(
+  WhereInfo *pWInfo,         /* WHERE clause */
+  int iLevel                 /* Which loop we are talking about */
+){
+  WhereLoop *pLoop;          /* Description of this loop */
+  WhereLevel *pParent;       /* Controlling parent loop */
+  SrcList *pTabList;         /* Complete FROM clause */
+  Bitmask mKey;              /* Mask of dependent tables */
+  int iParent;               /* Inner-most dependent table */
+  int i;
+
+  if( iLevel<2 ){
+    /* If there are less than two outer loops, this optimization is no help */
+    return 0;
+  }
+  if( pWInfo->eOnePass!=ONEPASS_OFF ){
+    return 0;
+  }
+  if( OptimizationDisabled(pWInfo->pParse->db, SQLITE_JoinMiss) ){
+    return 0;
+  }
+
+  /* The OP_SeekGE and OP_SeekLE opcodes only work right for this
+  ** optimization on a pure equality constraint, so skip the optimization
+  ** for anything else.
+  */
+  pLoop = pWInfo->a[iLevel].pWLoop;
+#if 1
+  if( (pLoop->wsFlags & WHERE_CONSTRAINT)!=WHERE_COLUMN_EQ ) return 0;
+  if( pLoop->wsFlags & WHERE_SKIPSCAN ) return 0;
+  if( pLoop->wsFlags & WHERE_BIGNULL_SORT ) return 0;
+  assert( (pLoop->wsFlags & (WHERE_VIRTUALTABLE|WHERE_MULTI_OR))==0 );
+  assert( pLoop->u.btree.nEq>0 );
+#endif
+
+  /* Find a mask of all outer tables that influence the key */
+  mKey = 0;
+  for(i=0; i<pLoop->u.btree.nEq; i++){
+    if( sqlite3ExprContainsSubquery(pLoop->aLTerm[i]->pExpr) ){
+      return 0;
+    }
+    mKey |= pLoop->aLTerm[i]->prereqRight;
+  }
+
+  /* Look back through outer loops.  Find the inner-most outer loop
+  ** that influences the key and that is not separated from iLevel
+  ** by an outer join.  Make iParent be the index of that inner-most
+  ** outer loop.
+  */
+  pTabList = pWInfo->pTabList;
+  iParent = iLevel-1;
+  while( iParent>0 && (pWInfo->a[iParent].pWLoop->maskSelf & mKey)==0 ){
+    iParent--;
+  }
+  assert( iParent>=0 && iParent<=iLevel );
+  if( iParent>=iLevel-1 ){
+    return 0;
+  }
+
+  /* Everything needs to be an INNER join */
+  for(i=iParent; i<=iLevel; i++){
+    if( pTabList->a[pWInfo->a[i].iFrom].fg.jointype & JT_OUTER ) return 0;
+  }
+
+  /* If the inner-most outer loop that influences the key for iLevel
+  ** is controlled by an automatic index and if it is the only outer
+  ** loop that influences the key, then arrange to delete the automatic
+  ** index entry if there is no match on the iLevel key.
+  */
+  pParent = &pWInfo->a[iParent];
+  if( (pParent->pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0
+   && (mKey & (mKey-1))==0
+  ){
+    if( pParent->addrDeleteCont==0 ){
+      pParent->addrDeleteCont = sqlite3VdbeMakeLabel(pWInfo->pParse);
+    }
+    return pParent->addrDeleteCont;
+  }
+
+  return pParent->addrCont;
+}
+
+/*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
 */
@@ -1534,11 +1650,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   int bRev;            /* True if we need to scan in reverse order */
   WhereLoop *pLoop;    /* The WhereLoop object being coded */
   WhereClause *pWC;    /* Decomposition of the entire WHERE clause */
-  WhereTerm *pTerm;               /* A WHERE clause term */
-  sqlite3 *db;                    /* Database connection */
-  SrcItem *pTabItem;              /* FROM clause term being coded */
-  int addrBrk;                    /* Jump here to break out of the loop */
-  int addrCont;                   /* Jump here to continue with next cycle */
+  WhereTerm *pTerm;         /* A WHERE clause term */
+  sqlite3 *db;              /* Database connection */
+  SrcItem *pTabItem;        /* FROM clause term being coded */
+  int addrBrk;              /* Jump here to break out of the loop */
+  int addrCont;             /* Jump here to continue with next cycle */
+  int addrMiss;             /* addrCont enhanced for no-matching rows */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
   Index *pIdx = 0;          /* Index used by loop (if any) */
@@ -1583,6 +1700,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   */
   addrBrk = pLevel->addrNxt = pLevel->addrBrk;
   addrCont = pLevel->addrCont = sqlite3VdbeMakeLabel(pParse);
+  addrMiss = findNoMatchContinuation(pWInfo, iLevel);
 
   /* If this is the right table of a LEFT OUTER JOIN, allocate and
   ** initialize a memory cell that records if this table matches any
@@ -1758,15 +1876,16 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, 0, bRev, iReleaseReg);
     if( iRowidReg!=iReleaseReg ) sqlite3ReleaseTempReg(pParse, iReleaseReg);
     addrNxt = pLevel->addrNxt;
+    if( addrMiss==0 ) addrMiss = addrNxt;
     if( pLevel->regFilter ){
-      sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrNxt);
+      sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrMiss);
       VdbeCoverage(v);
-      sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
+      sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrMiss,
                            iRowidReg, 1);
       VdbeCoverage(v);
       filterPullDown(pParse, pWInfo, iLevel, addrNxt, notReady);
     }
-    sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrNxt, iRowidReg);
+    sqlite3VdbeAddOp3(v, OP_SeekRowid, iCur, addrMiss, iRowidReg);
     VdbeCoverage(v);
     pLevel->op = OP_Noop;
   }else if( (pLoop->wsFlags & WHERE_IPK)!=0
@@ -2039,6 +2158,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       zEndAff = sqlite3DbStrDup(db, &zStartAff[nEq]);
     }
     addrNxt = (regBignull ? pLevel->addrBignull : pLevel->addrNxt);
+    if( addrMiss==0 ) addrMiss = addrNxt;
 
     testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
     testcase( pRangeStart && (pRangeStart->eOperator & WO_GE)!=0 );
@@ -2093,7 +2213,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       if( pLevel->regFilter ){
         assert( sqlite3WhereLoopBloomable(pLoop) );
-        sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
+        sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrMiss,
                              regBase, nEq);
         VdbeCoverage(v);
         filterPullDown(pParse, pWInfo, iLevel, addrNxt, notReady);
@@ -2120,7 +2240,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         }
         VdbeCoverage(v);
       }
-      sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
+      sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrMiss, regBase, nConstraint);
       VdbeCoverage(v);
       VdbeCoverageIf(v, op==OP_Rewind);  testcase( op==OP_Rewind );
       VdbeCoverageIf(v, op==OP_Last);    testcase( op==OP_Last );
