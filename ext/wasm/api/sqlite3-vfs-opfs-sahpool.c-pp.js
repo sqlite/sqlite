@@ -1349,8 +1349,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      On success this routine rewrites the database header bytes in the
      output file (not the input array) to force disabling of WAL mode,
      (A) for historical reasons and (B) getting WAL to work in this
-     build requires acquiring a BEGIN EXCLUSIVE on the db before using
-     it.
+     build requires doing a (pragma locking_mode=exclusive) on the db
+     before using it.
 
      On a write error, the handle is removed from the pool and made
      available for re-use.
