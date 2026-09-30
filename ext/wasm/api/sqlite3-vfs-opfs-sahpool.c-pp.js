@@ -189,7 +189,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pool = getPoolForPFile(pFile);
       pool.log('xCheckReservedLock');
       pool.storeErr();
-      wasm.poke32(pOut, 1);
+      const file = pool.getOFileForS3File(pFile);
+      wasm.poke32(
+        pOut,
+        pool.hasReservedLock(file.path) ? 1 : 0
+        /* As forum:b2fbb61642 elaborates on why we cannot simply
+           check file.lockType>=capi.SQLITE_LOCK_RESERVED
+           here. Summary: xOpen() has long allowed multiple handles to
+           the same filename and we need to check if any of them have
+           a lock to avoid a specific corruption case which that forum
+           thread demonstrates. */
+      );
       return 0;
     },
     xClose: function(pFile){
@@ -475,8 +485,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Class for managing OPFS-related state for the
-     OPFS SharedAccessHandle Pool sqlite3_vfs.
+     Class for managing OPFS-related state for the OPFS
+     SharedAccessHandle Pool sqlite3_vfs. This class is
+     internal-use-only, never exposed to the client. OpfsSAHPoolUtil
+     is the public-facing part.
   */
   class OpfsSAHPool {
     /* OPFS dir in which VFS metadata is stored. */
@@ -498,7 +510,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* Set of currently-unused SAHs. */
     #availableSAH = new Set();
     /* Maps (sqlite3_file*) to xOpen's file objects. */
-    #mapS3FileToOFile_ = new Map();
+    #mapS3FileToOFile_  = new Map();
 
     /* Maps SAH to an abstract File Object which contains
        various metadata about that handle. */
@@ -1069,8 +1081,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return nWrote;
     }
 
+    /**
+       Returns true if any (sqlite3_file*) currently opened by this
+       pool using the given client-provided file name (as distinct from
+       its opaque name) holds a RESERVED or greater lock, else false.
+    */
+    hasReservedLock(filename){
+      const lr = capi.SQLITE_LOCK_RESERVED;
+      for(const f of this.#mapS3FileToOFile_.values()){
+        if(f.lockType>=lr && filename===f.path){
+          return true;
+        }
+      }
+      return false;
+    }
   }/*class OpfsSAHPool*/;
-
 
   /**
      A OpfsSAHPoolUtil instance is exposed to clients in order to
