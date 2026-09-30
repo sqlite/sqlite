@@ -1558,14 +1558,11 @@ static int findNoMatchContinuation(
   WhereLevel *pParent;       /* Controlling parent loop */
   SrcList *pTabList;         /* Complete FROM clause */
   Bitmask mKey;              /* Mask of dependent tables */
-  int iParent;               /* Inner-most dependent table */
-  int i;
+  int iParent;               /* Inner-most loop affecting the key to iLevel */
+  int i;                     /* Loop counter */
 
   if( iLevel<2 ){
     /* If there are less than two outer loops, this optimization is no help */
-    return 0;
-  }
-  if( pWInfo->eOnePass!=ONEPASS_OFF ){
     return 0;
   }
   if( OptimizationDisabled(pWInfo->pParse->db, SQLITE_JoinMiss) ){
@@ -1585,9 +1582,11 @@ static int findNoMatchContinuation(
   assert( pLoop->u.btree.nEq>0 );
 #endif
 
-  /* Find a mask of all outer tables that influence the key */
+  /* Find a mask of all outer tables that influence the key.  At the same
+  ** time, check to see if any keys values are computed from subqueries and
+  ** fail out (return 0) if there are any. */
   mKey = 0;
-  for(i=0; i<pLoop->u.btree.nEq; i++){
+  for(i=0; i<pLoop->nLTerm; i++){
     if( sqlite3ExprContainsSubquery(pLoop->aLTerm[i]->pExpr) ){
       return 0;
     }
@@ -1595,8 +1594,7 @@ static int findNoMatchContinuation(
   }
 
   /* Look back through outer loops.  Find the inner-most outer loop
-  ** that influences the key and that is not separated from iLevel
-  ** by an outer join.  Make iParent be the index of that inner-most
+  ** that influences the key. Make iParent be the index of that inner-most
   ** outer loop.
   */
   pTabList = pWInfo->pTabList;
@@ -1605,11 +1603,9 @@ static int findNoMatchContinuation(
     iParent--;
   }
   assert( iParent>=0 && iParent<=iLevel );
-  if( iParent>=iLevel-1 ){
-    return 0;
-  }
 
-  /* Everything needs to be an INNER join */
+  /* Everything needs to be an INNER join.  Fail if there are any
+  ** OUTER joins in between iParent and iLevel. */
   for(i=iParent; i<=iLevel; i++){
     if( pTabList->a[pWInfo->a[i].iFrom].fg.jointype & JT_OUTER ) return 0;
   }
