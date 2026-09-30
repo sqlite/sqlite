@@ -119,7 +119,7 @@ proc proj__faterr {failMode args} {
 # additional level.
 #
 proc proj-fatal {args} {
-  tailcall proj__faterr 1 {*}$args
+  uplevel 1 [list proj__faterr 1 {*}$args]
 }
 
 #
@@ -128,7 +128,7 @@ proc proj-fatal {args} {
 # Works like proj-fatal but uses [error] intead of [exit].
 #
 proc proj-error {args} {
-  tailcall proj__faterr 0 {*}$args
+  uplevel 1 [list proj__faterr 0 {*}$args]
 }
 
 #
@@ -147,7 +147,7 @@ proc proj-assert {script {msg ""}} {
     if {"" eq $msg} {
       set msg $script
     }
-    tailcall proj__faterr 1 "Assertion failed:" $msg
+    uplevel 1 [list proj__faterr 1 "Assertion failed:" $msg]
   }
 }
 
