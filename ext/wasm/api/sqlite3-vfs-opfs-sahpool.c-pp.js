@@ -205,6 +205,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(file) {
         try{
           pool.log(`xClose ${file.path}`);
+          pool.unlockFile(file, capi.SQLITE_LOCK_NONE);
           pool.mapS3FileToOFile(pFile, false);
           file.sah.flush();
           if(file.flags & capi.SQLITE_OPEN_DELETEONCLOSE){
@@ -236,8 +237,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       pool.log(`xLock ${lockType}`);
       pool.storeErr();
       const file = pool.getOFileForS3File(pFile);
-      file.lockType = lockType;
-      return 0;
+      return pool.lockFile(file, lockType);
     },
     xRead: function(pFile,pDest,n,offset64){
       const pool = getPoolForPFile(pFile);
@@ -291,7 +291,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pool = getPoolForPFile(pFile);
       pool.log('xUnlock');
       const file = pool.getOFileForS3File(pFile);
-      file.lockType = lockType;
+      pool.unlockFile(file, lockType);
       return 0;
     },
     xWrite: function(pFile,pSrc,n,offset64){
@@ -506,7 +506,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* Set of currently-unused SAHs. */
     #availableSAH = new Set();
     /* Maps (sqlite3_file*) to xOpen's file objects. */
-    #mapS3FileToOFile_  = new Map();
+    #mapS3FileToOFile  = new Map();
+    /* Maps client-side file names to the lock state of the files
+       opened via this pool: {nShared, lockType}, modelled after
+       os_unix.c:unixInodeInfo. */
+    #mapPathToLock = new Map();
 
     /* Maps SAH to an abstract File Object which contains
        various metadata about that handle. */
@@ -613,6 +617,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       this.#mapSAHToName.clear();
       this.#mapFilenameToSAH.clear();
       this.#availableSAH.clear();
+      this.#mapS3FileToOFile.clear();
+      this.#mapPathToLock.clear();
     }
 
     /**
@@ -864,7 +870,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        xOpen file object.
     */
     getOFileForS3File(pFile){
-      return this.#mapS3FileToOFile_.get(pFile);
+      return this.#mapS3FileToOFile.get(pFile);
     }
     /**
        Maps or unmaps (if file is falsy) the given (sqlite3_file*)
@@ -872,10 +878,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     mapS3FileToOFile(pFile,file){
       if(file){
-        this.#mapS3FileToOFile_.set(pFile, file);
+        this.#mapS3FileToOFile.set(pFile, file);
         setPoolForPFile(pFile, this);
       }else{
-        this.#mapS3FileToOFile_.delete(pFile);
+        this.#mapS3FileToOFile.delete(pFile);
         setPoolForPFile(pFile, false);
       }
     }
@@ -955,7 +961,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        @see unpauseVfs()
     */
     pauseVfs(){
-      if(this.#mapS3FileToOFile_.size>0){
+      if(this.#mapS3FileToOFile.size>0){
         sqlite3.SQLite3Error.toss(
           capi.SQLITE_MISUSE, "Cannot pause VFS",
           this.vfsName,"because it has opened files."
@@ -1083,14 +1089,66 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        its opaque name) holds a RESERVED or greater lock, else false.
     */
     hasReservedLock(filename){
-      const lr = capi.SQLITE_LOCK_RESERVED;
-      for(const f of this.#mapS3FileToOFile_.values()){
-        if(f.lockType>=lr && filename===f.path){
-          return true;
-        }
-      }
-      return false;
+      const lk = this.#mapPathToLock.get(filename);
+      return !!lk && lk.lockType>capi.SQLITE_LOCK_SHARED;
     }
+
+
+    /**
+       Implements xLock() for the given xOpen-generated file object.
+       This pool holds its SAHs exclusively, so its xOpen() represent
+       the only connections to a given file. The locks are held
+       separately from their file object in the same thread the same
+       way in which os_unix.c:unixLock() distinguishes multiple
+       connections of a single process which share an inode: a lock
+       which conflicts with another connection's lock fails with
+       SQLITE_BUSY, and a failed attempt to get from RESERVED to
+       EXCLUSIVE leaves a PENDING lock, which admits no new SHARED
+       locks.
+    */
+    lockFile(file, lockType){
+      if(file.lockType>=lockType) return 0;
+      let lk = this.#mapPathToLock.get(file.path);
+      if(!lk){
+        lk = Object.assign(Object.create(null),{
+          nShared: 0, lockType: capi.SQLITE_LOCK_NONE
+        });
+        this.#mapPathToLock.set(file.path, lk);
+      }
+      if(file.lockType!==lk.lockType
+         && (lk.lockType>=capi.SQLITE_LOCK_PENDING
+             || lockType>capi.SQLITE_LOCK_SHARED)){
+        return capi.SQLITE_BUSY;
+      }
+      if(lockType===capi.SQLITE_LOCK_SHARED){
+        ++lk.nShared;
+        if(lk.lockType===capi.SQLITE_LOCK_NONE) lk.lockType = lockType;
+      }else if(lockType===capi.SQLITE_LOCK_EXCLUSIVE && lk.nShared>1){
+        if(file.lockType===capi.SQLITE_LOCK_RESERVED){
+          file.lockType = lk.lockType = capi.SQLITE_LOCK_PENDING;
+        }
+        return capi.SQLITE_BUSY;
+      }else{
+        lk.lockType = lockType;
+      }
+      file.lockType = lockType;
+      return 0;
+    }
+
+    /** Implements xUnlock() for the given xOpen file object. */
+    unlockFile(file, lockType){
+      if(file.lockType<=lockType) return;
+      const lk = this.#mapPathToLock.get(file.path);
+      if(file.lockType>capi.SQLITE_LOCK_SHARED){
+        lk.lockType = capi.SQLITE_LOCK_SHARED;
+      }
+      if(lockType===capi.SQLITE_LOCK_NONE && 0===--lk.nShared
+         /* Maintenance reminder: the && ordering is significant */){
+        this.#mapPathToLock.delete(file.path);
+      }
+      file.lockType = lockType;
+    }
+
   }/*class OpfsSAHPool*/;
 
   /**
