@@ -1101,7 +1101,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return !!lk && lk.lockType>capi.SQLITE_LOCK_SHARED;
     }
 
-
     /**
        Implements xLock() for the given xOpen-generated file object.
        This pool holds its SAHs exclusively, so its xOpen() represent
