@@ -1,5 +1,5 @@
-C Fix\sdefinition\sof\sVEC1_META_4BYTEMIN\sso\sthat\sit\sworks\swith\smsvc.
-D 2026-09-30T16:38:56.907
+C Fix\sproblems\sin\svec1rollback.test\spreventing\sit\sfrom\srunning\son\swindows.
+D 2026-09-30T16:41:58.959
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -625,7 +625,7 @@ F ext/vec1/test/vec1meta3.test 91907adb451e17b777f526dd39c8cdfd2c5928a47b3a864eb
 F ext/vec1/test/vec1nan.test 3ff3fe4b0f33a5c1f4129ba318443e7d927fd9dd6fc339349fea3c57fe140a8c
 F ext/vec1/test/vec1pq.test 81d74f516971a3883782d2d443efe3f6a7501d4c9f980a758e1c2eb8b5f22885
 F ext/vec1/test/vec1query.test 7120a2824b9f6563f7986c436204870c9d6e4af2bff3a39d38ef277188ef9189
-F ext/vec1/test/vec1rollback.test cb2a117153eb3bd3b97a19e8fce6a880b930862b0b50d240f80569ad593a6764
+F ext/vec1/test/vec1rollback.test 41565f526e153b24615ed38edda835fbb185f2f07f5e72f5c947add810b33d71
 F ext/vec1/test/vec1rotate.test a90773e8ef8259f81c793cb335e3c023295231416c37d89e387d524304dadfde
 F ext/vec1/test/vec1rotate2.test 7e4e06b3f970190c4ac28256db7aa924796b9a1fe1985941e35db4604c8717a0
 F ext/vec1/test/vec1round.test b38735c7e5b0af833505cc639d60816cfca2143b7461a1b443815c4be2b9d3ed
@@ -2278,8 +2278,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3a0876d973868be7b6f4156a434cd09098c7ab1abdc7f0ef4f3d12a03de68b24
-R e2a6a361772528d8b9fca843be0f8c92
+P c9b4c9c0aaf0c314312381558ed9cf60aac800dfb4f5701d4d2e1f5268b7f081
+R 535e28302ab61e6c4a8c8f61bccac8e4
 U dan
-Z a95742aa236b4568479fbd30ade20f73
+Z d4a692ce27d9474f2a4094c3503437bb
 # Remove this line to create a well-formed Fossil manifest.
