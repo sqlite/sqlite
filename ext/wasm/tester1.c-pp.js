@@ -3340,27 +3340,34 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const sqlIns1 = "insert into kvvfs(a) values(?)";
           q1 = db.prepare(sqlIns1);
           q2 = duo.prepare(sqlIns1);
-          if( 0 ){
-            q1.bind('from q1').stepFinalize();
-            ++expectRows;
-            T.assert(expectRows === duo.selectValue(sqlCount),
-                     "Unexpected record count.");
-            q2.bind('from q1').stepFinalize();
-            ++expectRows;
-          }else{
-            q1.bind('from q1');
-            T.assert(capi.SQLITE_DONE===capi.sqlite3_step(q1),
-                     "Unexpected step result");
-            ++expectRows;
-            T.assert(expectRows === duo.selectValue(sqlCount),
-                     "Unexpected record count.");
-            q2.bind('from q1').step();
-            ++expectRows;
-          }
+          q1.bind('from q1');
+          T.assert(capi.SQLITE_DONE===capi.sqlite3_step(q1),
+                   "Unexpected step result");
+          ++expectRows;
+          T.assert(expectRows === duo.selectValue(sqlCount),
+                   "Unexpected record count.");
+          q2.bind('from q2').step();
+          ++expectRows;
           T.assert(expectRows === db.selectValue(sqlCount),
                    "Unexpected record count.");
-          q1.finalize();
-          q2.finalize();
+
+          q1.reset();
+          q2.reset();
+          T.mustThrowMatching(
+            ()=>db.transaction("IMMEDIATE",()=>q2.step()),
+            (err)=>capi.SQLITE_BUSY===err.resultCode,
+            "Expecting db to be locked."
+          );
+          q1.reset().stepFinalize();
+          ++expectRows;
+          T.assert(expectRows === db.selectValue(sqlCount),
+                   "Unexpected record count after unlock.");
+          T.assert( capi.SQLITE_BUSY==q2.resetNoThrow() );
+          q2.stepFinalize();
+          ++expectRows;
+          T.assert(expectRows === db.selectValue(sqlCount),
+                   "Unexpected record count after unlock.");
+
           if( 1 ){
             debug("Begin vacuum/page size test...");
             const defaultPageSize = 1024 * 8 /* build-time default */;
