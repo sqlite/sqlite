@@ -334,7 +334,6 @@ function StructBinderFactory(config){
   const __freeStruct = function(ctor, obj, m){
     const ii = getInstanceHandle(obj, false);
     if( !ii ) return;
-    rmInstanceHandle(obj);
     if( !m && !(m = ii.p) ){
       console.warn("Cannot(?) happen: __freeStruct() found no instanceInfo");
       return;
@@ -361,6 +360,7 @@ function StructBinderFactory(config){
                      m,'threw. NOT propagating it.',e);
       }
     }
+    rmInstanceHandle(obj);
     delete obj.ondispose;
     if(ctor.debugFlags.__flags.dealloc){
       log("debug.dealloc:",(ii.ownsPointer?"":"EXTERNAL"),

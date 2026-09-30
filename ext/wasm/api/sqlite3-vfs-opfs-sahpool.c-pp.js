@@ -458,7 +458,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       /* Inherit certain VFS members from the default VFS,
          if available. */
       opfsVfs.$xRandomness = dVfs.$xRandomness;
-      opfsVfs.$xSleep = dVfs.$xSleep;
       dVfs.dispose();
     }
     if(!opfsVfs.$xRandomness && !vfsMethods.xRandomness){
@@ -471,9 +470,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return i;
       };
     }
-    if(!opfsVfs.$xSleep && !vfsMethods.xSleep){
-      vfsMethods.xSleep = (pVfs,ms)=>0;
-    }
+    /**
+       This VFS's xSleep() must be a no-op. In this environment,
+       only db handles within the same thread can ever come into
+       contention, and that contention cannot be resolved if
+       one of the handles sleeds in that same thread.
+       See also: forum:3f0794c5d8
+    */
+    vfsMethods.xSleep = (pVfs,ms)=>0;
     sqlite3.vfs.installVfs({
       vfs: {struct: opfsVfs, methods: vfsMethods}
     });
