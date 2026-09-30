@@ -1,5 +1,5 @@
-C Fix\sthe\sOPFS\sSAHPool\sVFS's\sxLock/xUnlock\sto\sproperly\sdeal\swith\smultiple\shandles\sto\sthe\ssame\sunderlying\sfile\swithin\sthe\ssame\sJS\sthread.\sAddresses\s[forum:5e66a600ba6e57de|bug\sreport\s2026-09-30T10:49:15Z].\sAlso\s(unrelated\sbut\scode-adjacent)\smake\ssure\sthat\sthe\sVFS\sreleases\sall\sof\sits\sinternal\smappings\swhen\sit's\spaused.
-D 2026-09-30T11:48:29.326
+C JS:\swhen\sdisposing\sof\sa\sC\sstruct\sinstance,\sdo\snot\sunmap\sthe\s'pointer'\sproperty\sinterceptor\suntil\safter\sall\sclient-added\sfinalizers\shave\sbeen\scalled.
+D 2026-09-30T13:18:14.287
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -636,7 +636,7 @@ F ext/wasm/fiddle/fiddle.js 2a0984cc4a35e6889c0d84ee9bf853317d5545ddb3966dfb995b
 F ext/wasm/fiddle/index.c-pp.html 5fd1f462864710d1b00d27fc4bc6190cb846cc865d7cc93b99644423f2c4cc84
 F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73607dc54d290
 F ext/wasm/index.html 7b27bb7518558c58c518ac3b47220226f635fa11331bac98f4aaf0d63fc4b283
-F ext/wasm/jaccwabyt/jaccwabyt.js 4e2b797dc170851c9c530c3567679f4aa509eec0fab73b466d945b00b356574b
+F ext/wasm/jaccwabyt/jaccwabyt.js 6f0668b6d445b6f1be219662d43d1795184cccd3b39ac57308e69e779acc9594
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
 F ext/wasm/libcmpp.c a5bec47a754206aac2ffb45ba4adaec6af3b4fcc24c705c61a6f47893b72aef5
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6b470917b2c9ab25d1e7fed56f19f37b5c2fc3f2a3d504a752a7bb2db14a3ee6
-R 50d487b8f85477aa2f1db2fb6a4742ff
+P 9e2caaa382cee5d5df26ad3af7d727ab3f68a912e39655ffcc52f592d5a08a8d
+R bee390359e76358b84c4ea5fe5ff4089
 U stephan
-Z 4a941db12c9be1b97ec2cd9de521d808
+Z 4ff29a481b1fb8b2a35002dd6ce97aa5
 # Remove this line to create a well-formed Fossil manifest.
