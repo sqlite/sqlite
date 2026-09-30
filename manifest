@@ -1,5 +1,5 @@
-C Cherry-pick\sfixes\s[c9dd4d88e44a]\sand\s[fa44643f65d]\sinto\sbranch-3.53.
-D 2026-09-30T13:32:02.026
+C [fa44643f65d6]\sinadvertently\sremoved\sits\scircular-cleanup\sprotection\sby\sfixing\sthe\sfinalizer\sordering.\sThis\scheck-in\sfixes\sthat.\sSpotted\sin\s[forum:ba4cb328a7|forum\spost\s2026-09-30T14:59:13Z].
+D 2026-09-30T15:45:23.321
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -606,7 +606,7 @@ F ext/wasm/api/sqlite3-license-version-header.js 98d90255a12d02214db634e041c8e7f
 F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js 25e31482b04293a33d7599f1459eb552b3eb36ca10c02c816122d3308bf80cb2
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
 F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js e3758c4ef4375e4b65e847c7444532a3a15389855599cd33233fb4aff4bdfcd4
-F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 601f72535bf6a6fa6ce2357e86717b72ae4523d64c8f7b32e0f2cc20551cd430
+F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js ca32a38454cae1a9ac169606a2c352016583a9be827d980155c5a42cf97597cd
 F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 3dbd918ef037cd8fa9c7b4dccb3c8637b228638654c429e7df6acab5981c75e2
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 3da8fe72dc9e76614a9c102b92e777ce03f81d788b607701c828d8fcbac44b06
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 366596d8ff73d4cefb938bbe95bc839d503c3fab6c8335ce4bf52f0d8a7dee81
@@ -633,7 +633,7 @@ F ext/wasm/fiddle/fiddle.js 84fd75967e0af8b69d3dd849818342227d0f81d13db92e0dcbc6
 F ext/wasm/fiddle/index.c-pp.html 02f063ef30b8124f311029855c4439e77bc6505d1bf65a163d88c064a63ee9d9
 F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73607dc54d290
 F ext/wasm/index.html 5bf6cf1b0a3c8b9f5f54d77f2219d7ae87a15162055ce308109c49b1dcab4239
-F ext/wasm/jaccwabyt/jaccwabyt.js 6f0668b6d445b6f1be219662d43d1795184cccd3b39ac57308e69e779acc9594
+F ext/wasm/jaccwabyt/jaccwabyt.js 99039632cd8fa6f82acdb01e213850d2efe220388441fa29efaf18e8002a2294
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
 F ext/wasm/libcmpp.c 0e2cec7de7c9cbe7941e6a4dc0c123cec736578a3eeae7828ac18706acd3cea6
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
@@ -2207,10 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 079400229e098b807143001c0e534b48e8dcec6c9171d6c10d8bec0c59254ec4
-Q +c9dd4d88e44a9eae4ea11d0ce5491c7ac2ac2d60a3bc83ed485812234be374da
-Q +fa44643f65d6815c8c21ec25e7aa6e39a00fdc818d1d058e03123042e45884e1
-R f319561a13d812860e127ddb45797290
+P f774529206f3cb41ff9e40133eec374c4b790c0315d1b895cb20b0893d17a4bf
+R 6fe8e2aa8da2f40728dc3ebbcd4bb874
 U stephan
-Z 10bf921d454278b2412f6c46f970d692
+Z c46cb79385e4e647826cfcd8796b1277
 # Remove this line to create a well-formed Fossil manifest.

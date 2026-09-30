@@ -21,7 +21,7 @@
 
   ./c-pp -o js/jaccwabyt.js -@policy=error jaccwabyt/jaccwabyt.c-pp.js
 
-  by libcmpp 2.x 2fc4afc31f6505c27b9c34988973a2bd9b157d559247cdd26868ae75632c3a5e @ 2025-11-16 23:03:27.352 UTC
+  by libcmpp 2.0.x 4539e17f451054d2aeb6a5ffe3891af087fd8fa6cfae4e31d02e1fddfec69d46 @ 2026-09-30 09:12:44.230 UTC
 */
 'use strict';
 globalThis.Jaccwabyt =
@@ -333,7 +333,8 @@ function StructBinderFactory(config){
       and unmaps obj from its native resources. */
   const __freeStruct = function(ctor, obj, m){
     const ii = getInstanceHandle(obj, false);
-    if( !ii ) return;
+    if( !ii || ii.isDisposing ) return;
+    ii.isDisposing = true;
     if( !m && !(m = ii.p) ){
       console.warn("Cannot(?) happen: __freeStruct() found no instanceInfo");
       return;
