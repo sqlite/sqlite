@@ -1,5 +1,5 @@
-C Fix\sproblems\sin\svec1rollback.test\spreventing\sit\sfrom\srunning\son\swindows.
-D 2026-09-30T16:41:58.959
+C Fix\sa\sfaulty\sassert()\sthat\swas\sfailing\swhen\srunning\svec1\sOOM\stests.
+D 2026-09-30T17:07:42.656
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -764,7 +764,7 @@ F src/insert.c 68b898cb17607b36fa751b8985da06531932c502d77186f82842817286c7fd03
 F src/json.c 98b654f8316e76bdff4eaf915ba6b95335a8b77e0bcd650a107c7ac86fb16080
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 5cd4cd7ec6e1a46416806899086363fbf95eecd3bfb9a388b436c9a77243c902
-F src/main.c 5e366de50caa6083b0f28ca342970bff909c8086382c21f1cd7b8d92fa7b3590
+F src/main.c 3bdc49a38ba0919016531fc7fa606a103731123497014c80233ff57fd44d4298
 F src/malloc.c 422f7e0498e1c9ef967f06283b6f2c0b16db6b905d8e06f6dbc8baaa3e4e6c5a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2278,8 +2278,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c9b4c9c0aaf0c314312381558ed9cf60aac800dfb4f5701d4d2e1f5268b7f081
-R 535e28302ab61e6c4a8c8f61bccac8e4
+P d15cf3890230d5a870e50448c69d640fedcbd15f32788b808cb1f212399e2796
+R 5f2ad466e906e7a61d707a8804512523
 U dan
-Z d4a692ce27d9474f2a4094c3503437bb
+Z bec2b4cef171ca72a417fe864beafe29
 # Remove this line to create a well-formed Fossil manifest.
