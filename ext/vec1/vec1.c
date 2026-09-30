@@ -107,7 +107,7 @@ typedef char            i8;
 
 #define VERTICAL_SUM_GENERIC(aAcc, nAcc, I) {                          \
   int c;                                                               \
-  for(c=4; c<nAcc; c++) acc[c & 3] = I (aAcc[c & 3], aAcc[c]);         \
+  for(c=4; c<nAcc; c++) aAcc[c & 3] = I (aAcc[c & 3], aAcc[c]);        \
   for(c=2; c<4 && c<nAcc; c++) aAcc[c & 1] = I (aAcc[c & 1], aAcc[c]); \
   if( nAcc>1 ) aAcc[0] = I (aAcc[0], aAcc[1]);                         \
 }
