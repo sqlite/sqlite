@@ -1,5 +1,5 @@
-C Improve\slocking\ssupport\sin\sthe\sJS\skvvfs.
-D 2026-09-30T19:29:13.147
+C Remove\san\sextraneous\snearly-full-file\slevel\sof\sindentation\sin\sext/wasm/tester1.c-pp.js.
+D 2026-09-30T20:59:50.681
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -655,7 +655,7 @@ F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f
 F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555e685bce3da8c3f
 F ext/wasm/tester1-worker.c-pp.html 441b8b12769670a6bf03be205e6f20ec05827348a565ddcee94219c44ec313e3
 F ext/wasm/tester1.c-pp.html 69403505b2c0b6cd76c8a210e3a09e80a8eb84a47c3eae591ab0e81c3934af61
-F ext/wasm/tester1.c-pp.js d03d0ec425ef90eedea8eccaa573009bc5fabfea4f5cf523d03d259d465791cc
+F ext/wasm/tester1.c-pp.js de7cdfee3b1dace334698be34a36945f2476be265f20d8c84d6b2408d5d8f8fd
 F ext/wasm/tests/opfs/concurrency/index.html 706eab6308343c04ac2360aba6001af4ffaf46d8f33a0ccd02c64d93e3216a43
 F ext/wasm/tests/opfs/concurrency/test.js 6919778fceaac1b7cc78caf41d796f545d2c4433b31188aa9689f05b5ad28828
 F ext/wasm/tests/opfs/concurrency/worker.js 704d82c5e287e47f612349e027765943a58ad967dcf178fb5a1c3a8eaafb09af
@@ -2221,9 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 771faec269d786f01fc8d9155fd546d09ea6ca2eba0f0c97e34e795f64719454 0fed9bcbe2c33d8db5b3500b506bcdfa6a2c718a65bfef4f1d2d21951f6341a8
-R 168356af216358245b21bb9e0b3f39e5
-T +closed 0fed9bcbe2c33d8db5b3500b506bcdfa6a2c718a65bfef4f1d2d21951f6341a8 Closed\sby\sintegrate-merge.
+P bc5b3e391f1a40a6bfdab11548b5943150ae6d0f9fd4836c7e5fbb6b23642988
+R c0e25e25bb489951b8e0715fbdd3d4ea
 U stephan
-Z f462bd7515c5e873009888e075a0a3f6
+Z 09b2c216c7811995b3942824ecb6a7ce
 # Remove this line to create a well-formed Fossil manifest.
