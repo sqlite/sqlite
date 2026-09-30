@@ -1,0 +1,149 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1fault4
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING vec1(a, b);
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10000
+  )
+  INSERT INTO t1 SELECT random_vector(13), i+0.5 FROM s;
+}
+faultsim_save_and_close
+
+do_faultsim_test 1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  db eval { PRAGMA table_info = t1 }
+} -body {
+  execsql {
+    SELECT count(*) FROM t1(random_vector(13), 13);
+  }
+} -test {
+  faultsim_test_result {0 13} 
+}
+
+do_faultsim_test 2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  db eval { PRAGMA table_info = t1 }
+} -body {
+  execsql {
+    SELECT count(*) FROM t1(random_vector(13), '{K:5000,streaming:true}');
+  }
+} -test {
+  faultsim_test_result {0 10000}
+}
+
+do_execsql_test 2.1 {
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{nbucket:8}') FROM t1 WHERE rowid<1000
+  ));
+}
+faultsim_save_and_close
+
+do_faultsim_test 2.2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  db eval { PRAGMA table_info = t1 }
+} -body {
+  execsql {
+    SELECT count(*) FROM t1(
+        random_vector(13), '{K:5000,streaming:true,nprobe:2}'
+    );
+  }
+} -test {
+  faultsim_test_result {0 10000}
+}
+
+
+faultsim_restore_and_reopen
+vec1_load db
+do_execsql_test 3.0 {
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{codesize:13}') FROM t1 WHERE rowid<1000
+  ));
+}
+faultsim_save_and_close
+
+breakpoint
+do_faultsim_test 3 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  db eval { PRAGMA table_info = t1 }
+} -body {
+  execsql {
+    SELECT count(*) FROM t1(random_vector(13), 13);
+  }
+} -test {
+  faultsim_test_result {0 13} 
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t1 USING vec1(a, b);
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  INSERT INTO t1(a, b) VALUES( random_vector(13), 1.123 );
+}
+faultsim_save_and_close
+
+do_faultsim_test 4 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  db eval { PRAGMA table_info = t1 }
+} -body {
+  execsql {
+    INSERT INTO t1(a, b) VALUES( random_vector(13), 'text' );
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO t1 SELECT random_vector(12) FROM s;
+}
+
+proc progress {args} {}
+
+faultsim_save_and_close
+do_faultsim_test 5 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  db func progress progress
+  db eval { SELECT count(*) FROM t1 }
+} -body {
+  execsql {
+    SELECT length( vec1_train(a, '{nbucket:8, progress:"progress"}') ) FROM t1
+  }
+} -test {
+  faultsim_test_result {0 408} 
+}
+
+
+finish_test
+

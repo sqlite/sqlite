@@ -1,0 +1,160 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1train
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1000
+  ) INSERT INTO t1 SELECT random_vector(16) FROM s;
+}
+
+do_catchsql_test 1.1 {
+  SELECT vec1_train(a, '{codesize: "large"}') FROM t1
+} {1 {vec1: codesize must be set to an integer value between 1 and 256, or 0}}
+
+do_catchsql_test 1.2 {
+  SELECT vec1_train(a, '{codesize: 16, nthread: -1}') FROM t1
+} {1 {vec1: nthread must be set to an integer value between 1 and 128}}
+
+do_catchsql_test 1.3 {
+  SELECT vec1_train(a, '{codesize: 1024}') FROM t1
+} {1 {vec1: codesize must be set to an integer value between 1 and 256, or 0}}
+
+do_catchsql_test 1.4 {
+  SELECT vec1_train(a, '{codesize: 8, opq: "yes"}') FROM t1
+} {1 {vec1: opq must be set to a boolean value}}
+
+do_catchsql_test 1.5 {
+  SELECT vec1_train(a, '{codesize: 8, opq: 555}') FROM t1
+} {1 {vec1: opq must be set to a boolean value}}
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE u1 USING vec1(a);
+}
+
+do_catchsql_test 2.1 {
+  INSERT INTO u1(cmd, arg) VALUES('rebuild', '{param: 1234}');
+} {1 {vec1: unknown parameter: param}}
+
+do_execsql_test 3.0 {
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(random_vector(16));
+  INSERT INTO t2 VALUES(random_vector(16));
+  INSERT INTO t2 VALUES(random_vector(16));
+
+  INSERT INTO t2 VALUES('');
+}
+
+do_catchsql_test 3.1 {
+  SELECT vec1_train(x, '{codesize: 8}') FROM t2
+} {1 {vec1_train: bad argument}}
+
+do_execsql_test 3.2.0 {
+  UPDATE t2 SET x=randomblob(7) WHERE rowid=4;
+}
+do_catchsql_test 3.2.1 {
+  SELECT vec1_train(x, '{codesize: 8}') FROM t2
+} {1 {vec1_train: bad argument}}
+
+do_execsql_test 3.3.0 {
+  UPDATE t2 SET x=random_vector(20) WHERE rowid=4;
+}
+do_catchsql_test 3.3.1 {
+  SELECT vec1_train(x, '{codesize: 8}') FROM t2
+} {1 {vec1_train: bad argument}}
+do_catchsql_test 3.3.2 {
+  SELECT vec1_train(x) FROM t2
+} {1 {vec1_train: bad argument}}
+
+do_execsql_test 3.4.0 {
+  UPDATE t2 SET x=random_vector(16) WHERE rowid=4;
+}
+#do_catchsql_test 3.4.1 {
+#  SELECT vec1_train(x, '{codesize: 12}') FROM t2
+#} {1 {vec1_train: vector size (16) must be a multiple of codesize (12)}}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 4.0 {
+  CREATE TABLE x1(v);
+}
+
+do_catchsql_test 4.1 {
+  SELECT vec1_train(v, '{nbucket: 8}') FROM x1
+} {1 {too few training vectors (have 0, require more than that)}}
+
+do_execsql_test 4.2 {
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100
+  ) INSERT INTO x1 SELECT random_vector(16) FROM s;
+}
+
+do_catchsql_test 4.3 {
+  SELECT vec1_train(v, '{nbucket: 8, progress: "nofunc"}') FROM x1
+} {1 {no such function: nofunc}}
+
+proc errorfunc {args} {
+  error "this is an error!"
+}
+db func errorfunc errorfunc
+
+do_catchsql_test 4.4 {
+  SELECT vec1_train(v, '{nbucket: 8, progress: "errorfunc"}') FROM x1
+} {1 {this is an error!}}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(a);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1000
+  ) INSERT INTO v1 SELECT random_vector(16) FROM s;
+}
+
+do_catchsql_test 5.1 {
+  INSERT INTO v1(cmd, arg) VALUES(
+    'rebuild', (SELECT substr( (
+      SELECT vec1_train(a, '{codesize: 8}') FROM v1
+    ), 1, 2000))
+  );
+} {1 {vec1: model size mismatch: have 2000, expected  16408}}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(a);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<12
+  ) INSERT INTO v1 SELECT random_vector(16) FROM s;
+}
+
+proc myprofile {args} {}
+db func myprofile myprofile
+
+do_catchsql_test 6.1 {
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{quantizer:"pq", profile: "myprofile"}') FROM v1
+  ));
+} {1 {too few training vectors (require 512, have 12)}}
+
+finish_test
+

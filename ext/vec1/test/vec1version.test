@@ -1,0 +1,118 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1version
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1;
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO v1(rowid, vector) VALUES(1, random_vector(128));
+  INSERT INTO v1(rowid, vector) VALUES(2, random_vector(128));
+  INSERT INTO v1(rowid, vector) VALUES(3, random_vector(128));
+  INSERT INTO v1(rowid, vector) VALUES(4, random_vector(128));
+  INSERT INTO v1(rowid, vector) VALUES(5, random_vector(128));
+
+  INSERT INTO v1(cmd, vector) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 1.2 { PRAGMA integrity_check } {ok}
+
+do_execsql_test 1.3 {
+  SELECT * FROM v1_config WHERE id=5;
+} {5 4}
+
+do_execsql_test 1.4 {
+  UPDATE v1_config SET val=2 WHERE id=5;
+} {}
+
+db close
+sqlite3 db test.db
+vec1_load db
+
+do_catchsql_test 1.5 {
+  SELECT rowid FROM v1(random_vector(128));
+} {1 {unrecognized index version}}
+
+do_execsql_test 1.6 {
+  UPDATE v1_config SET val=7 WHERE id=5;
+} {}
+
+do_catchsql_test 1.7 {
+  SELECT rowid FROM v1(random_vector(128));
+} {1 {unsupported index version - requires vec1 0.7}}
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v2 USING vec1;
+  INSERT INTO v2(rowid, vector) VALUES(5, random_vector(128));
+  INSERT INTO v2_config(id, val) VALUES(17, 'hello');
+}
+
+db close
+sqlite3 db test.db
+vec1_load db
+
+do_catchsql_test 2.1 {
+  SELECT rowid FROM v2(random_vector(128), 4);
+} {1 {unrecognized config entry: 17}}
+
+#--------------------------------------------------------------------------
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE v3 USING vec1;
+}
+
+do_execsql_test 3.1 {
+  INSERT INTO v3(rowid, vector) VALUES(1, random_vector(128));
+  INSERT INTO v3(rowid, vector) VALUES(2, random_vector(128));
+  INSERT INTO v3(rowid, vector) VALUES(3, random_vector(128));
+  INSERT INTO v3(rowid, vector) VALUES(4, random_vector(128));
+  INSERT INTO v3(rowid, vector) VALUES(5, random_vector(128));
+
+  INSERT INTO v3(cmd, vector) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_test 3.2 {
+  set model [db one {SELECT val FROM v3_model WHERE id=1}]
+  set model [string replace $model 0 3 [binary format I 1005]]
+  db eval { UPDATE v3_model SET val = $model WHERE id=1 }
+} {}
+
+db close
+sqlite3 db test.db
+vec1_load db
+
+do_catchsql_test 3.3 {
+  SELECT rowid FROM v3(random_vector(128), 4);
+} {1 {vec1: unsupported model version - require vec1 1.5}}
+
+do_test 3.4 {
+  set model [db one {SELECT val FROM v3_model WHERE id=1}]
+  set model [string replace $model 0 3 [binary format I 2]]
+  db eval { UPDATE v3_model SET val = $model WHERE id=1 }
+} {}
+
+db close
+sqlite3 db test.db
+vec1_load db
+
+do_catchsql_test 3.5 {
+  SELECT rowid FROM v3(random_vector(128), 4);
+} {1 {vec1: unrecognized model version}}
+
+
+finish_test
+

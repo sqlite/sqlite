@@ -1786,6 +1786,40 @@ fts5.c: $(FTS5_SRC) $(B.tclsh)
 fts5.o:	fts5.c $(DEPS_OBJ_COMMON) $(EXTHDR)
 	$(T.cc.extension) -c fts5.c
 
+#
+# vec1 loadable extension. Not part of the amalgamation or any
+# distributed package; built only by explicitly running "make vec1.so".
+#
+# If $(CFLAGS.vec1.avx2) is not empty (configure sets it to "-mavx2
+# -mfma" when the compiler accepts them), vec1.c is compiled twice -
+# once with scalar code and once with AVX2 - and both objects linked
+# into a single extension that picks one at runtime based on the CPU.
+# Otherwise a single scalar-only build is done.
+#
+# Deliberately does not use $(T.cc.extension), as that defines
+# SQLITE_CORE, which is wrong for a loadable extension.
+#
+# $(CFLAGS.vec1.opt) is appended after $(CFLAGS), so it overrides any
+# -O option there (e.g. configure's default -O2). vec1 relies on the
+# unrolling and inlining that -O3 provides. To build with the -O level
+# from $(CFLAGS) instead, pass "CFLAGS.vec1.opt=" to make.
+#
+CFLAGS.vec1.avx2 ?=
+CFLAGS.vec1.opt ?= -O3
+T.cc.vec1 = $(T.compile) -I. -I$(TOP)/src $(CFLAGS.vec1.opt)
+vec1$(T.dll): $(TOP)/ext/vec1/vec1.c sqlite3.h
+	@if test -n "$(CFLAGS.vec1.avx2)"; then set -x; \
+	  $(T.cc.vec1) -DVEC1SIMD=SCALAR -c $(TOP)/ext/vec1/vec1.c \
+	    -o vec1-scalar.o || exit $$?; \
+	  $(T.cc.vec1) -DVEC1SIMD=AVX2 $(CFLAGS.vec1.avx2) \
+	    -c $(TOP)/ext/vec1/vec1.c -o vec1-avx2.o || exit $$?; \
+	  $(T.compile) $(LDFLAGS.shlib) -o $@ vec1-scalar.o vec1-avx2.o \
+	    $(LDFLAGS.math) $(LDFLAGS.pthread) || exit $$?; \
+	else set -x; \
+	  $(T.cc.vec1) $(LDFLAGS.shlib) -o $@ $(TOP)/ext/vec1/vec1.c \
+	    $(LDFLAGS.math) $(LDFLAGS.pthread) || exit $$?; \
+	fi
+
 sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(DEPS_OBJ_COMMON) $(EXTHDR)
 	$(T.cc.extension) -c $(TOP)/ext/rbu/sqlite3rbu.c
 
@@ -2500,6 +2534,7 @@ help:
 tidy:
 	rm -f *.o *.obj *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(T.exe)
 	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
+	rm -f vec1$(T.dll)
 	rm -rf .libs .deps tsrc .target_source
 	rm -f lemon$(B.exe) sqlite*.tar.gz
 	rm -f mkkeywordhash$(B.exe) mksourceid$(B.exe)

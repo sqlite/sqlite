@@ -1,0 +1,46 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1fault6
+vec1_load db
+
+faultsim_save_and_close
+do_faultsim_test 1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+} -body {
+  execsql {
+    CREATE VIRTUAL TABLE v1 USING vec1(v, a, b);
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+reset_db
+vec1_load db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE x1 USING vec1(a, b, c);
+}
+faultsim_save_and_close
+do_faultsim_test 2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+} -body {
+  execsql { DROP TABLE x1 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+finish_test
+
