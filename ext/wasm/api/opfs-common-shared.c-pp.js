@@ -853,6 +853,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
            so would need to pass it to the async proxy. That would
            make it inordinately expensive considering that it's
            just a hint.
+
+           See: forum:a2f573b00cda1372
         */
         wasm.poke(pOut, 0, 'i32');
         return 0;
@@ -1069,7 +1071,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
 //#define vfs.metrics.enable
-//#// import initS11n()
 //#include "api/opfs-common-inline.c-pp.js"
 //#undef vfs.metrics.enable
     opfsVfs.initS11n = initS11n;
@@ -1112,7 +1113,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         const W = opfsVfs.worker =
 //#if target:es6-bundler-friendly
               (()=>{
-                /* _Sigh_... */
                 /* Discussion explaining this formulation:
                    https://github.com/sqlite/sqlite-wasm/pull/159 */
                 const url = new URL('sqlite3-opfs-async-proxy.js', import.meta.url);
@@ -1260,7 +1260,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
                 state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
                 opfsVfs.initS11n();
-                delete opfsVfs.initS11n;
+                opfsVfs.initS11n = null;
                 if(options.sanityChecks){
                   warn("Running sanity checks because of opfs-sanity-check URL arg...");
                   sanityCheck();
@@ -1303,4 +1303,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*createVfsState()*/;
 
 }/*sqlite3ApiBootstrap.initializers*/);
-//#/if global snip
+//#/if /* global snip */
