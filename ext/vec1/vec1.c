@@ -139,7 +139,8 @@ typedef char            i8;
 
 # include <immintrin.h>
 
-# ifdef __FMA__
+# if defined(__FMA__) || defined(_MSC_VER)
+   /* With MSVC, __AVX2__ implies __FMA__ */
 #  define FMADD(a,b,c) _mm256_fmadd_ps((a),(b),(c))
 #  define FMADD64(a,b,c) _mm256_fmadd_pd((a),(b),(c))
 # else

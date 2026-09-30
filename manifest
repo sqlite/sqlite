@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sthat\swas\sfailing\swhen\srunning\svec1\sOOM\stests.
-D 2026-09-30T17:07:42.656
+C For\smsvc,\s__AVX2__\simplies\s__FMA__.
+D 2026-09-30T17:38:45.760
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -640,7 +640,7 @@ F ext/vec1/tool/vec1_algo_test.c c62b828a3e46a39a8656f26b74804906cc3160758f8afc6
 F ext/vec1/tool/vec1bench.tcl de201e8b468de035065dd8dfdaa171d64760693deb19e6d5725e23840e6cca1e
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c 06282d8fc75ede7fdbd747fe0cb5baf6b9c420c76110a5143ef11aac6d26aa3e
+F ext/vec1/vec1.c df15944144582049c2a90d966f901231c4f1c3acfe99475292a707f8d608a7d2
 F ext/wasm/GNUmakefile cc28e65dec12f1b992957152d8395484f4fcf7f94e6b6736a09ee4f48e7ec048
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
@@ -2278,8 +2278,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d15cf3890230d5a870e50448c69d640fedcbd15f32788b808cb1f212399e2796
-R 5f2ad466e906e7a61d707a8804512523
+P aae661526953196ae078b2fe52d73f8a02ee9aa8f190b3fcdc27b23e4a344475
+R 2e28ba778be5998103a3a3b549e9b002
 U dan
-Z bec2b4cef171ca72a417fe864beafe29
+Z 16e7d20860c7b10f028a7245bc3c88fe
 # Remove this line to create a well-formed Fossil manifest.
