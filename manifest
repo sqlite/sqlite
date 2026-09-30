@@ -1,5 +1,5 @@
-C Import\svec1\ssources\sinto\sdirectory\sext/vec1/\sof\sthis\sproject.
-D 2026-09-30T14:49:16.274
+C Fix\sdefinition\sof\sVEC1_META_4BYTEMIN\sso\sthat\sit\sworks\swith\smsvc.
+D 2026-09-30T16:38:56.907
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -640,7 +640,7 @@ F ext/vec1/tool/vec1_algo_test.c c62b828a3e46a39a8656f26b74804906cc3160758f8afc6
 F ext/vec1/tool/vec1bench.tcl de201e8b468de035065dd8dfdaa171d64760693deb19e6d5725e23840e6cca1e
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c d6c96e5272447a08847a5031ceac121f3483a2a26283bb651f6c1d85179b0b2b
+F ext/vec1/vec1.c 06282d8fc75ede7fdbd747fe0cb5baf6b9c420c76110a5143ef11aac6d26aa3e
 F ext/wasm/GNUmakefile cc28e65dec12f1b992957152d8395484f4fcf7f94e6b6736a09ee4f48e7ec048
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
@@ -2278,11 +2278,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c9dd4d88e44a9eae4ea11d0ce5491c7ac2ac2d60a3bc83ed485812234be374da
-R abde61b2c412631e87e77f443f340a02
-T *branch * vec1
-T *sym-vec1 *
-T -sym-trunk *
+P 3a0876d973868be7b6f4156a434cd09098c7ab1abdc7f0ef4f3d12a03de68b24
+R e2a6a361772528d8b9fca843be0f8c92
 U dan
-Z 907e792789daaeb3c2cc5400f2140971
+Z a95742aa236b4568479fbd30ade20f73
 # Remove this line to create a well-formed Fossil manifest.
