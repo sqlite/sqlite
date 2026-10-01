@@ -2054,7 +2054,7 @@ int sqlite3CreateFunc(
     if( db->nVdbeActive ){
       sqlite3ErrorWithMsg(db, SQLITE_BUSY,
         "unable to delete/modify user-function due to active statements");
-      assert( !db->mallocFailed );
+      assert( !db->mallocFailed || db->nVdbeExec>0 );
       return SQLITE_BUSY;
     }else{
       sqlite3ExpirePreparedStatements(db, 0);

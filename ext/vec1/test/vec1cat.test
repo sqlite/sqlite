@@ -1,0 +1,247 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1cat
+vec1_load db
+
+do_execsql_test 1.0 {
+  PRAGMA table_info = vec1cat
+} {
+  0 database {} 0 {} 0 
+  1 name {} 0 {} 0 
+  2 model {} 0 {} 0 
+  3 qprofile {} 0 {} 0 
+}
+
+do_execsql_test 1.1 {
+  CREATE VIRTUAL TABLE x1 USING vec1(x);
+  SELECT database, name FROM vec1cat;
+} {
+  main x1
+}
+
+db close
+sqlite3 db test.db
+vec1_load db
+
+do_execsql_test 1.2 {
+  SELECT database, name, model FROM vec1cat;
+} {
+  main x1 {{"index": "none", "distance": "l2"}}
+}
+
+do_execsql_test 1.3 {
+  INSERT INTO x1(cmd, arg) VALUES( 'rebuild', '{index:"flat", distance:"cos"}');
+}
+
+do_execsql_test 1.4 {
+  SELECT database, name, model FROM vec1cat;
+} {
+  main x1 {{"index": "flat", "distance": "cos"}}
+}
+
+db close
+sqlite3 db test.db
+vec1_load db
+
+do_execsql_test 1.5 {
+  SELECT database, name, model FROM vec1cat;
+} {
+  main x1 {{"index": "flat", "distance": "cos"}}
+}
+
+do_execsql_test 1.6 {
+  INSERT INTO x1(cmd, arg) VALUES('rebuild', (
+    WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000)
+    SELECT vec1_train(random_vector(16), '{nbucket:8, codesize:8}') FROM s
+  ));
+  SELECT database, name, model FROM vec1cat;
+} {
+  main x1
+  {{"index": "trained", "distance": "l2", "nbucket": 8, "quantizer": "pq", "codesize": 8, "residual": true, "wht": false}}
+}
+
+do_execsql_test 1.7 {
+  CREATE VIRTUAL TABLE temp.x2 USING vec1(x);
+  SELECT rowid, database, name, model FROM vec1cat;
+} {
+  1 temp x2
+  {{"index": "none", "distance": "l2"}}
+  2 main x1
+  {{"index": "trained", "distance": "l2", "nbucket": 8, "quantizer": "pq", "codesize": 8, "residual": true, "wht": false}}
+}
+
+foreach {tn spec res} {
+
+  1 {nbucket:0, codesize:8} {
+    "index": "trained", "distance": "l2", "nbucket": 0, 
+    "quantizer": "pq", "codesize": 8, 
+    "residual": false, "wht": false
+  }
+
+  2 {nbucket:8, codesize:0} {
+    "index": "trained", "distance": "l2", "nbucket": 8, 
+    "quantizer": "none", "codesize": 0, 
+    "residual": false, "wht": false
+  }
+
+  3 {nbucket:0, codesize:8, opq:1} {
+      "index": "trained", "distance": "l2", "nbucket": 0, 
+      "quantizer": "opq", "codesize": 8, 
+      "residual": false, "wht": false
+  }
+
+  4 {codesize:2, quantizer: "bq", distance: "cos"} {
+      "index": "trained", "distance": "cos", "nbucket": 0, 
+      "quantizer": "bq", "codesize": 2,
+      "residual": false, "wht": true
+  }
+
+  5 {codesize:1, nbucket: 16, quantizer: "bq", distance: "l2", wht: 0} {
+      "index": "trained", "distance": "l2", "nbucket": 16, 
+      "quantizer": "bq", "codesize": 1,
+      "residual": true, "wht": false
+  }
+
+  6 {codesize:0, nbucket: 0} {
+    "index":"flat", "distance":"l2"
+  }
+
+  7 {} {
+    "index":"flat", "distance":"l2"
+  }
+
+} {
+
+  set model [db one {
+    WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000)
+    SELECT vec1_train(random_vector(16), '{'||$spec||'}') FROM s
+  }]
+
+  set output [db one { SELECT json('{' || $res || '}') }]
+
+  do_execsql_test 1.8.$tn.1 {
+    INSERT INTO x1(cmd, arg) VALUES( 'rebuild', $model );
+    SELECT json(model) FROM vec1cat WHERE name='x1';
+  } [list $output]
+
+  if {[db one {SELECT json_extract($output, '$.index')=='trained'}]} {
+    set model [db one {
+      WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000)
+        SELECT vec1_train(random_vector(16), $output) FROM s
+    }]
+  } else {
+    set model $output
+  }
+  do_execsql_test 1.8.$tn.2 {
+    INSERT INTO x1(cmd, arg) VALUES( 'rebuild', $model );
+    SELECT json(model) FROM vec1cat WHERE name='x1';
+  } [list $output]
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE x1 USING vec1(x);
+  CREATE VIRTUAL TABLE x2 USING vec1(y);
+  CREATE VIRTUAL TABLE x3 USING vec1(z);
+}
+
+do_execsql_test 2.1 {
+  SELECT rowid, name FROM vec1cat
+} {
+  1 x3 2 x2 3 x1
+}
+
+do_test 2.2 {
+  list [catch {
+    db eval {
+      SELECT rowid, name FROM vec1cat
+    } {
+      if {$name=="x2"} {
+        db eval {
+          DROP TABLE x2;
+          DROP TABLE x1;
+        }
+      }
+    }
+  } msg] $msg
+} {1 {database table is locked}}
+
+do_execsql_test 2.3 {
+  SELECT qprofile FROM vec1cat WHERE name='x1';
+} {{{
+  "total": {"cnt": 0, "cycle": 0},
+  "init": {"cnt": 0, "cycle": 0},
+  "coarse": {"cnt": 0, "cycle": 0},
+  "idxread": {"cnt": 0, "cycle": 0},
+  "metaread": {"cnt": 0, "cycle": 0},
+  "metascan": {"cnt": 0, "cycle": 0},
+  "lut": {"cnt": 0, "cycle": 0},
+  "pqscan": {"cnt": 0, "cycle": 0},
+  "finalsort": {"cnt": 0, "cycle": 0}
+}}}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE x2 USING vec1(y);
+  INSERT INTO x2 VALUES( random_vector(13) );
+  INSERT INTO x2 VALUES( random_vector(13) );
+  INSERT INTO x2 VALUES( random_vector(13) );
+  INSERT INTO x2 VALUES( random_vector(13) );
+  INSERT INTO x2 VALUES( random_vector(13) );
+
+  INSERT INTO x2(cmd, arg) VALUES('rebuild', (
+    WITH s(i) AS ( VALUES (1) UNION ALL SELECT i+1 FROM s WHERE i<512 )
+    SELECT vec1_train( random_vector(13), '{nbucket:8}' ) FROM s
+  ))
+}
+
+do_execsql_test 3.1 {
+  SELECT count(distance) FROM x2;
+} 5
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x1 USING vec1(y, a);
+
+  INSERT INTO x1(cmd, arg) VALUES('rebuild', (
+    WITH s(i) AS ( VALUES (1) UNION ALL SELECT i+1 FROM s WHERE i<512 )
+    SELECT vec1_train( 
+      random_vector(32), '{nbucket:8, codesize:8, distance:"cos"}' 
+    ) FROM s
+  ))
+}
+
+do_execsql_test 4.1 {
+  INSERT INTO x1 (rowid, y, a) VALUES(10, random_vector(32), 4556);
+} 
+
+do_execsql_test 4.2 {
+  SELECT key FROM json_each( (SELECT distance FROM x1) )
+} {bucket coarse_error reconstruction_error code}
+
+do_execsql_test 4.3 {
+  SELECT typeof(distance) FROM x1(random_vector(32), '{nprobe:8, K:5}')
+} {real}
+
+
+finish_test
+

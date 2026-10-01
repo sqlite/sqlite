@@ -1,0 +1,40 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1intck2
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE mytbl USING vec1(a, b);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 )
+  INSERT INTO mytbl SELECT random_vector(32), 'val'||i FROM s;
+}
+
+foreach {tn spec} {
+  1 "{codesize: 8, nbucket: 8}"
+  2 "{codesize: 8, nbucket: 8, residual: 0}"
+} {
+  do_execsql_test 1.$tn.1 {
+    INSERT INTO mytbl(cmd, arg) VALUES('rebuild', (
+          SELECT vec1_train(a, $spec) FROM mytbl
+    ));
+  }
+
+  do_execsql_test 1.$tn.2 {
+    PRAGMA integrity_check
+  } {ok}
+}
+
+finish_test
+
