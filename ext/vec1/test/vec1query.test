@@ -1,0 +1,147 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1query
+vec1_load db
+
+set lCentroid [list]
+proc allocate_centroids {nCentroid nElem} {
+  global lCentroid
+  for {set ii 0} {$ii < $nCentroid} {incr ii} {
+    lappend lCentroid [randvec $nElem 10.0]
+  }
+}
+
+proc randvec {nElem {scale 1.0}} {
+  set vec [list]
+  for {set ii 0} {$ii < $nElem} {incr ii} {
+    lappend vec [expr {rand() * $scale}]
+  }
+  return $vec
+}
+
+proc addvec {a b} {
+  if {[llength $a]!=[llength $b]} {
+    error "vectors are different lengths"
+  }
+  set ret [list]
+  foreach ia $a ib $b {
+    lappend ret [expr $ia + $ib]
+  }
+  return $ret
+}
+
+proc cvec {nDim} {
+  global lCentroid
+  if {[llength $lCentroid]==0} {
+    allocate_centroids 16 $nDim
+  }
+
+  set ii [expr int(abs(rand()) * [llength $lCentroid])]
+  set ret [addvec [lindex $lCentroid $ii] [randvec $nDim 1.0]]
+
+  binary format r* $ret
+}
+
+db func cvec cvec
+
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+}
+
+do_execsql_test 1.1 {
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO v1 SELECT cvec(24) FROM s;
+}
+
+do_execsql_test 1.2 {
+ INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+   SELECT vec1_train(v, '{codesize:0, nbucket:20, distance:"l2"}') FROM v1
+ ));
+}
+
+set nRep 100
+
+proc testquery {v p} {
+  db one {SELECT 
+    (SELECT rowid FROM v1($v, $p) ORDER BY vec1_l2_distance(v, $v))
+      ==
+    (SELECT rowid FROM v1 ORDER BY vec1_l2_distance(v, $v))
+  }
+}
+
+do_test 1.3 {
+  set nTry 0
+  set nFind 0
+  for {set ii 0} {$ii < $nRep} {incr ii} {
+    set v [cvec 24]
+    set p "{K:50, nprobe:4}"
+    incr nTry 1
+    incr nFind [testquery $v $p]
+  }
+
+  expr {((double($nFind) / $nTry) >= 0.98) ? "ok" : "$nFind/$nTry"}
+} {ok}
+
+do_test 1.4 {
+  set nTry 0
+  set nFind 0
+  for {set ii 0} {$ii < $nRep} {incr ii} {
+    set v [random_vector 24]
+    set p "{K:50, nprobe:4}"
+    incr nTry 1
+    incr nFind [testquery $v $p]
+  }
+
+  expr {((double($nFind) / $nTry) >= 0.99) ? "ok" : "$nFind/$nTry"}
+} {ok}
+
+model2tbl model v1
+
+if {1 || [set_test_counter errors]>0} {
+  set ii 0
+  foreach c $lCentroid {
+    set bin [binary format r* $c]
+    puts -nonewline "CENTROID $ii: "
+    set L [
+      db eval {
+        SELECT format('%.1f', vec1_l2_distance($bin, coarse)) AS d FROM model
+      } 
+    ]
+    puts [lrange [lsort $L] 0 0]
+    incr ii
+  }
+}
+
+do_execsql_test 1.5 {
+  PRAGMA integrity_check
+} {ok}
+
+set v [db one {SELECT random_vector(24)}]
+set p "{K:50,nprobe:null}"
+do_catchsql_test 1.6 {
+  SELECT (SELECT rowid FROM v1($v, $p) ORDER BY vec1_cos_distance(v, $v))
+       ==(SELECT rowid FROM v1 ORDER BY vec1_cos_distance(v, $v))
+} {1 {vec1: null value in json object}}
+
+do_catchsql_test 1.7 {
+  SELECT rowid FROM v1($v, -10)
+} {1 {vec1: K must be an integer value between 0 and 33554432}}
+
+
+finish_test
+

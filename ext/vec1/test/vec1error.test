@@ -1,0 +1,85 @@
+# 2026-08-04
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1error
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  INSERT INTO v1(rowid, v) VALUES(11, random_vector(8));
+  INSERT INTO v1(rowid, v) VALUES(12, random_vector(8));
+}
+
+do_catchsql_test 1.1 {
+  SELECT rowid FROM v1(random_vector(8), '{K:10, nprobes:10}');
+} {1 {unrecognized option 'nprobes', should be one of  nprobe, K, streaming, or nprobe_slack}}
+
+do_catchsql_test 1.2 {
+  SELECT vec1_train(v, '{quantizer:"donuts"}') FROM v1;
+} {1 {unrecognized quantizer 'donuts', should be one of none, pq, opq, or bq}}
+
+do_catchsql_test 1.3 {
+  SELECT vec1_train(v, '{nthread:0}') FROM v1;
+} {1 {vec1: nthread must be set to an integer value between 1 and 128}}
+
+#-------------------------------------------------------------------------
+# Ensure that INSERT is not confused by a vector for which the squared
+# L2 is close to INFINITY for all centroids. 
+#
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(a);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO v1(rowid, a) SELECT i, random_vector(4) FROM s;
+
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{nbucket:8}') FROM v1
+  ));
+}
+
+do_execsql_test 2.1 {
+  INSERT INTO v1(a) VALUES( vec1_from_json('[1e30, 1e30, 1e30, 1e30]') );
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+vec1_load db
+
+do_test 3.1 { sqlite3_db_config db TRUSTED_SCHEMA 0 } {0}
+
+do_execsql_test 3.2 {
+  CREATE VIRTUAL TABLE t1 USING vec1(x);
+  INSERT INTO t1 VALUES( random_vector(1024) );
+  INSERT INTO t1 VALUES( random_vector(1024) );
+
+  CREATE VIEW v1 AS SELECT rowid, x FROM t1;
+}
+
+do_execsql_test 3.3 {
+  SELECT rowid FROM t1
+} {1 2}
+
+do_execsql_test 3.4 {
+  SELECT rowid FROM v1
+} {1 2}
+
+
+
+finish_test
+

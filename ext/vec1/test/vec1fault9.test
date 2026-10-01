@@ -1,0 +1,82 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1fault9
+vec1_load db
+
+do_faultsim_test 1 -faults oom* -body {
+  execsql {
+    SELECT vec1_to_json( vec1_from_json('[1,2,3,4,5,6,7,8,9,10]') );
+  }
+} -test {
+  faultsim_test_result {0 {{[1,2,3,4,5,6,7,8,9,10]}}}
+}
+
+do_execsql_test 2 {
+  CREATE VIRTUAL TABLE x1 USING vec1(v, b);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<20 )
+  INSERT INTO x1 
+  SELECT rvec(12, i), CASE WHEN i%2 THEN 'one' ELSE 'two' END FROM s;
+  INSERT INTO x1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_faultsim_test 2 -faults oom* -body {
+  sqlite3 db test.db
+  sqlite3_db_config_lookaside db 0 0 0
+  vec1_load db
+  set one one
+  execsql { 
+    SELECT rowid FROM x1(rvec(12, 4000), 200) WHERE b=$one ORDER BY 1
+  }
+} -test {
+  faultsim_test_result \
+      {0 {1 3 5 7 9 11 13 15 17 19}} \
+      {1 {}} \
+      {1 {error during initialization: }}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 3 {
+  CREATE VIRTUAL TABLE x1 USING vec1(v, b);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<20 )
+  INSERT INTO x1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+faultsim_save_and_close
+
+breakpoint
+do_faultsim_test 3 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  sqlite3_db_config_lookaside db 0 0 0
+  vec1_load db
+} -body {
+  set value "this_is_a_good_value"
+  execsql { 
+    INSERT INTO x1 VALUES( rvec(44, 156), $value );
+  }
+} -test {
+  if {$testrc==0} {
+    set r [db one {
+      SELECT rowid FROM x1(rvec(44, 13), 10) WHERE b='this_is_a_good_value';
+    }]
+    if {$r!=1} { error "unexected!" }
+  }
+  faultsim_test_result {0 {}} 
+}
+
+finish_test
+

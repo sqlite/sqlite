@@ -91,7 +91,7 @@ if( !vfsName ){
    VFS or both the "opfs" and "opfs-wl" VFSes.
 */
 const workerId = (Math.random() * 10000000) | 0;
-const isWebLocker = 'opfs-wl'===urlParams.get('vfs');
+const isWebLocker = 'opfs-wl'===vfsName;
 const wPost = (type,...args)=>postMessage({type, payload:args});
 const installAsyncProxy = function(){
   const toss = function(...args){throw new Error(args.join(' '))};

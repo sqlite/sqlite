@@ -1,0 +1,121 @@
+# 2026-03-14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1stream
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO v1(rowid, v) SELECT i, random_vector(16) FROM s;
+
+  INSERT INTO v1(cmd, arg) 
+  SELECT 'rebuild', vec1_train(v, '{nbucket:32, codesize:0}') FROM v1;
+}
+
+do_test 1.1 {
+  llength [
+    db eval {
+      SELECT rowid FROM v1(random_vector(16), '{K:10, nprobe: 1, streaming:0}')
+    }
+  ]
+} {10}
+
+do_test 1.2 {
+  llength [
+    db eval {
+      SELECT rowid FROM v1(
+          random_vector(16), '{K:1000, nprobe: 32, streaming:0}'
+      )
+    }
+  ]
+} {1000}
+
+do_test 1.3 {
+  llength [
+    db eval {
+      SELECT rowid FROM v1(random_vector(16), '{K:10, nprobe: 1, streaming:1}')
+    }
+  ]
+} {1000}
+
+proc repeat {str n} {
+  string repeat $str $n
+}
+db func repeat repeat
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v2 USING vec1(v, m);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO v2(rowid, v, m) SELECT i, random_vector(16), repeat(i,200) FROM s;
+
+  INSERT INTO v2(cmd, arg) 
+  SELECT 'rebuild', vec1_train(v, '{nbucket:32, codesize:0}') FROM v1;
+}
+
+breakpoint
+do_test 2.1 {
+  llength [
+    db eval {
+      SELECT rowid 
+      FROM v2(random_vector(16), '{K:10, nprobe: 1, streaming:1}')
+      WHERE m=repeat(555,200)
+    }
+  ]
+} {1}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+db func vec vec
+proc vec {args} { binary format r* $args }
+
+proc sequence {n} {
+  set ret [list]
+  for {set i 1} {$i <= $n} {incr i} { lappend ret $i }
+  set ret
+}
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE docs USING vec1(embedding, title, category);
+
+  WITH RECURSIVE r(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i<400)
+  INSERT INTO docs(rowid, embedding, title, category)
+    SELECT i, 
+         vec(i%37, i%53, i%71, i%29),
+         'runbook '||i, 
+         CASE WHEN i%3=0 THEN 'ops' ELSE 'kb' END
+    FROM r;
+
+  INSERT INTO docs(cmd,arg) VALUES('rebuild', (
+    SELECT vec1_train(embedding,'{nbucket:16,quantizer:"none"}') FROM docs
+  ));
+}
+
+do_execsql_test 3.1 { PRAGMA integrity_check } {ok}
+
+for {set ii 1} {$ii <= 16} {incr ii} {
+  set j "{K:10,streaming:1,nprobe:$ii}"
+  do_execsql_test 3.2.$ii {
+    SELECT rowid FROM docs(vec(5,5,5,5), $j) ORDER BY 1
+  } [sequence 400]
+}
+
+finish_test
+

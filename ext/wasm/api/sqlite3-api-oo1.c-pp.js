@@ -1959,6 +1959,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        also called, otherwise any existing bindings, along with
        any memory allocated for them, are retained.
 
+       Clients must not use capi.sqlite3_reset() with this object
+       because this method does book-keeping specific to this class,
+       e.g. the pieces which ensure that the column-fetching methods
+       throw when called without a corresponding step().
+
        In versions 3.42.0 and earlier, this function did not throw if
        sqlite3_reset() returns non-0, but it was discovered that
        throwing (or significant extra client-side code) is necessary
@@ -1975,6 +1980,32 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       checkSqlite3Rc(this.db, rc);
       return this;
     },
+
+    /**
+       Works like reset() except that it returns the underlying
+       C-level result code instead of throwing if that code represents
+       an error.
+
+       Clients must not use capi.sqlite3_reset() for this purpose
+       because this method (like reset()) does book-keeping specific
+       to this class.
+
+       Throws if an exec() is underway.
+
+       The use case this addresses is when a step() fails due to,
+       e.g., a locking error: a following reset() will report that
+       locking error by throwing and that's sometimes inconvenient.
+
+       Added in 3.54.
+    */
+    resetNoThrow: function(alsoClearBinds){
+      affirmNotLockedByExec(this,'reset()');
+      if(alsoClearBinds) this.clearBindings();
+      const rc = capi.sqlite3_reset(affirmStmtOpen(this).pointer);
+      __stmtMayGet.delete(this);
+      return rc;
+    },
+
     /**
        Binds one or more values to its bindable parameters. It
        accepts 1 or 2 arguments:

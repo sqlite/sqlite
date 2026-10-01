@@ -1,0 +1,42 @@
+# 2026-03-14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1rotate2
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<34000
+  )
+  INSERT INTO v1(rowid, v) SELECT i, random_vector(256) FROM s;
+}
+
+proc progress {percent msg} {
+  puts "${percent}%: $msg"
+}
+db func progress progress
+
+do_test 1.1 {
+  set T [db one {
+    SELECT 
+      vec1_train(v, '{codesize:16, opq:1, nopq_round:1, progress:"progress"}') 
+    FROM v1
+  }]
+  set {} {}
+} {}
+
+finish_test
+
