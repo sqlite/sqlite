@@ -1,0 +1,125 @@
+# 2026-08-20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1cat2
+vec1_load db
+
+
+foreach {tn training expect} {
+  1 { codesize: 16 } { 
+    "index": "trained", 
+    "distance": "l2", 
+    "nbucket": 0, 
+    "quantizer": "pq", 
+    "codesize": 16, 
+    "residual": false, 
+    "wht": false
+  }
+
+  2 { quantizer: "pq" } { 
+    "index": "trained", 
+    "distance": "l2", 
+    "nbucket": 0, 
+    "quantizer": "pq", 
+    "codesize": 16, 
+    "residual": false, 
+    "wht": false
+  }
+
+  3 { quantizer: "opq" } { 
+    "index": "trained", 
+    "distance": "l2", 
+    "nbucket": 0, 
+    "quantizer": "opq", 
+    "codesize": 32, 
+    "residual": false, 
+    "wht": false
+  }
+
+  4 { quantizer: "bq" } { 
+    "index": "trained", 
+    "distance": "l2", 
+    "nbucket": 0, 
+    "quantizer": "bq", 
+    "codesize": 16, 
+    "residual": false, 
+    "wht": true
+  }
+
+  5 { nbucket: 10 } { 
+    "index": "trained", 
+    "distance": "l2", 
+    "nbucket": 10, 
+    "quantizer": "none", 
+    "codesize": 0, 
+    "residual": false, 
+    "wht": false
+  }
+
+  6 { nbucket: 10, quantizer: "pq" } { 
+    "index": "trained", 
+    "distance": "l2", 
+    "nbucket": 10, 
+    "quantizer": "pq", 
+    "codesize": 16, 
+    "residual": true, 
+    "wht": false
+  }
+
+  7 { quantizer: "pq", codesize: 0 } { 
+    "index": "trained", 
+    "distance": "l2", 
+    "nbucket": 0, 
+    "quantizer": "pq", 
+    "codesize": 16, 
+    "residual": false, 
+    "wht": false
+  }
+} {
+
+  do_execsql_test 1.$tn.1 {
+    DROP TABLE IF EXISTS v1;
+    CREATE VIRTUAL TABLE v1 USING vec1 (v);
+  }
+
+  do_execsql_test 1.$tn.2 {
+
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<512 ),
+    data(v) AS ( SELECT random_vector(128) FROM s)
+
+    INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+      SELECT vec1_train(v, '{' || $training || '}') FROM data
+    ));
+
+    SELECT json(model) FROM vec1cat;
+  } [db eval { SELECT json( '{' || $expect || '}' )} ]
+
+  do_execsql_test 1.$tn.3 {
+
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<512 ),
+    data(v) AS ( SELECT random_vector(128) FROM s)
+
+    INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+      SELECT vec1_train(v, (SELECT model FROM vec1cat)) FROM data
+    ));
+
+    SELECT json(model) FROM vec1cat;
+  } [db eval { SELECT json( '{' || $expect || '}' )} ]
+  
+}
+
+
+
+finish_test
+

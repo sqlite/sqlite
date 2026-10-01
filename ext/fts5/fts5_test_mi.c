@@ -375,7 +375,9 @@ static void fts5MatchinfoFunc(
   if( p==0 || sqlite3_stricmp(zArg, p->zArg) ){
     p = fts5MatchinfoNew(pApi, pFts, pCtx, zArg);
     if( p==0 ){
-      rc = SQLITE_NOMEM;
+      /* If p==0, then fts5MatchinfoNew() has already configure pCtx with
+      ** an error code. So just return early here. */
+      return;
     }else{
       rc = pApi->xSetAuxdata(pFts, p, sqlite3_free);
     }

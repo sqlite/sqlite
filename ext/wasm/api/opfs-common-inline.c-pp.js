@@ -8,8 +8,7 @@
    but which has a 99% identical structure for each.
 */
 //#/if
-//#// vfs.metrics.enable is a refactoring crutch.
-//#define vfs.metrics.enable 0
+//#define vfs.metrics.enable 0 /* a refactoring crutch */
 const initS11n = function(){
   /**
      This proxy de/serializes cross-thread function arguments and

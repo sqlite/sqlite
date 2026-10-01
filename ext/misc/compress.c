@@ -102,7 +102,7 @@ static void uncompressFunc(
     nOut = (nOut<<7) | (pIn[i]&0x7f);
     if( (pIn[i]&0x80)!=0 ){ i++; break; }
   }
-  pOut = sqlite3_malloc64( (u64)nOut+1 );
+  pOut = sqlite3_malloc64( (sqlite3_uint64)nOut+1 );
   if( pOut==0 ){
     sqlite3_result_error_nomem(context);
     return;

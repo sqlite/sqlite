@@ -1,0 +1,107 @@
+# 2026 September 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# RBU does not support tables with GENERATED columns. This file tests
+# that attempting to update such a table, or to RBU vacuum a database
+# that contains one, fails with an error.
+#
+
+source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
+set ::testprefix rbugen
+
+foreach {tn schema} {
+  1 { CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c AS (b*2) STORED) }
+  2 { CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c AS (b*2) VIRTUAL) }
+} {
+  set errmsg "SQLITE_ERROR - generated columns not supported: t1.c"
+
+  # Attempt to apply an RBU update to table t1. Test both with and
+  # without the generated column in the data_t1 table.
+  #
+  foreach {tn2 data} {
+    1 {
+      CREATE TABLE data_t1(a, b, rbu_control);
+      INSERT INTO data_t1 VALUES(3, 3, 0);
+    }
+    2 {
+      CREATE TABLE data_t1(a, b, c, rbu_control);
+      INSERT INTO data_t1 VALUES(3, 3, 6, 0);
+    }
+  } {
+    reset_db
+    execsql $schema
+    execsql { INSERT INTO t1(a, b) VALUES(1, 1), (2, 2) }
+    db close
+
+    forcedelete rbu.db
+    sqlite3 db2 rbu.db
+    db2 eval $data
+    db2 close
+
+    do_test $tn.$tn2.1 {
+      list [catch { run_rbu test.db rbu.db } msg] $msg
+    } [list 1 $errmsg]
+
+    sqlite3 db test.db
+    do_execsql_test $tn.$tn2.2 { SELECT * FROM t1 } {1 1 2 2 2 4}
+  }
+
+  # Attempt to RBU vacuum a database that contains table t1.
+  #
+  db close
+  do_test $tn.3 {
+    forcedelete state.db
+    sqlite3rbu_vacuum rbu test.db state.db
+    while {[rbu step]=="SQLITE_OK"} {}
+    list [catch { rbu close } msg] $msg
+  } [list 1 $errmsg]
+}
+
+#-------------------------------------------------------------------------
+# Test case from forum post 297b9c4103. An index on a generated column
+# with a large column number used to cause RBU to write past the end
+# of a heap buffer.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(
+    a INTEGER PRIMARY KEY,
+    b TEXT GENERATED ALWAYS AS ('b') STORED,
+    c TEXT GENERATED ALWAYS AS ('c') STORED,
+    d TEXT GENERATED ALWAYS AS ('d') STORED,
+    e TEXT GENERATED ALWAYS AS ('e') STORED,
+    f TEXT GENERATED ALWAYS AS ('f') STORED,
+    g TEXT GENERATED ALWAYS AS ('g') STORED
+  );
+  CREATE INDEX idx1 ON t1(g);
+  INSERT INTO t1(a) VALUES(1);
+}
+db close
+
+forcedelete rbu.db
+sqlite3 db2 rbu.db
+do_execsql_test -db db2 3.1 {
+  CREATE TABLE data_t1(a INTEGER PRIMARY KEY, rbu_control TEXT);
+  INSERT INTO data_t1 VALUES(2, 0);
+}
+db2 close
+
+do_test 3.2 {
+  list [catch { run_rbu test.db rbu.db } msg] $msg
+} {1 {SQLITE_ERROR - generated columns not supported: t1.b}}
+
+sqlite3 db test.db
+do_execsql_test 3.3 {
+  SELECT * FROM t1;
+} {1 b c d e f g}
+
+finish_test

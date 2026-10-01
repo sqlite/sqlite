@@ -641,5 +641,31 @@ do_test 8.1 {
 
 $expert destroy
 
+#-------------------------------------------------------------------------
+reset_db
+
+proc evil {x} { return $x }
+db func evil -deterministic -innocuous evil
+
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a, g AS (evil(a)) VIRTUAL);
+  INSERT INTO t1(a) VALUES('one'),('two'),('three');
+  CREATE INDEX i1 ON t1(g);
+}
+
+proc evil {x} {
+  db eval { SELECT sqlite_expert_rem(10000000, 0) }
+  return $x
+}
+
+do_test 9.1 {
+  set expert [sqlite3_expert_new db]
+  $expert sql { SELECT 1234 }
+  list [catch { $expert analyze } msg] $msg
+} {1 SQLITE_ERROR}
+
+$expert destroy
+
+
 
 finish_test

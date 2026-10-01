@@ -5697,7 +5697,9 @@ case OP_SeekRowid: {        /* jump0, in3, ncycle */
     }else
     if( (x.flags & MEM_Real)==0
      || x.u.r < -9223372036854775808.0
-     || x.u.r > 9223372036854775807.0
+     || x.u.r > 9223372036854774784.0
+           /*   ^^^^^^^^^^^^^^^^^^^^^-- same value as every other double
+           **   between 9223372036854774263.0 and 923372036854775295.0 */
      || (double)(iKey = sqlite3RealToI64(x.u.r))!=x.u.r
     ){
       goto jump_to_p2;
@@ -6381,14 +6383,17 @@ case OP_Rowid: {                 /* out2, ncycle */
   break;
 }
 
-/* Opcode: NullRow P1 * * * *
+/* Opcode: NullRow P1 P2 * * *
 **
-** Move the cursor P1 to a null row.  Any OP_Column operations
+** Move the cursor P1 to a null row if P2 is 0.  Any OP_Column operations
 ** that occur while the cursor is on the null row will always
 ** write a NULL.
 **
 ** If cursor P1 is not previously opened, open it now to a special
 ** pseudo-cursor that always returns NULL for every column.
+**
+** If P2 is not 0, then the nullRow flag on the pseudo-cursor is
+** turned off.
 */
 case OP_NullRow: {
   VdbeCursor *pC;
@@ -6405,7 +6410,7 @@ case OP_NullRow: {
     pC->noReuse = 1;
     pC->uc.pCursor = sqlite3BtreeFakeValidCursor();
   }
-  pC->nullRow = 1;
+  pC->nullRow = (pOp->p2==0);
   pC->cacheStatus = CACHE_STALE;
   if( pC->eCurType==CURTYPE_BTREE ){
     assert( pC->uc.pCursor!=0 );

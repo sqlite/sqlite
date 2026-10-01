@@ -248,4 +248,42 @@ do_execsql_test 8.13 {
   SELECT lower(x) FROM t3 FULL JOIN t4 USING(x) WHERE x='Abc';
 } abc
 
+#-------------------------------------------------------------------------
+# Report <https://sqlite.org/bugs/forumpost/e1d039e2ca>
+#
+reset_db
+
+do_execsql_test 9.0 {
+  CREATE TABLE t0(a INTEGER PRIMARY KEY);
+  INSERT INTO t0 VALUES(5);
+  CREATE TABLE t1(b INTEGER);
+  INSERT INTO t1 VALUES(1);
+  CREATE TABLE t2(c INTEGER);
+  INSERT INTO t2 VALUES(7);
+}
+
+do_execsql_test 9.1 {
+  SELECT * 
+  FROM t1 JOIN t0 ON (t0.a >= 3 OR t0.a <= 0)
+} {1 5}
+
+do_execsql_test 9.2 {
+  SELECT * 
+  FROM t1 JOIN t0 ON (t0.a >= 3 OR t0.a <= 0) RIGHT JOIN t2 ON 1
+} {1 5 7}
+
+do_execsql_test 9.3 {
+  SELECT *
+  FROM t1 JOIN t0 ON (t0.a >= 3)
+  RIGHT JOIN t2 ON 1
+  WHERE t1.b IS NULL;
+}
+
+do_execsql_test 9.4 {
+  SELECT *
+  FROM t1 JOIN t0 ON (t0.a >= 3 OR t0.a <= 0)
+  RIGHT JOIN t2 ON 1
+  WHERE t1.b IS NULL;
+}
+
 finish_test

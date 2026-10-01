@@ -1,0 +1,114 @@
+# 2026-08-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1config
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1("vector column", "meta column");
+}
+
+do_execsql_test 1.1 {
+  SELECT v1."vector column", v1."meta column" FROM v1
+}
+
+
+foreach {tn cols err} {
+  1 { vector BLOB } {vec1: trailing characters after column name}
+  2 { v, col BLOB } {vec1: trailing characters after column name}
+  3 { v, [col BLOB]x } {vec1: trailing characters after column name}
+  4 { "vector col" BLOB } {vec1: trailing characters after column name}
+  5 { v, +i } {vec1: near "+": syntax error}
+} {
+  execsql { DROP TABLE IF EXISTS v1 }
+  do_catchsql_test 1.2.$tn "
+    CREATE VIRTUAL TABLE v1 USING vec1( $cols )
+  " [list 1 $err]
+}
+
+foreach {tn cols lCol} {
+  1 { vector } {vector}
+  2 { "vector col" } {{vector col}}
+  3 { v, 'meta 1' } {v {meta 1}}
+  4 { v, 'Dave''s col' } {v {Dave's col}}
+  5 { v, [column [[[] } {v {column [[[}}
+} {
+  execsql { DROP TABLE IF EXISTS v1 }
+
+  do_test 1.3.$tn {
+    execsql "CREATE VIRTUAL TABLE v1 USING vec1( $cols );"
+    set ret [list]
+    db eval { PRAGMA table_info = v1 } a {
+      lappend ret $a(name)
+    }
+    set ret
+  } $lCol
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE "Count Duckula's 11" USING vec1(
+      "vector column", "meta column"
+  );
+}
+
+do_execsql_test 2.1 {
+  SELECT * FROM "Count Duckula's 11";
+}
+
+do_execsql_test 2.2 {
+  ALTER TABLE "Count Duckula's 11" RENAME TO "Bill's table";
+}
+
+do_execsql_test 2.3 {
+  INSERT INTO "Bill's table" VALUES(random_vector(10), 1100);
+  INSERT INTO "Bill's table" VALUES(random_vector(10), 'text');
+  INSERT INTO "Bill's table"(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 2.4 {
+  ALTER TABLE "Bill's table" RENAME TO "a b c ''' d e f";
+  PRAGMA integrity_check;
+} {ok}
+
+#-------------------------------------------------------------------------
+# Try to create tables with reserved column names "rowid" or "distance".
+# Report https://sqlite.org/vec1/forumpost/05e888d619
+#
+reset_db
+vec1_load db
+
+breakpoint
+foreach {tn cols err} {
+  1 "rowid"        {1 {vec1: reserved column name: rowid}}
+  2 "ROWID"        {1 {vec1: reserved column name: ROWID}}
+  3 " [rowid] "    {1 {vec1: reserved column name: [rowid]}}
+  4 " \"rowid\" "  {1 {vec1: reserved column name: "rowid"}}
+  5 " 'roWid' "    {1 {vec1: reserved column name: 'roWid'}}
+  6 " [ rowid]"    {0 {}}
+  5 " 'ro''Wid' "  {0 {}}
+} {
+  execsql { DROP TABLE IF EXISTS g1 }
+  do_catchsql_test 3.$tn "
+    CREATE VIRTUAL TABLE g1 USING vec1 ( $cols )
+  " $err
+}
+
+
+finish_test
+

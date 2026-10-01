@@ -1,0 +1,213 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1fault1
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE mytbl USING vec1(a, b);
+  INSERT INTO mytbl(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+faultsim_save_and_close
+
+do_faultsim_test 1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  execsql { PRAGMA table_info = mytbl }
+} -body {
+  execsql {
+    INSERT INTO mytbl VALUES(random_vector(128), 555);
+  }
+} -test {
+  faultsim_test_result {0 {}} \
+    {1 {unable to open a temporary database file for storing temporary tables}}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE mytbl USING vec1(a, b);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<600 )
+  INSERT INTO mytbl SELECT random_vector(8), i FROM s;
+  INSERT INTO mytbl(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{codesize:8, nbucket:2}') FROM mytbl
+  ));
+}
+
+do_faultsim_test 2 -faults oom* -body {
+  execsql {
+    PRAGMA integrity_check
+  }
+} -test {
+  faultsim_test_result {0 ok} \
+    {1 {unable to open a temporary database file for storing temporary tables}}
+}
+
+#-------------------------------------------------------------------------
+# OOM error while loading the extension.
+#
+reset_db
+
+breakpoint
+if {[catch {db one {SELECT vec1_info()}}]} {
+  do_faultsim_test 3 -faults oom* -prep {
+    reset_db
+  } -body {
+    vec1_load_only db
+  } -test {
+    faultsim_test_result {0 {}} {1 {}} {1 {error during initialization: }}
+  }
+}
+ 
+#-------------------------------------------------------------------------
+# OOM error while deleting lots of rows
+#
+reset_db
+vec1_load db
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE mytbl USING vec1(a);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100 )
+  INSERT INTO mytbl SELECT random_vector(8) FROM s;
+  INSERT INTO mytbl(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+faultsim_save_and_close
+
+do_faultsim_test 4 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  db eval { PRAGMA table_info = mytbl }
+} -body {
+  execsql {
+    DELETE FROM mytbl WHERE rowid BETWEEN 30 AND 60
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
+#-------------------------------------------------------------------------
+# OOM error in vec1cat query
+#
+reset_db
+vec1_load db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE mytbl USING vec1(a, b);
+  CREATE VIRTUAL TABLE x1 USING vec1(a, b);
+}
+
+set P {{{
+  "total": {"cnt": 0, "cycle": 0},
+  "init": {"cnt": 0, "cycle": 0},
+  "coarse": {"cnt": 0, "cycle": 0},
+  "idxread": {"cnt": 0, "cycle": 0},
+  "metaread": {"cnt": 0, "cycle": 0},
+  "metascan": {"cnt": 0, "cycle": 0},
+  "lut": {"cnt": 0, "cycle": 0},
+  "pqscan": {"cnt": 0, "cycle": 0},
+  "finalsort": {"cnt": 0, "cycle": 0}
+}}}
+
+do_faultsim_test 5 -faults oom-* -prep {
+  execsql { PRAGMA table_info = mytbl }
+} -body {
+  execsql {
+    SELECT rowid, model, qprofile FROM vec1cat
+  }
+} -test {
+  faultsim_test_result [subst {0 {1 {{"index": "none", "distance": "l2"}} $::P 2 {{"index": "none", "distance": "l2"}} $::P}}]
+}
+
+#-------------------------------------------------------------------------
+# OOM error in vec1FlatToNone()
+#
+reset_db
+vec1_load db
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE hello USING vec1(a, b);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100 )
+  INSERT INTO hello SELECT random_vector(8), i*100 FROM s;
+
+  INSERT INTO hello(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_faultsim_test 6 -faults oom-* -prep {
+  sqlite3 db test.db
+  vec1_load db
+  execsql { PRAGMA table_info = mytbl }
+} -body {
+  execsql {
+    INSERT INTO hello(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+# OOM error in vec1FlatToNone()
+#
+reset_db
+vec1_load db
+
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE hello USING vec1(a, b);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1100 )
+  INSERT INTO hello SELECT random_vector(8), i*100 FROM s;
+}
+
+
+set mod [db one {
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<600
+  )
+  SELECT vec1_train(random_vector(8), '{codesize:8}') FROM s
+}]
+
+do_faultsim_test 7 -faults oom* -prep {
+  sqlite3 db test.db
+  vec1_load db
+  execsql { PRAGMA table_info = mytbl }
+} -body {
+  execsql {
+    INSERT INTO hello(cmd, arg) VALUES('rebuild', $::mod);
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+set mod [db one {
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<600
+  )
+  SELECT vec1_train(random_vector(8), '{nbucket:8}') FROM s
+}]
+
+do_faultsim_test 8 -faults oom* -prep {
+  sqlite3 db test.db
+  vec1_load db
+  execsql { PRAGMA table_info = mytbl }
+} -body {
+  execsql {
+    INSERT INTO hello(cmd, arg) VALUES('rebuild', $::mod);
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+
+finish_test
+

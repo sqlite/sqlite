@@ -1,0 +1,61 @@
+# 2026-08-04
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1update2
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v, x);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<200
+  )
+  INSERT INTO v1 SELECT random_vector(16), 'tag' || hex(randomblob(64)) FROM s;
+  INSERT INTO v1(cmd, arg) VALUES('blocksize', 2048);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 1.1 {
+  SELECT sum(length(val)) FROM v1_idx;
+  SELECT sum(length(val)) FROM v1_meta;
+} {13684 26656}
+
+do_execsql_test 1.2 {
+  SELECT count(*) FROM v1_idx;
+  SELECT count(*) FROM v1_meta;
+} {7 7}
+
+do_execsql_test 1.3 {
+  UPDATE v1 SET v = random_vector(16);
+  UPDATE v1 SET v = random_vector(16);
+  UPDATE v1 SET v = random_vector(16);
+  UPDATE v1 SET v = random_vector(16);
+}
+
+do_execsql_test 1.4 {
+  SELECT count(*) FROM v1_idx;
+  SELECT count(*) FROM v1_meta;
+} {7 7}
+
+do_execsql_test 1.5 {
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 1.6 {
+  SELECT count(*) FROM v1_idx;
+  SELECT count(*) FROM v1_meta;
+} {7 7}
+
+
+finish_test
+

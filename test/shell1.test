@@ -647,6 +647,16 @@ do_test shell1-3.21.6 {
    {DROP TABLE t2;} \
    {.schema -indent t2}
 } {}
+do_test shell1-3.21.7 {
+  catchcmd "test7.db" {
+     CREATE TABLE t7(x);
+     CREATE VIEW v7("a*/;SELECT 12345;/*") AS SELECT 234;
+  }
+  catchcmd "test7.db" ".schema"
+} {0 {CREATE TABLE t7(x);
+CREATE VIEW v7("a*/;SELECT 12345;/*") AS SELECT 234
+/* v7("a**;SELECT 12345;/*") */;}}
+forcedelete test7.db
 
 # .separator STRING  Change column separator used by output and .import
 do_test shell1-3.22.1 {
@@ -695,7 +705,8 @@ do_test shell1-3.23b.3 {
 do_test shell1-3.23b.4 {
   # too many arguments
   catchcmd "test.db" ".stats OFF BAD"
-} {1 {Usage: .stats ?on|off|stmt|vmstep?}}
+} {1 {line 1: .stats OFF BAD
+line 1:        ^--- unknown argument}}
 
 # Ticket 7be932dfa60a8a6b3b26bcf7623ec46e0a403ddb 2018-06-07
 # Adverse interaction between .stats and .eqp

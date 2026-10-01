@@ -1896,7 +1896,7 @@ do_expr_test e_expr-35.1.3 { (SELECT count(*) FROM t2) } integer 3
 do_expr_test e_expr-35.1.4 { (SELECT 4 FROM t2) } integer 4
 
 do_expr_test e_expr-35.1.5 { 
-  (SELECT b FROM t2 UNION SELECT a+1 FROM t2)
+  (SELECT b FROM t2 UNION SELECT a+1 FROM t2 ORDER BY 1)
 } null {}
 do_expr_test e_expr-35.1.6 { 
   (SELECT a FROM t2 UNION SELECT COALESCE(b, 55) FROM t2 ORDER BY 1)

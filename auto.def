@@ -66,4 +66,17 @@ sqlite-configure canonical {
   proj-define-for-opt static-tclsqlite3 STATIC_TCLSQLITE3 "Statically link tclsqlite3?"
   proj-define-for-opt static-cli-shell STATIC_CLI_SHELL "Statically link CLI shell?"
 
+  # vec1 (ext/vec1) is only built on request ("make vec1.so"). If the
+  # compiler supports AVX2 it is built as a multi-arch extension that
+  # selects AVX2 or scalar code at runtime. Use [cctest] rather than
+  # [cc-check-flags] so the flags are not appended to later tests.
+  msg-checking "Checking for AVX2 flags for vec1... "
+  if {[cctest -cflags {-mavx2 -mfma}]} {
+    msg-result "-mavx2 -mfma"
+    define CFLAGS_VEC1_AVX2 {-mavx2 -mfma}
+  } else {
+    msg-result "no"
+    define CFLAGS_VEC1_AVX2 ""
+  }
+
 }; # sqlite-configure
