@@ -636,4 +636,127 @@ do_test 11.0 {
   compare_db db db2
 } {}
 
+#-------------------------------------------------------------------------
+test_reset
+db function indirect [list S indirect]
+
+do_common_sql {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+
+  CREATE TABLE t2(a PRIMARY KEY, b, c UNIQUE);
+}
+
+proc xConflict {op tbl type args} { 
+  if {$type == "CONFLICT"} { return REPLACE }
+  return OMIT
+}
+
+proc do_indirect_test {tn sql res {res2 {}}} {
+  if {$res2==""} { set res2 $res }
+
+  # Create a sessions objection on database [db].
+  sqlite3session S db main
+  S object_config rowid 1
+  S attach *
+
+  # Execute the SQL script against [db]
+  execsql $sql
+
+  # Extract changeset C from the session.
+  set C [S changeset]
+  S delete
+
+  # Check the contents of the changeset is as expected
+  set x [list]
+  sqlite3session_foreach c $C { lappend x $c }
+  uplevel do_test $tn.a [list [list set {} $x]] [list [list {*}$res]]
+
+  # Create a sessions objection on database [db2].
+  sqlite3session S db2 main
+  S object_config rowid 1
+  S attach *
+
+  # Apply the changeset to db2
+  sqlite3changeset_apply db2 $C xConflict
+
+  # Extract changeset C2 from the session.
+  set C2 [S changeset]
+  S delete
+
+  # Check that C2 is as expected.
+  set x [list]
+  sqlite3session_foreach c $C2 { lappend x $c }
+  uplevel do_test $tn.b [list [list set {} $x]] [list [list {*}$res2]]
+}
+
+do_indirect_test 12.1 {
+  INSERT INTO t1 VALUES(1, 2, 3);
+} {
+  {INSERT t1 0 X.. {} {i 1 i 2 i 3}}
+}
+
+do_indirect_test 12.2 {
+  SELECT indirect(1);
+  INSERT INTO t1 VALUES(2, 4, 6);
+  SELECT indirect(0);
+} {
+  {INSERT t1 1 X.. {} {i 2 i 4 i 6}}
+}
+
+do_indirect_test 12.3 {
+  SELECT indirect(1);
+  DELETE FROM t1 WHERE a=2;
+  SELECT indirect(0);
+  DELETE FROM t1 WHERE a=1;
+  INSERT INTO t1 VALUES (3, 'x', 'y');
+} {
+  {DELETE t1 0 X.. {i 1 i 2 i 3} {}} 
+  {DELETE t1 1 X.. {i 2 i 4 i 6} {}}
+  {INSERT t1 0 X.. {} {i 3 t x t y}}
+}
+
+do_indirect_test 12.4 {
+  SELECT indirect(1);
+  UPDATE t1 SET c='z';
+  SELECT indirect(0);
+} {
+  {UPDATE t1 1 X.. {i 3 {} {} t y} {{} {} {} {} t z}}
+}
+
+do_test 12.5.1 {
+  execsql { INSERT INTO t1 VALUES(4, 'four', 'four') } db2
+} {}
+
+do_indirect_test 12.5.2 {
+  SELECT indirect(1);
+  INSERT INTO t1 VALUES(4, 'iv', 'iv');
+  SELECT indirect(0);
+} {
+  {INSERT t1 1 X.. {} {i 4 t iv t iv}}
+} {
+  {UPDATE t1 1 X.. {i 4 t four t four} {{} {} t iv t iv}}
+}
+
+do_indirect_test 12.6 {
+  INSERT INTO t2 VALUES(1, 'i', 'i');
+  INSERT INTO t2 VALUES(2, 'ii', 'ii');
+  INSERT INTO t2 VALUES(3, 'iii', 'iii');
+} {
+  {INSERT t2 0 X.. {} {i 1 t i t i}} 
+  {INSERT t2 0 X.. {} {i 2 t ii t ii}}
+  {INSERT t2 0 X.. {} {i 3 t iii t iii}}
+} 
+
+do_indirect_test 12.7 {
+  SELECT indirect(1);
+    UPDATE t2 SET c=NULL WHERE a=1;
+    UPDATE t2 SET c='i' WHERE a=3;
+    UPDATE t2 SET c='iii' WHERE a=1;
+  SELECT indirect(0);
+} {
+  {UPDATE t2 1 X.. {i 1 {} {} t i} {{} {} {} {} t iii}}
+  {UPDATE t2 1 X.. {i 3 {} {} t iii} {{} {} {} {} t i}}
+} 
+
+
 finish_test
