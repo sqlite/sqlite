@@ -41,7 +41,7 @@
 # define SQLITE_MUTEX_OMIT
 #endif
 #if SQLITE_THREADSAFE && !defined(SQLITE_MUTEX_NOOP)
-#  if SQLITE_OS_UNIX
+#  if SQLITE_OS_UNIX || defined(__CYGWIN__)
 #    define SQLITE_MUTEX_PTHREADS
 #  elif SQLITE_OS_WIN
 #    define SQLITE_MUTEX_W32

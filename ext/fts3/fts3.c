@@ -1130,7 +1130,10 @@ static int fts3ContentColumns(
     ** nul-terminator byte.  */
     nCol = sqlite3_column_count(pStmt);
     for(i=0; i<nCol; i++){
+      /* This call to sqlite3_column_name() cannot fail, as no conversion
+      ** between encodings, and therefore no malloc() call, is required. */
       const char *zCol = sqlite3_column_name(pStmt, i);
+      assert( zCol );
       nStr += strlen(zCol) + 1;
     }
 
@@ -1143,6 +1146,7 @@ static int fts3ContentColumns(
       for(i=0; i<nCol; i++){
         const char *zCol = sqlite3_column_name(pStmt, i);
         int n = (int)strlen(zCol)+1;
+        assert( zCol );           /* no malloc() required, cannot fail */
         memcpy(p, zCol, n);
         azCol[i] = p;
         p += n;
@@ -3724,8 +3728,8 @@ static void fts3SnippetFunc(
   const char *zStart = "<b>";
   const char *zEnd = "</b>";
   const char *zEllipsis = "<b>...</b>";
-  int iCol = -1;
-  int nToken = 15;                /* Default number of tokens in snippet */
+  i64 iCol = -1;
+  i64 nToken = 15;                /* Default number of tokens in snippet */
 
   /* There must be at least one argument passed to this function (otherwise
   ** the non-overloaded version would have been called instead of this one).
@@ -3741,9 +3745,9 @@ static void fts3SnippetFunc(
   pTab = (Fts3Table *)pCsr->base.pVtab;
 
   switch( nVal ){
-    case 6: nToken = sqlite3_value_int(apVal[5]);
+    case 6: nToken = sqlite3_value_int64(apVal[5]);
             /* no break */ deliberate_fall_through
-    case 5: iCol = sqlite3_value_int(apVal[4]);
+    case 5: iCol = sqlite3_value_int64(apVal[4]);
             /* no break */ deliberate_fall_through
     case 4: zEllipsis = (const char*)sqlite3_value_text(apVal[3]);
             /* no break */ deliberate_fall_through
@@ -3756,6 +3760,9 @@ static void fts3SnippetFunc(
   }else if( nToken==0 || iCol>=pTab->nColumn ){
     sqlite3_result_text(pContext, "", -1, SQLITE_STATIC);
   }else if( SQLITE_OK==fts3CursorSeek(pContext, pCsr) ){
+    if( iCol<0 ) iCol = -1;
+    if( nToken<-64 ) nToken = -64;
+    if( nToken>64 ) nToken = 64;
     sqlite3Fts3Snippet(pContext, pCsr, zStart, zEnd, zEllipsis, iCol, nToken);
   }
 }

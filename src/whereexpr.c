@@ -212,7 +212,7 @@ static int isLikeOrGlob(
     if( pVal && sqlite3_value_type(pVal)==SQLITE_TEXT ){
       z = sqlite3_value_text(pVal);
     }
-    sqlite3VdbeSetVarmask(pParse->pVdbe, iCol);
+    sqlite3VdbeReprepareOnBind(pParse->pVdbe, iCol, 0);
     assert( pRight->op==TK_VARIABLE || pRight->op==TK_REGISTER );
   }else if( op==TK_STRING ){
     assert( !ExprHasProperty(pRight, EP_IntValue) );
@@ -317,7 +317,7 @@ static int isLikeOrGlob(
       ** reprepare the statement when that parameter is rebound */
       if( op==TK_VARIABLE ){
         Vdbe *v = pParse->pVdbe;
-        sqlite3VdbeSetVarmask(v, pRight->iColumn);
+        sqlite3VdbeReprepareOnBind(v, pRight->iColumn, 0);
         assert( !ExprHasProperty(pRight, EP_IntValue) );
         if( *pisComplete && pRight->u.zToken[1] ){
           /* If the rhs of the LIKE expression is a variable, and the current
@@ -1668,7 +1668,7 @@ static void whereAddLimitExpr(
   Expr *pNew;
   int iVal = 0;
 
-  if( sqlite3ExprIsInteger(pExpr, &iVal, pParse) && iVal>=0 ){
+  if( sqlite3ExprIsInteger(pExpr, &iVal, pParse, 0) && iVal>=0 ){
     Expr *pVal = sqlite3ExprInt32(db, iVal);
     if( pVal==0 ) return;
     pNew = sqlite3PExpr(pParse, TK_MATCH, 0, pVal);

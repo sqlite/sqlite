@@ -784,6 +784,7 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
         SrcItem *pOld = F->a;
         assert( pOld->fg.fixedSchema==0 );
         pNew->zName = pOld->zName;
+        pOld->zName = 0;
         assert( pOld->fg.fixedSchema==0 );
         if( pOld->fg.isSubquery ){
           pNew->fg.isSubquery = 1;
@@ -803,8 +804,13 @@ seltablist(A) ::= stl_prefix(A) nm(Y) dbnm(D) LP exprlist(E) RP as(Z) on_using(N
           pOld->u1.pFuncArg = 0;
           pOld->fg.isTabFunc = 0;
           pNew->fg.isTabFunc = 1;
+        }else if( pOld->fg.isIndexedBy ){
+          pNew->u1.zIndexedBy = pOld->u1.zIndexedBy;
+          pOld->u1.zIndexedBy = 0;
+          pOld->fg.isIndexedBy = 0;
+          pNew->fg.isIndexedBy = 1;
         }
-        pOld->zName = 0;
+        pNew->fg.notIndexed = pOld->fg.notIndexed;
       }
       sqlite3SrcListDelete(pParse->db, F);
     }else{

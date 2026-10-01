@@ -15,6 +15,7 @@ if {![info exists testdir]} {
 } 
 source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
+set testprefix rtreeI
 ifcapable !rtree { finish_test ; return }
 
 # The following is a test of rowvalue handling on virtual tables that
@@ -68,6 +69,37 @@ do_execsql_test rtreeI-1.50 {
 do_execsql_test rtreeI-1.51 {
   SELECT 123 FROM t1, t2 WHERE 5>x1 AND 99>id AND (x0,0)<(a,0.5);
 } {123}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 2.0 {
+  PRAGMA page_size = 4096;
+  CREATE TABLE zero(x INTEGER PRIMARY KEY);
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x1, x2, y1, y2);
+
+  WITH RECURSIVE c(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM c WHERE i<51)
+  INSERT INTO t1 SELECT i,i,i+1,i,i+1 FROM c;
+
+  CREATE TRIGGER tr BEFORE INSERT ON t1_node BEGIN
+    SELECT raise(IGNORE);
+  END;
+} {}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 2.1 {
+  PRAGMA integrity_check
+} {ok}
+
+do_catchsql_test 2.2 {
+  INSERT INTO t1 VALUES(1000, 0, 1, 0, 1);
+} {1 {database disk image is malformed}}
+
+do_execsql_test 2.3 {
+  SELECT * FROM t1 WHERE id=25
+} {25 25.0 26.0 25.0 26.0}
 
 
 

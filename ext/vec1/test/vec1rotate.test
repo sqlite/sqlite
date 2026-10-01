@@ -1,0 +1,56 @@
+# 2026-03-14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1rotate
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO v1(rowid, v) SELECT i, random_vector(14) FROM s;
+
+  INSERT INTO v1(cmd, arg) 
+  SELECT 
+    'rebuild', 
+    vec1_train(v, '{codesize:14, opq:true, svd_verify:true, distance:"cos"}') 
+  FROM v1;
+}
+
+set v [db one {SELECT random_vector(14)}]
+do_execsql_test 1.1 {
+  SELECT
+      (SELECT rowid FROM v1($v, 1))==
+      (SELECT rowid FROM v1 ORDER BY vec1_cos_distance($v, v))
+  ;
+} {1}
+
+do_execsql_test 2.0 {
+  DROP TABLE IF EXISTS v1;
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10000
+  )
+  INSERT INTO v1(rowid, v) SELECT i, random_vector(64) FROM s;
+
+  INSERT INTO v1(cmd, arg) 
+  SELECT 
+    'rebuild', 
+    vec1_train(v, '{codesize:8, opq:true, svd_verify:true}') 
+  FROM v1;
+}
+
+finish_test
+

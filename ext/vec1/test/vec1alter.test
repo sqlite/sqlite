@@ -1,0 +1,80 @@
+# 2026-08-04
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1alter
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  INSERT INTO v1(rowid, v) VALUES(11, random_vector(8));
+  INSERT INTO v1(rowid, v) VALUES(12, random_vector(8));
+}
+
+do_execsql_test 1.1 {
+  ALTER TABLE v1 RENAME TO v2;
+}
+
+do_execsql_test 1.2 {
+  SELECT rowid FROM v2
+} {11 12}
+
+do_execsql_test 1.3 {
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 1.4 {
+  PRAGMA writable_schema;
+} {0}
+
+do_execsql_test 1.5 {
+  PRAGMA writable_schema = 1;
+  PRAGMA writable_schema;
+} {1}
+
+do_execsql_test 1.6 {
+  ALTER TABLE v2 RENAME TO v3;
+}
+
+do_execsql_test 1.7 {
+  PRAGMA writable_schema;
+} {1}
+
+do_execsql_test 1.8 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  INSERT INTO v1(rowid, v) VALUES(-14, random_vector(18));
+  INSERT INTO v1(rowid, v) VALUES(-15, random_vector(18));
+}
+
+do_execsql_test 1.9 {
+  SELECT rowid FROM v1
+} {-15 -14}
+
+do_test 1.10 { sqlite3_db_config db DEFENSIVE   } {0}
+do_test 1.11 { sqlite3_db_config db DEFENSIVE 1 } {1}
+
+do_execsql_test 1.12 {
+  ALTER TABLE v3 RENAME TO v4;
+}
+
+do_test 1.13 { sqlite3_db_config db DEFENSIVE   } {1}
+
+do_execsql_test 1.14 {
+  SELECT tbl_name, name, sql FROM sqlite_schema WHERE name='v4_idx_idx'
+} {
+  v4_idx v4_idx_idx 
+  {CREATE INDEX 'v4_idx_idx' ON 'v4_idx'(bucket, first, last)}
+}
+
+finish_test
+

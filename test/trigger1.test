@@ -875,5 +875,20 @@ do_catchsql_test trigger1-25.3 {
   END;
 } {1 {trigger "r2" contains too many steps}}
 
+# Bug 2026-08-22T23:55:15Z
+#
+reset_db
+do_execsql_test trigger1-26.1 {
+  PRAGMA recursive_triggers=ON;
+  CREATE TABLE t(a INTEGER PRIMARY KEY ON CONFLICT REPLACE, b INT UNIQUE);
+  INSERT INTO t VALUES(3,3),(4,4);
+  CREATE TRIGGER tr AFTER DELETE ON t
+    BEGIN
+      INSERT INTO t VALUES(9,9);
+    END;
+} {}
+do_catchsql_test trigger1-26.2 {
+  UPDATE t SET a=a+1, b=9 WHERE a=3;
+} {1 {UNIQUE constraint failed: t.b}}
 
 finish_test

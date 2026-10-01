@@ -1,0 +1,95 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1binary2
+
+vec1_load db
+expr srand(0)
+
+proc random_item {L} {
+  set ii [expr {int(abs(rand()) * [llength $L])}]
+  lindex $L $ii
+}
+
+proc random_binvec {n {opts {1 -1}}} {
+  set lRet [list]
+  for {set ii 0} {$ii < $n} {incr ii} {
+    lappend lRet [random_item $opts]
+  }
+
+  binary format f$n $lRet
+}
+
+db func random_binvec random_binvec
+
+set nQuery 100
+
+foreach {tn N opts nbucket} {
+
+  1 8    {1 -1} 0
+  2 16   {1 -1} 0
+  3 24   {1 -1} 0
+  4 29   {1 -1} 0
+  5 9    {1 -1} 0
+  6 201  {1 -1} 0
+
+  7 8    {2  3} 1
+  8 33   {-400  -155} 1
+} {
+
+  do_execsql_test 1.$tn.0 {
+    DROP TABLE IF EXISTS v1;
+
+    CREATE VIRTUAL TABLE v1 USING vec1(v);
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<5
+    )
+    INSERT INTO v1(v) SELECT random_binvec($N, $opts) FROM s;
+  }
+  
+  set spec "{quantizer:\"bq\", nbucket:$nbucket, wht:0}"
+  do_execsql_test 1.$tn.1 {
+    INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+      SELECT vec1_train(v, $spec) FROM v1
+    ));
+  } {}
+
+  do_execsql_test 1.$tn.2 {
+    PRAGMA integrity_check
+  } {ok}
+  
+  for {set j 0} {$j < $nQuery} {incr j} {
+    set q [random_binvec $N $opts]
+    set expect [db one {
+      SELECT r FROM (
+          SELECT group_concat(rowid, ' ') AS r, vec1_l2_distance($q, v) FROM v1 
+          GROUP BY 2
+          ORDER BY 2 ASC
+          LIMIT 1
+      )
+    }]
+
+    set nExpect [llength $expect]
+
+    do_execsql_test 1.$tn.2.$j. {
+      SELECT r FROM (
+        SELECT rowid AS r FROM v1($q, $nExpect)
+      ) ORDER BY 1
+    } $expect
+  }
+
+}
+
+finish_test
+

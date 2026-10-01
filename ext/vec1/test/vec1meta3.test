@@ -1,0 +1,304 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1meta3
+vec1_load db
+
+proc create_table {name nMeta} {
+  set meta ""
+  for {set i 0} {$i<$nMeta} {incr i} {
+    append meta ", m$i"
+  }
+  execsql "CREATE VIRTUAL TABLE $name USING vec1(v $meta)"
+}
+
+do_test 1.0 {
+  create_table v1 100
+} {}
+
+do_test 1.1 {
+  create_table v2 256
+} {}
+
+do_test 1.2 {
+  list [catch { create_table v3 257 } msg] $msg
+} {1 {too many meta-data columns (max is 256)}}
+
+do_test 1.3 {
+  set vals ""
+  for {set i 0} {$i<256} {incr i} {
+    append vals ", $i"
+  }
+  execsql "INSERT INTO v2 VALUES( random_vector(8) $vals )"
+} {}
+
+do_test 1.4 {
+  for {set i 0} {$i<256} {incr i} {
+    set r [execsql "SELECT rowid FROM v2( random_vector(8), 1 ) WHERE m$i = $i"]
+    if {$r!="1"} { error "unexpected: $r" }
+  }
+  set {} {}
+} {}
+
+do_execsql_test 1.5 {
+  SELECT rowid FROM v2( random_vector(8), 1 ) 
+  WHERE m1 = 1 AND m2 = 2 AND m5 = 5 AND m4 = 4 AND m3 = 3;
+} {1}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE x1 USING vec1(v, a, b);
+  CREATE TABLE t1(z);
+
+  INSERT INTO x1 VALUES(random_vector(8), 10, 20);
+  INSERT INTO t1 VALUES(10);
+}
+
+do_execsql_test 2.1 {
+  SELECT x1.b FROM x1(random_vector(8), 5), t1 WHERE z=a;
+} {20}
+
+do_execsql_test 2.1 {
+  SELECT x1.b FROM x1(random_vector(8), 5) ORDER BY x1.rowid LIMIT 5
+} {20}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE x1 USING vec1(v, a, b);
+  INSERT INTO x1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+
+  INSERT INTO x1 VALUES(random_vector(8), 10, 20);
+  INSERT INTO x1 VALUES(random_vector(8), 20, 30);
+}
+
+do_execsql_test 3.1 {
+  INSERT INTO x1 VALUES(random_vector(8), 20_000_000_000, 40);
+} {}
+
+#-------------------------------------------------------------------------
+# https://sqlite.org/vec1/forumpost/0fd4e91444
+#
+reset_db
+vec1_load db
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE d_blob USING vec1(embedding, title, checksum);
+  CREATE VIRTUAL TABLE d_text USING vec1(embedding, title, checksum);
+  CREATE VIRTUAL TABLE d_none USING vec1(embedding, title, checksum);
+
+  INSERT INTO d_blob(cmd,arg) VALUES('rebuild','{index:"flat"}');
+  INSERT INTO d_text(cmd,arg) VALUES('rebuild','{index:"flat"}');
+  INSERT INTO d_none(cmd,arg) VALUES('rebuild','{index:"none"}');
+}
+
+do_execsql_test 4.1 {
+  WITH RECURSIVE r(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i<200 )
+  INSERT INTO d_blob(rowid, embedding, title, checksum)
+    SELECT i, vec1_from_json('['||i||','||(i*2)||',0,0]'), 'runbook '||i,
+           CAST(printf('%08d', i) AS BLOB) 
+    FROM r;
+
+  WITH RECURSIVE r(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i<200 )
+  INSERT INTO d_text(rowid, embedding, title, checksum)
+    SELECT i, vec1_from_json('['||i||','||(i*2)||',0,0]'), 'runbook '||i,
+           printf('%08d', i) FROM r;
+
+  WITH RECURSIVE r(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i<200 )
+  INSERT INTO d_none(rowid, embedding, title, checksum)
+    SELECT i, vec1_from_json('['||i||','||(i*2)||',0,0]'), 'runbook '||i,
+           CAST(printf('%08d', i) AS BLOB) 
+    FROM r;
+}
+
+foreach tab {d_none d_text d_blob} {
+  do_execsql_test 4.2.$tab.1 "
+    DELETE FROM $tab WHERE rowid%2<>0;
+  "
+
+  # Check that the filtered query can see the 100 survivors
+  do_execsql_test 4.2.$tab.2 [subst -nocommands {
+    SELECT count(*) 
+      FROM $tab (vec1_from_json('[9,18,0,0]'), 900)
+      WHERE checksum IS NOT NULL
+  }] {100}
+
+}
+
+do_execsql_test 4.3.1 {
+  SELECT count(*) 
+  FROM d_blob(vec1_from_json('[9,18,0,0]'),'{K:900}')
+  WHERE checksum = CAST('00000100' AS BLOB)
+} 1
+
+do_execsql_test 4.3.2 {
+  SELECT count(*) 
+  FROM d_none(vec1_from_json('[9,18,0,0]'),'{K:900}')
+  WHERE checksum = CAST('00000100' AS BLOB)
+} 1
+
+do_execsql_test 4.3.3 {
+  SELECT count(*) 
+  FROM d_text(vec1_from_json('[9,18,0,0]'),'{K:900}')
+  WHERE checksum = '00000100'
+} 1
+
+do_execsql_test 4.4 {
+  PRAGMA integrity_check
+} {ok}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v, a);
+  INSERT INTO v1 VALUES(random_vector(8), 1);
+  INSERT INTO v1 VALUES(random_vector(8), 2);
+  INSERT INTO v1 VALUES(random_vector(8), 3);
+  INSERT INTO v1 VALUES(random_vector(8), 4);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 5.1 {
+  SELECT rowid FROM v1( random_vector(8), 100 ) WHERE a=500;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 6.1.1 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v, t);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 )
+  INSERT INTO v1 SELECT random_vector(16), 'tag' || hex(randomblob(1000)) FROM s;
+}
+
+do_execsql_test 6.1.2 {
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 6.1.3 {
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"none"}');
+} {}
+
+sqlite3_limit db SQLITE_LIMIT_LENGTH 1000000
+
+do_catchsql_test 6.1.4 {
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+} {1 {string or blob too big}}
+
+do_execsql_test 6.1.5 {
+  PRAGMA integrity_check;
+} {ok}
+
+sqlite3_limit db SQLITE_LIMIT_LENGTH 100000000
+
+do_execsql_test 6.1.6 {
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 6.2.0 {
+  DROP TABLE IF EXISTS v1;
+  CREATE VIRTUAL TABLE v1 USING vec1(v, t);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 )
+  INSERT INTO v1 SELECT random_vector(200), 'tag' || hex(randomblob(1)) FROM s;
+}
+
+sqlite3_limit db SQLITE_LIMIT_LENGTH 500000
+
+do_catchsql_test 6.2.1 {
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+} {1 {string or blob too big}}
+
+do_execsql_test 6.2.2 {
+  PRAGMA integrity_check;
+} {ok}
+
+sqlite3_limit db SQLITE_LIMIT_LENGTH 100000000
+
+do_execsql_test 6.2.3 { 
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  UPDATE v1_idx SET val = NULL; 
+}
+
+do_execsql_test 6.2.4 {
+  PRAGMA integrity_check;
+} {{v1: %_idx entry id=1 is corrupt}}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE b1 USING vec1(c1, c2);
+  INSERT INTO b1 VALUES(random_vector(10), 'hello');
+  INSERT INTO b1 VALUES(random_vector(10), 'world');
+  INSERT INTO b1 VALUES(random_vector(10), 'one');
+  INSERT INTO b1 VALUES(random_vector(10), 'one');
+  INSERT INTO b1 VALUES(random_vector(10), 'world');
+  INSERT INTO b1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 7.1 {
+  SELECT rowid FROM b1(random_vector(10), 10) 
+  WHERE c2 = 'ONE' COLLATE nocase
+  ORDER BY 1
+} {3 4}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE docs USING vec1(embedding, title, size_kb, priority);
+  INSERT INTO docs(rowid, embedding, title, size_kb, priority)
+    SELECT i, 
+           vec1_from_json('['||i||',0,0,0]'), 
+           'runbook '||i, (i%5)*100, (i%3)+1
+    FROM (
+      WITH RECURSIVE r(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i<60
+      )
+      SELECT i FROM r
+    );
+}
+
+foreach {tn where res} {
+  1 "priority IN (1,2) AND size_kb=100" 8
+  2 "size_kb=100 AND priority IN (1,2)" 8
+  4 "size_kb IN (100,200) AND priority = 1" 8
+  5 "priority IN (1,2)" 20
+  6 "size_kb = 100" 12
+  3 "priority IN (1,2) AND size_kb > 50" 20
+} {
+breakpoint
+  do_execsql_test 8.1.$tn "
+    SELECT count(*) 
+      FROM docs( vec1_from_json('\[1,0,0,0\]'), 20 )
+      WHERE $where
+  " [list $res]
+}
+
+
+
+finish_test
+

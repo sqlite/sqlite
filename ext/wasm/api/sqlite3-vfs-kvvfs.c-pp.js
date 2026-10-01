@@ -420,7 +420,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      Add both store.jzClass and store.jzClass+"-journal"
-     to cache,storagePool.
+     to cache.storagePool.
   */
   const installStorageAndJournal = (store)=>
         cache.storagePool[store.jzClass] =
@@ -581,50 +581,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         ? cache.storagePool[zClass]
         : cache.storagePool[wasm.cstrToJs(zClass)];
 
-//#if 0
-  // fileForDb() works but we don't have a current need for it.
-  /**
-     Expects an (sqlite3*). Uses sqlite3_file_control() to extract its
-     (sqlite3_file*). On success it returns a new KVVfsFile instance
-     wrapping that pointer, which the caller must eventual call
-     dispose() on (which won't free the underlying pointer, just the
-     wrapper). Returns null if no handle is found (which would
-     indicate either that pDb is not using kvvfs or a severe bug in
-     its management).
-  */
-  const fileForDb = function(pDb){
-    const stack = wasm.pstack.pointer;
-    try{
-      const pOut = wasm.pstack.allocPtr();
-      return wasm.exports.sqlite3_file_control(
-        pDb, wasm.ptr.null, capi.SQLITE_FCNTL_FILE_POINTER, pOut
-      )
-        ? null
-        : new KVVfsFile(wasm.peekPtr(pOut));
-    }finally{
-      wasm.pstack.restore(stack);
-    }
-  };
-
-  /**
-     Expects an object from the storagePool map. The $szPage and
-     $szDb members of each store.files entry is set to -1 in an attempt
-     to trigger those values to reload.
-  */
-  const alertFilesToReload = (store)=>{
-    try{
-      for( const f of store.files ){
-        // FIXME: we need to use one of the C APIs for this, maybe an
-        // fcntl.
-        f.$szPage = -1;
-        f.$szDb = -1n
-      }
-    }catch(e){
-      error("alertFilesToReload()",store,e);
-      throw e;
-    }
-  };
-//#/if
 
   const kvvfsMakeKey = wasm.exports.sqlite3__wasm_kvvfsMakeKey;
   /**
@@ -656,6 +612,35 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      journal.
   */
   const pFileHandles = new Map();
+
+  /**
+     Map of filename to lock objects with this structure:
+
+     {.lockType: int, .nShared: int}
+
+     Used by xLock(), xUnlock(), and xCheckReservedLock(). Modelled
+     after the "same-process, same-file, different-db-handle" locking
+     in os_unix.c.
+  */
+  const mapPathToLocks = new Map();
+
+  /**
+     Main xUnlock() impl for kvvfs, also used by xClose(). Expects an
+     xOpen()-created file handle object and the second argument to
+     xUnlock(). It returns void.
+  */
+  const unlockFile = function(fh, lockType){
+    if(fh.lockType<=lockType) return;
+    const lk = mapPathToLocks.get(fh.jzClass);
+    if(fh.lockType>capi.SQLITE_LOCK_SHARED){
+      lk.lockType = capi.SQLITE_LOCK_SHARED;
+    }
+    if(lockType===capi.SQLITE_LOCK_NONE && 0===--lk.nShared
+       /* Maintenance reminder: the && ordering is significant */){
+      mapPathToLocks.delete(fh.jzClass);
+    }
+    fh.lockType = lockType;
+  };
 
   /**
      Original WASM functions for methods we partially override.
@@ -741,24 +726,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           else if(1===nBuf){
             wasm.poke(zBuf, 0);
             return nV;
-          }
-          if( nBuf+1<nV ){
+          }else if( nBuf<nV ){
             toss3(capi.SQLITE_RANGE,
                   "xRcrdRead()",jzClass,jXKey,
                   "input buffer is too small: need",
                   nV,"but have",nBuf);
+          }else if( nBuf > nV + 1 ){
+            nBuf = nV + 1;
           }
           if( 0 ){
             debug("xRcrdRead", nBuf, zClass, wasm.cstrToJs(zClass),
                   wasm.cstrToJs(zKey), nV, jV, store);
           }
-          const zV = cache.memBuffer(0);
+          const nCopy = nV<nBuf ? nV : nBuf-1;
           const heap = wasm.heap8();
-          for (let i = 0; i < nV; ++i) {
+          for (let i = 0; i < nCopy; ++i) {
             heap[wasm.ptr.add(zBuf, i)] = jV.codePointAt(i) & 0xff;
           }
-          heap[wasm.ptr.add(zBuf, nV)] = 0;
-          return nBuf;
+          heap[wasm.ptr.add(zBuf, nCopy)] = 0;
+          return nCopy;
         }catch(e){
           error("kvrecordRead()",e);
           cache.setError(e);
@@ -857,7 +843,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             kvvfs?.log?.xOpen
               && debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
           }
-          pFileHandles.set(pProtoFile, {store: s, file: f, jzClass});
+          pFileHandles.set(pProtoFile, Object.assign(Object.create(null),{
+            store: s,
+            file: f,
+            jzClass,
+            lockType: 0
+          }));
           s.listeners && notifyListeners('open', s, s.files.length);
           return 0;
         }catch(e){
@@ -957,7 +948,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
         }
         return 0;
-      }
+      },
+
+      /**
+         This VFS's xSleep() must be a no-op. In this environment,
+         only db handles within the same thread can ever come into
+         contention, and that contention cannot be resolved if
+         one of the handles sleeps in that same thread.
+         See also: forum:3f0794c5d8
+      */
+      xSleep: (pVfs,ms)=>0,
 
 //#if 0
       // these impls work but there's currently no pressing need _not_ use
@@ -989,6 +989,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           kvvfs?.log?.xClose && debug("xClose", pFile, h);
           if( h ){
             pFileHandles.delete(pFile);
+            unlockFile(h, capi.SQLITE_LOCK_NONE);
             const s = h.store;//storageForZClass(h.jzClass);
             s.files = s.files.filter((v)=>v!==h.file);
             if( --s.refc<=0 && s.deleteAtRefc0 ){
@@ -1067,6 +1068,82 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
       },
 
+      xLock: function(pFile, iLock){
+        cache.popError();
+        try{
+          const h = pFileHandles.get(pFile);
+          if( capi.SQLITE_LOCK_NONE!==iLock ){
+            /* Tells the impl to re-read its size. */
+            originalMethods.ioDb.xLock(pFile, iLock);
+          }
+          /**
+             This impl is based off of the one in the opfs-sahpool VFS
+             impl which, in turn, is based off of the impl in
+             os_unix.c.
+          */
+          if(h.lockType>=iLock) return 0;
+          let lk = mapPathToLocks.get(h.jzClass);
+          if(!lk){
+            lk = Object.assign(Object.create(null),{
+              nShared: 0, lockType: capi.SQLITE_LOCK_NONE
+            });
+            mapPathToLocks.set(h.jzClass, lk);
+          }
+          if(h.lockType!==lk.lockType
+             && (lk.lockType>=capi.SQLITE_LOCK_PENDING
+                 || iLock>capi.SQLITE_LOCK_SHARED)){
+            return capi.SQLITE_BUSY;
+          }
+          if(iLock===capi.SQLITE_LOCK_SHARED){
+            ++lk.nShared;
+            if(lk.lockType===capi.SQLITE_LOCK_NONE) lk.lockType = iLock;
+          }else if(iLock===capi.SQLITE_LOCK_EXCLUSIVE && lk.nShared>1){
+            if(h.lockType===capi.SQLITE_LOCK_RESERVED){
+              h.lockType = lk.lockType = capi.SQLITE_LOCK_PENDING;
+            }
+            return capi.SQLITE_BUSY;
+          }else{
+            lk.lockType = iLock;
+          }
+          h.lockType = iLock;
+          return 0;
+        }catch(e){
+          error("xLock", e);
+          return cache.setError(e);
+        }
+      },
+
+      xUnlock: function(pFile, iLock){
+        cache.popError();
+        try{
+          if( capi.SQLITE_LOCK_NONE===iLock ){
+            /* Tells the impl to re-read its size on the next op. */
+            originalMethods.ioDb.xUnlock(pFile, iLock);
+          }
+          const h = pFileHandles.get(pFile);
+          unlockFile(h, iLock);
+          return 0;
+        }catch(e){
+          error("xUnlock", e);
+          return cache.setError(e);
+        }
+      },
+
+      xCheckReservedLock: function(pFile, pOut){
+        cache.popError();
+        try{
+          const h = pFileHandles.get(pFile);
+          const lk = mapPathToLocks.get(h.jzClass);
+          wasm.poke32(pOut,
+                      (!!lk && lk.lockType>capi.SQLITE_LOCK_SHARED)
+                      ? 1 : 0)
+          return 0;
+        }catch(e){
+          error("xCheckReservedLock", e);
+          return cache.setError(e);
+        }
+      },
+
 //#if 0
       // We override xRead/xWrite only for logging/debugging. They
       // should otherwise be disabled (it's faster that way).
@@ -1103,9 +1180,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 //#if 0
       xTruncate: function(pFile,i64){},
       xFileSize: function(pFile,pi64Out){},
-      xLock: function(pFile,iLock){},
-      xUnlock: function(pFile,iLock){},
-      xCheckReservedLock: function(pFile,piOut){},
       xSectorSize: function(pFile){},
       xDeviceCharacteristics: function(pFile){}
 //#/if
@@ -1116,6 +1190,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          are copied as-is from the ioDb objects. Others are specific
          to journal files. */
       xClose: true,
+      xLock: true,
+      xUnlock: true,
+      xCheckReservedLock: true,
 //#if 0
       xRead: function(pFile,pTgt,n,iOff64){},
       xWrite: function(pFile,pSrc,n,iOff64){},
@@ -1123,9 +1200,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xSync: function(pFile,flags){},
       xFileControl: function(pFile, opId, pArg){},
       xFileSize: function(pFile,pi64Out){},
-      xLock: true,
-      xUnlock: true,
-      xCheckReservedLock: true,
       xSectorSize: true,
       xDeviceCharacteristics: true
 //#/if

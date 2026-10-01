@@ -943,15 +943,11 @@ int sqlite3_intck_unlock(sqlite3_intck *p){
 */
 const char *sqlite3_intck_test_sql(sqlite3_intck *p, const char *zObj){
   sqlite3_free(p->zTestSql);
+  p->zTestSql = 0;
   if( zObj ){
     p->zTestSql = intckCheckObjectSql(p, zObj, 0, 0);
-  }else{
-    if( p->zObj ){
-      p->zTestSql = intckCheckObjectSql(p, p->zObj, p->zKey, 0);
-    }else{
-      sqlite3_free(p->zTestSql);
-      p->zTestSql = 0;
-    }
+  }else if( p->zObj ){
+    p->zTestSql = intckCheckObjectSql(p, p->zObj, p->zKey, 0);
   }
   return p->zTestSql;
 }

@@ -382,4 +382,44 @@ do_catchsql_test 12.4 {
   SELECT * FROM o1 INDEXED BY p2 ORDER BY 1;
 } {1 {no query solution}}
 
+# Bug 2026-09-10T20:38:13Z
+#
+do_execsql_test 13.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a,b,c);
+  CREATE INDEX t1a ON t1(a);
+  CREATE INDEX t1b ON t1(b);
+  INSERT INTO t1 VALUES(1,2,3),(4,1,6),(7,8,9);
+  CREATE TABLE t0(x);
+  INSERT INTO t0 VALUES(0);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(y);
+  INSERT INTO t2 VALUES(99);
+}
+do_eqp_test 13.2 {
+  SELECT c FROM t0 JOIN (t1 INDEXED BY t1a) ON true;
+} {SCAN t1 USING INDEX t1a}
+do_eqp_test 13.3 {
+  SELECT c FROM t0 JOIN (t1 INDEXED BY t1b) ON true;
+} {SCAN t1 USING INDEX t1b}
+do_eqp_test 13.4 {
+  SELECT c FROM t0 CROSS JOIN (t1 NOT INDEXED) ON a=x;
+} {{SCAN t1}}
+do_catchsql_test 13.5 {
+  SELECT c FROM t0 JOIN (t1 INDEXED BY t1x) ON true;
+} {1 {no such index: t1x}}
+do_eqp_test 13.12 {
+  SELECT t1.c FROM t0 JOIN (t1 INDEXED BY t1a JOIN t2 ON true) ON true;
+} {SCAN t1 USING INDEX t1a}
+do_eqp_test 13.13 {
+  SELECT t1.c FROM t0 JOIN (t1 INDEXED BY t1b JOIN t2 ON true) ON true;
+} {SCAN t1 USING INDEX t1b}
+do_eqp_test 13.14 {
+  SELECT t1.c FROM t0 CROSS JOIN (t1 NOT INDEXED JOIN t2 ON true) ON a=x;
+} {{SCAN t1}}
+do_catchsql_test 13.15 {
+  SELECT t1.c FROM t0 JOIN (t1 INDEXED BY t1x JOIN t2 ON true) ON true;
+} {1 {no such index: t1x}}
+
+
 finish_test

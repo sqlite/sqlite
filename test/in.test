@@ -578,8 +578,40 @@ do_test in-13.11 {
   }
 } {1 null null null 1}
 
-do_test in-13.12 {
+do_test in-13.12-desc {
   execsql {
+    CREATE INDEX i1 ON t7(a DESC);
+    CREATE INDEX i2 ON t7(b DESC);
+    CREATE INDEX i3 ON t7(c DESC);
+  }
+  execsql {
+    SELECT
+      2 IN (SELECT a FROM t7),
+      6 IN (SELECT a FROM t7),
+      2 IN (SELECT b FROM t7),
+      6 IN (SELECT b FROM t7),
+      2 IN (SELECT c FROM t7),
+      6 IN (SELECT c FROM t7)
+  } 
+} {1 null 1 0 1 0}
+
+do_test in-13.13-desc {
+  execsql {
+    SELECT
+      2 NOT IN (SELECT a FROM t7),
+      6 NOT IN (SELECT a FROM t7),
+      2 NOT IN (SELECT b FROM t7),
+      6 NOT IN (SELECT b FROM t7),
+      2 NOT IN (SELECT c FROM t7),
+      6 NOT IN (SELECT c FROM t7)
+  } 
+} {0 null 0 1 0 1}
+
+do_test in-13.12-asc {
+  execsql {
+    DROP INDEX i1;
+    DROP INDEX i2;
+    DROP INDEX i3;
     CREATE INDEX i1 ON t7(a);
     CREATE INDEX i2 ON t7(b);
     CREATE INDEX i3 ON t7(c);
@@ -595,7 +627,7 @@ do_test in-13.12 {
   } 
 } {1 null 1 0 1 0}
 
-do_test in-13.13 {
+do_test in-13.13-asc {
   execsql {
     SELECT
       2 NOT IN (SELECT a FROM t7),
@@ -623,11 +655,16 @@ do_test in-13.14 {
     SELECT * FROM a WHERE id NOT IN (SELECT id FROM b);
   }
 } {}
-do_test in-13.14 {
+do_test in-13.14-desc {
   execsql {
-    CREATE INDEX i5 ON b(id);
+    CREATE INDEX i5 ON b(id DESC);
     SELECT * FROM a WHERE id NOT IN (SELECT id FROM b);
   }
+} {}
+do_execsql_test in-13.14-asc {
+  DROP INDEX i5;
+  CREATE INDEX i5 ON b(id DESC);
+  SELECT * FROM a WHERE id NOT IN (SELECT id FROM b);
 } {}
 
 do_test in-13.15 {

@@ -272,6 +272,7 @@ int sqlite3_fprintf(FILE *out, const char *zFormat, ...){
     va_start(ap, zFormat);
     z = sqlite3_vmprintf(zFormat, ap);
     va_end(ap);
+    if( z==0 ) return -1;
     sqlite3_fputs(z, out);
     rc = (int)strlen(z);
     sqlite3_free(z);
@@ -293,6 +294,7 @@ int sqlite3_vfprintf(FILE *out, const char *zFormat, va_list ap){
     */
     char *z;
     z = sqlite3_vmprintf(zFormat, ap);
+    if( z==0 ) return -1;
     sqlite3_fputs(z, out);
     rc = (int)strlen(z);
     sqlite3_free(z);
