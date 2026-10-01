@@ -545,7 +545,7 @@ static void showSegdirMap(sqlite3 *db, const char *zTab){
 ** Decode a single segment block and display the results on stdout.
 */
 static void decodeSegment(
-  const unsigned char *aData,   /* Content to print */
+  const unsigned char *aInput,  /* Content to print */
   int nData                     /* Number of bytes of content */
 ){
   sqlite3_int64 iChild = 0;
@@ -557,6 +557,13 @@ static void decodeSegment(
   sqlite3_int64 i = 0;
   int cnt = 0;
   char zTerm[1000];
+
+  unsigned char *aData = sqlite3_malloc64((sqlite3_int64)nData+64);
+  if( aData==0 ){
+    fprintf(stderr, "failed to allocate %d bytes\n", nData+64);
+    exit(1);
+  }
+  memcpy(aData, aInput, nData);
 
   i += getVarint(aData, &n);
   iHeight = (int)n;
@@ -572,8 +579,16 @@ static void decodeSegment(
       iPrefix = 0;
     }
     i += getVarint(aData+i, &nTerm);
-    if( iPrefix+nTerm+1 >= sizeof(zTerm) ){
-      fprintf(stderr, "term to long\n");
+    if( iPrefix<0 || nTerm<0 ){
+      fprintf(stderr, "segment is corrupt\n");
+      exit(1);
+    }
+    if( iPrefix+nTerm+1 >= (sqlite3_int64)sizeof(zTerm) ){
+      fprintf(stderr, "term too long\n");
+      exit(1);
+    }
+    if( (i + nTerm)>nData ){
+      fprintf(stderr, "segment is corrupt\n");
       exit(1);
     }
     memcpy(zTerm+iPrefix, aData+i, (size_t)nTerm);
@@ -581,12 +596,18 @@ static void decodeSegment(
     i += nTerm;
     if( iHeight==0 ){
       i += getVarint(aData+i, &iDocsz);
+      if( iDocsz<0 || iDocsz>0x7FFFFFFF ){
+        fprintf(stderr, "segment is corrupt\n");
+        exit(1);
+      }
       printf("term: %-25s doclist %7lld bytes offset %lld\n", zTerm, iDocsz, i);
       i += iDocsz;
     }else{
       printf("term: %-25s child %lld\n", zTerm, ++iChild);
     }
   }
+
+  sqlite3_free(aData);
 }
   
   
@@ -702,7 +723,7 @@ static void showSegment(sqlite3 *db, const char *zTab){
 ** Decode a single doclist and display the results on stdout.
 */
 static void decodeDoclist(
-  const unsigned char *aData,   /* Content to print */
+  const unsigned char *aInput,  /* Content to print */
   int nData                     /* Number of bytes of content */
 ){
   sqlite3_int64 iPrevDocid = 0;
@@ -712,12 +733,19 @@ static void decodeDoclist(
   sqlite3_int64 iCol;
   int i = 0;
 
+  unsigned char *aData = sqlite3_malloc64((sqlite3_int64)nData+64);
+  if( aData==0 ){
+    fprintf(stderr, "failed to allocate %d bytes\n", nData+64);
+    exit(1);
+  }
+  memcpy(aData, aInput, nData);
+
   while( i<nData ){
     i += getVarint(aData+i, &iDocid);
     printf("docid %lld col0", iDocid+iPrevDocid);
     iPrevDocid += iDocid;
     iPrevPos = 0;
-    while( 1 ){
+    while( i<nData ){
       i += getVarint(aData+i, &iPos);
       if( iPos==1 ){
         i += getVarint(aData+i, &iCol);
@@ -732,6 +760,8 @@ static void decodeDoclist(
       }
     }
   }
+
+  sqlite3_free(aData);
 }
   
 

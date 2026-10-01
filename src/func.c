@@ -378,7 +378,7 @@ static void substrFunc(
     p2 = sqlite3_value_int64(argv[2]);
     if( p2==0 && sqlite3_value_type(argv[2])==SQLITE_NULL ) return;
   }else{
-    p2 = sqlite3_context_db_handle(context)->aLimit[SQLITE_LIMIT_LENGTH];
+    p2 = LARGEST_INT64;
   }
   if( p1==0 ){
 #ifdef SQLITE_SUBSTR_COMPATIBILITY

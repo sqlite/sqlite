@@ -618,6 +618,24 @@ do_catchsql_test 13.1.9 {
   SELECT fts5_get_locale(nolocale, 'text') FROM nolocale('three AND two');
 } {1 {non-integer argument passed to function fts5_get_locale()}}
 
+# Column numbers too large or too small to fit in a 32-bit signed integer
+# are out of range.
+foreach {tn iCol} {
+  1  2147483648
+  2  -2147483649
+  3  4294967295
+  4  4294967296
+  5  4294967297
+  6  -4294967295
+  7  -4294967296
+  8  9223372036854775807
+  9  -9223372036854775808
+} {
+  do_catchsql_test 13.1.10.$tn {
+    SELECT fts5_get_locale(nolocale, $iCol) FROM nolocale('three AND two');
+  } {1 {column index out of range}}
+}
+
 
 # Check that if the table does support locale=1, fts5_get_locale()
 # returns the locale of the identified row/column.

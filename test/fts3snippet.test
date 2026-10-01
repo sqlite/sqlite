@@ -561,6 +561,22 @@ do_test 4.3 {
   }]
 } {64}
 
+# The 6th argument to snippet() is the approximate number of tokens to
+# use in the returned snippet. Test that this still works as expected
+# (the absolute value is silently capped at 64) if the value passed in
+# is too large to be represented as a 32-bit integer.
+do_test 4.4 {
+  llength [db one {
+    SELECT snippet(t4, '', '', '', 0, 4294967297) FROM t4 WHERE t4 MATCH 'E'
+  }]
+} {64}
+
+do_test 4.5 {
+  llength [db one {
+    SELECT snippet(t4, '', '', '', 0, -4294967297) FROM t4 WHERE t4 MATCH 'E'
+  }]
+} {64}
+
 #-------------------------------------------------------------------------
 # Request a snippet from a query with more than 64 phrases.
 #
@@ -610,6 +626,14 @@ do_snip_test 6.1 two 0 5  {one {two} three A}
 do_snip_test 6.2 two -1 5 {one {two} three A}
 do_snip_test 6.3 two 3 5  {one {two} three D}
 do_snip_test 6.4 two 4 5  {}
+
+# The 5th argument to snippet() is a column index. A negative value means
+# any column may be used, and a value greater than or equal to the number
+# of columns in the table means there is no such column and the result is
+# an empty string. Test that this is still true if the value passed in is
+# too large to be represented as a 32-bit integer.
+do_snip_test 6.5 two -4294967293 5 {one {two} three A}
+do_snip_test 6.6 two 4294967299  5 {}
 
 set sqlite_fts3_enable_parentheses 0
 finish_test

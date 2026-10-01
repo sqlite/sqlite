@@ -137,6 +137,7 @@ set cdecllist {
   sqlite3_log
   sqlite3_mprintf
   sqlite3_snprintf
+  sqlite3_str_appendf
   sqlite3_test_control
   sqlite3_vtab_config
 }

@@ -1,0 +1,162 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1binary
+
+
+foreach {tn nElem codesize} {
+  1 16 2
+  2 16 1
+  3 48 6
+  4 48 3
+} {
+  reset_db
+  vec1_load db
+  expr srand(0)
+  do_execsql_test 1.$tn.0 {
+    CREATE VIRTUAL TABLE v1 USING vec1(v);
+  }
+
+  set nRow [expr 40]
+  set nLimit [expr 40]
+
+  do_execsql_test 1.$tn.1 {
+    WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$nRow
+    )
+    INSERT INTO v1 SELECT random_vector($nElem) FROM s;
+  }
+
+  set jarg "{quantizer:\"bq\", nbucket: 8, codesize: $codesize}"
+  do_execsql_test 1.$tn.2 {
+    INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+          SELECT vec1_train(v, $jarg) FROM v1
+    ));
+  }
+
+  set v [db one {SELECT random_vector($nElem)}]
+
+  set res [db eval {
+      SELECT rowid FROM v1 ORDER by vec1_l2_distance($v, v) LIMIT $nLimit
+  }]
+
+  do_execsql_test 1.$tn.2 {
+    SELECT rowid FROM v1($v, '{K:50, nprobe:8}') 
+      ORDER BY vec1_l2_distance(v, $v) 
+      LIMIT $nLimit
+  } $res
+
+  do_execsql_test 1.$tn.3 {
+    PRAGMA integrity_check
+  } {ok}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$nRow )
+    SELECT vec1_train(random_vector(8), '{quantizer:"bq", nbucket:8}') FROM s
+  ));
+
+  INSERT INTO v1 VALUES( random_vector(8) );
+}
+
+set v [db one {SELECT random_vector(8)}]
+
+do_execsql_test 2.2 {
+  SELECT rowid FROM v1($v, '{nprobe:8}') LIMIT $nLimit
+} {1}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE v1 USING vec1(abc);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$nRow )
+    SELECT vec1_train(random_vector(64), '{quantizer:"bq", nbucket:2}') FROM s
+  ));
+
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO v1 SELECT random_vector(64) FROM s;
+}
+
+do_execsql_test 2.2 {
+  PRAGMA integrity_check
+} {ok}
+
+foreach id [db eval {SELECT rowid FROM v1}] {
+  db eval { DELETE FROM v1 WHERE rowid = $id }
+  if {($id % 1)==0} {
+    do_execsql_test 2.3.$id {
+      PRAGMA integrity_check
+    } {ok}
+  }
+}
+
+#-------------------------------------------------------------------------
+# Now check the version number in model headers. This should be 7 when
+# using a binary quantizer, or 4 otherwise.
+#
+reset_db
+vec1_load db
+
+foreach {tn jarg iVersion} {
+  1 "{nbucket:2, codesize:8}" 4
+  2 "{nbucket:2, codesize:8, quantizer:\"bq\"}" 7
+  3 "{nbucket:2, codesize:8, quantizer:\"pq\"}" 4
+} {
+  do_test 2.$tn {
+    set M [db one {
+      WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<512
+      )
+      SELECT vec1_train(random_vector(16), $jarg) FROM s;
+    }]
+
+    binary scan $M I version
+    set version
+  } $iVersion
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 )
+  INSERT INTO v1 SELECT random_vector(100) FROM s;
+
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(v, '{quantizer:"bq", nbucket:2, codesize:8}') FROM v1
+  ));
+}
+
+set v [db one {SELECT random_vector(100)}]
+do_execsql_test 3.2 {
+  SELECT count(*) FROM (
+    SELECT rowid FROM v1($v, '{nprobe:2}') LIMIT 5
+  );
+} {5}
+
+finish_test
+  

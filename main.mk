@@ -298,6 +298,13 @@ TCL_CONFIG_SH ?=
 #
 HAVE_WASI_SDK ?= 0
 #
+# $(ENABLE_RPATH) tells libtclsqlite3 whether to use an -rpath
+# flag. By default it does for historical compatibility. In the
+# canonical build configure --disable-rpath disables the use of rpath.
+#
+ENABLE_RPATH ?= 1
+
+#
 # ... and many, many more. Sane defaults are selected where possible.
 #
 # With the above-described defined, the rest of this make script will
@@ -1646,14 +1653,21 @@ pkgIndex.tcl-1: pkgIndex.tcl
 pkgIndex.tcl-0 pkgIndex.tcl-:
 tcl: pkgIndex.tcl-$(HAVE_TCL)
 
+#
+# Tcl's proper rpath is defined as TCL_LD_SEARCH_FLAGS in
+# tclConfig.sh, but it's defined in such a way as to be useless for a
+# _static_ makefile like this one, so we're _guessing_ that the linker
+# supports the -rpath flag in the form hard-coded here.
+#
+libtclsqlite3.rpath-0    =
+libtclsqlite3.rpath-1    = -Wl,-rpath,$$TCLLIBDIR
+libtclsqlite3.rpath-     = $(libtclsqlite3.rpath-1)
+
 $(libtclsqlite3.DLL): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
 	$(T.tcl.env.source); \
 	$(T.link.shared) -o $@ tclsqlite.o \
 		$$TCL_INCLUDE_SPEC $$TCL_STUB_LIB_SPEC $(LDFLAGS.libsqlite3) \
-		$(LIBOBJ) -Wl,-rpath,$$TCLLIBDIR
-# ^^^ that rpath bit is defined as TCL_LD_SEARCH_FLAGS in
-# tclConfig.sh, but it's defined in such a way as to be useless for a
-# _static_ makefile.
+		$(LIBOBJ) $(libtclsqlite3.rpath-$(ENABLE_RPATH))
 $(libtclsqlite3.DLL)-1: $(libtclsqlite3.DLL)
 $(libtclsqlite3.DLL)-0 $(libtclsqlite3.DLL)-:
 libtcl: $(libtclsqlite3.DLL)-$(HAVE_TCL)
@@ -1772,6 +1786,40 @@ fts5.c: $(FTS5_SRC) $(B.tclsh)
 
 fts5.o:	fts5.c $(DEPS_OBJ_COMMON) $(EXTHDR)
 	$(T.cc.extension) -c fts5.c
+
+#
+# vec1 loadable extension. Not part of the amalgamation or any
+# distributed package; built only by explicitly running "make vec1.so".
+#
+# If $(CFLAGS.vec1.avx2) is not empty (configure sets it to "-mavx2
+# -mfma" when the compiler accepts them), vec1.c is compiled twice -
+# once with scalar code and once with AVX2 - and both objects linked
+# into a single extension that picks one at runtime based on the CPU.
+# Otherwise a single scalar-only build is done.
+#
+# Deliberately does not use $(T.cc.extension), as that defines
+# SQLITE_CORE, which is wrong for a loadable extension.
+#
+# $(CFLAGS.vec1.opt) is appended after $(CFLAGS), so it overrides any
+# -O option there (e.g. configure's default -O2). vec1 relies on the
+# unrolling and inlining that -O3 provides. To build with the -O level
+# from $(CFLAGS) instead, pass "CFLAGS.vec1.opt=" to make.
+#
+CFLAGS.vec1.avx2 ?=
+CFLAGS.vec1.opt ?= -O3
+T.cc.vec1 = $(T.compile) -I. -I$(TOP)/src $(CFLAGS.vec1.opt)
+vec1$(T.dll): $(TOP)/ext/vec1/vec1.c sqlite3.h
+	@if test -n "$(CFLAGS.vec1.avx2)"; then set -x; \
+	  $(T.cc.vec1) -DVEC1SIMD=SCALAR -c $(TOP)/ext/vec1/vec1.c \
+	    -o vec1-scalar.o || exit $$?; \
+	  $(T.cc.vec1) -DVEC1SIMD=AVX2 $(CFLAGS.vec1.avx2) \
+	    -c $(TOP)/ext/vec1/vec1.c -o vec1-avx2.o || exit $$?; \
+	  $(T.compile) $(LDFLAGS.shlib) -o $@ vec1-scalar.o vec1-avx2.o \
+	    $(LDFLAGS.math) $(LDFLAGS.pthread) || exit $$?; \
+	else set -x; \
+	  $(T.cc.vec1) $(LDFLAGS.shlib) -o $@ $(TOP)/ext/vec1/vec1.c \
+	    $(LDFLAGS.math) $(LDFLAGS.pthread) || exit $$?; \
+	fi
 
 sqlite3rbu.o:	$(TOP)/ext/rbu/sqlite3rbu.c $(DEPS_OBJ_COMMON) $(EXTHDR)
 	$(T.cc.extension) -c $(TOP)/ext/rbu/sqlite3rbu.c
@@ -2487,6 +2535,7 @@ help:
 tidy:
 	rm -f *.o *.obj *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(T.exe)
 	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
+	rm -f vec1$(T.dll)
 	rm -rf .libs .deps tsrc .target_source
 	rm -f lemon$(B.exe) sqlite*.tar.gz
 	rm -f mkkeywordhash$(B.exe) mksourceid$(B.exe)

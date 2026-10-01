@@ -901,10 +901,12 @@ static int deltaparsevtabNext(sqlite3_vtab_cursor *cur){
     return SQLITE_OK;
   }
   z = pCur->aDelta + pCur->iCursor;
+  i = pCur->nDelta - pCur->iCursor;
   pCur->a1 = deltaGetInt(&z, &i);
   switch( i>0 ? z[0] : 0 ){
     case '@': {
       z++;
+      i--;
       if( pCur->iNext>=pCur->nDelta ){
         pCur->eOp = DELTAPARSE_OP_ERROR;
         pCur->iNext = pCur->nDelta;
@@ -1022,7 +1024,8 @@ static int deltaparsevtabFilter(
   if( pCur->nDelta==0 || a==0 ){
     return SQLITE_OK;
   }
-  pCur->aDelta = sqlite3_malloc64( pCur->nDelta+1 );
+  sqlite3_free(pCur->aDelta);
+  pCur->aDelta = sqlite3_malloc64(pCur->nDelta+1);
   if( pCur->aDelta==0 ){
     pCur->nDelta = 0;
     return SQLITE_NOMEM;
@@ -1030,6 +1033,7 @@ static int deltaparsevtabFilter(
   memcpy(pCur->aDelta, a, pCur->nDelta);
   pCur->aDelta[pCur->nDelta] = 0;
   a = pCur->aDelta;
+  i = pCur->nDelta;
   pCur->eOp = DELTAPARSE_OP_SIZE;
   pCur->a1 = deltaGetInt(&a, &i);
   if( i<=0 || a[0]!='\n' ){

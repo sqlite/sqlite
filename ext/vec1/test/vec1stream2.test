@@ -1,0 +1,87 @@
+# 2026-03-14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1stream2
+vec1_load db
+
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING vec1(v);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 )
+  INSERT INTO t1 SELECT rvec(16, i) FROM s;
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+foreach {tn2 idx} {
+  1 {
+    INSERT INTO t1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  }
+  2 {
+    INSERT INTO t1(cmd, arg) VALUES('rebuild', (
+      SELECT vec1_train(v, '{nbucket:8}') FROM t1
+    ));
+    SELECT vec1_config('nprobe', 2);
+  }
+  3 {
+    INSERT INTO t1(cmd, arg) VALUES('rebuild', (
+      SELECT vec1_train(v, '{nbucket:8, codesize:4}') FROM t1
+    ));
+    SELECT vec1_config('nprobe', 4);
+  }
+} {
+  foreach {tn iVec} {
+    1 498753
+    2 722456
+    3 462190
+    4 981077
+    5 606275 
+    6 239435
+    7 508863
+    8 795393
+    9 163905
+    10 697229
+  } {
+    db eval $idx
+
+    for {set nRes 2} {$nRes < 100} {incr nRes 3} {
+      set expect [db eval { SELECT rowid FROM t1( rvec(16, $iVec), $nRes ) }]
+
+      if {$nRes>[llength $expect]} break
+  
+      do_test 1.$tn2.$tn.$nRes.1 {
+        set J "{K:$nRes, streaming:1}"
+        set all [db eval { SELECT rowid FROM t1( rvec(16, $iVec), $J) }]
+        lrange $all 0 [expr $nRes-1]
+      } $expect
+  
+      set expect [db eval { SELECT rowid FROM t1 ORDER BY 1 }]
+  
+      do_test 1.$tn2.$tn.$nRes.2 {
+        set J "{K:$nRes, streaming:1}"
+        set all [db eval { SELECT rowid FROM t1( rvec(16, $iVec), $J) }]
+        lsort -integer $all
+      } $expect
+
+      do_test 1.$tn2.$tn.$nRes.3 {
+        set J "{K:$nRes, streaming:1, nprobe_slack:0.2}"
+        set all [db eval { SELECT rowid FROM t1( rvec(16, $iVec), $J) }]
+        lsort -integer $all
+      } $expect
+    }
+  }
+}
+
+
+finish_test
+

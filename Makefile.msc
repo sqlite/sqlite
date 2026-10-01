@@ -2475,6 +2475,36 @@ fts5_ext.lo:	fts5.c $(HDR) $(EXTHDR)
 fts5.dll:	fts5_ext.lo
 	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ fts5_ext.lo
 
+# vec1 loadable extension.
+#
+# If VEC1_AVX2 is non-zero (the default, except when targeting ARM),
+# vec1.c is compiled twice - once with scalar code and once with AVX2 -
+# and both objects linked into a single DLL that picks one at runtime
+# based on the CPU. Otherwise a single scalar-only build is done.
+#
+!IFNDEF VEC1_AVX2
+!IF "$(PLATFORM)"=="arm" || "$(PLATFORM)"=="ARM" || "$(PLATFORM)"=="arm64" || "$(PLATFORM)"=="ARM64"
+VEC1_AVX2 = 0
+!ELSEIF "$(VSCMD_ARG_TGT_ARCH)"=="arm" || "$(VSCMD_ARG_TGT_ARCH)"=="arm64"
+VEC1_AVX2 = 0
+!ELSE
+VEC1_AVX2 = 1
+!ENDIF
+!ENDIF
+
+VEC1_SRC = $(TOP)\ext\vec1\vec1.c
+
+!IF $(VEC1_AVX2)!=0
+vec1.dll:	$(VEC1_SRC) $(SQLITE3H)
+	$(TCC) -DVEC1SIMD=SCALAR -Fovec1scalar.lo -Fdvec1.pdb -c $(VEC1_SRC)
+	$(TCC) -DVEC1SIMD=AVX2 -arch:AVX2 -Fovec1avx2.lo -Fdvec1.pdb -c $(VEC1_SRC)
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ vec1scalar.lo vec1avx2.lo
+!ELSE
+vec1.dll:	$(VEC1_SRC) $(SQLITE3H)
+	$(TCC) -Fovec1.lo -Fdvec1.pdb -c $(VEC1_SRC)
+	$(LD) $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) /DLL /OUT:$@ vec1.lo
+!ENDIF
+
 sqlite3rbu.lo:	$(TOP)\ext\rbu\sqlite3rbu.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\rbu\sqlite3rbu.c
 
@@ -2955,6 +2985,7 @@ clean:
 	del /Q kvtest.exe ossshell.exe scrub.exe 2>NUL
 	del /Q showshm.exe sqlite3_checker.* sqlite3_expert.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
+	del /Q vec1.* 2>NUL
 	del /q src-verify.exe 2>NUL
 	del /q jimsh.exe jimsh0.exe 2>NUL
 	-$(TCLSH_CMD) test/testrunner.tcl clean

@@ -1,0 +1,115 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1func
+vec1_load db
+
+do_execsql_test 1.0 {
+  SELECT vec1_to_json(
+    vec1_from_json('[1.0, 2.0, 3.0, 4.0]')
+  )
+} {{[1,2,3,4]}}
+
+do_execsql_test 1.1 {
+  SELECT quote(vec1_from_json('[1.0, 2.0, 3.0, 4.0]'))
+} {X'0000803F000000400000404000008040'}
+
+do_catchsql_test 1.2 {
+  SELECT vec1_to_json(X'')
+} {1 {vec1: invalid vector argument}}
+
+do_catchsql_test 1.3 {
+  SELECT vec1_to_json(X'0000803F000000400000404000008040FF')
+} {1 {vec1: invalid vector argument}}
+
+do_execsql_test 1.4 {
+  SELECT vec1_to_json(X'0000803F000000400000404000008040')
+} {[1,2,3,4]}
+
+do_execsql_test 1.5 {
+  SELECT vec1_to_json_i(X'0000803F000000400000404000008040')
+} {[1065353216,1073741824,1077936128,1082130432]}
+
+#-------------------------------------------------------------------------
+
+foreach {tn in out} {
+  1 "  [1,2,3]  "        "0 {{[1,2,3]}}"
+  2 "  [ 1 , 2 , 3 ]  "  "0 {{[1,2,3]}}"
+  3 "  {1,2,3}  "        "1 {error parsing json vector}"
+  4 "  [1,2,3"           "1 {error parsing json vector}"
+  5 "  [1,2, ]"          "1 {error parsing json vector}"
+  6 "  [1,2,3] x "       "1 {error parsing json vector}"
+} {
+  do_catchsql_test 2.$tn {
+    SELECT vec1_to_json( vec1_from_json($in) )
+  } $out
+}
+
+#-------------------------------------------------------------------------
+
+do_execsql_test 3.0 {
+  SELECT vec1_cos_distance(random_vector(9), random_vector(9)) 
+    BETWEEN 0.0 AND 2.0
+} {1}
+
+do_catchsql_test 3.1 {
+  SELECT vec1_cos_distance(random_vector(9), random_vector(8)) 
+} {1 {vec1_cos_distance: bad arguments}}
+do_catchsql_test 3.2 {
+  SELECT vec1_cos_distance(randomblob(37), randomblob(37)) 
+} {1 {vec1_cos_distance: bad arguments}}
+
+do_catchsql_test 3.3 {
+  SELECT vec1_l2_distance(random_vector(9), random_vector(8)) 
+} {1 {vec1_l2_distance: bad arguments}}
+do_catchsql_test 3.4 {
+  SELECT vec1_l2_distance(randomblob(37), randomblob(37)) 
+} {1 {vec1_l2_distance: bad arguments}}
+
+#-------------------------------------------------------------------------
+# Test that vectors of zero magnitude are considered orthogonal to all
+# others, including itself.
+
+do_execsql_test 4.0 {
+  SELECT vec1_cos_distance(random_vector(9), zeroblob(4*9));
+} {1.0}
+do_execsql_test 4.1 {
+  SELECT vec1_cos_distance(zeroblob(4*9), random_vector(9));
+} {1.0}
+
+#-------------------------------------------------------------------------
+# Test that non-blob arguments are errors.
+#
+foreach {tn a2 bErr} {
+  0 { (X'12345678', X'12345678') } 0
+  1 { (X'12345678', '12345678')  } 1
+  2 { ('12345678', '12345678')  } 1
+  3 { ('12345678', X'12345678')  } 1
+} {
+  do_test 5.$tn.1 {
+    lindex [catchsql "SELECT vec1_l2_distance $a2"] 0
+  } $bErr
+  do_test 5.$tn.2 {
+    lindex [catchsql "SELECT vec1_cos_distance $a2"] 0
+  } $bErr
+}
+
+#-------------------------------------------------------------------------
+#
+
+do_execsql_test 6.0 { SELECT vec1_from_json(NULL) } {{}}
+do_execsql_test 6.1 { SELECT vec1_from_json(NULL) IS NULL } {1}
+
+finish_test
+

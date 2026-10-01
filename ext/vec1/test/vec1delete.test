@@ -1,0 +1,279 @@
+# 2026-04-02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1delete
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1;
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO v1(rowid, vector) VALUES(1, random_vector(128));
+  INSERT INTO v1(rowid, vector) VALUES(2, random_vector(128));
+  INSERT INTO v1(rowid, vector) VALUES(3, random_vector(128));
+  INSERT INTO v1(rowid, vector) VALUES(4, random_vector(128));
+  INSERT INTO v1(rowid, vector) VALUES(5, random_vector(128));
+
+  INSERT INTO v1(cmd, vector) VALUES('rebuild', (
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<512
+    ) SELECT vec1_train( random_vector(128), '{nbucket:4,codesize:8}' ) FROM s
+  ));
+}
+
+do_execsql_test 1.2 {
+  INSERT INTO v1_base VALUES(6, random_vector(128));
+}
+
+do_catchsql_test 1.3 { 
+  DELETE FROM v1 WHERE rowid=6
+} {1 {database disk image is malformed}}
+
+do_execsql_test 1.4 { 
+  DELETE FROM v1_base WHERE rowid=6;
+  UPDATE v1_base SET vector = random_vector(32) WHERE id=5;
+} {}
+
+do_catchsql_test 1.5 { 
+  DELETE FROM v1 WHERE rowid=5
+} {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1;
+}
+
+do_execsql_test 2.1 {
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1
+  ) INSERT INTO v1(rowid, vector) SELECT i, random_vector(32) FROM s;
+
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 2.2 {
+  DELETE FROM v1 WHERE rowid=1;
+}
+
+do_execsql_test 2.3 {
+  SELECT rowid FROM v1(random_vector(32), 10);
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1;
+  INSERT INTO v1(cmd, vector) VALUES('rebuild', (
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+    ) SELECT vec1_train( random_vector(32), '{codesize:8}' ) FROM s
+  ));
+}
+do_execsql_test 2.1 {
+  BEGIN;
+    WITH s(i) AS (
+       SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+    ) INSERT INTO v1(rowid, vector) SELECT i, random_vector(32) FROM s;
+}
+
+do_test 2.2 {
+  for {set ii 1} {$ii < 1000} {incr ii 2} {
+    execsql {
+      DELETE FROM v1 WHERE rowid=$ii
+    }
+  }
+  execsql COMMIT
+} {}
+
+do_execsql_test 2.3 {
+  PRAGMA integrity_check;
+} {ok}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(a, b);
+  WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<500
+  ) INSERT INTO v1(rowid, a) SELECT i, random_vector(10) FROM s;
+
+  WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<500
+  ) INSERT INTO v1(rowid, a) SELECT i*10_000_000_000, random_vector(10) FROM s;
+  UPDATE v1 SET b=rowid;
+
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 3.1.1 {
+  SELECT rowid FROM v1(random_vector(10)) WHERE b=250 LIMIT 10;
+} {250}
+do_execsql_test 3.1.2 {
+  DELETE FROM v1 WHERE rowid = 250;
+} {}
+do_execsql_test 3.1.3 {
+  SELECT rowid FROM v1(random_vector(10)) WHERE b=250 LIMIT 10;
+} {}
+
+do_execsql_test 3.2.0 {
+  SELECT rowid FROM v1 WHERE b=250*10_000_000_000 LIMIT 10;
+} {2500000000000}
+do_execsql_test 3.2.1 {
+  SELECT rowid FROM v1 (random_vector(10)) WHERE b=250*10_000_000_000 LIMIT 10;
+} {2500000000000}
+do_execsql_test 3.2.2 {
+  DELETE FROM v1 WHERE rowid = 250*10_000_000_000;
+} {}
+do_execsql_test 3.2.3 {
+  SELECT rowid FROM v1(random_vector(10)) WHERE b=250*10_000_000_000 LIMIT 10;
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(a, b);
+  INSERT INTO v1(rowid, a, b) 
+  VALUES(250*10_000_000_000, random_vector(10), 250*10_000_000_000);
+
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 4.1.0 {
+  SELECT rowid FROM v1 WHERE b=250*10_000_000_000 LIMIT 10;
+} {2500000000000}
+do_execsql_test 4.1.1 {
+  SELECT rowid FROM v1 (random_vector(10)) WHERE b=250*10_000_000_000 LIMIT 10;
+} {2500000000000}
+do_execsql_test 4.1.2 {
+  DELETE FROM v1 WHERE rowid = 250*10_000_000_000;
+} {}
+do_execsql_test 4.1.3 {
+  SELECT rowid FROM v1(random_vector(10)) WHERE b=250*10_000_000_000 LIMIT 10;
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(a, b);
+  INSERT INTO v1 VALUES(random_vector(32), 'one');
+  INSERT INTO v1 VALUES(random_vector(32), 'two');
+  INSERT INTO v1 VALUES(random_vector(32), 'three');
+  INSERT INTO v1 VALUES(random_vector(32), 'four');
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 5.1 {
+  BEGIN;
+    INSERT INTO v1(rowid, a, b) 
+      VALUES(-20_000_000_000, random_vector(32), 'five');
+    INSERT INTO v1(rowid, a, b) 
+      VALUES(-30_000_000_000, random_vector(32), 'six');
+    INSERT INTO v1(rowid, a, b) 
+      VALUES(-40_000_000_000, random_vector(32), 'seven');
+    DELETE FROM v1 WHERE rowid=3;
+}
+
+do_execsql_test 5.2 {
+  SELECT rowid, length(a), b FROM v1 ORDER BY 1
+} {
+  -40000000000 128 seven
+  -30000000000 128 six
+  -20000000000 128 five
+  1 128 one
+  2 128 two
+  4 128 four
+}
+
+do_execsql_test 5.3 {
+  COMMIT;
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 5.4 {
+  INSERT INTO v1_base(id, vector, c0) VALUES(11, 0, 'nan');
+}
+
+do_execsql_test 5.5 {
+  SELECT length(a) FROM v1 WHERE rowid=11
+} {{}}
+
+do_execsql_test 5.6 {
+  SELECT distance FROM v1 WHERE rowid=11
+} {{}}
+
+do_execsql_test 5.7 {
+  SELECT distance FROM v1 WHERE rowid=4
+} {{{bucket:0, coarse_error:0.000000, reconstruction_error:0.000000, code: null}}}
+
+do_execsql_test 5.8 {
+  SELECT distance, distance FROM v1 WHERE rowid=4
+} {
+  {{bucket:0, coarse_error:0.000000, reconstruction_error:0.000000, code: null}}
+  {{bucket:0, coarse_error:0.000000, reconstruction_error:0.000000, code: null}}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE x1 USING vec1( v );
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<400
+  )
+  INSERT INTO x1(rowid, v) 
+  SELECT CASE WHEN i%2 THEN -i ELSE +i END, random_vector(8) FROM s;
+
+  INSERT INTO x1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 6.1 {
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 6.2 {
+  INSERT INTO x1(rowid, v) VALUES(0, random_vector(8));
+} {}
+
+do_execsql_test 6.3 {
+  DELETE FROM x1 WHERE abs(rowid)%10 = 1;
+} {}
+
+do_execsql_test 6.4 {
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 6.5 {
+  DELETE FROM x1 WHERE rowid = 0;
+} {}
+
+do_execsql_test 6.6 {
+  PRAGMA integrity_check
+} {ok}
+
+
+finish_test
+
