@@ -396,6 +396,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               ? pool.getPath(zName)
               : getRandomName();
         let sah = pool.getSAHForPath(path);
+        if(sah && (flags & capi.SQLITE_OPEN_CREATE)
+           && (flags & capi.SQLITE_OPEN_EXCLUSIVE)){
+          toss('file already exists:', path);
+        }
         if(!sah && (flags & capi.SQLITE_OPEN_CREATE)) {
           // File not found so try to create it.
           if(pool.getFileCount() < pool.getCapacity()) {
@@ -599,22 +603,59 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     /**
-       Reduce capacity by n, but can only reduce up to the limit
-       of currently-available SAHs. Returns a Promise which resolves
-       to the number of slots really removed.
+       Reduce capacity by n, but can only reduce up to the limit of
+       currently-available SAHs. Returns a Promise which resolves to
+       the number of slots really removed. Throws if removal of an
+       OPFS filesystem entry fails for any reason, in which case the
+       VFS itself is left in a well-defined state, possibly partially
+       reduced in capacity compared to before this call, but the file
+       which was unable to be removed is in an undefined state. It may
+       be orphaned and/or later recycled.
+
+       As of 3.54, throws if n is an invalid value. Prior to that
+       an invalid value could cause it to remove all entries.
     */
     async reduceCapacity(n){
+      if(!Number.isSafeInteger(n) || n < 0){
+        toss('Invalid capacity reduction:', n);
+      }
       let nRm = 0;
       for(const ah of Array.from(this.#availableSAH)){
         if(nRm === n || this.getFileCount() === this.getCapacity()){
           break;
         }
         const name = this.#mapSAHToName.get(ah);
-        //this.#unmapFileObject(ah);
         ah.close();
-        await this.#dhOpaque.removeEntry(name);
         this.#mapSAHToName.delete(ah);
         this.#availableSAH.delete(ah);
+        await this.#dhOpaque.removeEntry(name);
+        //#if 0
+        /* removeEntry() may throw, in which case the storage is in an
+           undefined state and that particular file name might or
+           might not work ever again. One suggestion contributed
+           off-list is that when removeEntry() throws, we re-animate
+           the entry:
+
+           ah.close();
+           try {
+             await this.#dhOpaque.removeEntry(name);
+           } catch (e) {
+             this.#mapSAHToName.delete(ah);
+             this.#availableSAH.delete(ah);
+             const h = await this.#dhOpaque.getFileHandle(name);
+             const restored = await h.createSyncAccessHandle();
+             this.#mapSAHToName.set(restored, name);
+             this.#availableSAH.add(restored);
+             throw e;
+           }
+           this.#mapSAHToName.delete(ah);
+           this.#availableSAH.delete(ah);
+
+           But that feels like a bigger minefield than the current
+           approach, in particular given the very, very niche use
+           cases for this function.
+        */
+        //#/if
         ++nRm;
       }
       return nRm;
@@ -1048,7 +1089,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             util.affirmDbHeader(chunk);
             checkedHeader = true;
           }
-          sah.write(chunk, {at:  HEADER_OFFSET_DATA + nWrote});
+          const n = sah.write(chunk, {at: HEADER_OFFSET_DATA + nWrote});
+          if( n!==chunk.byteLength ){
+            toss("Expected to write "+chunk.byteLength+
+                 "bytes but wrote"+n+".");
+          }
           nWrote += chunk.byteLength;
         }
         if( nWrote < 512 || 0!==nWrote % 512 ){
@@ -1056,7 +1101,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         if( !checkedHeader ){
           const header = new Uint8Array(20);
-          sah.read( header, {at: 0} );
+          sah.read( header, {at: HEADER_OFFSET_DATA} );
           util.affirmDbHeader( header );
         }
         sah.write(new Uint8Array([1,1]), {
@@ -1084,6 +1129,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         this.setAssociatedPath(sah, '', 0);
         toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
       }else{
+        sah.truncate(HEADER_OFFSET_DATA + n
+                     /* Ensure no trailing junk when overwriting an
+                        existing file with a shorter one. */);
         sah.write(new Uint8Array([1,1]), {at: HEADER_OFFSET_DATA+18}
                    /* force db out of WAL mode */);
         this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
