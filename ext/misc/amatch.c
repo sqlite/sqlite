@@ -1196,7 +1196,7 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
       rc = sqlite3_step(p->pVCheck);
       if( rc==SQLITE_ROW ){
         zW = (const char*)sqlite3_column_text(p->pVCheck, 0);
-        if( strncmp(zBuf, zW, nWord+nNextIn)==0 ){
+        if( zW!=0 && strncmp(zBuf, zW, nWord+nNextIn)==0 ){
           amatchAddWord(pCur, pWord->rCost, pWord->nMatch+nNextIn, zBuf, "");
         }
       }
@@ -1211,7 +1211,7 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
       if( rc!=SQLITE_ROW ) break;
       zW = (const char*)sqlite3_column_text(p->pVCheck, 0);
       amatchStrcpy(zBuf+nWord, zNext);
-      if( strncmp(zW, zBuf, nWord)!=0 ) break;
+      if( zW==0 || strncmp(zW, zBuf, nWord)!=0 ) break;
       if( (zNextIn[0]=='*' && zNextIn[1]==0)
        || (zNextIn[0]==0 && zW[nWord]==0)
       ){

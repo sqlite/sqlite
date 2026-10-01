@@ -156,5 +156,9 @@ void sqlite3WalDb(Wal *pWal, sqlite3 *db);
 int sqlite3WalSystemErrno(Wal*);
 #endif
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_WALSTAT)
+  void sqlite3WalStat(Wal*,sqlite3_str*);
+#endif
+
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* SQLITE_WAL_H */

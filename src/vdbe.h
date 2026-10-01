@@ -306,7 +306,7 @@ int sqlite3VdbeUsesDoubleQuotedString(Vdbe*,const char*);
 void sqlite3VdbeSwap(Vdbe*,Vdbe*);
 VdbeOp *sqlite3VdbeTakeOpArray(Vdbe*, int*, int*);
 sqlite3_value *sqlite3VdbeGetBoundValue(Vdbe*, int, u8);
-void sqlite3VdbeSetVarmask(Vdbe*, int);
+void sqlite3VdbeReprepareOnBind(Vdbe*, int, int);
 #ifndef SQLITE_OMIT_TRACE
   char *sqlite3VdbeExpandSql(Vdbe*, const char*);
 #endif

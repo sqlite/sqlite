@@ -6389,7 +6389,7 @@ static int sessionChangesetFindTable(
   if( pIter ){
     sqlite3changeset_pk(pIter, &abPK, &nCol);
   }else if( !pTab && !pGrp->db ){
-    return SQLITE_OK;
+    return SQLITE_ERROR;
   }
 
   /* If one was not found above, create a new table now */
@@ -6415,7 +6415,7 @@ static int sessionChangesetFindTable(
       if( rc || pTab->nCol==0 ){
         sqlite3_free(pTab->azCol);
         sqlite3_free(pTab);
-        return rc;
+        return rc ? rc : SQLITE_ERROR;
       }
     }
 
@@ -7253,44 +7253,40 @@ int sqlite3changegroup_change_begin(
     rc = SQLITE_ERROR;
   }else{
     rc = sessionChangesetFindTable(pGrp, zTab, 0, &pTab);
+    if( pTab==0 && pzErr ){
+      *pzErr = sqlite3_mprintf("no such table: %s", zTab);
+    }
   }
   if( rc==SQLITE_OK ){
-    if( pTab==0 ){
-      if( pzErr ){
-        *pzErr = sqlite3_mprintf("no such table: %s", zTab);
-      }
-      rc = SQLITE_ERROR;
-    }else{
-      int nReq = pTab->nCol * (eOp==SQLITE_UPDATE ? 2 : 1);
-      pGrp->cd.pTab = pTab;
-      pGrp->cd.eOp = eOp;
-      pGrp->cd.bIndirect = bIndirect;
+    int nReq = pTab->nCol * (eOp==SQLITE_UPDATE ? 2 : 1);
+    pGrp->cd.pTab = pTab;
+    pGrp->cd.eOp = eOp;
+    pGrp->cd.bIndirect = bIndirect;
 
-      if( pGrp->cd.nBufAlloc<nReq ){
-        SessionBuffer *aBuf = (SessionBuffer*)sqlite3_realloc(
-            pGrp->cd.aBuf, nReq * sizeof(SessionBuffer)
+    if( pGrp->cd.nBufAlloc<nReq ){
+      SessionBuffer *aBuf = (SessionBuffer*)sqlite3_realloc(
+          pGrp->cd.aBuf, nReq * sizeof(SessionBuffer)
+      );
+      if( aBuf==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        memset(&aBuf[pGrp->cd.nBufAlloc], 0, 
+            sizeof(SessionBuffer) * (nReq - pGrp->cd.nBufAlloc)
         );
-        if( aBuf==0 ){
-          rc = SQLITE_NOMEM;
-        }else{
-          memset(&aBuf[pGrp->cd.nBufAlloc], 0, 
-              sizeof(SessionBuffer) * (nReq - pGrp->cd.nBufAlloc)
-          );
-          pGrp->cd.aBuf = aBuf;
-          pGrp->cd.nBufAlloc = nReq;
-        }
+        pGrp->cd.aBuf = aBuf;
+        pGrp->cd.nBufAlloc = nReq;
       }
+    }
 
 #ifdef SQLITE_DEBUG
-      {
-        /* Assert that all column values are currently undefined */
-        int ii;
-        for(ii=0; ii<pGrp->cd.nBufAlloc; ii++){
-          assert( pGrp->cd.aBuf[ii].nBuf==0 );
-        }
+    {
+      /* Assert that all column values are currently undefined */
+      int ii;
+      for(ii=0; ii<pGrp->cd.nBufAlloc; ii++){
+        assert( pGrp->cd.aBuf[ii].nBuf==0 );
       }
-#endif
     }
+#endif
   }
 
   return rc;

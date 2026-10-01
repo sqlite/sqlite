@@ -1058,7 +1058,7 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
 ** This is the default collating function named "BINARY" which is always
 ** available.
 */
-static int binCollFunc(
+int sqlite3BinaryCompare(
   void *NotUsed,
   int nKey1, const void *pKey1,
   int nKey2, const void *pKey2
@@ -1090,16 +1090,19 @@ static int rtrimCollFunc(
   const u8 *pK2 = (const u8*)pKey2;
   while( nKey1 && pK1[nKey1-1]==' ' ) nKey1--;
   while( nKey2 && pK2[nKey2-1]==' ' ) nKey2--;
-  return binCollFunc(pUser, nKey1, pKey1, nKey2, pKey2);
+  return sqlite3BinaryCompare(pUser, nKey1, pKey1, nKey2, pKey2);
 }
 
 /*
 ** Return true if CollSeq is the default built-in BINARY.
 */
+#if !SQLITE_USES_INLINE
 int sqlite3IsBinary(const CollSeq *p){
-  assert( p==0 || p->xCmp!=binCollFunc || strcmp(p->zName,"BINARY")==0 );
-  return p==0 || p->xCmp==binCollFunc;
+  assert( p==0 || p->xCmp!=sqlite3BinaryCompare
+       || strcmp(p->zName,"BINARY")==0 );
+  return p==0 || p->xCmp==sqlite3BinaryCompare;
 }
+#endif
 
 /*
 ** Another built-in collating sequence: NOCASE.
@@ -2063,7 +2066,7 @@ int sqlite3CreateFunc(
     if( db->nVdbeActive ){
       sqlite3ErrorWithMsg(db, SQLITE_BUSY,
         "unable to delete/modify user-function due to active statements");
-      assert( !db->mallocFailed );
+      assert( !db->mallocFailed || db->nVdbeExec>0 );
       return SQLITE_BUSY;
     }else{
       sqlite3ExpirePreparedStatements(db, 0);
@@ -3585,9 +3588,12 @@ static int openDatabase(
   ** EVIDENCE-OF: R-52786-44878 SQLite defines three built-in collating
   ** functions:
   */
-  createCollation(db, sqlite3StrBINARY, SQLITE_UTF8, 0, binCollFunc, 0);
-  createCollation(db, sqlite3StrBINARY, SQLITE_UTF16BE, 0, binCollFunc, 0);
-  createCollation(db, sqlite3StrBINARY, SQLITE_UTF16LE, 0, binCollFunc, 0);
+  createCollation(db, sqlite3StrBINARY, SQLITE_UTF8, 0,
+                  sqlite3BinaryCompare, 0);
+  createCollation(db, sqlite3StrBINARY, SQLITE_UTF16BE, 0,
+                  sqlite3BinaryCompare, 0);
+  createCollation(db, sqlite3StrBINARY, SQLITE_UTF16LE, 0,
+                  sqlite3BinaryCompare, 0);
   createCollation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc, 0);
   createCollation(db, "RTRIM", SQLITE_UTF8, 0, rtrimCollFunc, 0);
   if( db->mallocFailed ){

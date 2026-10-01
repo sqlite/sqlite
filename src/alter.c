@@ -303,6 +303,30 @@ static void sqlite3ErrorIfNotEmpty(
 }
 
 /*
+** zCol is a column name used in an ALTER TABLE DROP, ADD or RENAME COLUMN
+** operation. zOp identifies the specific operation - "drop", "add", "rename
+** to" or "rename from". pTab is the table being altered.
+**
+** If pTab has a rowid and zCol is a rowid alias, then SQLITE_ERROR is 
+** returned and an error message left in pParse. Or, if zCol is not an alias 
+** for "rowid" or pTab is not an intkey table, then SQLITE_OK is returned.
+*/
+static int isRowidAlias(
+  Parse *pParse, 
+  Table *pTab, 
+  const char *zCol, 
+  const char *zOp
+){
+  if( HasRowid(pTab) && sqlite3IsRowid(zCol) ){
+    sqlite3ErrorMsg(pParse, "cannot %s rowid alias: %s", zOp, zCol);
+    return SQLITE_ERROR;
+  }
+  return SQLITE_OK;
+}
+
+
+
+/*
 ** This function is called after an "ALTER TABLE ... ADD" statement
 ** has been parsed. Argument pColDef contains the text of the new
 ** column definition.
@@ -347,9 +371,9 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
 #endif
 
 
-  /* Check that the new column is not specified as PRIMARY KEY or UNIQUE.
-  ** If there is a NOT NULL constraint, then the default value for the
-  ** column must not be NULL.
+  /* Check that the new column is not specified as PRIMARY KEY or UNIQUE,
+  ** or a rowid alias. If there is a NOT NULL constraint, then the default
+  ** value for the column must not be NULL.
   */
   if( pCol->colFlags & COLFLAG_PRIMKEY ){
     sqlite3ErrorMsg(pParse, "Cannot add a PRIMARY KEY column");
@@ -360,6 +384,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
          "Cannot add a UNIQUE column");
     return;
   }
+  if( isRowidAlias(pParse, pTab, pCol->zCnName, "add") ) return;
   if( (pCol->colFlags & COLFLAG_GENERATED)==0 ){
     /* If the default value for the new column was specified with a
     ** literal NULL, then set pDflt to 0. This simplifies checking
@@ -448,6 +473,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
      || (pCol->notNull && (pCol->colFlags & COLFLAG_GENERATED)!=0)
      || (pTab->tabFlags & TF_Strict)!=0
     ){
+      pParse->colNamesSet = 1;
       sqlite3NestedParse(pParse,
         "SELECT CASE WHEN quick_check GLOB 'CHECK*'"
         " THEN raise(ABORT,'CHECK constraint failed')"
@@ -652,6 +678,8 @@ void sqlite3AlterRenameColumn(
   sqlite3MayAbort(pParse);
   zNew = sqlite3NameFromToken(db, pNew);
   if( !zNew ) goto exit_rename_column;
+  if( isRowidAlias(pParse, pTab, zOld, "rename from") ) goto exit_rename_column;
+  if( isRowidAlias(pParse, pTab, zNew, "rename to") ) goto exit_rename_column;
   assert( pNew->n>0 );
   bQuote = sqlite3Isquote(pNew->z[0]);
   sqlite3NestedParse(pParse,
@@ -2278,6 +2306,7 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, const Token *pName){
     sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pName);
     goto exit_drop_column;
   }
+  if( isRowidAlias(pParse, pTab, zCol, "drop") ) goto exit_drop_column;
 
   /* Do not allow the user to drop a PRIMARY KEY column or a column
   ** constrained by a UNIQUE constraint.  */

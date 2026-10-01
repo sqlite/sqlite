@@ -1306,7 +1306,7 @@ static Trigger *fkActionTrigger(
             testcase( pCol->colFlags & COLFLAG_STORED );
             pDflt = 0;
           }else{
-            pDflt = sqlite3ColumnExpr(pFKey->pFrom, pCol);
+            pDflt = sqlite3ColumnExprAuth(pFKey->pFrom, pCol, pParse);
           }
           if( pDflt ){
             pNew = sqlite3ExprDup(db, pDflt, 0);

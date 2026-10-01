@@ -434,5 +434,29 @@ do_execsql_test 8.3 {
 } {}
 
 
+#-------------------------------------------------------------------------
+# Check that the next_char() function is not marked SQLITE_INNOCUOUS.
+#
+do_execsql_test 9.1 {
+  SELECT (flags & 0x200000) FROM pragma_function_list
+   WHERE name='next_char';
+} {0 0 0}
+
+do_execsql_test 9.2 {
+  CREATE TABLE dict(word);
+  INSERT INTO dict VALUES('cat'), ('car'), ('cow');
+  CREATE VIEW v1 AS SELECT next_char('c', 'dict', 'word') AS x;
+  PRAGMA trusted_schema = ON;
+  SELECT * FROM v1;
+} {ao}
+
+do_catchsql_test 9.3 {
+  PRAGMA trusted_schema = OFF;
+  SELECT * FROM v1;
+} {1 {unsafe use of next_char()}}
+
+do_execsql_test 9.4 {
+  PRAGMA trusted_schema = ON;
+}
 
 finish_test

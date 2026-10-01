@@ -1,0 +1,63 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1flat
+vec1_load db
+
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO v1(v) SELECT random_vector(32) FROM s;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(v, '{nbucket:24, codesize:0}') FROM v1
+  ));
+}
+
+db close
+sqlite3 db test.db
+vec1_load db
+
+do_execsql_test 1.1 {
+  SELECT length(v) FROM v1 LIMIT 1
+} {128}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v2 USING vec1(v);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO v2(v) SELECT random_vector(7) FROM s;
+}
+
+breakpoint
+do_execsql_test 2.1 {
+  INSERT INTO v2(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(v, '{nbucket:24, codesize:0}') FROM v2
+  ));
+}
+
+set v [db one { SELECT v FROM v2 WHERE rowid = 499 }]
+
+do_execsql_test 2.1 {
+}
+
+finish_test
+

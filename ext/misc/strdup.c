@@ -53,6 +53,14 @@ SQLITE_EXTENSION_INIT1
 #include <stdlib.h>
 
 /*
+** No-op wrapper around free() to work around problems with non-CDECL
+** calling conventions on 32-bit Windows builds.
+*/
+static void strdupFree(void *p){
+  free(p);
+}
+
+/*
 ** Make a copy of a string or BLOB in memory obtained from malloc().
 */
 static void strdupfunc(
@@ -75,7 +83,7 @@ static void strdupfunc(
       return;
     }
     if( nIn>0 ) memcpy(zOut, zIn, nIn);
-    sqlite3_result_blob(context, zOut, nIn, free);
+    sqlite3_result_blob(context, zOut, nIn, strdupFree);
   }else{
     zIn = (const unsigned char*)sqlite3_value_text(argv[0]);
     if( zIn==0 ) return;
@@ -87,7 +95,7 @@ static void strdupfunc(
     }
     memcpy(zOut, zIn, nIn);
     zOut[nIn] = 0;
-    sqlite3_result_text64(context, (char*)zOut, nIn, free,
+    sqlite3_result_text64(context, (char*)zOut, nIn, strdupFree,
                           SQLITE_UTF8_ZT);
   }
 }

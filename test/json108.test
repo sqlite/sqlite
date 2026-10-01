@@ -41,5 +41,82 @@ do_execsql_test 1.5 {
   SELECT count(*) FROM t1 WHERE json(j0)==json(json_pretty(j0,'/*hello*/'));
 } 10
 
+#-------------------------------------------------------------------------
+
+do_execsql_test 2.0 {
+  CREATE TABLE obj(x);
+  INSERT INTO obj VALUES('{name:"value"}');
+
+  CREATE TABLE one(y);
+  INSERT INTO one VALUES(1);
+
+  CREATE TABLE zero(z);
+}
+
+
+do_execsql_test 2.1 {
+  SELECT key, value FROM json_tree(obj.x) JOIN obj;
+} {
+  {} {{"name":"value"}} name value
+}
+
+do_catchsql_test 2.2 {
+  SELECT key, value FROM json_tree(obj.x) LEFT JOIN obj;
+} {
+  1 {table-function argument references tables to its right}
+}
+
+do_catchsql_test 2.3 {
+  SELECT key, value FROM json_tree(obj.x) LEFT JOIN obj WHERE obj.x!='';
+} {
+  1 {table-function argument references tables to its right}
+}
+
+do_catchsql_test 2.4 {
+  SELECT key, value FROM json_tree(obj.x), one LEFT JOIN obj WHERE obj.x!='';
+} {
+  1 {table-function argument references tables to its right}
+}
+
+do_execsql_test 2.5 {
+  SELECT key, value FROM json_tree(obj.x), obj LEFT JOIN one;
+} {
+  {} {{"name":"value"}} name value
+}
+
+do_execsql_test 2.6 {
+  SELECT key, value FROM obj, json_tree(obj.x) LEFT JOIN one;
+} {
+  {} {{"name":"value"}} name value
+}
+
+do_execsql_test 2.7 {
+  SELECT key, value FROM one LEFT JOIN json_tree(obj.x), obj;
+} {
+  {} {{"name":"value"}} name value
+}
+
+do_execsql_test 2.8 {
+  SELECT key, value FROM one LEFT JOIN obj, json_tree(obj.x);
+} {
+  {} {{"name":"value"}} name value
+}
+
+do_execsql_test 2.9 {
+  SELECT key, value FROM zero LEFT JOIN obj, json_tree(obj.x);
+} {
+}
+
+do_execsql_test 2.10 {
+  SELECT key, value FROM obj LEFT JOIN json_tree(obj.x);
+} {
+  {} {{"name":"value"}} name value
+}
+
+do_execsql_test 2.11 {
+  SELECT key, value FROM obj LEFT JOIN zero, json_tree(obj.x);
+} {
+  {} {{"name":"value"}} name value
+}
 
 finish_test

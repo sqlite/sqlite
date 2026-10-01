@@ -2167,7 +2167,7 @@ static int btreeComputeFreeSpace(MemPage *pPage){
       size = get2byte(&data[pc+2]);
       if( size<4 && sqlite3FaultSim(422)==SQLITE_OK ){
         /* Minimum freeblock size is 4.  Enable fault-sim 422 to disable this
-        ** check to reach interesting error stats.  However, disabling this
+        ** check to reach interesting error states.  However, disabling this
         ** check can cause assertion faults due to min-heap overflow.  All
         ** fault-sims are for testing use only, but this one especially so. */
         return SQLITE_CORRUPT_PAGE(pPage);
@@ -10428,6 +10428,9 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
       }
       pMove = 0;
       rc = btreeGetPage(pBt, maxRootPgno, &pMove, 0);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerWrite(pMove->pDbPage);
+      }
       freePage(pMove, &rc);
       releasePage(pMove);
       if( rc!=SQLITE_OK ){
@@ -11248,9 +11251,9 @@ int sqlite3BtreeIntegrityCheck(
     checkOom(&sCheck);
     goto integrity_ck_cleanup;
   }
-  sCheck.heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
+  sCheck.heap = (u32*)sqlite3Malloc( pBt->pageSize*2 );
 #ifdef SQLITE_DEBUG
-  sCheck.mxHeap = pBt->pageSize/4 - 1;
+  sCheck.mxHeap = pBt->pageSize/2 - 1;
 #endif
   if( sCheck.heap==0 ){
     checkOom(&sCheck);
@@ -11338,7 +11341,7 @@ int sqlite3BtreeIntegrityCheck(
   /* Clean  up and report errors.
   */
 integrity_ck_cleanup:
-  sqlite3PageFree(sCheck.heap);
+  sqlite3_free(sCheck.heap);
   sqlite3_free(sCheck.aPgRef);
   *pnErr = sCheck.nErr;
   if( sCheck.nErr==0 ){

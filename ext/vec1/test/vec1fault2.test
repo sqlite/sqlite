@@ -1,0 +1,49 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1fault2
+
+#-------------------------------------------------------------------------
+# OOM error in multi-threaded 'rebuild'.
+#
+reset_db
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE mytbl USING vec1(a, b);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<600 )
+  INSERT INTO mytbl SELECT random_vector(8), i FROM s;
+}
+faultsim_save_and_close
+
+proc progress {percent msg} { }
+
+do_faultsim_test 1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  db func progress progress
+  db eval { PRAGMA table_info = mytbl }
+  db eval { SELECT vec1_config('nthread', 2) }
+} -body {
+  execsql {
+    INSERT INTO mytbl(cmd, arg) VALUES('rebuild', (
+      SELECT vec1_train(a, '{codesize:8, progress: "progress"}') FROM mytbl
+    ));
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
+finish_test
+

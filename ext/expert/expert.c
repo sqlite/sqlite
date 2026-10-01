@@ -54,6 +54,10 @@ static int readSqlFromFile(sqlite3expert *p, const char *zFile, char **pzErr){
   nIn = ftell(in);
   rewind(in);
   pBuf = sqlite3_malloc64( nIn+1 );
+  if( pBuf==0 ){
+    *pzErr = sqlite3_mprintf("out of memory\n");
+    return SQLITE_NOMEM;
+  }
   nRead = fread(pBuf, nIn, 1, in);
   fclose(in);
   if( nRead!=1 ){

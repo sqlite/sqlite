@@ -417,7 +417,7 @@ static void qrfEqpStats(Qrf *p){
     if( sqlite3_stmt_scanstatus_v2(pS,i,SQLITE_SCANSTAT_EXPLAIN,f,(void*)&z) ){
       break;
     }
-    n = (int)strlen(z) + qrfStatsHeight(pS,i)*3;
+    n = (z ? (int)strlen(z) : 0) + qrfStatsHeight(pS,i)*3;
     if( n>nWidth ) nWidth = n;
   }
   nWidth += 2;
@@ -2939,6 +2939,7 @@ qrf_reinit:
       p->spec.zColumnSep = ",";
       p->spec.zRowSep = "\r\n";
       p->spec.zNull = "";
+      if( p->spec.eEsc==QRF_Auto ) p->spec.eEsc = QRF_ESC_Off;
       break;
     }
     case QRF_STYLE_Quote: {

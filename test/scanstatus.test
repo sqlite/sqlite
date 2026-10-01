@@ -168,7 +168,7 @@ do_execsql_test 2.8.1 {
   SELECT * FROM x2 WHERE i=1 AND j='two'
 }
 do_scanstatus_test 2.8.2 {
-  nLoop 1 nVisit 0 nEst 8.0 zName x2ij 
+  nLoop 1 nVisit 0 nEst 9.0 zName x2ij 
   zExplain {SEARCH x2 USING INDEX x2ij (i=? AND j=?)}
 }
 
@@ -176,7 +176,7 @@ do_execsql_test 2.9.1 {
   SELECT * FROM x2 WHERE i=5 AND j='two'
 }
 do_scanstatus_test 2.9.2 {
-  nLoop 1 nVisit 0 nEst 8.0 zName x2ij 
+  nLoop 1 nVisit 0 nEst 9.0 zName x2ij 
   zExplain {SEARCH x2 USING INDEX x2ij (i=? AND j=?)}
 }
 
@@ -184,7 +184,7 @@ do_execsql_test 2.10.1 {
   SELECT * FROM x2 WHERE i=3 AND j='three'
 } {3 three {3 three}}
 do_scanstatus_test 2.10.2 {
-  nLoop 1 nVisit 1 nEst 8.0 zName x2ij 
+  nLoop 1 nVisit 1 nEst 9.0 zName x2ij 
   zExplain {SEARCH x2 USING INDEX x2ij (i=? AND j=?)}
 }
 
@@ -279,7 +279,7 @@ do_scanstatus_test 4.2.2 {
   nLoop 1 nVisit 1 nEst 1.0 zName sqlite_autoindex_p1_1 
   zExplain {SEARCH p1 USING INDEX sqlite_autoindex_p1_1 (x=?)}
 
-  nLoop 1 nVisit 3 nEst 262144.0 zName c1 zExplain {SCAN c1}
+  nLoop 1 nVisit 3 nEst 1048576.0 zName c1 zExplain {SCAN c1}
 }
 
 #-------------------------------------------------------------------------
