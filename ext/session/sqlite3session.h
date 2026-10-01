@@ -157,6 +157,8 @@ int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 **        made, or
 **   <li> The change is made by an SQL trigger or foreign key action 
 **        instead of directly as a result of a users SQL statement.
+**   <li> The change is made by a call to sqlite3changeset_apply() or similar
+**        and the change was marked as indirect in the changeset or patchset.
 ** </ul>
 **
 ** If a single row is affected by more than one operation within a session,
