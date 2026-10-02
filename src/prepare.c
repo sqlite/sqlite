@@ -129,6 +129,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     int rc;
     u8 saved_iDb = db->init.iDb;
     sqlite3_stmt *pStmt;
+    const char *zEnd;
     TESTONLY(int rcp);            /* Return code from sqlite3_prepare() */
 
     assert( db->init.busy );
@@ -143,7 +144,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     db->init.orphanTrigger = 0;
     db->init.azInit = (const char**)argv;
     pStmt = 0;
-    TESTONLY(rcp = ) sqlite3Prepare(db, argv[4], -1, 0, 0, &pStmt, 0);
+    TESTONLY(rcp = ) sqlite3Prepare(db, argv[4], -1, 0, 0, &pStmt, &zEnd);
     rc = db->errCode;
     assert( (rc&0xFF)==(rcp&0xFF) );
     db->init.iDb = saved_iDb;
@@ -159,6 +160,8 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
           corruptSchema(pData, argv, sqlite3_errmsg(db));
         }
       }
+    }else if( zEnd[0] ){
+      corruptSchema(pData, argv, 0);
     }
     db->init.azInit = sqlite3StdType; /* Any array of string ptrs will do */
     sqlite3_finalize(pStmt);
