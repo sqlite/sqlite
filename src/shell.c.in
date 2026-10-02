@@ -8439,7 +8439,7 @@ static int dotCmdImport(ShellState *p){
   import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
   if( sqlite3_table_column_metadata(p->db, zSchema, zTable,0,0,0,0,0,0) 
    && 0==db_int(p->db, "SELECT count(*) FROM \"%w\".sqlite_schema"
-                       " WHERE name=%Q AND type='view'",
+                       " WHERE name=%Q COLLATE nocase AND type='view'",
                        zSchema ? zSchema : "main", zTable)
   ){
     /* Table does not exist.  Create it. */
