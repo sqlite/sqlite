@@ -211,6 +211,7 @@ static char **columnNames(
   int truePk = 0;          /* PRAGMA table_info identifies the PK to use */
   i64 nPK = 0;             /* Number of PRIMARY KEY columns */
   i64 i, j;                /* Loop counters */
+  int iPKey = 0;           /* Primary key index */
 
   if( g.bSchemaPK==0 ){
     /* Normal case:  Figure out what the true primary key is for the table.
@@ -283,9 +284,9 @@ static char **columnNames(
   }
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     char * sid = safeId((char*)sqlite3_column_text(pStmt,1));
-    int iPKey;
-    if( truePk && (iPKey = sqlite3_column_int(pStmt,5))>0 ){
-      az[iPKey-1] = sid;
+    if( truePk && sqlite3_column_int(pStmt,5)>0 ){
+      assert( iPKey<naz );
+      az[iPKey++] = sid;
     }else{
       if( !g.bSchemaCompare
           || !(strcmp(sid,"rootpage")==0

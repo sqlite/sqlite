@@ -1,5 +1,5 @@
-C Fix\sintegrity-check\sfails\sthat\swould\soccur\sif\sthe\sdatabase\scontained\sa\scontentless\sfts4\stable.\sReport\s[bugs:/info/2026-10-02T12:22:03Z\s|\s2026-10-02T12:22:03Z].
-D 2026-10-02T14:33:50.451
+C Fix\sthe\s"sqldiff"\sutility\sso\sthat\swhen\susing\sthe\s--primarykey\soption\son\na\stable\sthat\shas\sa\sPRIMARY\sKEY\swith\sredundant\scolumns,\sit\sdoes\snot\soverflow\nthe\sarray\sof\sPRIMARY\sKEY\scolumn\snames.\s\sBug\sdiscovered\sby\sAnthropic\sas\nANT-2026-Y36XS4M7.
+D 2026-10-02T18:47:27.150
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2257,7 +2257,7 @@ F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdadd
 F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 4969fd642dad0ea483e4e104163021d92baf98f6a8eac981fe48525f9b873430
-F tool/sqldiff.c e581749af18f02a72cd18f56b465df1bef630544aebdf13993e2be55e4158f94
+F tool/sqldiff.c 4a9bdeedff021031f95f300825e0e1f62d4217f1a65c087db4ee498232fde4a2
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
 F tool/sqlite3_rsync.c 18ce221e820cd0457a11ae53e898d01bca8ed9f8de08c2ccb8fd2fb116e1b5f2
 F tool/sqltclsh.c.in c103c6fc7d42bce611f9d4596774d60b7ef3d0b291a1f58c9e6184e458b89296
@@ -2278,8 +2278,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 99aab2c99220a3814124a57653e6627aa91c24459bf4eb87e69c9ed0b3378a0c
-R 09f79f8f3e6531210ce5a559571d7e2a
-U dan
-Z 2851b7404766dff34f76803f1668fc50
+P ca8de9a30484d26739a09c972c525a1ae6edcce41b0f3c612805836b894c7a26
+R 301e33a2ffb744d16de7c138fe919fd9
+U drh
+Z 61130e1ed52a20054782dc02ad432a1e
 # Remove this line to create a well-formed Fossil manifest.
