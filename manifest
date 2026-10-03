@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sin\srbuvacuum.test\sthat\swas\sassuming\sSQLite\signored\strailing\sSQL\sstored\sin\sa\sdb\sschema.\sAs\sof\s[e21c5bc59a]\sthis\sis\snot\strue.
-D 2026-10-03T15:29:06.645
+C Fix\ssome\sformatting\sissues\sin\stest\sprogram\svec1bench.tcl.
+D 2026-10-03T15:54:28.545
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -637,7 +637,7 @@ F ext/vec1/test/vec1update.test 77d5b85b859393f0d8fbc2f556a75c06bee7b23a19b5af7c
 F ext/vec1/test/vec1update2.test 4fb868f051df89a35f7e58725699259150292fe972253088f3feb10ee7c50945
 F ext/vec1/test/vec1version.test 7d17cc84c0a3c8706080abb3484bad8a6eb118c8d4946c7846cde5c4e6cfc89e
 F ext/vec1/tool/vec1_algo_test.c c62b828a3e46a39a8656f26b74804906cc3160758f8afc6ed89f507b832af302
-F ext/vec1/tool/vec1bench.tcl de201e8b468de035065dd8dfdaa171d64760693deb19e6d5725e23840e6cca1e
+F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b62631b480c2d2d
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
 F ext/vec1/vec1.c 08cd74248dd2707e8a59943007e1dbcac2946e60b9d55c261f4810d1689b17fa
@@ -2278,8 +2278,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 85207e5253967c2d30c67ff1f5b572ca3117b5d95ecba65affc861c4ce7ec10c
-R 67384174ef4b3c15e93bfac3c585caf1
+P d47bc6e0d2fc0444612e8e43265e2a9083f1fcbc4489cabbf25e43538431fc42
+R 5e5abc93fcca9566a5c3a19a50f888aa
 U dan
-Z c5af6ff692a19ec230ed601e17fb3472
+Z e82128053f2f36c2a4461a50a740cc48
 # Remove this line to create a well-formed Fossil manifest.
