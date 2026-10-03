@@ -1,5 +1,5 @@
-C Enhance\sthe\ssqlite3_incomplete()\sinterface\sso\sthat\sit\sreturns\sSQLITE_EMPTY\nif\sthe\sinput\sconsists\spurely\sof\swhitespace\sand\scomments.\s\sFix\sbugs\sin\nthe\scontinuation\sprompt\smechanism\sof\sthe\sCLI\sdiscovered\swhile\smaking\sthis\nenhancement.
-D 2026-10-03T09:53:15.381
+C Fix\stest\scases\sadded\sby\s[e21c5bc59ae66173]\sso\sthat\sthey\swork\swith\nin-memory\sconfigurations.
+D 2026-10-03T10:45:03.241
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1576,7 +1576,7 @@ F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 84e4cc5cbca285357f7906e99b21be4f2bf5abc0
 F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
-F test/parser1.test c3d46f149a88745b9d89ef41424dd1b9004027984ae0564bee6420b19d3b416b
+F test/parser1.test 1901cf7157fbf7842eaee4a7dea65e096c606f01d42740a7991fa85eba421d45
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test 8a801d2b8e4b0ebb99701f026a67a9e84634c8aa24799a842c44003b93250da1
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
@@ -2278,8 +2278,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 65ec11f05a9ee5b23495427ece76c0550a8ffc28980a8a0c72d556ba0d2290e2
-R e8b79e518e3232a27bd6824f70877085
+P 086e6fb47cc29d9568495990cde467933e503ffd5ddd70073d1e6d26e445fa49
+R d37b739097ff85b4c8a86d8b2c9e1715
 U drh
-Z 90560fdc063acbff6247885568821ba6
+Z 8dc2d3f9bfcd678fca08633f2cd699cc
 # Remove this line to create a well-formed Fossil manifest.
