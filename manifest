@@ -1,5 +1,5 @@
-C Fix\stest\scases\sadded\sby\s[e21c5bc59ae66173]\sso\sthat\sthey\swork\swith\nin-memory\sconfigurations.
-D 2026-10-03T10:45:03.241
+C Fix\sa\stest\scase\sin\srbuvacuum.test\sthat\swas\sassuming\sSQLite\signored\strailing\sSQL\sstored\sin\sa\sdb\sschema.\sAs\sof\s[e21c5bc59a]\sthis\sis\snot\strue.
+D 2026-10-03T15:29:06.645
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -469,7 +469,7 @@ F ext/rbu/rburesume.test 1403752d152b55efb7fc25749c0fccc790061371ec9ffe428cc04f8
 F ext/rbu/rbusave.test 588b618dad9d65c4b13d03a79931de82213503fedc26bdf5789c996ecf427fba
 F ext/rbu/rbusplit.test a6dedd23cf37bcf2e8646d9d7139846e96d60d92f9bc6d6ba6ca8c24c0bd1f72
 F ext/rbu/rbutemplimit.test 4980df2d4b74f4dd982add8f78809106154ef5a3c4bdce747422ab0b0481e029
-F ext/rbu/rbuvacuum.test e3585cfda220038e8186c583e9bd2aaa9eccd0a5c2e40ed861de3c987c93f68c
+F ext/rbu/rbuvacuum.test 6ded47e692b89c5c31f0bef31d899eecfaa3f0df7e1e969746ea507a6c3b54fb
 F ext/rbu/rbuvacuum2.test 1a9bd41f127be2826de2a65204df9118525a8af8d16e61e6bc63ba3ac0010a23
 F ext/rbu/rbuvacuum3.test 3ce42695fdf21aaa3499e857d7d4253bc499ad759bcd6c9362042c13cd37d8de
 F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69eefaebb205
@@ -2278,8 +2278,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 086e6fb47cc29d9568495990cde467933e503ffd5ddd70073d1e6d26e445fa49
-R d37b739097ff85b4c8a86d8b2c9e1715
-U drh
-Z 8dc2d3f9bfcd678fca08633f2cd699cc
+P 85207e5253967c2d30c67ff1f5b572ca3117b5d95ecba65affc861c4ce7ec10c
+R 67384174ef4b3c15e93bfac3c585caf1
+U dan
+Z c5af6ff692a19ec230ed601e17fb3472
 # Remove this line to create a well-formed Fossil manifest.
