@@ -1344,10 +1344,8 @@ static char *expand_prompt(
         int cc = (R>>16)&0xff;
         int nParen = R>>32;
         int eSemi = (R>>8)&0xff;
-        if( cc==0 ){
+        if( cc==0 || cc=='-' ){
           /* no-op */
-        }else if( cc=='-' ){
-          sqlite3_str_append(pOut,"\\n",3);
         }else if( cc=='/' ){
           sqlite3_str_append(pOut,"*/",2);
         }else{
