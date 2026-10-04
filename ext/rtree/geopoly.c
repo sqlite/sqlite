@@ -595,7 +595,7 @@ static void geopolyRegularFunc(
   double x = sqlite3_value_double(argv[0]);
   double y = sqlite3_value_double(argv[1]);
   double r = sqlite3_value_double(argv[2]);
-  int n = sqlite3_value_int(argv[3]);
+  i64 n = sqlite3_value_int64(argv[3]);
   int i;
   GeoPoly *p;
   (void)argc;
