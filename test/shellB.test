@@ -42,7 +42,7 @@ proc do_clitest {name args} {
 # file $srcfile.  Return true on success.
 #
 proc build_loadable {ext srcfile} {
-  if {$::tcl_platform(platform) eq "windows"} {
+  if {$::tcl_platform(os) eq "Windows NT"} {
     set ext [file root $ext].dll
     set cmd [list exec gcc -shared -fPIC -I. -I.. -o $ext $srcfile]
   } elseif {$::tcl_platform(os) eq "Darwin"} {

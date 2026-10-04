@@ -736,6 +736,30 @@ datetest 22.6  {datetime('2026-02-17 12:34','end of year','subsec')} \
                {2026-12-31 23:59:59.999}
 datetest 22.7  {datetime('2026-02-17 12:34','end of time','subsec')} {NULL}
 
+# Bug 2026-09-23T02:44:48Z
+#
+# Hour field can be 24 as long as minutes and seconds are zero.
+#
+datetest 23.1 {julianday('24:00:00')} {2451545.5}
+datetest 23.2 {datetime('24:00:00')}  {2000-01-02 00:00:00}
+datetest 23.3 {julianday(datetime('24:00:00'))} {2451545.5}
+datetest 23.4 {(julianday(datetime('24:00:00'))-julianday('24:00:00'))*24} 0.0
+datetest 23.5 {datetime(datetime('24:00:00'))} {2000-01-02 00:00:00}
+set A {2000-01-01 24:00:00}
+set B {2000-01-02 00:00:00}
+datetest 23.6 {timediff('$A','$B')} {+0000-00-00 00:00:00.000}
+datetest 23.7 {datetime('$A')} {2000-01-02 00:00:00}
+datetest 23.8 {datetime('$B',timediff('$A','$B'))} {2000-01-02 00:00:00}
+set A {24:00:00}
+set B {2000-01-01 00:00:00}
+datetest 23.9 {timediff('$A','$B')} {+0000-00-01 00:00:00.000}
+datetest 23.10 {datetime('$A')} {2000-01-02 00:00:00}
+datetest 23.11 {datetime('$B',timediff('$A','$B'))} {2000-01-02 00:00:00}
+datetest 23.12 {strftime('%d/%w/%U/%W','2000-01-02 00:00:00')} {02/0/01/00}
+datetest 23.13 {strftime('%d/%w/%U/%W','2000-01-01 24:00:00')} {02/0/01/00}
+datetest 23.14 {datetime('24:01')} {NULL}
+datetest 23.15 {datetime('24:00:01')} {NULL}
+datetest 23.16 {datetime('24:00:00.001')} {NULL}
 
 
 finish_test

@@ -518,6 +518,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
   int i, j;                       /* Loop counters */
   SrcItem *pLeft;                 /* Left table being joined */
   SrcItem *pRight;                /* Right table being joined */
+  int bSeenTFunc = 0;             /* True if have seen table-valued function */
 
   pSrc = p->pSrc;
   pLeft = &pSrc->a[0];
@@ -660,9 +661,17 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
       p->selFlags |= SF_OnToWhere;
     }
 
+    if( bSeenTFunc==0 ){
+      bSeenTFunc = (pLeft->fg.isTabFunc && pLeft->u1.pFuncArg);
+    }
+
+    /* We also need to call sqlite3SelectCheckOnClauses() to verify that
+    ** table-valued function arguments do not illegally refer to any tables to
+    ** their right. This test is required if either (a) there is a RIGHT JOIN
+    ** in the SrcList, or (b) there is a LEFT JOIN to the right of a 
+    ** table-valued function.  */
     if( (pRight->fg.isTabFunc && joinType==EP_OuterON && pRight->u1.pFuncArg)
-     || (pLeft->fg.isTabFunc && pLeft->u1.pFuncArg
-         && pLeft->fg.jointype & JT_LTORJ)
+     || (bSeenTFunc && joinType==EP_OuterON)
     ){
       p->selFlags |= SF_OnToWhere;
     }
@@ -7592,16 +7601,36 @@ void sqlite3SelectCheckOnClauses(Parse *pParse, Select *pSelect){
   pSelect->selFlags &= ~SF_OnToWhere;
 
   /* Check for any table-function args that are attached to virtual tables 
-  ** on the RHS of an outer join. They are subject to the same constraints
-  ** as ON clauses. */
+  ** on the RHS of an outer join. They are subject to similar constraints
+  ** as ON clauses. Specifically:
+  **
+  ** * If the table-valued function is to the left of any RIGHT JOIN, or if
+  **   it is the RHS of a RIGHT JOIN, then the table-valued function arguments
+  **   may not refer to any tables to the right of this one.
+  **
+  ** * If the table-valued function is to the left of a LEFT JOIN, then it
+  **   may not refer to any table that occurs to the right of the LEFT JOIN.
+  */
   sCtx.bFuncArg = 1;
   for(ii=0; ii<pSelect->pSrc->nSrc; ii++){
     SrcItem *pItem = &pSelect->pSrc->a[ii];
-    if( pItem->fg.isTabFunc
-     && (pItem->fg.jointype & (JT_OUTER|JT_LTORJ))
-    ){
-      sCtx.iJoin = pItem->iCursor;
-      sqlite3WalkExprList(&w, pItem->u1.pFuncArg);
+    if( pItem->fg.isTabFunc ){
+      sCtx.iJoin = -1;
+      if( (pItem->fg.jointype & (JT_LTORJ|JT_RIGHT)) ){
+        sCtx.iJoin = pItem->iCursor;
+      }else{
+        int jj;
+        for(jj=ii+1; jj<pSelect->pSrc->nSrc; jj++){
+          SrcItem *pItem2 = &pSelect->pSrc->a[jj];
+          if( pItem2->fg.jointype & JT_OUTER ){
+            sCtx.iJoin = pItem2[-1].iCursor;
+            break;
+          }
+        }
+      }
+      if( sCtx.iJoin>=0 ){
+        sqlite3WalkExprList(&w, pItem->u1.pFuncArg);
+      }
     }
   }
 }

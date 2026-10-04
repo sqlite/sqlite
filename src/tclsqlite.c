@@ -1130,7 +1130,7 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     switch( eType ){
       case SQLITE_BLOB: {
         data = Tcl_GetByteArrayFromObj(pVar, &n);
-        sqlite3_result_blob(context, data, n, SQLITE_TRANSIENT);
+        sqlite3_result_blob64(context, data, n, SQLITE_TRANSIENT);
         break;
       }
       case SQLITE_INTEGER: {
@@ -1522,7 +1522,7 @@ static int dbPrepareAndBind(
           ** it has no string representation or the host
           ** parameter name begins with "@". */
           data = Tcl_GetByteArrayFromObj(pVar, &n);
-          sqlite3_bind_blob(pStmt, i, data, n, SQLITE_STATIC);
+          sqlite3_bind_blob64(pStmt, i, data, n, SQLITE_STATIC);
           Tcl_IncrRefCount(pVar);
           pPreStmt->apParm[iParm++] = pVar;
         }else if( c=='b' && pVar->bytes==0 
@@ -3168,6 +3168,9 @@ static int SQLITE_TCLAPI DbObjCmd(
     if( zCommit[0] == 'C' ){
       /* success, set result as number of lines processed */
       pResult = Tcl_GetObjResult(interp);
+      if( Tcl_IsShared(pResult) ){
+        pResult = Tcl_DuplicateObj(pResult);
+      }
       Tcl_SetIntObj(pResult, lineno);
       rc = TCL_OK;
     }else{

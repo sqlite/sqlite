@@ -291,6 +291,7 @@ static void print_wal_header(Cksum *pCksum){
 static i64 describeContent(
   unsigned char *a,       /* Cell content */
   i64 nLocal,             /* Bytes in a[] */
+  int nMax,               /* Maximum number of bytes to write to zDesc */
   char *zDesc             /* Write description here */
 ){
   int nDesc = 0;
@@ -305,7 +306,7 @@ static i64 describeContent(
   pData = &a[x];
   a += n;
   i = x - n;
-  while( i>0 && pData<=pLimit ){
+  while( i>0 && pData<=pLimit && nDesc<nMax ){
     n = decodeVarint(a, &x);
     a += n;
     i -= n;
@@ -315,7 +316,7 @@ static i64 describeContent(
     nDesc++;
     zDesc++;
     if( x==0 ){
-      sprintf(zDesc, "*");     /* NULL is a "*" */
+      snprintf(zDesc, nMax-nDesc, "*");     /* NULL is a "*" */
     }else if( x>=1 && x<=6 ){
       v = (signed char)pData[0];
       pData++;
@@ -326,20 +327,20 @@ static i64 describeContent(
         case 3:  v = (v<<8) + pData[0];  pData++;
         case 2:  v = (v<<8) + pData[0];  pData++;
       }
-      sprintf(zDesc, "%lld", v);
+      snprintf(zDesc, nMax-nDesc, "%lld", v);
     }else if( x==7 ){
-      sprintf(zDesc, "real");
+      snprintf(zDesc, nMax-nDesc, "real");
       pData += 8;
     }else if( x==8 ){
-      sprintf(zDesc, "0");
+      snprintf(zDesc, nMax-nDesc, "0");
     }else if( x==9 ){
-      sprintf(zDesc, "1");
+      snprintf(zDesc, nMax-nDesc, "1");
     }else if( x>=12 ){
       i64 size = (x-12)/2;
       if( (x&1)==0 ){
-        sprintf(zDesc, "blob(%lld)", size);
+        snprintf(zDesc, nMax-nDesc, "blob(%lld)", size);
       }else{
-        sprintf(zDesc, "txt(%lld)", size);
+        snprintf(zDesc, nMax-nDesc, "txt(%lld)", size);
       }
       pData += size;
     }
@@ -433,7 +434,8 @@ static i64 describeCell(
     n += 4;
   }
   if( showCellContent && cType!=5 ){
-    nDesc += describeContent(a, nLocal, &zDesc[nDesc-1]);
+    zDesc[sizeof(zDesc)-1] = '\0';
+    nDesc += describeContent(a, nLocal, sizeof(zDesc)-nDesc, &zDesc[nDesc-1]);
   }
   *pzDesc = zDesc;
   return nLocal+n;

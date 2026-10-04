@@ -5267,38 +5267,42 @@ static u64 fts3ChecksumIndex(
     rc = sqlite3Fts3SegReaderStart(p, &csr, &filter);
   }
 
-  if( rc==SQLITE_OK ){
-    while( SQLITE_ROW==(rc = sqlite3Fts3SegReaderStep(p, &csr)) ){
-      char *pCsr = csr.aDoclist;
-      char *pEnd = &pCsr[csr.nDoclist];
+  while( rc==SQLITE_OK && SQLITE_ROW==(rc = sqlite3Fts3SegReaderStep(p,&csr)) ){
+    char *pCsr = csr.aDoclist;
+    char *pEnd = &pCsr[csr.nDoclist];
 
-      i64 iDocid = 0;
-      i64 iCol = 0;
-      u64 iPos = 0;
+    i64 iDocid = 0;
+    int iCol = 0;
+    u64 iPos = 0;
 
-      pCsr += sqlite3Fts3GetVarint(pCsr, &iDocid);
-      while( pCsr<pEnd ){
-        u64 iVal = 0;
-        pCsr += sqlite3Fts3GetVarintU(pCsr, &iVal);
-        if( pCsr<pEnd ){
-          if( iVal==0 || iVal==1 ){
-            iCol = 0;
-            iPos = 0;
-            if( iVal ){
-              pCsr += sqlite3Fts3GetVarint(pCsr, &iCol);
-            }else{
-              pCsr += sqlite3Fts3GetVarintU(pCsr, &iVal);
-              if( p->bDescIdx ){
-                iDocid = (i64)((u64)iDocid - iVal);
-              }else{
-                iDocid = (i64)((u64)iDocid + iVal);
-              }
-            }
+    rc = SQLITE_OK;
+    pCsr += sqlite3Fts3GetVarint(pCsr, &iDocid);
+    while( pCsr<pEnd ){
+      u64 iVal = 0;
+      pCsr += sqlite3Fts3GetVarintU(pCsr, &iVal);
+      if( pCsr<pEnd ){
+        if( iVal==0 || iVal==1 ){
+          iCol = 0;
+          iPos = 0;
+          if( iVal ){
+            pCsr += fts3GetVarint32(pCsr, &iCol);
           }else{
-            iPos += (iVal - 2);
+            pCsr += sqlite3Fts3GetVarintU(pCsr, &iVal);
+            if( p->bDescIdx ){
+              iDocid = (i64)((u64)iDocid - iVal);
+            }else{
+              iDocid = (i64)((u64)iDocid + iVal);
+            }
+          }
+        }else{
+          iPos += (iVal - 2);
+          if( iPos>0x7FFFFFFF ){
+            rc = SQLITE_CORRUPT_VTAB;
+            break;
+          }else{
             cksum = cksum ^ fts3ChecksumEntry(
                 csr.zTerm, csr.nTerm, iLangid, iIndex, iDocid,
-                (int)iCol, (int)iPos
+                iCol, (int)iPos
             );
           }
         }
@@ -5325,6 +5329,7 @@ int sqlite3Fts3IntegrityCheck(Fts3Table *p, int *pbOk){
   u64 cksum1 = 0;                 /* Checksum based on FTS index contents */
   u64 cksum2 = 0;                 /* Checksum based on %_content contents */
   sqlite3_stmt *pAllLangid = 0;   /* Statement to return all language-ids */
+  int bContentless = (p->zContentTbl && p->zContentTbl[0]=='\0');
 
   /* This block calculates the checksum according to the FTS index. */
   rc = fts3SqlStmt(p, SQL_SELECT_ALL_LANGID, &pAllLangid, 0);
@@ -5344,7 +5349,7 @@ int sqlite3Fts3IntegrityCheck(Fts3Table *p, int *pbOk){
   }
 
   /* This block calculates the checksum according to the %_content table */
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && !bContentless ){
     sqlite3_tokenizer_module const *pModule = p->pTokenizer->pModule;
     sqlite3_stmt *pStmt = 0;
     char *zSql;
@@ -5402,7 +5407,7 @@ int sqlite3Fts3IntegrityCheck(Fts3Table *p, int *pbOk){
     rc = SQLITE_OK;
     *pbOk = 0;
   }else{
-    *pbOk = (rc==SQLITE_OK && cksum1==cksum2);
+    *pbOk = (rc==SQLITE_OK && (bContentless || cksum1==cksum2));
   }
   return rc;
 }

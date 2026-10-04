@@ -1,0 +1,293 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1intck
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE mytbl USING vec1(a, b);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000 )
+  INSERT INTO mytbl SELECT random_vector(32), 'val'||i FROM s;
+
+  INSERT INTO mytbl(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{codesize:8}') FROM mytbl
+  ));
+}
+
+do_execsql_test 1.1 {
+  SELECT length(val) FROM mytbl_idx;
+} {12076}
+
+do_execsql_test 1.2 {
+  PRAGMA integrity_check
+} {ok}
+
+proc set_ntombstone {val n} {
+  set be32 [binary format I $n]
+  return [string replace $val 8 11 $be32]
+}
+db funct set_ntombstone set_ntombstone
+
+do_execsql_test 1.3 {
+  UPDATE mytbl_idx SET val = set_ntombstone(val, 4);
+} {}
+
+do_execsql_test 1.4 {
+  PRAGMA integrity_check
+} {{mytbl: bad tombstone count}}
+
+do_execsql_test 2.0 {
+  INSERT INTO mytbl(cmd) VALUES('rebuild');
+}
+
+proc zero_pq {val i} {
+  set iOff [expr 12 + 1000*4 + $i]
+  set ret $val
+  for {set jj 0} {$jj < 8} {incr jj} {
+    set ret [string replace $ret $iOff $iOff [binary format c 0]]
+    incr iOff 16
+  }
+  return $ret
+}
+db func zero_pq zero_pq
+
+do_execsql_test 2.1 {
+  UPDATE mytbl_idx SET val = zero_pq(val, 4);
+} {}
+
+do_execsql_test 2.2 {
+  PRAGMA integrity_check
+} {{mytbl: %_idx PQ does not match calculated PQ for row 5}}
+
+#------------------------------------------------------------------
+
+do_execsql_test 3.0 {
+  INSERT INTO mytbl(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{nbucket:16,codesize:32}') FROM mytbl
+  ));
+}
+
+# Replace the vector for row 555 with a copy of the bucket vector that
+# is most distant from the current vector. The idea being to pick a
+# value guaranteed to be assigned to a different bucket than the current
+# vector.
+model2tbl model mytbl
+do_execsql_test 3.1 {
+  UPDATE mytbl_base SET vector = 
+    (SELECT coarse FROM model ORDER BY vec1_l2_distance(vector, coarse) DESC)
+  WHERE id=555;
+}
+
+do_execsql_test 3.2 {
+  PRAGMA integrity_check
+} {{mytbl: vector from row 555 is in wrong bucket}}
+
+do_execsql_test 3.3 {
+  UPDATE mytbl_base SET vector = random_vector(31) WHERE id=555;
+}
+
+do_execsql_test 3.4 {
+  PRAGMA integrity_check
+} {{mytbl: vector in %_base row 555 is wrong size}}
+
+do_execsql_test 3.5 {
+  UPDATE mytbl_base SET vector = random_vector(32);
+  INSERT INTO mytbl(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{nbucket:16,codesize:32}') FROM mytbl
+  ));
+}
+
+do_execsql_test 3.6 {
+  UPDATE mytbl_base SET c0 = 'hello world' WHERE id=555
+}
+
+do_execsql_test 3.7 {
+  PRAGMA integrity_check
+} {{mytbl: meta-value value mismatch for row 555}}
+
+do_execsql_test 3.8 {
+  UPDATE mytbl_base SET vector = random_vector(32);
+  INSERT INTO mytbl(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{codesize:16}') FROM mytbl
+  ));
+}
+
+proc shorten {val} {
+  string range $val 0 end-1
+}
+db func shorten shorten
+
+do_execsql_test 3.9 {
+  UPDATE mytbl_idx SET val = shorten(val);
+  PRAGMA integrity_check;
+} {
+  {mytbl: %_idx entry id=1 is corrupt}
+}
+
+do_execsql_test 3.10 {
+  INSERT INTO mytbl(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{nbucket:16}') FROM mytbl
+  ));
+}
+
+do_execsql_test 3.11 {
+  UPDATE mytbl_base SET vector = vector+1 WHERE id=555;
+  PRAGMA integrity_check;
+} {
+  {mytbl: bucket value in %_base row 555 is incorrect}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(x, a, b);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100 )
+  INSERT INTO v1(rowid, x, a, b) 
+    SELECT 10_000_000_000 + i, random_vector(8), 20_000_000_000+i, i FROM s;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 4.1 {
+  SELECT count(*) FROM v1;
+  DELETE FROM v1 WHERE rowid = 10_000_000_000 + 35;
+  SELECT count(*) FROM v1;
+} {100 99}
+
+do_execsql_test 4.2 {
+  PRAGMA integrity_check
+} {ok}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(x, a);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+
+  INSERT INTO v1 VALUES(random_vector(8), 'helloworld');
+  INSERT INTO v1 VALUES(random_vector(8), 4.5);
+  INSERT INTO v1 VALUES(random_vector(8), 1000);
+  INSERT INTO v1 VALUES(random_vector(8), X'12345678');
+
+  PRAGMA integrity_check
+} {ok}
+
+foreach {tn update err} {
+  1 { UPDATE v1_base SET c0='helloWORLD' WHERE id=1 } 
+    {v1: meta-value value mismatch for row 1}
+
+  2 { UPDATE v1_base SET c0='helloworld2' WHERE id=1 } 
+    {v1: meta-value value mismatch for row 1}
+
+  3 { UPDATE v1_base SET c0=4.5 WHERE id=1 } 
+    {v1: meta-value value mismatch for row 1}
+
+  4 { UPDATE v1_base SET c0=5.5 WHERE id=2 } 
+    {v1: meta-value value mismatch for row 2}
+
+  5 { UPDATE v1_base SET c0=1001 WHERE id=3 } 
+    {v1: meta-value value mismatch for row 3}
+
+  6 { UPDATE v1_base SET c0=5 WHERE id=2 } 
+    {v1: meta-value value mismatch for row 2}
+
+  7 { UPDATE v1_base SET c0='textvalue' WHERE id=2 } 
+    {v1: meta-value value mismatch for row 2}
+
+  8 { UPDATE v1_base SET c0=X'ABCDEF' WHERE id=2 } 
+    {v1: meta-value value mismatch for row 2}
+
+  9 { UPDATE v1_base SET c0=X'ABCDEF' WHERE id=4 } 
+    {v1: meta-value value mismatch for row 4}
+
+  10 { UPDATE v1_base SET c0=X'00ABCDEF' WHERE id=4 } 
+    {v1: meta-value value mismatch for row 4}
+
+  11 { DELETE FROM v1_base WHERE id=1 } 
+    {v1: %_idx row 1 missing from %_base}
+
+  12 { INSERT INTO v1_base(id, vector, c0) VALUES(555,random_vector(8),'xyz') }
+    {v1: wrong number of entries in %_base - have 5, expect 4}
+
+} {
+  execsql BEGIN
+  execsql $update
+  do_execsql_test 5.$tn {
+    PRAGMA integrity_check
+  } [list $err]
+  execsql ROLLBACK
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+execsql { SELECT vec1_config('nthread', 4) }
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(x, a);
+
+  INSERT INTO v1 VALUES(random_vector(8), 1.2);
+  INSERT INTO v1 VALUES(random_vector(8), 4.5);
+  INSERT INTO v1 VALUES(random_vector(8), 1000);
+
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 6.1 {
+  UPDATE v1 SET a = (rowid*1000);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  INSERT INTO v1 VALUES(random_vector(8), NULL);
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 6.2.1 {
+  INSERT INTO v1 VALUES(random_vector(8), 1.234);
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 6.2.2 {
+  INSERT INTO v1 VALUES(random_vector(8), 'text');
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 6.3 {
+  UPDATE v1 SET a = (rowid*1000);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  INSERT INTO v1 VALUES(random_vector(8), 10_000_000_000);
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 6.4 {
+  UPDATE v1 SET a = (rowid*1000);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  INSERT INTO v1 VALUES(random_vector(8), -10_000_000_000);
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 6.5 {
+  UPDATE v1 SET a = rowid;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  INSERT INTO v1 VALUES(random_vector(8), -1);
+  PRAGMA integrity_check;
+} {ok}
+
+
+finish_test
+

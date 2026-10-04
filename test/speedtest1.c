@@ -1571,7 +1571,7 @@ void testset_star(void){
    );
   speedtest1_end_test();
 
-  speedtest1_begin_test(130, "Star query with LEFT JOINs");
+  speedtest1_begin_test(140, "Star query with LEFT JOINs");
   speedtest1_exec(
     "SELECT count(*), max(content04), min(content03), sum(rate04), avg(rate05)"
     " FROM facttab LEFT JOIN dimension01 ON attr01=beta01"

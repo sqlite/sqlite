@@ -1,0 +1,390 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1flat
+vec1_load db
+
+
+do_execsql_test 1.0 {
+  CREATE TABLE base(vector);
+  CREATE VIRTUAL TABLE v1 USING vec1;
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO base(vector) SELECT random_vector(32) FROM s;
+  INSERT INTO v1(vector) SELECT vector FROM base;
+}
+
+set rnd [db one {SELECT random_vector(32)}]
+
+foreach {tn idx func type} {
+  1 { {index:"flat", distance: "l2"}  } vec1_l2_distance   integer
+  2 { {index:"flat", distance: "cos"} } vec1_cos_distance  integer
+  3 { {index:"none", distance: "l2"}  } vec1_l2_distance   blob
+  4 { {index:"none", distance: "cos"} } vec1_cos_distance  blob
+} {
+  do_execsql_test 1.$tn.1 {
+    INSERT INTO v1(cmd, vector) VALUES('rebuild', $idx);
+  }
+
+  do_execsql_test 1.$tn.2 {
+    PRAGMA integrity_check
+  } {ok}
+
+  set expect [db eval "
+    SELECT rowid FROM base ORDER BY $func (vector, \$rnd) LIMIT 50
+  "]
+
+  do_execsql_test 1.$tn.3 {
+    SELECT rowid FROM v1($rnd, '{K:50}')
+  } $expect
+
+  do_execsql_test 1.$tn.4 {
+    SELECT distinct typeof(vector) FROM v1_base
+  } $type
+
+  do_execsql_test 1.$tn.5 {
+    DELETE FROM v1;
+    SELECT rowid FROM v1($rnd, '{K:50}');
+  } {}
+
+  do_execsql_test 1.$tn.6 {
+    INSERT INTO v1(vector) SELECT vector FROM base;
+    SELECT rowid FROM v1($rnd, '{K:50}');
+  } $expect
+
+  do_execsql_test 1.$tn.7 {
+    SELECT distinct typeof(vector) FROM v1_base
+  } $type
+
+  set expect [db eval "
+    SELECT rowid, $func (vector, \$rnd) FROM base 
+    ORDER BY $func (vector, \$rnd) LIMIT 50
+  "]
+  do_execsql_test 1.$tn.8 {
+    SELECT rowid, distance FROM v1($rnd, '{K:50}')
+  } $expect
+
+  do_execsql_test 1.$tn.9 {
+    SELECT count( distance ) FROM v1
+  } {1000}
+
+}
+
+do_execsql_test 1.5 {
+  DELETE FROM v1;
+  INSERT INTO v1(vector) SELECT vector FROM base LIMIT 10;
+  INSERT INTO v1(cmd, vector) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 1.5.1 {
+  SELECT rowid FROM v1;
+} {1 2 3 4 5 6 7 8 9 10}
+
+do_execsql_test 1.5.2 {
+  BEGIN;
+    DELETE FROM v1 WHERE rowid IN (3, 7);
+    SELECT rowid FROM v1;
+} {1 2 4 5 6 8 9 10}
+
+do_execsql_test 1.5.3 {
+  COMMIT;
+  SELECT rowid FROM v1;
+} {1 2 4 5 6 8 9 10}
+
+do_execsql_test 1.5.4 {
+  INSERT INTO v1(rowid, vector) VALUES(11, random_vector(32));
+  SELECT rowid FROM v1;
+} {1 2 4 5 6 8 9 10 11}
+
+do_catchsql_test 1.5.5 {
+  INSERT INTO v1(rowid, vector) VALUES(8, random_vector(32));
+} {1 {constraint failed}}
+
+do_execsql_test 1.6.1 {
+  SELECT rowid, length(vector) FROM v1 WHERE rowid=5;
+} {5 128}
+
+do_execsql_test 1.6.2 {
+  SELECT rowid, length(vector) FROM v1 WHERE rowid=7;
+} {}
+
+#------------------------------------------------------------------------
+# Now try tests on {codesize:0, nbucket:32} indexes. These are also
+# flat, as they store full vectors in the index.
+#
+reset_db
+vec1_load db
+
+set rnd [db one {SELECT random_vector(32)}]
+
+do_execsql_test 2.0 {
+  CREATE TABLE base(vector);
+  CREATE VIRTUAL TABLE v1 USING vec1;
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO base(vector) SELECT random_vector(32) FROM s;
+  INSERT INTO v1(vector) SELECT vector FROM base;
+}
+
+do_execsql_test 2.1 {
+  INSERT INTO v1(cmd, vector) VALUES('rebuild', (
+    SELECT vec1_train(vector, '{codesize:0, nbucket:32}') FROM base
+  ));
+}
+
+do_execsql_test 2.2 {
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 2.3.1 {
+  SELECT rowid FROM v1 WHERE rowid=123
+} {123}
+do_execsql_test 2.3.2 {
+  DELETE FROM v1 WHERE rowid=123;
+  PRAGMA integrity_check;
+} {ok}
+do_execsql_test 2.3.3 {
+  SELECT rowid FROM v1 WHERE rowid=123
+} {}
+
+do_execsql_test 2.4.1 {
+  SELECT rowid, length(vector) FROM v1 WHERE rowid=789
+} {789 128}
+do_execsql_test 2.4.2 {
+  SELECT count(*), sum(v1.vector=base.vector) 
+  FROM v1 CROSS JOIN base 
+  WHERE v1.rowid=base.rowid;
+} {999 999}
+do_execsql_test 2.4.3 {
+  SELECT count(*), sum(v1.vector=base.vector) 
+  FROM base CROSS JOIN v1 
+  WHERE v1.rowid=base.rowid;
+} {999 999}
+
+do_execsql_test 2.5.1 {
+  DELETE FROM v1;
+  INSERT INTO v1(vector) SELECT vector FROM base;
+  PRAGMA integrity_check;
+} {ok}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE "vector table" USING vec1(a);
+} {}
+
+do_catchsql_test 3.1 {
+  INSERT INTO "vector table"(cmd, arg) VALUES('rebuild', '{index=flat}');
+} {1 {vec1: malformed JSON}}
+
+do_catchsql_test 3.2 {
+  INSERT INTO "vector table"(cmd, arg) VALUES('rebuild', X'001122334455');
+} {1 {vec1: model too small - 6 bytes}}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE vvv USING vec1(a, b);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO vvv(rowid, a, b) 
+  SELECT i * 1_000_000_000, random_vector(25), i FROM s;
+
+  SELECT sum(rowid) FROM vvv;
+} {5050000000000}
+
+do_execsql_test 4.1 {
+  INSERT INTO vvv(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+} {}
+
+do_execsql_test 4.2 {
+  DELETE FROM vvv WHERE rowid IN (
+    21 * 1_000_000_000, 53 * 1_000_000_000, 2 * 1_000_000_000
+  );
+  SELECT sum(rowid) FROM vvv;
+} {4974000000000}
+
+do_execsql_test 4.3 {
+  INSERT INTO vvv(cmd, arg) VALUES('rebuild', '{index:"none"}');
+  SELECT sum(rowid) FROM vvv;
+} {4974000000000}
+
+do_execsql_test 4.4 {
+  INSERT INTO vvv(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  SELECT sum(rowid) FROM vvv;
+} {4974000000000}
+
+# Corrupt the index entry
+do_execsql_test 4.5.1 {
+  SELECT rowid FROM vvv_idx
+} {1 2}
+do_execsql_test 4.5.2 {
+  UPDATE vvv_idx SET val = substr(val, 1, 5000) WHERE rowid=2;
+} {}
+do_catchsql_test 4.5.3 {
+  INSERT INTO vvv(cmd, arg) VALUES('rebuild', '{index:"none"}');
+} {1 {database disk image is malformed}}
+do_catchsql_test 4.5.4 {
+  SELECT rowid FROM vvv(random_vector(25)) LIMIT 100
+} {1 {database disk image is malformed}}
+
+do_execsql_test 4.6.1 {
+  UPDATE vvv_idx SET val = substr(val, 1, 11) WHERE rowid=2;
+} {}
+do_catchsql_test 4.6.2 {
+  INSERT INTO vvv(cmd, arg) VALUES('rebuild', '{index:"none"}');
+} {1 {database disk image is malformed}}
+do_catchsql_test 4.6.3 {
+  SELECT rowid FROM vvv(random_vector(25)) LIMIT 100
+} {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+# This time corrupt the meta-values list.
+#
+reset_db
+vec1_load db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE vvv USING vec1(a, b);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO vvv(a, b) SELECT random_vector(25), i FROM s;
+  INSERT INTO vvv(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+} {}
+
+do_execsql_test 5.1 {
+  UPDATE vvv_meta SET val = substr(val, 1, 50);
+}
+
+do_catchsql_test 5.2 {
+  SELECT rowid FROM vvv(random_vector(25)) WHERE b=222 LIMIT 10
+} {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+vec1_load db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE vvv USING vec1(a, b);
+  INSERT INTO vvv(a, b) VALUES( random_vector(25), 'first' );
+  INSERT INTO vvv(a, b) VALUES( random_vector(25), 'second' );
+  INSERT INTO vvv(a, b) VALUES( random_vector(25), 'third' );
+  INSERT INTO vvv(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+} {}
+
+do_execsql_test 6.1 {
+  SELECT rowid, length(a) FROM vvv(random_vector(25), 3) ORDER BY 1
+} {1 100 2 100 3 100}
+
+do_execsql_test 6.2 {
+  DELETE FROM vvv_base WHERE id=2;
+}
+
+do_catchsql_test 6.3 {
+  SELECT rowid, length(a) FROM vvv(random_vector(25), 3) ORDER BY 1
+} {1 {database disk image is malformed}}
+
+do_execsql_test 6.4 {
+  INSERT INTO vvv_base(id, vector, c0) VALUES(2, 0, 'second');
+  SELECT rowid, length(a) FROM vvv(random_vector(25), 3) ORDER BY 1
+} {1 100 2 100 3 100}
+
+do_execsql_test 6.5 {
+  INSERT INTO vvv(rowid, a, b) VALUES(400, random_vector(25), 'four hundred');
+  INSERT INTO vvv_base(id, vector, c0) VALUES(4, 0, 'fourth');
+  SELECT rowid, length(a) FROM vvv(random_vector(25), 4) ORDER BY 1
+} {1 100 2 100 3 100 400 100}
+
+do_execsql_test 6.6 {
+  SELECT rowid, length(a) FROM vvv ORDER BY 1
+} {1 100 2 100 3 100 4 {} 400 100}
+
+
+do_execsql_test 6.7 {
+  DELETE FROM vvv_base WHERE id=4;
+  INSERT INTO vvv(a, b) VALUES( random_vector(25), 'fifth' );
+}
+
+do_execsql_test 6.8 {
+  UPDATE vvv_idx SET val = substr(val, 1, 400);
+}
+
+do_catchsql_test 6.9 {
+  INSERT INTO vvv(a, b) VALUES( random_vector(25), 'sixth' );
+} {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE vvv USING vec1(a, b);
+  INSERT INTO vvv(a, b) VALUES( random_vector(25), 'first' );
+  INSERT INTO vvv(a, b) VALUES( random_vector(25), 'second' );
+  INSERT INTO vvv(a, b) VALUES( random_vector(25), 'third' );
+  INSERT INTO vvv(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+} {}
+
+do_execsql_test 7.1 {
+  INSERT INTO vvv(cmd, arg) VALUES('rebuild', NULL); 
+}
+
+do_execsql_test 7.2 {
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 7.3 {
+  BEGIN;
+    INSERT INTO vvv(cmd, arg) VALUES('rebuild', NULL); 
+}
+
+do_execsql_test 7.4 {
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 7.5 {
+  COMMIT
+}
+
+do_execsql_test 7.6 {
+  PRAGMA integrity_check
+} {ok}
+
+do_catchsql_test 7.7 {
+  BEGIN;
+    INSERT INTO vvv(cmd, arg) VALUES('rebuild', (
+     WITH s(i) AS (
+       SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<500
+     )
+     SELECT vec1_train(random_vector(22), '{nbucket:4}') FROM s
+   ));
+} {1 {vec1: model/data vector size mismatch: 22/25}}
+
+do_test 7.7.1 {
+  sqlite3_get_autocommit db
+} 0
+
+do_execsql_test 7.8 {
+  COMMIT;
+  PRAGMA integrity_check;
+} {ok}
+
+finish_test
+

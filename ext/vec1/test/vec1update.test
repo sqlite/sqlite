@@ -1,0 +1,124 @@
+# 2026-08-04
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1update
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  INSERT INTO v1(rowid, v) VALUES(11, random_vector(8));
+  INSERT INTO v1(rowid, v) VALUES(12, random_vector(8));
+
+  INSERT INTO v1(cmd, v) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 1.1 {
+  PRAGMA integrity_check
+} {ok}
+
+do_catchsql_test 1.2.1 {
+  UPDATE v1 SET v = random_vector(9) WHERE rowid=12;
+} {1 {vec1: unexpected vector blob size 36 bytes, expected 32}}
+
+do_execsql_test 1.2.2 {
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 1.2.3 {
+  SELECT rowid, length(v) from v1;
+} {11 32 12 32}
+
+do_execsql_test 1.3.1 {
+  BEGIN;
+    INSERT INTO v1(rowid, v) VALUES(13, random_vector(8));
+} {}
+
+do_catchsql_test 1.3.2 {
+    UPDATE v1 SET v = random_vector(9) WHERE rowid=12;
+} {1 {vec1: unexpected vector blob size 36 bytes, expected 32}}
+
+do_execsql_test 1.3.3 {
+  COMMIT;
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 1.3.4 {
+  SELECT rowid, length(v) from v1;
+} {11 32 12 32 13 32}
+
+do_execsql_test 1.3.5 {
+  SELECT rowid, length(v) from v1;
+} {11 32 12 32 13 32}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  INSERT INTO v1(rowid, v) VALUES(11, random_vector(8));
+  INSERT INTO v1(rowid, v) VALUES(12, random_vector(8));
+
+  INSERT INTO v1(cmd, v) VALUES('rebuild', '{index:"flat"}');
+}
+
+# explain_i { UPDATE v1 SET rowid=11 WHERE rowid=12; }
+
+do_execsql_test 2.1 {
+  BEGIN;
+    INSERT INTO v1(rowid, v) VALUES(13, random_vector(8));
+}
+do_catchsql_test 2.2 {
+    UPDATE v1 SET rowid=11 WHERE rowid=12;
+} {1 {constraint failed}}
+
+do_execsql_test 2.3 {
+  COMMIT;
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 2.4 {
+  SELECT rowid, length(v) FROM v1
+} {11 32 12 32 13 32}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v, t);
+  WITH s(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1000)
+  INSERT INTO v1 SELECT random_vector(16), '' FROM s;
+
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(v, '{quantizer:"bq", nbucket: 1}') FROM v1
+  ));
+}
+
+do_execsql_test 3.1 { SELECT count(distance) FROM v1 } {1000}
+
+do_execsql_test 3.2 {
+  UPDATE v1 SET t='text510' WHERE rowid IN (412, 667, 2);
+}
+
+do_execsql_test 3.3 {
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 3.4 {
+  SELECT rowid FROM v1(random_vector(16), 100) WHERE t='text510' ORDER BY 1
+} {2 412 667}
+
+finish_test
+

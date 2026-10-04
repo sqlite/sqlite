@@ -9483,8 +9483,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&pzNeededCollation, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
 #endif
 #if SQLITE_OS_WIN
-  Tcl_LinkVar(interp, "sqlite_os_type",
-      (char*)&sqlite3_os_type, TCL_LINK_LONG);
   Tcl_LinkVar(interp, "sqlite3_win_test_unc_locking",
       (char*)&sqlite3_win_test_unc_locking, TCL_LINK_INT);
 #endif

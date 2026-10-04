@@ -404,5 +404,62 @@ foreach {tn cmd} {
 }
 grp delete
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(a PRIMARY KEY, b);
+}
+
+do_test 5.1 {
+  sqlite3changegroup grp
+  grp schema db main
+  list [catch { grp change_begin INSERT t3 0 } msg] $msg
+} {1 {SQLITE_ERROR - no such table: t3}}
+grp delete
+db close
+
+forcedelete test.db2
+sqlite3 db test.db2
+do_test 5.2 {
+  execsql { 
+    CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t3 VALUES(1, 'one');
+    INSERT INTO t3 VALUES(3, 'three');
+  } 
+
+  set C [changeset_from_sql { INSERT INTO t3 VALUES(2, 'two') }]
+  set {} {}
+} {}
+
+db close
+sqlite3 db test.db
+do_test 5.3 {
+  sqlite3changegroup grp
+  grp schema db main
+  list [catch { grp add $C } msg] $msg
+} {1 SQLITE_ERROR}
+grp delete
+
+do_test 5.4 {
+  sqlite3changegroup grp
+  list [catch { grp add $C } msg] $msg
+} {0 {}}
+grp delete
+
+do_execsql_test 5.5 {
+  CREATE TABLE t3(a, b, c PRIMARY KEY);
+}
+
+do_test 5.6 {
+  sqlite3changegroup grp
+  grp schema db main
+  list [catch { grp add $C } msg] $msg
+} {1 SQLITE_SCHEMA}
+grp delete
+
+
+
+
 finish_test
 

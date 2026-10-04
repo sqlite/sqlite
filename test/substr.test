@@ -155,4 +155,15 @@ proc substr-2-test {id string idx result} {
 substr-2-test 5.1 abcdefghijklmnop 5 efghijklmnop
 substr-2-test 5.2 abcdef -5 bcdef
 
+# Bug 2026-09-20T18:42:27Z
+# Ridiculous values for the second argument of substr()
+#
+do_execsql_test substr-6.1 {
+  SELECT substr('abcdefghijklmnop',-1_000_000_000_000_000);
+} {abcdefghijklmnop}
+do_execsql_test substr-6.2 {
+  SELECT substr('abcdefghijklmnop',-1_000_000_000_000_000,
+                                      999_999_999_999_995);
+} {abcdefghijk}
+
 finish_test

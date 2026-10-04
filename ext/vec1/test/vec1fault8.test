@@ -1,0 +1,124 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1fault8
+vec1_load db
+
+do_execsql_test 1 {
+  CREATE VIRTUAL TABLE t1 USING vec1(v, b);
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+faultsim_save_and_close
+do_faultsim_test 1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+} -body {
+  execsql {
+    BEGIN;
+      INSERT INTO t1 VALUES( random_vector(4), 1.5 );
+      INSERT INTO t1 VALUES( random_vector(4), 2.5 );
+      INSERT INTO t1 VALUES( random_vector(4), 3.5 );
+      INSERT INTO t1 VALUES( random_vector(4), 4.5 );
+    COMMIT;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+reset_db
+vec1_load db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING vec1(v, b);
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  INSERT INTO t1 VALUES( random_vector(10), -10_000_000_000 );
+}
+
+faultsim_save_and_close
+do_faultsim_test 2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+} -body {
+  execsql {
+    DELETE FROM t1 WHERE rowid=1;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#--------------------------------------------------------------------------
+reset_db
+vec1_load db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING vec1(v, b);
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  INSERT INTO t1 VALUES( random_vector(10), 'hello');
+  INSERT INTO t1 VALUES( random_vector(10), 'world');
+  INSERT INTO t1 VALUES( random_vector(10), 'today');
+}
+
+do_execsql_test 3.1 {
+  SELECT rowid, length(v), length(v) FROM t1(random_vector(10), 5) 
+    WHERE b IN ('hello', 'world', 'today')
+    ORDER BY 1
+} {1 40 40 2 40 40 3 40 40}
+
+faultsim_save_and_close
+do_faultsim_test 3.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+} -body {
+  execsql {
+    SELECT rowid, length(v) FROM t1(random_vector(10), 5) 
+    WHERE b IN ('hello', 'world', 'today')
+    ORDER BY 1
+  }
+} -test {
+  faultsim_test_result {0 {1 40 2 40 3 40}}
+}
+
+do_faultsim_test 3.3 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+} -body {
+  execsql {
+    SELECT rowid, length(distance) BETWEEN 60 AND 80, b FROM t1;
+  }
+} -test {
+  faultsim_test_result {0 {1 1 hello 2 1 world 3 1 today}}
+}
+
+do_faultsim_test 3.4 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+} -body {
+  execsql {
+    SELECT rowid, b FROM t1(random_vector(10), 5) ORDER BY 1;
+  }
+} -test {
+  faultsim_test_result {0 {1 hello 2 world 3 today}}
+}
+
+reset_db
+vec1_load db
+do_faultsim_test 4 -faults oom* -body {
+  execsql {
+    SELECT vec1_info() IS NOT NULL
+  }
+} -test {
+  faultsim_test_result {0 1}
+}
+
+finish_test
+

@@ -1,0 +1,100 @@
+# 2026-01-17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1ac
+vec1_load db
+
+db func normalize normalize
+proc normalize {vec} {
+  binary scan $vec f* aVal
+  set sum 0.0
+  foreach v $aVal {
+    set sum [expr $sum + ($v*$v)]
+  }
+  set sz [expr sqrt($sum)]
+  set aNew [list]
+  foreach v $aVal {
+    lappend aNew [expr $v/$sz]
+  }
+  binary format f* $aNew
+}
+
+db func rescale rescale
+proc rescale {vec mul} {
+  binary scan $vec f* aVal
+  set aNew [list]
+  foreach v $aVal {
+    lappend aNew [expr $v*$mul]
+  }
+  binary format f* $aNew
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(k INTEGER PRIMARY KEY, v VECTOR);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10000
+  )
+  INSERT INTO t1 SELECT NULL, random_vector2(128) FROM s;
+
+  CREATE VIRTUAL TABLE v1 USING vec1;
+  INSERT INTO v1(rowid, vector) SELECT k, v FROM t1;
+}
+
+foreach {tn cfg} {
+  1 { {nbucket:0, codesize:0, distance:"cos"} }
+  2 { {nbucket:0, codesize:32, distance:"cos"} }
+  3 { {nbucket:32, codesize:32, distance:"cos"} }
+} {
+
+  do_execsql_test 1.$tn.1 {
+    INSERT INTO v1(cmd, vector) VALUES('rebuild', (
+      SELECT vec1_train(vector, $cfg) FROM v1
+    ));
+  } {}
+
+  do_execsql_test 1.$tn.2 {
+    SELECT sum( 
+      rowid IN ( SELECT rowid FROM v1( normalize( o.vector ), '{K:10}' ) ) 
+    )
+    FROM v1 AS o WHERE rowid BETWEEN 600 AND 700;
+  } {101}
+
+  do_execsql_test 1.$tn.3 {
+    SELECT sum( 
+      rowid IN ( SELECT rowid FROM v1( rescale( o.vector, 0.01 ), '{K:10}' ) ) 
+    )
+    FROM v1 AS o WHERE rowid BETWEEN 600 AND 700;
+  } {101}
+}
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v2 USING vec1;
+  INSERT INTO v2(rowid, vector) SELECT k, v FROM t1;
+  INSERT INTO v2(cmd, vector) VALUES('rebuild', (
+      SELECT vec1_train(vector, '{nbucket:32, codesize:32, distance:"cos"}') 
+      FROM v2
+  ));
+}
+
+do_execsql_test 2.1 {
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 2.2 {
+  DELETE FROM v2 WHERE (rowid % 45)==0;
+  PRAGMA integrity_check;
+} {ok}
+
+
+finish_test

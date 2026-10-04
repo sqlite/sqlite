@@ -647,6 +647,16 @@ do_test shell1-3.21.6 {
    {DROP TABLE t2;} \
    {.schema -indent t2}
 } {}
+do_test shell1-3.21.7 {
+  catchcmd "test7.db" {
+     CREATE TABLE t7(x);
+     CREATE VIEW v7("a*/;SELECT 12345;/*") AS SELECT 234;
+  }
+  catchcmd "test7.db" ".schema"
+} {0 {CREATE TABLE t7(x);
+CREATE VIEW v7("a*/;SELECT 12345;/*") AS SELECT 234
+/* v7("a**;SELECT 12345;/*") */;}}
+forcedelete test7.db
 
 # .separator STRING  Change column separator used by output and .import
 do_test shell1-3.22.1 {

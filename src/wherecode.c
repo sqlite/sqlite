@@ -1595,6 +1595,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     pLevel->iLeftJoin = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
     VdbeComment((v, "init LEFT JOIN match flag"));
+    if( pTabItem->fg.viaCoroutine ){
+      sqlite3VdbeAddOp2(v, OP_NullRow, pTabItem->iCursor, 1);
+    }
   }
 
   /* Special case of a FROM clause subquery implemented as a co-routine */

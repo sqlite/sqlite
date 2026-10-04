@@ -223,15 +223,11 @@ proc sqlite-configure {buildMode configScript} {
         dbpage               => {Enable the sqlite3_dbpage extension}
         dbstat               => {Enable the sqlite3_dbstat extension}
         carray=1             => {Disable the CARRAY extension}
+        column-metadata      => {Enable the column metadata APIs}
         all=$::sqliteConfig(all-flag-default) => {$allFlagHelp}
         largefile=1
           => {This legacy flag has no effect on the library but may influence
               the generated sqlite_cfg.h by adding #define HAVE_LFS}
-      }
-      {canonical} {
-        column-metadata      => {Enable the column metadata APIs}
-        # ^^^ Affects how sqlite3.c is generated, so is not available in
-        # the autoconf build.
       }
     }
 
