@@ -258,7 +258,7 @@ static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
       break;
     }
     if( geopolySkipSpace(&s)==']'
-     && s.nVertex>=4
+     && s.nVertex>=4 && s.nVertex<16777216
      && s.a[0]==s.a[s.nVertex*2-2]
      && s.a[1]==s.a[s.nVertex*2-1]
      && (s.z++, geopolySkipSpace(&s)==0)
