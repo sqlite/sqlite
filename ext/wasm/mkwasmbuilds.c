@@ -242,7 +242,7 @@ const BuildDefs oBuildDefs = {
     .zDotWasm    = 0,
     .zCmppD      = 0,
     .zEmcc       = 0,
-    .zEmccExtra  = "-sMEMORY64=1 -sWASM_BIGINT=1",
+    .zEmccExtra  = "$(emcc.MEMORY64) -sWASM_BIGINT=1",
     .zEnv        = 0,
     .zDeps       = 0,
     .zIfCond     = 0,
@@ -270,7 +270,7 @@ const BuildDefs oBuildDefs = {
     .zDotWasm    = 0,
     .zCmppD      = "-Dtarget:es6-module",
     .zEmcc       = 0,
-    .zEmccExtra  = "-sMEMORY64=1 -sWASM_BIGINT=1",
+    .zEmccExtra  = "$(emcc.MEMORY64) -sWASM_BIGINT=1",
     .zEnv        = 0,
     .zDeps       = 0,
     .zIfCond     = 0,
@@ -313,7 +313,7 @@ const BuildDefs oBuildDefs = {
     .zEmcc       =
     "$(emcc.speedtest1)"
     " $(emcc.speedtest1.common)"
-    " -sMEMORY64=1 -sWASM_BIGINT=1"
+    " $(emcc.MEMORY64) -sWASM_BIGINT=1"
     " $(pre-post.speedtest164.flags)"
     " $(cflags.common)"
     " -DSQLITE_SPEEDTEST1_WASM"
@@ -362,7 +362,7 @@ const BuildDefs oBuildDefs = {
     .zDotWasm    = "sqlite3-64bit",
     .zCmppD      = "$(c-pp.D.bundler)",
     .zEmcc       = 0,
-    .zEmccExtra  = "-sMEMORY64=1",
+    .zEmccExtra  = "$(emcc.MEMORY64)",
     .zEnv        = 0,
     .zDeps       = 0,
     .zIfCond     = 0,
@@ -883,11 +883,11 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@$(call b.strip-js-emcc-bindings,$(logtag.%s))\n", zBuildName);
 
       pf("\t@if [ x1 = 'x$(base64.wasm)' ]; then \\\n"
-         "\techo '[$(emo.magic) Embedding $(out.%s.wasm) into $@ ...]'; \\\n"
+         "\techo '$(logtag.%s) $(emo.magic) Embedding $(out.%s.wasm) into $@ ...'; \\\n"
          "\telse \\\n"
-         "\techo '[$(emo.megaphone) Not embedding WASM in JS. Pass base64.wasm=1 to do that.]'; \\\n"
+         "\techo '$(logtag.%s) $(emo.megaphone) Not embedding WASM in JS. Pass base64.wasm=1 to do that.'; \\\n"
          "\tfi\n",
-         zBuildName);
+         zBuildName, zBuildName, zBuildName);
       pf("\t@mv $@ $@.in; \\\n"
          "\t$(call b.c-pp.shcmd,%s,$@.in,$@,"
          " \"--delimiter=//%%\" -Dbase64.wasm=$(base64.wasm)"

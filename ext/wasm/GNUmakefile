@@ -636,6 +636,8 @@ endif
 #
 # cflags.common = C compiler flags for all builds
 cflags.common =  -I. -I$(dir $(sqlite3.c)) -std=c99 -fPIC
+
+#
 # emcc.WASM_BIGINT = 1 for BigInt (C int64) support, else 0.  The API
 # disables certain features if BigInt is not enabled and such builds
 # _are not tested_ on any regular basis. Update 2026-07: Browsers old
@@ -643,8 +645,19 @@ cflags.common =  -I. -I$(dir $(sqlite3.c)) -std=c99 -fPIC
 # build (and we've never had direct access to such a browser to test
 # on). i.e. non-BigInt builds are effectively unnecessary and can be
 # safely removed at some point.
+#
+# Emscripten 6.0.8 (2026-08-20) deprecates WASM_BIGINT, now behaving
+# as if WASM_BIGINT were always 1. WASM_BIGINT=1 has been its default
+# since 4.0.0 (2025-01-14).  We have not tested WASM_BIGINT=0 builds
+# since the earliest days of ext/wasm's development, so this does not
+# really change anything for us but does give us justification to
+# strip out the parts of the JS code which try to adapt to no-BigInt
+# environments (but are untested in such).
+#
 emcc.WASM_BIGINT ?= 1
-emcc.MEMORY64 ?= 0
+# emcc 6.0.1 deprecates -sMEMORY64=1 in favor of --target=wasm64
+emcc.MEMORY64 ?= --target=wasm64
+#emcc.MEMORY64 ?= -sMEMORY64=1
 #
 # https://emscripten.org/docs/tools_reference/settings_reference.html#memory64
 #
@@ -1071,9 +1084,11 @@ $(EXPORTED_FUNCTIONS.fiddle): $(EXPORTED_FUNCTIONS.api.in) \
 
 emcc.flags.fiddle = \
   $(emcc.cflags) $(emcc_opt_full) \
+  $(emcc.MEMORY64) \
   --minify 0 \
   -sALLOW_TABLE_GROWTH \
-  -sMEMORY64=$(emcc.MEMORY64) \
+  -sALLOW_MEMORY_GROWTH \
+  -sASSERTIONS \
   -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.8) \
   -sABORTING_MALLOC \
   -sSTRICT_JS=0 \
