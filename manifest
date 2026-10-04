@@ -1,5 +1,5 @@
-C In\sQRF,\sadd\sthe\szero-pad\sflag\sto\sthe\sdefault\sfloating-point\sformat\sin\noutput\smodes\sthat\srender\sJSON\sor\sINSERT,\sso\sthat\sinfinities\sare\sshown\nas\s9e999\sor\ssimilar\sinstead\sof\sas\s"Inf".\n[bugs:/info/2026-10-04T05:35:43Z|Bug\s2026-10-04T05:35:43Z]
-D 2026-10-04T16:23:01.635
+C Improve\ssupport\sfor\s--with-tcl\sin\scross-compilation\senvironments,\sas\sdiscussed\sin\s[forum:fe9e99eb27c8c2ba|forum\sthread\s2026-08-15T18:21:17Z].
+D 2026-10-04T19:51:51.315
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -48,7 +48,7 @@ F autosetup/find_tclconfig.tcl 3394bcd1aad45d6af48262f50808d4f0ac4f1088ba8fa9d08
 F autosetup/jimsh0.c daf13a86959fe2d055ed42d9417ceb63d698ae4b71bde959a0979ab729a83819
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 67683f214977a416baafc4c1020f9940ff047a7306b2292c5872d6287460b7d5
-F autosetup/sqlite-config.tcl ab8665286daf9ca1af3e682756ffe7a503557810d004b5bed1617697e83db7be
+F autosetup/sqlite-config.tcl 062c021fb0377cb9091135d6805b5e1c697b5276c642c72fe1245c9feee9e4e4
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl e014dd95900c7f9a34e8e0f460f47e94841059827bce8b4c49668b0c7ae3f1a0
@@ -2278,8 +2278,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 13d8921bcabc4a5a5295652d29982ae18cf0190299ee9e655c7e0f2b4d658de9
-R 0ceba5ad22fd1ee5ba51bdbe29be0267
-U drh
-Z d39b9be8ac32d01a2cfeb392365ca86d
+P f63139ba68bc7df770bbd3c26bcd760c479889fb45fa921e9e225e38c9e2044c 41f095e34974da53170200719a069c0a30110e27a1db85f562bbe744a40e9a80
+R 771ec5fa0646617381291d7cfe227f57
+T +closed 41f095e34974da53170200719a069c0a30110e27a1db85f562bbe744a40e9a80 Closed\sby\sintegrate-merge.
+U stephan
+Z 644ec730ae144cd98eb5e04d50c3db8f
 # Remove this line to create a well-formed Fossil manifest.
