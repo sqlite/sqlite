@@ -1314,7 +1314,7 @@ static void charFunc(
     sqlite3_int64 x;
     unsigned c;
     x = sqlite3_value_int64(argv[i]);
-    if( x<0 || x>0x10ffff ) x = 0xfffd;
+    if( x<0 || (x>=0xd800 && (x<=0xdfff || x>0x10ffff)) ) x = 0xfffd;
     c = (unsigned)(x & 0x1fffff);
     if( c<0x00080 ){
       *zOut++ = (u8)(c&0xFF);

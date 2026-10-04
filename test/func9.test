@@ -61,6 +61,9 @@ do_execsql_test func9-220 {
 
 do_execsql_test func9-300 {
   SELECT hex( unistr('\UFFFFFFFF') )
-} {F7BFBFBF}
+} {EFBFBD}
+do_execsql_test func9-301 {
+  SELECT hex( unistr('\U0010FFFF') )
+} {F48FBFBF}
 
 finish_test

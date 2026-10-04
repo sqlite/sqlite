@@ -121,6 +121,7 @@ int sqlite3AppendOneUtf8Character(char *zOut, u32 v){
     zOut[1] = 0x80 + (u8)(v & 0x3f);
     return 2;
   }
+  if( v>=0xd800 && (v<=0xdfff || v>0x10ffff) ) v = 0xfffd;
   if( v<0x10000 ){
     zOut[0] = 0xe0 + (u8)((v>>12) & 0x0f);
     zOut[1] = 0x80 + (u8)((v>>6) & 0x3f);
