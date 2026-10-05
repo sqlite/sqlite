@@ -2491,6 +2491,20 @@ void sqlite3SubqueryColumnTypes(
 }
 
 /*
+** Check the current subquery nesting depth.  Return true and set an
+** error if it has gone too deep.
+*/
+static int checkSubqueryNestingDepth(Parse *pParse){
+#if SQLITE_MAX_EXPR_DEPTH>0
+  if( pParse->nNestSel >= pParse->db->aLimit[SQLITE_LIMIT_EXPR_DEPTH] ){
+    sqlite3ErrorMsg(pParse, "VIEWs and/or subqueries nested too deep");
+    return 1;
+  }
+#endif
+  return 0;
+}
+
+/*
 ** Given a SELECT statement, generate a Table structure that describes
 ** the result set of that SELECT.
 */
@@ -2500,12 +2514,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect, char aff){
   u64 savedFlags;
 
   pParse->nNestSel++;
-#if SQLITE_MAX_EXPR_DEPTH>0
-  if( pParse->nNestSel >= db->aLimit[SQLITE_LIMIT_EXPR_DEPTH] ){
-    sqlite3ErrorMsg(pParse, "VIEWs and/or subqueries nested too deep");
-    return 0;
-  }
-#endif
+  if( checkSubqueryNestingDepth(pParse) ) return 0;
   savedFlags = db->flags;
   db->flags &= ~(u64)SQLITE_FullColNames;
   db->flags |= SQLITE_ShortColNames;
@@ -5752,14 +5761,13 @@ With *sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
 }
 
 /*
-** This function checks if argument pFrom refers to a CTE declared by
+** This function checks to see if argument pFrom refers to a CTE declared by
 ** a WITH clause on the stack currently maintained by the parser (on the
-** pParse->pWith linked list).  And if currently processing a CTE
-** CTE expression, through routine checks to see if the reference is
-** a recursive reference to the CTE.
+** pParse->pWith linked list).  And if currently processing a CTE expression,
+** it also checks to see if the reference is a recursive reference to the CTE.
 **
-** If pFrom matches a CTE according to either of these two above, pFrom->pSTab
-** and other fields are populated accordingly.
+** If pFrom matches a CTE, pFrom->pSTab and other fields are populated
+** accordingly.
 **
 ** Return 0 if no match is found.
 ** Return 1 if a match is found.
@@ -5888,6 +5896,8 @@ static int resolveFromTermToCte(
       pRecTerm = pRecTerm->pPrior;
     }
 
+    pParse->nNestSel++;
+    if( checkSubqueryNestingDepth(pParse) ) return 2;
     pCte->zCteErr = "circular reference: %s";
     pSavedWith = pParse->pWith;
     pParse->pWith = pWith;
@@ -5912,6 +5922,8 @@ static int resolveFromTermToCte(
       }
     }
     pParse->pWith = pWith;
+    pParse->nNestSel--;
+    assert( pParse->nNestSel>=0 );
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
     pEList = pLeft->pEList;

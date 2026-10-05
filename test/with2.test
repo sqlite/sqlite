@@ -635,4 +635,37 @@ do_execsql_test 13.1 {
   SELECT * FROM t1, t3;
 } {111 222}
 
+# Bug 2026-10-04T04:58:58Z
+reset_db
+sqlite3_limit db SQLITE_LIMIT_EXPR_DEPTH 12
+do_catchsql_test 14.1 {
+  WITH c0 AS (SELECT 1 AS x),
+       c1 AS (SELECT x FROM c0),
+       c2 AS (SELECT x FROM c1),
+       c3 AS (SELECT x FROM c2),
+       c4 AS (SELECT x FROM c3),
+       c5 AS (SELECT x FROM c4),
+       c6 AS (SELECT x FROM c5),
+       c7 AS (SELECT x FROM c6),
+       c8 AS (SELECT x FROM c7),
+       c9 AS (SELECT x FROM c8),
+       c10 AS (SELECT x FROM c9)
+  SELECT x FROM c10;
+} {0 1}
+sqlite3_limit db SQLITE_LIMIT_EXPR_DEPTH 11
+do_catchsql_test 14.2 {
+  WITH c00 AS (SELECT 1 AS x),
+       c1 AS (SELECT x FROM c00),
+       c2 AS (SELECT x FROM c1),
+       c3 AS (SELECT x FROM c2),
+       c4 AS (SELECT x FROM c3),
+       c5 AS (SELECT x FROM c4),
+       c6 AS (SELECT x FROM c5),
+       c7 AS (SELECT x FROM c6),
+       c8 AS (SELECT x FROM c7),
+       c9 AS (SELECT x FROM c8),
+       c10 AS (SELECT x FROM c9)
+  SELECT x FROM c10;
+} {1 {VIEWs and/or subqueries nested too deep}}
+
 finish_test
