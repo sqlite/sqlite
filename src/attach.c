@@ -133,6 +133,7 @@ static void attachFunc(
           ** pointers to the schema object just freed by sqlite3BtreeClose() */
           sqlite3VtabEponymousTableClearAll(db);
         }
+        sqlite3ExpirePreparedStatements(db, 1);
       }else{
         sqlite3BtreeClose(pNewBt);
         rc = SQLITE_NOMEM;
