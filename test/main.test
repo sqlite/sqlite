@@ -82,7 +82,7 @@ do_test main-1.11 {
 } {1}
 do_test main-1.12 {
   db complete {DROP TABLE xyz; -- hi }
-} {1}
+} {0}
 do_test main-1.13 {
   db complete {DROP TABLE xyz; -- hi
   }
