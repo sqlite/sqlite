@@ -215,7 +215,6 @@ sqlite3_int64 sqlite3_incomplete(const char *zSql){
         zSql += 2;
         while( zSql[0] && (zSql[0]!='*' || zSql[1]!='/') ){ zSql++; }
         if( zSql[0]==0 ){
-          if( state==0 ) state = 2;
           pending = '/';
           goto incomplete_finish;
         }
@@ -230,7 +229,7 @@ sqlite3_int64 sqlite3_incomplete(const char *zSql){
         }
         while( *zSql && *zSql!='\n' ){ zSql++; }
         if( *zSql==0 ){
-          if( state!=1 ) pending = '-';
+          pending = '-';
           goto incomplete_finish;
         }
         token = tkWS;
@@ -333,12 +332,12 @@ sqlite3_int64 sqlite3_incomplete(const char *zSql){
     zSql++;
   }
 incomplete_finish:
-  if( state==0 ) return SQLITE_EMPTY;
+  if( state==0 && pending==0 ) return SQLITE_EMPTY;
   if( state==1 ) nParen = 0;
   return (i64)((((u64)nParen)<<32) |
                ((u64)pending<<16) |
                ((u64)statemap[state]<<8) |
-               (state!=1));
+               (state>1 || pending!=0));
 }
 int sqlite3_complete(const char *zSql){
   return sqlite3_incomplete(zSql)==0;
