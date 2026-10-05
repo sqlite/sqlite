@@ -1,5 +1,5 @@
-C Do\snot\srun\snew\svirtual\stable\stests\sin\smemdb1.test\sfor\sSQLITE_OMIT_VIRTUALTABLE\sbuilds.
-D 2026-10-05T17:25:06.226
+C Fixes\sto\ssqlite3_incomplete()\sso\sthat\sit\sdoes\snot\sappear\sto\spresume\sa\ntrailing\snewline\sif\sthere\sis\snone.\n[forum:/info/2026-10-05T16:22:33Z|Forum\s2026-10-05T16:22:33Z]
+D 2026-10-05T17:32:25.354
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d8
 F src/build.c 0a160b40ea1f85b5a95e62310bbe2b944b8834a26c36f1f4b7f0f2c7e654f789
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 22879bbd9e14fc4868f223b0d49bcdbbda4616c89f1519ec6a5e64b98a4137b1
-F src/complete.c 9fff9453f4612a0be6507cace1a97bbbff602029ac2e36e65c3d0c8f16732070
+F src/complete.c f68f545b9c6c19e2e848672dc0e4da230072fedc335d8980b55242cc4cfa60da
 F src/date.c 080641f59097d14fc7341f8bc0458d273b3a62d8381916db8ccbc89c2aae07b3
 F src/dbpage.c ec8590c5e7a564cef28ca3c6156521316a4d26cb572a34841b0bcb26b67b3f97
 F src/dbstat.c 34d4e825fbf763640ce3dbc56910ab080495ef4a6efb48b2b1852a43d43763fc
@@ -1466,7 +1466,7 @@ F test/lock6.test ad5b387a3a8096afd3c68a55b9535056431b0cf5
 F test/lock7.test 49f1eaff1cdc491cc5dee3669f3c671d9f172431
 F test/lock_common.tcl f0a1f7b8f3fbb8629dc6231613a02841736f86ef72151429d5ffc12c7f613fb3
 F test/lookaside.test 5a828e7256f1ee4da8e1bdaa03373a3ccdb0f1ff98dfa82e9b76cb41a45b1083
-F test/main.test e8752d76233b1c8906cd2c98ad920dba868bd63c87d51d8a2ea5e9cba55dd496
+F test/main.test c811a84848c5fa11c25aa6cf1aaccd877b0ea9bff0cfb636aabb4eea49ea4f2c
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test f7781c8151179fe4b7f743044a737ac2dfd87bf9cc18dd01398caf28d34e09c5
 F test/malloc3.test 6e88bae6312854a4adb4ecc2a6a5ea8c59b4db778b724ba718e1c43fc8c3c136
@@ -2279,8 +2279,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7c103a0b7d509dce58aa87518e13213451e5f70938ff08aa55accd645e3b2ff3
-R d57c5af62e36720b595773e6d70b41f1
-U dan
-Z 26683381c05f7eb44de265056a44d6ec
+P eced240b2a991ff8255f98d189a6874dda44e3cdb1fcd07e74abddf2a9a71ea4
+Q +bc54517c86296e42ca4ff843fcf5911eb81a0975b1d05d019b2cc39152232cf0
+R ed0bd1467bba1fbccc1a9a1a7d0cecf5
+U drh
+Z 4dbea8dd79277c50526f32ded18b47f7
 # Remove this line to create a well-formed Fossil manifest.
