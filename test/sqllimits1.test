@@ -733,7 +733,14 @@ if {$SQLITE_MAX_EXPR_DEPTH==0} {
       SELECT $expr
     }]
   } "1 {Expression tree is too large (maximum depth $::SQLITE_MAX_EXPR_DEPTH)}"
-  
+  do_test sqllimits1-9.1b {
+    set max $::SQLITE_MAX_EXPR_DEPTH
+    set expr "('abc'='ABC' [string repeat { COLLATE nocase} $max])"
+    catchsql [subst {
+      SELECT $expr
+    }]
+  } "1 {Expression tree is too large (maximum depth $::SQLITE_MAX_EXPR_DEPTH)}"
+
 if 0 {  
   # Attempting to beat the expression depth limit using nested SELECT
   # queries causes a parser stack overflow. 

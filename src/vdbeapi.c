@@ -2517,6 +2517,11 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       sqlite3VdbeMemSetInt64(pMem, p->iKey2);
     }else if( iStore>=pUnpack->nField ){
       pMem = (sqlite3_value *)columnNullValue();
+    }else if( (p->pTab->aCol)
+           && (p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL)
+           && (pMem->flags & (MEM_Int|MEM_IntReal))
+    ){
+      sqlite3VdbeMemRealify(pMem);
     }
   }else{
     /* For an UPDATE, memory cell (p->iNewReg+1+iStore) contains the required

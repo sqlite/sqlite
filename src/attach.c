@@ -128,6 +128,11 @@ static void attachFunc(
         sqlite3BtreeClose(pNew->pBt);
         pNew->pBt = pNewBt;
         pNew->pSchema = pNewSchema;
+        if( db->init.iDb==0 ){
+          /* Clear all eponymous virtual table instances, as they are holding
+          ** pointers to the schema object just freed by sqlite3BtreeClose() */
+          sqlite3VtabEponymousTableClearAll(db);
+        }
       }else{
         sqlite3BtreeClose(pNewBt);
         rc = SQLITE_NOMEM;

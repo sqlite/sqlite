@@ -173,23 +173,29 @@ int sqlite3ExprDataType(const Expr *pExpr){
 ** and the pExpr parameter is returned unchanged.
 */
 Expr *sqlite3ExprAddCollateToken(
-  const Parse *pParse,     /* Parsing context */
+  Parse *pParse,           /* Parsing context */
   Expr *pExpr,             /* Add the "COLLATE" clause to this expression */
   const Token *pCollName,  /* Name of collating sequence */
   int dequote              /* True to dequote pCollName */
 ){
-  if( pCollName->n>0 ){
+  if( pCollName->n>0 && pParse->nErr==0 ){
     Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLLATE, pCollName, dequote);
+    assert( pExpr!=0 );
     if( pNew ){
       pNew->pLeft = pExpr;
       pNew->flags |= EP_Collate|EP_Skip;
+#if SQLITE_MAX_EXPR_DEPTH>0
+      pNew->nHeight = pExpr->nHeight+1;
+      sqlite3ExprCheckHeight(pParse, pNew->nHeight);
+      testcase( pParse->nErr>0 );
+#endif
       pExpr = pNew;
     }
   }
   return pExpr;
 }
 Expr *sqlite3ExprAddCollateString(
-  const Parse *pParse,  /* Parsing context */
+  Parse *pParse,        /* Parsing context */
   Expr *pExpr,          /* Add the "COLLATE" clause to this expression */
   const char *zC        /* The collating sequence name */
 ){
