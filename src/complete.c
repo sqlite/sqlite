@@ -51,10 +51,10 @@ extern const char sqlite3IsEbcdicIdChar[];
 /*
 ** Return zero if the given SQL string is complete - if all comments,
 ** string and blob literals, and quoted identifiers have been closed and
-** if the entire string ends with ";" and possible with ";END;" if the
+** if the entire string ends with ";" and possibly with ";END;" if the
 ** string is a CREATE TRIGGER statement.  A non-zero return indicates
-** that the string is incomplete.  Bits of the return value indicate
-** what is missing and is needed to close out the statement.
+** that the string is empty or incomplete.  Bits of the return value
+** indicate what is missing and is needed to close out the statement.
 **
 ** Special handling is require for CREATE TRIGGER statements.
 ** Whenever the CREATE TRIGGER keywords are seen, the statement
@@ -66,11 +66,12 @@ extern const char sqlite3IsEbcdicIdChar[];
 **    R = 0xwwwwwwww00xxyyzz
 **
 ** In other words, zz is the least significant byte, yy is the next
-** most significant byte, xx is the third byte, wwwwwwww is a 32-bit
-** value from the middle.
+** most significant byte, xx is the third byte, wwwwwwww is the upper
+** four bytes of the return value.
 **
 **   zz == SQLITE_OK       Input is complete
 **   zz == SQLITE_ERROR    Input is incomplete
+**   zz == SQLITE_EMPTY    Input contains only whitespace
 **   zz == SQLITE_MISUSE   Input is a NULL pointer
 **   zz != 0               New values for zz may be added in the future
 **
@@ -96,7 +97,7 @@ extern const char sqlite3IsEbcdicIdChar[];
 **
 ** This implementation uses a state machine with 8 states:
 **
-**   (0) INVALID   We have not yet seen a non-whitespace character.
+**   (0) NOTHING   We have not yet seen a non-whitespace character.
 **
 **   (1) START     At the beginning or end of an SQL statement.  This routine
 **                 returns 1 if it ends in the START state and 0 if it ends
@@ -153,7 +154,7 @@ sqlite3_int64 sqlite3_incomplete(const char *zSql){
   static const u8 trans[8][8] = {
                      /* Token:                                                */
      /* State:       **  SEMI  WS  OTHER  EXPLAIN  CREATE  TEMP  TRIGGER  END */
-     /* 0 INVALID: */ {    1,  0,     2,       3,      4,    2,       2,   2, },
+     /* 0 NOTHING: */ {    1,  0,     2,       3,      4,    2,       2,   2, },
      /* 1   START: */ {    1,  1,     2,       3,      4,    2,       2,   2, },
      /* 2  NORMAL: */ {    1,  2,     2,       2,      2,    2,       2,   2, },
      /* 3 EXPLAIN: */ {    1,  3,     3,       2,      4,    2,       2,   2, },
@@ -169,14 +170,14 @@ sqlite3_int64 sqlite3_incomplete(const char *zSql){
   static const u8 trans[3][3] = {
                      /* Token:           */
      /* State:       **  SEMI  WS  OTHER */
-     /* 0 INVALID: */ {    1,  0,     2, },
+     /* 0 NOTHING: */ {    1,  0,     2, },
      /* 1   START: */ {    1,  1,     2, },
      /* 2  NORMAL: */ {    1,  2,     2, },
   };
 #endif /* SQLITE_OMIT_TRIGGER */
   /* Mapping state number to yy value for the return */
   static const u8 statemap[8] = {
-     /* 0 INVALID */ 1,
+     /* 0 NOTHING */ 0,
      /* 1 START   */ 0,
      /* 2 NORMAL  */ 1,
      /* 3 EXPLAIN */ 1,
@@ -228,7 +229,7 @@ sqlite3_int64 sqlite3_incomplete(const char *zSql){
         }
         while( *zSql && *zSql!='\n' ){ zSql++; }
         if( *zSql==0 ){
-          if( state!=1 ) pending = '-';
+          pending = '-';
           goto incomplete_finish;
         }
         token = tkWS;
@@ -331,11 +332,12 @@ sqlite3_int64 sqlite3_incomplete(const char *zSql){
     zSql++;
   }
 incomplete_finish:
+  if( state==0 && pending==0 ) return SQLITE_EMPTY;
   if( state==1 ) nParen = 0;
   return (i64)((((u64)nParen)<<32) |
                ((u64)pending<<16) |
                ((u64)statemap[state]<<8) |
-               (state!=1));
+               (state>1 || pending!=0));
 }
 int sqlite3_complete(const char *zSql){
   return sqlite3_incomplete(zSql)==0;

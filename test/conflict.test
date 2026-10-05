@@ -888,4 +888,35 @@ do_execsql_test conflict-16.5 {
   SELECT a FROM t1 ORDER BY a;
 } {4 6}
 
+# Bug 2026-10-05T07:15:40Z
+#
+do_execsql_test conflict-17.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  BEGIN;
+}
+do_catchsql_test conflict-17.2 {
+  INSERT OR REPLACE INTO t1 VALUES (1),('a');
+} {1 {datatype mismatch}}
+do_execsql_test conflict-17.3 {
+  COMMIT;
+  SELECT count(*) FROM t1;
+} 0
+
+do_execsql_test conflict-17.4 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES (1,'x'),(2,'y');
+  BEGIN;
+}
+do_catchsql_test conflict-17.5 {
+  UPDATE OR REPLACE t1 SET a = CASE a WHEN 1 THEN 10 ELSE 'z' END;
+} {1 {datatype mismatch}}
+do_execsql_test conflict-17.6 {
+  COMMIT;
+  SELECT * FROM t1;
+} {1 x 2 y}
+
+
+
 finish_test

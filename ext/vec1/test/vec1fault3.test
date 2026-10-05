@@ -1,0 +1,106 @@
+# 2026-04-01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1fault3
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING vec1(a, b, c, d, e);
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+faultsim_save_and_close
+
+do_faultsim_test 1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  db eval { PRAGMA table_info = t1 }
+  execsql { 
+    INSERT INTO t1 VALUES(random_vector(8), NULL, $f, 'helloworld', X'123456')
+  }
+} -body {
+  execsql BEGIN
+  for {set ii 0} {$ii < 1000} {incr ii} {
+    set f [expr rand()]
+    execsql { 
+      INSERT INTO t1 VALUES(random_vector(8), NULL, $f, 'helloworld', X'123456')
+    }
+  }
+  execsql COMMIT
+} -test {
+  faultsim_test_result {0 {}} 
+  catchsql ROLLBACK
+}
+
+do_faultsim_test 2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+} -body {
+  execsql {
+    BEGIN;
+      INSERT INTO t1(rowid, a) VALUES(5555, random_vector(24));
+      INSERT INTO t1(rowid, a) VALUES(20_000_000_000, random_vector(24));
+    COMMIT;
+  }
+  
+} -test {
+  faultsim_test_result {0 {}} 
+  catchsql ROLLBACK
+}
+
+#--------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING vec1(a, b);
+  INSERT INTO t1(cmd, arg) VALUES('rebuild', (
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+    ) SELECT vec1_train( random_vector(16), '{codesize:8}' ) FROM s
+  ));
+}
+faultsim_save_and_close
+
+do_faultsim_test 3.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  execsql {
+    BEGIN;
+      WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+      ) INSERT INTO t1(a, b) SELECT random_vector(16), i FROM s;
+  }
+} -body {
+  for {set ii 1} {$ii < 30} {incr ii} {
+    execsql { DELETE FROM t1 WHERE rowid=$ii }
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+  catchsql ROLLBACK
+}
+
+do_faultsim_test 3.2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  vec1_load db
+  execsql { PRAGMA table_info = t1 }
+} -body {
+  execsql {
+    INSERT INTO t1 VALUES( random_vector(16), 1100 );
+  }
+} -test {
+  faultsim_test_result {0 {}} 
+}
+
+finish_test
+

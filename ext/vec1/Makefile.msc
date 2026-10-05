@@ -1,0 +1,19 @@
+
+
+CFLAGS = /Zi /O2 /DNDEBUG /W4
+SIMDCFLAGS = /arch:AVX2 
+
+all: vec1.dll vec1multi.dll
+
+vec1.dll: vec1.c
+	cl $(CFLAGS) $(SIMDCFLAGS) vec1.c -link -dll -out:vec1.dll
+
+vec1multi.dll: vec1.c
+	cl /c /DVEC1SIMD=SCALAR $(CFLAGS) vec1.c /Fovec1scalar.obj
+	cl /c /DVEC1SIMD=AVX2 $(CFLAGS) /arch:AVX2 vec1.c /Fovec1avx2.obj
+        link /DLL vec1scalar.obj vec1avx2.obj /OUT:vec1multi.dll
+
+clean:
+	del /Q vec1.dll
+	del /Q vec1scalar.obj
+	del /Q vec1multi.obj

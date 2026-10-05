@@ -1,0 +1,111 @@
+# 2026-04-02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# A vec1 table "fixes" the vector size when either:
+#
+#   * the first vector is written to the table, or
+#   * the table is trained by a model that specifies a vector size.
+#
+# This file contains tests of these two cases.
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1fixed
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1;
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO v1(cmd, vector) VALUES('rebuild', (
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<512
+    ) SELECT vec1_train( random_vector(128), '{nbucket:4}' ) FROM s
+  ));
+}
+
+do_catchsql_test 1.2 {
+  INSERT INTO v1 VALUES(random_vector(127));
+} {1 {vec1: unexpected vector blob size 508 bytes, expected 512}}
+
+do_catchsql_test 1.3 {
+  INSERT INTO v1(cmd, vector) VALUES('rebuild', (
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<512
+    ) SELECT vec1_train( random_vector(64), '{codesize:16}' ) FROM s
+  ));
+} {1 {vec1: model/data vector size mismatch: 64/128}}
+
+do_catchsql_test 1.4 {
+  SELECT rowid FROM v1(random_vector(129))
+} {1 {vec1: unexpected vector blob size 516 bytes, expected 512}}
+
+#-------------------------------------------------------------------------
+# Similar to tests 1.*, except fix the vector size by inserting a row.
+#
+reset_db
+vec1_load db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1;
+}
+
+do_execsql_test 2.1 {
+  INSERT INTO v1 VALUES( random_vector(128) );
+}
+
+do_catchsql_test 2.2 {
+  INSERT INTO v1 VALUES(random_vector(127));
+} {1 {vec1: unexpected vector blob size 508 bytes, expected 512}}
+
+do_catchsql_test 2.3 {
+  INSERT INTO v1(cmd, vector) VALUES('rebuild', (
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<512
+    ) SELECT vec1_train( random_vector(64), '{codesize:16}' ) FROM s
+  ));
+} {1 {vec1: model/data vector size mismatch: 64/128}}
+
+do_catchsql_test 2.4 {
+  SELECT rowid FROM v1(random_vector(129))
+} {1 {vec1: unexpected vector blob size 516 bytes, expected 512}}
+
+do_execsql_test 2.5 {
+  INSERT INTO v1 VALUES( random_vector(128) );
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+vec1_load db
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1;
+}
+
+do_catchsql_test 3.1 {
+  INSERT INTO v1 VALUES( random_vector(1) );
+} {1 {invalid vector size: 4 bytes}}
+do_catchsql_test 3.2 {
+  INSERT INTO v1 VALUES( random_vector(4097) );
+} {1 {invalid vector size: 16388 bytes}}
+do_catchsql_test 3.3 {
+  INSERT INTO v1 VALUES( randomblob(207) );
+} {1 {invalid vector size: 207 bytes}}
+
+do_execsql_test 3.4 {
+  INSERT INTO v1 VALUES( random_vector(4096) );
+} 
+
+
+finish_test
+

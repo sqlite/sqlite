@@ -728,4 +728,40 @@ do_test 13.2.2 {
   } msg] $msg
 } {1 {(1) unsafe use of virtual table "aa"}}
 
+#---------------------------------------------------------------------------
+# Test integrity-check on a contentless table.
+#
+reset_db
+do_execsql_test 14.0 {
+  CREATE VIRTUAL TABLE ft USING fts3(x, content='');
+}
+do_execsql_test 14.1 {
+  PRAGMA integrity_check
+} {ok}
+do_execsql_test 14.2 {
+  PRAGMA table_info = ft;
+} {
+  0 x       {} 0 {} 0
+  1 content {} 0 {} 0
+}
+
+do_execsql_test 14.3 {
+  CREATE VIRTUAL TABLE a USING fts4(x, content='');
+}
+do_execsql_test 14.4 {
+  PRAGMA table_info = a;
+} {
+  0 x       {} 0 {} 0
+}
+do_execsql_test 14.5 {
+  PRAGMA integrity_check
+} {ok}
+do_execsql_test 14.6 {
+  INSERT INTO a(rowid, x) VALUES(1, 'one two three');
+  INSERT INTO a(rowid, x) VALUES(2, 'three two one');
+} {}
+do_execsql_test 14.7 {
+  PRAGMA integrity_check
+} {ok}
+
 finish_test

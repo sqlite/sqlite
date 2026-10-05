@@ -1,0 +1,394 @@
+# 2026-03-12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1meta2
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v, m1);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  INSERT INTO v1(rowid, v, m1) VALUES
+    (1, random_vector(8), '456'),
+    (2, random_vector(8), 456),
+    (3, random_vector(8), 456.0),
+    (4, random_vector(8), NULL),
+    (5, random_vector(8), 'some text'),
+    (6, random_vector(8), 'some other text'),
+    (7, random_vector(8), 'this text'),
+    (8, random_vector(8), X'ABCDEF'),
+    (9, random_vector(8), X'AC');
+  PRAGMA integrity_check;
+} {ok}
+
+foreach {tn where res} {
+  1 "m1 = 456"           {2 3}
+  2 "m1 = 'this text'"   {7}
+  3 "m1 = 'some text'"   {5}
+  4 "m1 = NULL"          {}
+  5 "m1 IS ?"            {4}
+  6 "m1 > 555"           {1 5 6 7 8 9}
+  7 "m1 >= 'some text'"  {5 7 8 9}
+  8 "m1 = '456'"         {1}
+  9 "m1 = X'ABCDEF'"     {8}
+  10 "m1 = X'ac'"        {9}
+  11 "m1 >= X'abcdef'"   {8 9}
+  12 "m1 > X'abcdef'"    {9}
+  13 "m1 IS NULL"        {4}
+  14 "m1 IS NOT NULL"    {1 2 3 5 6 7 8 9}
+  15 "m1 < 555"          {2 3}
+  16 "m1 <= '456'"       {1 2 3}
+  17 "m1 < 123.2"        {}
+  18 "m1 < 123"          {}
+  19 "m1 < 1123.2"       {2 3}
+  20 "m1 < 456.0"        {}
+  21 "m1 IS 456"         {2 3}
+
+  22 "m1 > 'this'"       {7 8 9}
+  23 "m1 = ''"           {}
+  24 "m1 IS 'this text is'" {}
+
+  22 "m1 > X'ABCDEF1234'" {9}
+  23 "m1 > X'ABCD'"       {8 9}
+  24 "m1 >= X''"          {8 9}
+  25 "m1 ISNULL"          {4}
+} {
+  set K [llength $res]
+  if {$K==0} {set K 100}
+
+  do_execsql_test 1.1.$tn "
+    SELECT * FROM (
+        SELECT rowid FROM v1(random_vector(8)) WHERE $where LIMIT $K
+    ) ORDER BY 1 LIMIT -1
+  " $res
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+proc rval {} {
+  expr (rand() * 10.0)
+}
+db func rval rval
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(v BLOB, m1, m2);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO t1 SELECT random_vector(12), rval(), rval() FROM s;
+  UPDATE t1 SET m1=NULL WHERE (rowid%7)==0;
+  UPDATE t1 SET m2=NULL WHERE (rowid%8)==0;
+
+  CREATE VIRTUAL TABLE v1 USING vec1(v, m1, m2);
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  INSERT INTO v1(rowid, v, m1, m2) SELECT rowid, v, m1, m2 FROM t1;
+}
+
+# Check the flags on the meta value arrays are set to 0x18. 
+#
+#    0x08=real values.
+#    0x10=contains null.
+#
+do_execsql_test 2.1 {
+  SELECT hex( substr(val, 1, 4) ) FROM v1_meta
+} {00000018 00000018}
+
+foreach t {2 3} {
+  foreach {tn expr} {
+    1    "m1 IS NULL"
+    2    "m1 < 1.0"
+    3    "m1 BETWEEN -2.5 AND 2.5"
+    4    "m1 < 4 AND m2 >= 4"
+    5    "m1 <= 'abc'"
+    6    "m1 IS NOT NULL"
+    7    "m1 < 1.1 AND m2 > 2.1"
+  } {
+    set expect [db eval "SELECT rowid FROM t1 WHERE $expr ORDER BY 1"]
+    do_execsql_test 2.$t.$tn.[llength $expect] "
+      SELECT rowid FROM v1(random_vector(12), 100) WHERE $expr ORDER BY 1
+    " $expect
+  }
+
+  do_execsql_test 2.$t.x {
+    PRAGMA integrity_check
+  } {ok}
+
+  do_execsql_test 2.$t.y {
+    INSERT INTO t1 VALUES(random_vector(12), 'abc', NULL);
+    INSERT INTO v1(rowid, v, m1, m2) 
+      SELECT rowid, v, m1, m2 FROM t1 WHERE rowid=last_insert_rowid();
+
+    SELECT hex( substr(val, 1, 4) ) FROM v1_meta
+  } {00000011 00000018}
+}
+
+db func rval rval 
+proc rval {} {
+  expr {int(rand() * 255.0)}
+}
+do_execsql_test 2.4 {
+  DELETE FROM t1;
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<300
+  )
+  INSERT INTO t1 SELECT random_vector(12), rval(), rval() FROM s;
+  UPDATE t1 SET m1=NULL WHERE m1<6 OR rowid=43;
+  UPDATE t1 SET m2=NULL WHERE m2<6 OR rowid=43;
+
+  DELETE FROM v1;
+  INSERT INTO v1(rowid, v, m1, m2) SELECT rowid, v, m1, m2 FROM t1;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+do_execsql_test 2.5 {
+  SELECT hex( substr(val, 1, 4) ) FROM v1_meta
+} {00000012 00000012}
+
+foreach t {6 7 8} {
+  foreach {tn expr} {
+
+    1    "m1 IS NULL"
+    2    "m1 = 11"
+    3    "m1 < 22"
+    4    "m1 < 254"
+    5    "m1 > 180"
+    6    "m1 IS NULL AND m2 IS NULL"
+    7    "m1 = 10 AND m2>10"
+    8    "m1>0 AND m2<100"
+    9    "m1>=0"
+    10   "m1>=130"
+    11   "m1<=130"
+
+    12   "m1<='text'"
+    13   "m1>'text'"
+    14   "m1>1000"
+
+    15   "m1 = 100.0"
+    16   "m1 > 100.0"
+    17   "m1 < 100.0"
+
+    18   "m1 > 89.2"
+    19   "m1 < 89.9"
+    20   "m1 >= 89.9"
+    21   "m1 BETWEEN -1 AND 201.5"
+    22   "m1 = 101.2"
+    23   "m2 IS NOT NULL"
+    24   "m2 < NULL"
+    25   "m1 >= -1"
+    26   "m1 <= 255"
+
+    27   "m1 < 255.5"
+    28   "m1 < 253.5"
+    29   "m1 = NULL"
+
+    30   "m2 >= 0"
+    31   "m2 >= 3.99"
+    32   "m2 >= 13.99"
+    33   "m2 >= 200"
+    34   "m2 >= 300"
+
+    35   "m2 <= 0"
+    36   "m2 <= 3.99"
+    37   "m2 <= 135.99"
+    38   "m2 <= 200"
+    39   "m2 <= 300"
+    40   "m2 <= -10_000_000_000"
+
+    41   "m1 IN (10, 20, 30)"
+    42   "m1 IN ('10', 20, 30)"
+    43   "m1 IN (NULL, NULL)"
+    44   "m1 IN (NULL, 100, 101, 102)"
+    45   "m1 IN (1000, NULL, 8, -456.123)"
+
+    46   "m2 IN (10, 20, 30)"
+    47   "m2 IN ('10', 20, 30)"
+    48   "m2 IN (NULL, NULL)"
+    49   "m2 IN (NULL, 100, 101, 102)"
+    50   "m2 IN (1000, NULL, 8, -456.123)"
+
+    51   "m2 = X'ABCD'"
+    52   "m1 < X'ABCD'"
+
+    53   "m1 IS 132.5"
+
+    54   "m1 > -4.5"
+    55   "m2 >= -4.5"
+    56   "m2 < -4.5"
+    57   "m2 <= -4.5"
+    58   "m2 IS 132"
+
+  } {
+    set expect [db eval "SELECT rowid FROM t1 WHERE $expr ORDER BY 1"]
+    do_execsql_test 2.$t.$tn.[llength $expect] "
+      SELECT rowid FROM (
+        SELECT rowid FROM v1(random_vector(12)) WHERE $expr LIMIT 1000
+      ) ORDER BY 1 LIMIT -1;
+    " $expect
+  }
+
+  do_execsql_test 2.$t.x {
+    PRAGMA integrity_check
+  } {ok}
+
+  if {$t==6} {
+    do_execsql_test 2.$t.y {
+      INSERT INTO t1 VALUES(random_vector(12), 1234, 'xyz');
+      INSERT INTO v1(rowid, v, m1, m2) 
+        SELECT rowid, v, m1, m2 FROM t1 WHERE rowid=last_insert_rowid();
+
+      SELECT hex( substr(val, 1, 4) ) FROM v1_meta
+    } {00000014 00000011}
+  } else {
+    do_execsql_test 2.$t.z {
+      INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"none"}');
+    }
+  }
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+proc rval {} {
+  expr int(rand() * 100) * 100
+}
+db func rval rval
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v, m1, m2);
+  CREATE TABLE t1(v, m1, m2);
+
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<300
+  )
+  INSERT INTO t1 SELECT random_vector(15), rval(), rval() FROM s;
+  UPDATE t1 SET m1=NULL WHERE m1<500 OR rowid=43;
+  UPDATE t1 SET m2=NULL WHERE m2<500 OR rowid=43;
+
+  INSERT INTO v1 SELECT * FROM t1;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+}
+
+foreach t {1 2} {
+  foreach {tn expr} {
+    1 "m1 = 4500"
+    2 "m1 IS NULL"
+    3 "m1 IS NOT NULL"
+
+    4 "m1 < 1000"
+    5 "m2 > -1000"
+
+    4 "m1 < 'text'"
+    5 "m2 > 'text'"
+
+    6 "m1 < 4500.5"
+    7 "m1 <= 4500.5"
+
+    8 "m1 = NULL"
+
+    9 "m2 IN (1000, 1100, 1200, 1300)"
+    10 "m2 IN (3000, 3100, 3200, 3300, NULL, 'text')"
+    11 "m2 IN (10_000_000_000, 2147483647, -2147483649)"
+
+  } {
+    set expect [db eval "SELECT rowid FROM t1 WHERE $expr ORDER BY 1"]
+    do_execsql_test 3.$t.$tn.[llength $expect] "
+      SELECT rowid FROM (
+        SELECT rowid FROM v1(random_vector(15)) WHERE $expr LIMIT 1000
+      ) ORDER BY 1 LIMIT -1;
+    " $expect
+  }
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE vec1tbl USING vec1(v, t);
+  INSERT INTO vec1tbl VALUES(
+    random_vector(8), hex(randomblob(100000))
+  );
+  SELECT length(t) FROM vec1tbl;
+} {200000}
+
+do_execsql_test 4.1 {
+  INSERT INTO vec1tbl(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 4.2 {
+  DELETE FROM vec1tbl_meta;
+  PRAGMA integrity_check;
+} {{vec1tbl: error reading meta-list id=1,meta=0}}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE vec1tbl USING vec1(v, t, u);
+  WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<317 )
+  INSERT INTO vec1tbl SELECT random_vector(15), 120, NULL FROM s;
+
+  INSERT INTO vec1tbl(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+} {}
+
+foreach {tn expr} {
+  1 "t = 120"
+  2 "u > 120"
+  3 "t > 100"
+  4 "t >= 101"
+  5 "u >= 101"
+  6 "t IN (100, 120, 140)"
+} {
+  set res [db eval "SELECT rowid FROM vec1tbl WHERE $expr ORDER BY 1"]
+  do_execsql_test 5.1.$tn "
+    SELECT rowid FROM vec1tbl(random_vector(15), '{K:500}') 
+    WHERE $expr ORDER BY 1
+  " $res
+}
+
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE vec1tbl USING vec1(v, t, u, x);
+  INSERT INTO vec1tbl VALUES(random_vector(15), NULL, 2147483647, 1);
+  INSERT INTO vec1tbl VALUES(random_vector(15), 520, 2147483646, 2);
+  INSERT INTO vec1tbl VALUES(random_vector(15), NULL, 2147483645, 255);
+  INSERT INTO vec1tbl VALUES(random_vector(15), NULL, NULL, NULL);
+  INSERT INTO vec1tbl(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+} {}
+
+foreach {tn expr} {
+  1 "u = 2147483647"
+  2 "u IS NULL"
+  3 "t = 2147483647"
+  4 "t IS NULL"
+  5 "x = 255"
+  6 "x IS NULL"
+} {
+  set res [db eval "SELECT rowid FROM vec1tbl WHERE $expr ORDER BY 1"]
+  do_execsql_test 5.1.$tn "
+    SELECT rowid FROM vec1tbl(random_vector(15), '{K:500}') 
+    WHERE $expr ORDER BY 1
+  " $res
+}
+
+
+
+finish_test
