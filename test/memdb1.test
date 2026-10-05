@@ -436,4 +436,45 @@ do_test 1360 {
   set res
 } {1 2 3}
 
+#-------------------------------------------------------------------------
+# A TEMP trigger on a table in a database overwritten by a deserialize() 
+# is orphaned in the same way as if the db was DETACHed.
+#
+reset_db
+do_execsql_test 1400 {
+  CREATE TABLE t1(x);
+}
+set blob [db serialize main]
+
+do_execsql_test 1410 {
+  CREATE TEMP TABLE tlog(y);
+  CREATE TEMP TRIGGER tr AFTER INSERT ON main.t1 BEGIN
+    INSERT INTO tlog VALUES(new.x);
+  END;
+  INSERT INTO t1 VALUES(1);
+  SELECT * FROM tlog;
+} {1}
+
+do_test 1420 { db deserialize main $blob } {}
+
+do_execsql_test 1430 {
+  INSERT INTO t1 VALUES(2);
+  SELECT * FROM tlog;
+} {1}
+
+do_execsql_test 1440 {
+  SELECT name, tbl_name FROM temp.sqlite_schema WHERE type='trigger';
+} {tr t1}
+
+do_execsql_test 1450 {
+  CREATE TEMP TABLE t1(x);
+  INSERT INTO temp.t1 VALUES(3);
+  SELECT * FROM tlog;
+} {1}
+
+do_execsql_test 1460 {
+  DROP TRIGGER temp.tr;
+  SELECT name FROM temp.sqlite_schema WHERE type='trigger';
+} {}
+
 finish_test
