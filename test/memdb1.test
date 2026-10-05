@@ -341,4 +341,50 @@ do_test 1110 {
   B finish
 } {SQLITE_OK}
 
+#-------------------------------------------------------------------------
+# Check that deserializing into the main db does not leave existing
+# eponymous virtual tables with a dangling schema pointer. 
+#
+# Report: https://sqlite.org/bugs/forumpost/2fbe01f58f
+#
+reset_db
+sqlite3 db :memory:
+
+do_execsql_test 1210 {
+  CREATE TABLE t(x); 
+  SELECT * FROM json_each('[1]');
+} {
+  0 1 integer 1 1 {} {$[0]} {$}
+}
+
+set blob [db serialize main]
+db deserialize main $blob
+
+do_execsql_test 1220 {
+  SELECT  *  FROM json_each('[1]');
+} {
+  0 1 integer 1 1 {} {$[0]} {$}
+}
+
+# Attempt to deserialize while a statement that uses an eponymous
+# virtual table is still active. The deserialize should fail.
+#
+do_test 1230 {
+  set res [list]
+  set msg ""
+  db eval { SELECT value FROM json_each('[1,2,3]') } {
+    if {$msg==""} {
+      catch { db deserialize main $blob } msg
+    }
+    lappend res $value
+  }
+  set res
+} {1 2 3}
+do_test 1240 {
+  set msg
+} {unable to set MEMDB content}
+do_execsql_test 1250 {
+  SELECT value FROM json_each('[4,5]');
+} {4 5}
+
 finish_test
