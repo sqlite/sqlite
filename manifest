@@ -1,5 +1,5 @@
-C Omit\sthe\s-r\scommand-line\soption\sfrom\sLemon.\s\sThat\sdoes\snot\saffect\nSQLite.\s[forum:/info/2026-10-05T15:11:11Z|Forum\s2026-10-05T15:11:11Z].
-D 2026-10-05T15:20:48.736
+C Allow\swindows\sclients\sto\sopen\sand\srecover\sa\swal\smode\sdatabase\seven\sif\san\sold\sclient\sstill\shas\sthe\s*-shm\sfile\smapped.\sForum\spost\s[forum:/info/2026-10-05T14:07:31Z\s|\s2026-10-05T14:07:31Z].
+D 2026-10-05T17:11:27.214
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -786,7 +786,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 713336d0c646720a9ccbd5bc6fe217bb4924dd28adea25d83a2af5346cb030e6
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 5ccac2954679efc003330a5686cd2048ec9059f90f54f43900e60877e9158aa7
-F src/os_win.c 364c3095fa6f1bc77b6d55acb7853011a25ff526562a576b5d89b4c14caa20a2
+F src/os_win.c 74473c76517956865581f12e4afc06c09a499ea70002cf9cedb3316301138be8
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fd9ca8fe01b09c490e66a440e2f56648d489ccb9e0e3b5508424079b046fc824
 F src/pager.h 53cabc1fd881a9c078eab7db6c233bc0ed29d8938fc05585f0e75e80d905d308
@@ -811,7 +811,7 @@ F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ef6b69d919800d1b2d3e1b57a1a0e78872c3bddd413a4bc639a865226cf91b16
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
-F src/test1.c 933b06ead0fd5cf256384dcc1e19979ef3d679a77c67176f81a7fe40536b46c6
+F src/test1.c d651507083ceff823113b86c0cd87cbfbb0e27b44f260a9909c78d6037b765dc
 F src/test2.c a61ed01d9264a1db74ab42fbc981fc66165f85d5e3947e92be61a73e79ec4f2d
 F src/test3.c c959fe0c3b04157483f5a6fa1950c1f222e062d920fee0a8e70410c6b6d45522
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -2138,6 +2138,7 @@ F test/win32heap.test 1ec2ce646aee491ec23bfcdfd005b33c79f13bf91467966f374a76ffe7
 F test/win32lock.test e56d7a9b6cf9d5f3867c2dd19ff36c5326881e4038c6867610ecb3a9868ea4eb
 F test/win32longpath.test 2641e3a5dbb59f49456f6caf78c0acd6ec7dbba27cb56363bab8fbfe93995caa
 F test/win32nolock.test 95854dc0206b8a95e4aee15a76acc082767b38f079b2e24676aed6cbb0f32798
+F test/win32shm.test 7fe1aba2287033af64187597b6e9afd9878431d0ab4391da94f8ed85b0fea228
 F test/window1.test b46d28b9698559e66aa4adafd8074b940faee498bf0c4fbdb62548bfcccc67e7
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
 F test/window2.test e466a88bd626d66edc3d352d7d7e1d5531e0079b549ba44efb029d1fbff9fd3c
@@ -2278,8 +2279,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4bfc6e53a95d710b7f40fa9c80d8cdd1df50d69ed8614e9800f7e6a1ca5a3c29
-R 2391d4ae8c506bcbf10a547ba9c0d51c
-U drh
-Z 88e25c606da38eefcb6e995e8c137798
+P bc72b1d95c2f098a92013ad9f4ab60440c105cd17889d12ae7349a4531a90c75
+R d807db430396ddbab88ff7374b0a00c2
+U dan
+Z 17580f838c995b8e4c097c3d30c6d5d6
 # Remove this line to create a well-formed Fossil manifest.

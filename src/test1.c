@@ -8363,6 +8363,163 @@ static int SQLITE_TCLAPI win32_file_lock(
 }
 #endif
 
+#ifdef _WIN32
+/*
+** An instance of this structure is allocated for each command created
+** by [map_win32_file].
+*/
+typedef struct TestMapFile TestMapFile;
+struct TestMapFile {
+  HANDLE hFile;                   /* Handle open on mapped file */
+  HANDLE hMap;                    /* Handle returned by CreateFileMappingW() */
+  void *pMap;                     /* Pointer returned by MapViewOfFile() */
+};
+
+/*
+** Release all resources held by the TestMapFile object passed as the
+** only argument. This is used as the delete-proc for the Tcl command.
+*/
+static void SQLITE_TCLAPI testMapFileDel(void *clientData){
+  TestMapFile *p = (TestMapFile*)clientData;
+  if( p->pMap ) UnmapViewOfFile(p->pMap);
+  if( p->hMap ) CloseHandle(p->hMap);
+  if( p->hFile!=INVALID_HANDLE_VALUE ) CloseHandle(p->hFile);
+  ckfree((char*)p);
+}
+
+/*
+** Implementation of the command created by [map_win32_file]:
+**
+**      CMD destroy
+*/
+static int SQLITE_TCLAPI testMapFileCmd(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  static const char *azMethod[] = { "destroy", 0 };
+  enum { MAPFILE_DESTROY };
+  int iMethod = 0;
+
+  if( objc<2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SUB-COMMAND ...");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIndexFromObj(interp, objv[1], azMethod, "method", 0, &iMethod) ){
+    return TCL_ERROR;
+  }
+
+  switch( iMethod ){
+    case MAPFILE_DESTROY: {
+      if( objc!=2 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "");
+        return TCL_ERROR;
+      }
+      Tcl_DeleteCommand(interp, Tcl_GetString(objv[0]));
+      break;
+    }
+  }
+
+  return TCL_OK;
+}
+
+/*
+**      map_win32_file CMD FILENAME
+**
+** Open file FILENAME and memory-map the entire file using the same
+** CreateFileMappingW() and MapViewOfFile() APIs used by winShmMap() in
+** os_win.c. Create a new Tcl command named CMD that may be used to
+** unmap the file ([CMD destroy]).
+*/
+static int SQLITE_TCLAPI map_win32_file(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zCmd = 0;
+  const char *zFile = 0;
+  LPWSTR zWide = 0;
+  int nWide = 0;
+  TestMapFile *p = 0;
+  LARGE_INTEGER sz;
+  char zErr[100];
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "CMD FILENAME");
+    return TCL_ERROR;
+  }
+  zCmd = Tcl_GetString(objv[1]);
+  zFile = Tcl_GetString(objv[2]);
+
+  /* Convert the utf-8 filename to utf-16 */
+  nWide = MultiByteToWideChar(CP_UTF8, 0, zFile, -1, NULL, 0);
+  if( nWide<=0 ){
+    Tcl_AppendResult(interp, "cannot convert filename: ", zFile, (char*)0);
+    return TCL_ERROR;
+  }
+  zWide = (LPWSTR)ckalloc(nWide * sizeof(WCHAR));
+  MultiByteToWideChar(CP_UTF8, 0, zFile, -1, zWide, nWide);
+
+  p = (TestMapFile*)ckalloc(sizeof(TestMapFile));
+  memset(p, 0, sizeof(TestMapFile));
+  p->hFile = CreateFileW(zWide,
+      GENERIC_READ | GENERIC_WRITE,
+      FILE_SHARE_READ | FILE_SHARE_WRITE,
+      NULL,
+      OPEN_EXISTING,
+      FILE_ATTRIBUTE_NORMAL,
+      NULL
+  );
+  if( p->hFile==INVALID_HANDLE_VALUE ){
+    DWORD lastErr = GetLastError();
+    ckfree((char*)zWide);
+    sqlite3_snprintf(sizeof(zErr), zErr, " (%lu)", lastErr);
+    Tcl_AppendResult(interp, "cannot open file: ", zFile, zErr, (char*)0);
+    testMapFileDel((void*)p);
+    return TCL_ERROR;
+  }
+  ckfree((char*)zWide);
+
+  if( !GetFileSizeEx(p->hFile, &sz) ){
+    sqlite3_snprintf(sizeof(zErr), zErr, " (%lu)", GetLastError());
+    Tcl_AppendResult(interp, "GetFileSizeEx failed", zErr, (char*)0);
+    testMapFileDel((void*)p);
+    return TCL_ERROR;
+  }
+  if( sz.QuadPart==0 ){
+    Tcl_AppendResult(interp, "cannot map zero-length file: ", zFile, (char*)0);
+    testMapFileDel((void*)p);
+    return TCL_ERROR;
+  }
+
+  /* Map the entire file. Same protection and flags as winShmMap(). */
+  p->hMap = CreateFileMappingW(p->hFile, NULL, PAGE_READWRITE,
+      (DWORD)(sz.QuadPart >> 32), (DWORD)(sz.QuadPart & 0xFFFFFFFF), NULL
+  );
+  if( p->hMap==NULL ){
+    sqlite3_snprintf(sizeof(zErr), zErr, " (%lu)", GetLastError());
+    Tcl_AppendResult(interp, "CreateFileMappingW failed", zErr, (char*)0);
+    testMapFileDel((void*)p);
+    return TCL_ERROR;
+  }
+  p->pMap = MapViewOfFile(p->hMap, FILE_MAP_WRITE | FILE_MAP_READ, 0, 0,
+      (SIZE_T)sz.QuadPart
+  );
+  if( p->pMap==NULL ){
+    sqlite3_snprintf(sizeof(zErr), zErr, " (%lu)", GetLastError());
+    Tcl_AppendResult(interp, "MapViewOfFile failed", zErr, (char*)0);
+    testMapFileDel((void*)p);
+    return TCL_ERROR;
+  }
+
+  Tcl_CreateObjCommand(interp, zCmd, testMapFileCmd, (void*)p, testMapFileDel);
+  Tcl_SetObjResult(interp, objv[1]);
+  return TCL_OK;
+}
+#endif
+
 
 /*
 **      optimization_control DB OPT BOOLEAN
@@ -9279,6 +9436,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "optimization_control",          optimization_control,0},
 #ifdef _WIN32
      { "lock_win32_file",               win32_file_lock,    0 },
+     { "map_win32_file",                map_win32_file,     0 },
 #endif
      { "tcl_objproc",                   runAsObjProc,       0 },
 
