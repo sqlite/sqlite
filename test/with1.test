@@ -1089,7 +1089,7 @@ do_catchsql_test 22.1 {
      SELECT 3 FROM c,c,c,c,c,c,c,c,c
   )
   SELECT 4 FROM c,c,c,c,c,c,c,c,c;
-} {1 {too many FROM clause terms, max: 200}}
+} {1 {VIEWs and/or subqueries nested too deep}}
 
 # 2019-05-22
 # ticket https://sqlite.org/src/tktview/ce823231949d3abf42453c8f20
