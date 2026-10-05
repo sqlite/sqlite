@@ -7312,6 +7312,10 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     }else{
       pExpr = sqlite3PExpr(pParse, TK_PLUS, pTerm, pExpr);
     }
+    if( pParse->nErr ){
+      sqlite3ExprDelete(db, pExpr);
+      pExpr = 0;
+    }
     pSub = pPrior;
   }
   p->pEList->a[0].pExpr = pExpr;
