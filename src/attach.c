@@ -57,6 +57,23 @@ int sqlite3DbIsNamed(sqlite3 *db, int iDb, const char *zName){
 }
 
 /*
+** If any TEMP triggers reference schema pSchema, move those triggers to
+** reference the TEMP schema itself.
+*/
+static void detachTempTriggers(sqlite3 *db, Schema *pSchema){
+  HashElem *pEntry;
+  assert( db->aDb[1].pSchema );
+  pEntry = sqliteHashFirst(&db->aDb[1].pSchema->trigHash);
+  while( pEntry ){
+    Trigger *pTrig = (Trigger*)sqliteHashData(pEntry);
+    if( pTrig->pTabSchema==pSchema ){
+      pTrig->pTabSchema = pTrig->pSchema;
+    }
+    pEntry = sqliteHashNext(pEntry);
+  }
+}
+
+/*
 ** An SQL user-function registered to do the work of an ATTACH statement. The
 ** three arguments to the function come directly from an attach statement:
 **
@@ -125,6 +142,7 @@ static void attachFunc(
         /* Both the Btree and the new Schema were allocated successfully.
         ** Close the old db and update the aDb[] slot with the new memdb
         ** values.  */
+        detachTempTriggers(db, pNew->pSchema);
         sqlite3BtreeClose(pNew->pBt);
         pNew->pBt = pNewBt;
         pNew->pSchema = pNewSchema;
@@ -304,7 +322,6 @@ static void detachFunc(
   sqlite3 *db = sqlite3_context_db_handle(context);
   int i;
   Db *pDb = 0;
-  HashElem *pEntry;
   char zErr[128];
 
   UNUSED_PARAMETER(NotUsed);
@@ -331,18 +348,7 @@ static void detachFunc(
     goto detach_error;
   }
 
-  /* If any TEMP triggers reference the schema being detached, move those
-  ** triggers to reference the TEMP schema itself. */
-  assert( db->aDb[1].pSchema );
-  pEntry = sqliteHashFirst(&db->aDb[1].pSchema->trigHash);
-  while( pEntry ){
-    Trigger *pTrig = (Trigger*)sqliteHashData(pEntry);
-    if( pTrig->pTabSchema==pDb->pSchema ){
-      pTrig->pTabSchema = pTrig->pSchema;
-    }
-    pEntry = sqliteHashNext(pEntry);
-  }
-
+  detachTempTriggers(db, pDb->pSchema);
   sqlite3BtreeClose(pDb->pBt);
   pDb->pBt = 0;
   pDb->pSchema = 0;
