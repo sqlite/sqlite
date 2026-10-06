@@ -1,5 +1,5 @@
-C Fix\sa\scase\scausing\sinfinitely\srecursive\scalls\sto\svec1.xSavepoint.
-D 2026-10-06T10:30:12.845
+C Increase\sversion\snumber\sreturned\sby\svec1_info()\sto\s"0.8".\sAlso\sfix\ssome\swarnings\sin\svec1.c.
+D 2026-10-06T11:13:01.512
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -641,7 +641,7 @@ F ext/vec1/tool/vec1_algo_test.c c62b828a3e46a39a8656f26b74804906cc3160758f8afc6
 F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b62631b480c2d2d
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c 80a28a4914a0abea720372d9ae36f6855aa664edfa0709542a0abce5945fe440
+F ext/vec1/vec1.c ded791a7a6fa35c0ba7f0b7800554c7f6077e8bf7de011f7e5c0925a53fa081d
 F ext/wasm/GNUmakefile cc28e65dec12f1b992957152d8395484f4fcf7f94e6b6736a09ee4f48e7ec048
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
@@ -2280,8 +2280,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4bf968095f427e87ae3afe498f74e00e9058b154e12e2d261f317640f4b49cc4
-R 45397a61da4ae3f4271291969ad517da
+P a6f0843000e537a68be9e65693e8da276a4f66302a9a3c72f3a3417b6d275272
+R a115038655f834113355eea1f395ac28
 U dan
-Z 51feb3211d73fd62480d652a105feaad
+Z 66272de88466018fce34e80852ebe644
 # Remove this line to create a well-formed Fossil manifest.
