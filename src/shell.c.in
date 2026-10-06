@@ -6048,7 +6048,7 @@ static void output_reset(ShellState *p){
         ** p->zTempFile data file out from under it */
         p->aUnlink = realloc(p->aUnlink, sizeof(Unlink)*(1+p->nUnlink));
         shell_check_oom(p->aUnlink);
-        p->aUnlink[p->nUnlink].tm = timeOfDay()+10000;
+        p->aUnlink[p->nUnlink].tm = timeOfDay()+10000000;
         p->aUnlink[p->nUnlink].zFN = p->zTempFile;
         p->nUnlink++;
         p->zTempFile = 0;
@@ -6489,8 +6489,9 @@ int shellDeleteFile(const char *zFilename, int *pRetry){
       sqlite3_sleep(pRetry[0]);
       pRetry[0] = 0;
       continue;
+    }else{
+      break;
     }
-    break;
   }
   return rc;
 }
@@ -6513,23 +6514,20 @@ int shellDeleteFile(const char *zFilename, int *pRetry){
 ** wait for nDelay milliseconds and try again before giving up.  Only
 ** a single wait occurs, even if problems are encountered with multiple
 ** temp files.  Only the first problem seen takes the delay.  Thus
-** the total delay never exceeds nDelay milliseconds.  When nDelay
-** is non-zero, memory used to hold the filename is reclaimed regardless
-** of whether or not the temporary files were successfully deleted.
+** the total delay never exceeds nDelay milliseconds.
 **
 ** If bForce is true, deletion is attempted on p->aUnlink[] files
 ** even if their time has not expired.  However, there is a pause
-** of up to nDelay milliseconds before doing the deletion.
-**
-** When nDelay is zero and the deletion attempt fails, memory used to
-** store temporary filesnames is not reclaimed.
+** of up to nDelay milliseconds before doing the deletion.  Memory
+** used to hold filenames is reclaimed regardless of whether or not
+** the delete is successful.
 **
 ** The bForce flag is used only when the process is about to exit.  When
 ** bForce is set, that indicates that this is our last opportunity to
 ** clean up temporary files.
 */
 static void clearTempFile(ShellState *p, int nDelay, int bForce){
-  int alwaysFree = (nDelay>0) || bForce;
+  int alwaysFree = bForce;
   int rc = 0;
   if( p->zTempFile && (!p->doXdgOpen || bForce) ){
     rc = shellDeleteFile(p->zTempFile, &nDelay);
@@ -6545,7 +6543,7 @@ static void clearTempFile(ShellState *p, int nDelay, int bForce){
       int doDelete =  tmToGo<=0;
       if( !doDelete && alwaysFree ){
         int tmSleep = nDelay;
-        if( tmSleep > tmToGo ) tmSleep = (int)tmToGo;
+        if( tmSleep > tmToGo ) tmSleep = (int)(tmToGo/1000);
         sqlite3_sleep(tmSleep);
         nDelay -= tmSleep;
         doDelete = 1;
