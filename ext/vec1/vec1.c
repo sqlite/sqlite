@@ -5870,7 +5870,7 @@ static int vec1PrepareSql(
 }
 
 #define VEC1_SQL_SCAN_BASE     1
-#define VEC1_SQL_REPLACE_IDX   2
+#define VEC1_SQL_INSERT_IDX    2
 
 #define VEC1_SQL_SCAN_IDX      3
 #define VEC1_SQL_CNT_IDX       4
@@ -5889,7 +5889,7 @@ static int vec1GetSql(Vec1Tab *pTab, int eSql, sqlite3_stmt **ppStmt){
 #define VEC1_SQL_INSERT_BASE   0
     "INSERT INTO %Q.'%q_base' VALUES(?, ?%s)",
     "SELECT * FROM %Q.'%q_base' ORDER BY 1",
-    "REPLACE INTO %Q.'%q_idx'(id, bucket, first, last, val)VALUES(?,?,?,?,?)",
+    "INSERT INTO %Q.'%q_idx'(id, bucket, first, last, val)VALUES(?,?,?,?,?)",
 
     "SELECT val, bucket, rowid FROM %Q.'%q_idx'",
     "SELECT sum( length(val) / ? ) FROM %Q.'%q_idx'",
@@ -9983,7 +9983,19 @@ static int vec1ListBuilderFlush(Vec1ListBuilder *p){
       memcpy(&aBlob[VEC1_LIST_SZHDR], p->bufRowid.a, p->bufRowid.n);
       memcpy(&aBlob[VEC1_LIST_SZHDR+p->bufRowid.n], p->bufData.a, p->bufData.n);
 
-      rc = vec1GetSql(p->pTab, VEC1_SQL_REPLACE_IDX, &pStmt);
+      if( p->iId>0 ){
+        /* If there is an existing entry, remove it */
+        rc = vec1GetSql(p->pTab, VEC1_SQL_DELETE_FROM_IDX, &pStmt);
+        if( rc==SQLITE_OK ){
+          sqlite3_bind_int64(pStmt, 1, p->iId);
+          sqlite3_step(pStmt);
+          vec1StmtReset(&rc, pStmt);
+        }
+      }
+
+      if( rc==SQLITE_OK ){
+        rc = vec1GetSql(p->pTab, VEC1_SQL_INSERT_IDX, &pStmt);
+      }
       if( rc==SQLITE_OK ){
         if( p->iId==0 ){
           sqlite3_bind_null(pStmt, 1);
