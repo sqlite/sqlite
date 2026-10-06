@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sfurther\simprovements\sto\sdelayed\stemp-file\sdeletion\sso\sthat\nthe\stest/output-redirect-test.txt\sscript\sworks\seven\sbetter.
-D 2026-10-06T14:34:02.987
+C Fix\sthe\simplementation\sof\sO_TMPFILE\sso\sthat\sit\sactually\sworks.
+D 2026-10-06T18:52:47.576
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -786,7 +786,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 713336d0c646720a9ccbd5bc6fe217bb4924dd28adea25d83a2af5346cb030e6
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c 5ccac2954679efc003330a5686cd2048ec9059f90f54f43900e60877e9158aa7
+F src/os_unix.c 6aa08e19db17a5c2cb8fad0fbf0a47951b6585fd0c385cf74dcf0aa1c0360f05
 F src/os_win.c 74473c76517956865581f12e4afc06c09a499ea70002cf9cedb3316301138be8
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fd9ca8fe01b09c490e66a440e2f56648d489ccb9e0e3b5508424079b046fc824
@@ -2280,8 +2280,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9dd1e3a1c739045c08db36c0d6ea921472535dfab583bf689310491e64f4fa4b
-R f913f7626e3d02c72c08a08b16733eed
+P adacd1423f159fa4698f7e40dd1488256a13dff0b31cc90e28c3441109596ef4
+R b333886981ca0543b01d08159d0076c6
 U drh
-Z 08af29dc49e706669a4b6d3a6fea9494
+Z 491b18e10afe4deafa8e81c0c157f590
 # Remove this line to create a well-formed Fossil manifest.
