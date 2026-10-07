@@ -1,5 +1,5 @@
-C Fix\sthe\simplementation\sof\sO_TMPFILE\sso\sthat\sit\sactually\sworks.
-D 2026-10-06T18:52:47.576
+C In\sthe\streeview\sdisplay\sfor\sExpr,\sshow\sTK_ASTERISK\snodes.\s\sDebugging\nlogic\sonly\s-\snot\sused\sin\sproduction\sbuilds.
+D 2026-10-07T10:07:16.107
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -861,7 +861,7 @@ F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 85d8b9f05f78211c61e3739ab5db761d7118766d1916ae7f2764735106bc4e13
 F src/tokenize.c e9d52d9f7374d82dadcd11726bea8a597d43709d6672704f3f0375bf1d726912
-F src/treeview.c feaa59f14db4f7b5aacca9c5ad5aeb562c1f98262c1ffd74371f4186ade91fc5
+F src/treeview.c 3a9e59b0d2b9e54e403fa65056ba90716eb91b5cc6e3fe0cda0edea060ddd281
 F src/trigger.c d6d8991ca346eb6f56e50a3c5df486176b67a9179336798a75bb05e622c72cac
 F src/update.c 2c5ea3803c19e5726960df9416a50759322d750b820db7d2b623b4f122e25bf9
 F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
@@ -2280,8 +2280,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P adacd1423f159fa4698f7e40dd1488256a13dff0b31cc90e28c3441109596ef4
-R b333886981ca0543b01d08159d0076c6
+P a435d786fe0e245e352d08d2e2ddf8c1e15154809e3b471810cc327e9d90ef85
+R cec5e9f03718f8ed95fa031d3dc4d810
 U drh
-Z 491b18e10afe4deafa8e81c0c157f590
+Z 48fe77c1f9aa2bbeb44542feeabc886d
 # Remove this line to create a well-formed Fossil manifest.
