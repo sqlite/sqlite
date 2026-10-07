@@ -1,5 +1,5 @@
-C Fix\sthe\sexpansion\sof\s"TABLE.*"\sso\sthat\sit\sworks\sthe\ssame\sas\sPostgreSQL\nwhen\sTABLE\sis\sthe\sleft\soperand\sof\sa\sRIGHT\sJOIN\sUSING.\n[bugs:/info/2026-10-07T02:56:24Z|Bug\s2026-10-07T02:56:24Z]
-D 2026-10-07T10:41:59.664
+C When\scalculating\sTCLLIBDIR\sfrom\sthe\sconfigure\sscript,\sfilter\sout\s//zipfs:\spaths.\sTcl9's\s(file\sisdir)\sreturns\strue\sfor\sthose\sbut\sthey\sare\snot\susable\sfor\sour\spurposes,\scausing\s(make\sinstall\sDESTDIR...)\sto\sinstall\stclsqlite3\sunder\s/zipfs.\smain.mk's\scounterpart\sto\sthis\spiece\salready\sdoes\sthat\sfiltering\sby\svirtue\sof\sthe\sshell's\s(test\s-d)\sbehaving\smore\sconventionally.
+D 2026-10-07T12:50:08.889
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -48,7 +48,7 @@ F autosetup/find_tclconfig.tcl 3394bcd1aad45d6af48262f50808d4f0ac4f1088ba8fa9d08
 F autosetup/jimsh0.c daf13a86959fe2d055ed42d9417ceb63d698ae4b71bde959a0979ab729a83819
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 67683f214977a416baafc4c1020f9940ff047a7306b2292c5872d6287460b7d5
-F autosetup/sqlite-config.tcl 062c021fb0377cb9091135d6805b5e1c697b5276c642c72fe1245c9feee9e4e4
+F autosetup/sqlite-config.tcl f7d43215fb1a971f53bab99bd5e319ea68c364ca61931358cbbfa5a3b3b4b650
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl e014dd95900c7f9a34e8e0f460f47e94841059827bce8b4c49668b0c7ae3f1a0
@@ -2280,8 +2280,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5cf4df16eb23e353834af79ba639e2e17f79d9cd11abcb325f5b7ac7f869b20d
-R 10269419fb05a882fcb0653eedf13fd9
-U drh
-Z 44e34cbc20adf87b9de376357fc2ae3b
+P d232720b7932c1cebe4cf5b1a1e9096889e1807844351390149dfeb2ea7fc304
+R 44b5366a46e4c5e6e1e3a5e42fddb2e0
+U stephan
+Z a5d0fd960491732c23b1faef939d5bd1
 # Remove this line to create a well-formed Fossil manifest.
