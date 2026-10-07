@@ -6686,10 +6686,10 @@ static int unixOpen(
     ** secure temporary file that cannot be accessed by other processes
     */
     zName = unixTempFileDir();
-    if( zName 
-     && (fd = robust_open(zName, O_RDWR|O_CREAT|O_EXCL|O_TMPFILE, 0600))>=0
+    if( zName
+     && (fd = robust_open(zName, O_RDWR|O_EXCL|O_TMPFILE, 0600))>=0
     ){
-      rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
+      rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags|UNIXFILE_NOLOCK);
       goto open_finished;
     }
 #endif

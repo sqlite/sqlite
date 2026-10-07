@@ -1344,10 +1344,8 @@ static char *expand_prompt(
         int cc = (R>>16)&0xff;
         int nParen = R>>32;
         int eSemi = (R>>8)&0xff;
-        if( cc==0 ){
+        if( cc==0 || cc=='-' ){
           /* no-op */
-        }else if( cc=='-' ){
-          sqlite3_str_append(pOut,"\\n",3);
         }else if( cc=='/' ){
           sqlite3_str_append(pOut,"*/",2);
         }else{
@@ -6041,7 +6039,11 @@ static void output_reset(ShellState *p){
       "xdg-open";
 #endif
       char *zCmd;
+#ifdef __linux__
+      zCmd = sqlite3_mprintf("%s %s 2>/dev/null", zXdgOpenCmd, p->zTempFile);
+#else
       zCmd = sqlite3_mprintf("%s %s", zXdgOpenCmd, p->zTempFile);
+#endif
       if( system(zCmd) ){
         cli_printf(stderr,"Failed: [%s]\n", zCmd);
       }else{
@@ -6050,7 +6052,7 @@ static void output_reset(ShellState *p){
         ** p->zTempFile data file out from under it */
         p->aUnlink = realloc(p->aUnlink, sizeof(Unlink)*(1+p->nUnlink));
         shell_check_oom(p->aUnlink);
-        p->aUnlink[p->nUnlink].tm = timeOfDay()+10000;
+        p->aUnlink[p->nUnlink].tm = timeOfDay()+10000000;
         p->aUnlink[p->nUnlink].zFN = p->zTempFile;
         p->nUnlink++;
         p->zTempFile = 0;
@@ -6491,8 +6493,9 @@ int shellDeleteFile(const char *zFilename, int *pRetry){
       sqlite3_sleep(pRetry[0]);
       pRetry[0] = 0;
       continue;
+    }else{
+      break;
     }
-    break;
   }
   return rc;
 }
@@ -6515,23 +6518,20 @@ int shellDeleteFile(const char *zFilename, int *pRetry){
 ** wait for nDelay milliseconds and try again before giving up.  Only
 ** a single wait occurs, even if problems are encountered with multiple
 ** temp files.  Only the first problem seen takes the delay.  Thus
-** the total delay never exceeds nDelay milliseconds.  When nDelay
-** is non-zero, memory used to hold the filename is reclaimed regardless
-** of whether or not the temporary files were successfully deleted.
+** the total delay never exceeds nDelay milliseconds.
 **
 ** If bForce is true, deletion is attempted on p->aUnlink[] files
 ** even if their time has not expired.  However, there is a pause
-** of up to nDelay milliseconds before doing the deletion.
-**
-** When nDelay is zero and the deletion attempt fails, memory used to
-** store temporary filesnames is not reclaimed.
+** of up to nDelay milliseconds before doing the deletion.  Memory
+** used to hold filenames is reclaimed regardless of whether or not
+** the delete is successful.
 **
 ** The bForce flag is used only when the process is about to exit.  When
 ** bForce is set, that indicates that this is our last opportunity to
 ** clean up temporary files.
 */
 static void clearTempFile(ShellState *p, int nDelay, int bForce){
-  int alwaysFree = (nDelay>0) || bForce;
+  int alwaysFree = bForce;
   int rc = 0;
   if( p->zTempFile && (!p->doXdgOpen || bForce) ){
     rc = shellDeleteFile(p->zTempFile, &nDelay);
@@ -6547,7 +6547,11 @@ static void clearTempFile(ShellState *p, int nDelay, int bForce){
       int doDelete =  tmToGo<=0;
       if( !doDelete && alwaysFree ){
         int tmSleep = nDelay;
-        if( tmSleep > tmToGo ) tmSleep = (int)tmToGo;
+        if( tmSleep > tmToGo/1000 ) tmSleep = (int)(tmToGo/1000);
+        if( tmSleep>=1000 ){
+          cli_printf(p->out,"Waiting about %d.%d seconds to delete temp"
+                            " file(s)\n", tmSleep/1000, (tmSleep/100)%10);
+        }
         sqlite3_sleep(tmSleep);
         nDelay -= tmSleep;
         doDelete = 1;
@@ -8439,7 +8443,7 @@ static int dotCmdImport(ShellState *p){
   import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
   if( sqlite3_table_column_metadata(p->db, zSchema, zTable,0,0,0,0,0,0) 
    && 0==db_int(p->db, "SELECT count(*) FROM \"%w\".sqlite_schema"
-                       " WHERE name=%Q AND type='view'",
+                       " WHERE name=%Q COLLATE nocase AND type='view'",
                        zSchema ? zSchema : "main", zTable)
   ){
     /* Table does not exist.  Create it. */
@@ -14739,7 +14743,7 @@ int SQLITE_CDECL main(int argc, char **argv){
   find_home_dir(1);
   output_reset(&data);
   data.doXdgOpen = 0;
-  clearTempFile(&data,2500,1);
+  clearTempFile(&data,10000,1);
   globalShellState = 0;
   while( data.nModeStack ) modePop(&data);
   free(data.aModeStack);

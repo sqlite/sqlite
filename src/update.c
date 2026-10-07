@@ -914,6 +914,7 @@ void sqlite3Update(
       sqlite3VdbeAddOp3(v, OP_Column, iEph, iRowidExpr, regNewRowid);
     }
     sqlite3VdbeAddOp1(v, OP_MustBeInt, regNewRowid); VdbeCoverage(v);
+    sqlite3MayAbort(pParse);
   }
 
   /* Compute the old pre-UPDATE content of the row being changed, if that

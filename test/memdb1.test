@@ -341,4 +341,140 @@ do_test 1110 {
   B finish
 } {SQLITE_OK}
 
+#-------------------------------------------------------------------------
+# Check that deserializing into the main db does not leave existing
+# eponymous virtual tables with a dangling schema pointer. 
+#
+# Report: https://sqlite.org/bugs/forumpost/2fbe01f58f
+#
+ifcapable vtab {
+  reset_db
+  sqlite3 db :memory:
+  
+  do_execsql_test 1210 {
+    CREATE TABLE t(x); 
+    SELECT * FROM json_each('[1]');
+  } {
+    0 1 integer 1 1 {} {$[0]} {$}
+  }
+  
+  set blob [db serialize main]
+  db deserialize main $blob
+  
+  do_execsql_test 1220 {
+    SELECT  *  FROM json_each('[1]');
+  } {
+    0 1 integer 1 1 {} {$[0]} {$}
+  }
+  
+  # Attempt to deserialize while a statement that uses an eponymous
+  # virtual table is still active. The deserialize should fail.
+  #
+  do_test 1230 {
+    set res [list]
+    set msg ""
+    db eval { SELECT value FROM json_each('[1,2,3]') } {
+      if {$msg==""} {
+        catch { db deserialize main $blob } msg
+      }
+      lappend res $value
+    }
+    set res
+  } {1 2 3}
+  do_test 1240 {
+    set msg
+  } {unable to set MEMDB content}
+  do_execsql_test 1250 {
+    SELECT value FROM json_each('[4,5]');
+  } {4 5}
+}
+
+#-------------------------------------------------------------------------
+# Test that deserializing expires all prepared statements.
+#
+reset_db
+do_execsql_test 1300 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a);
+  INSERT INTO t1 VALUES(1, 1), (2, 2);
+}
+
+set blob [db serialize main]
+
+reset_db
+do_execsql_test 1310 {
+  CREATE TABLE t2(a, b);
+  CREATE TABLE t1(c, d);
+  INSERT INTO t1 VALUES(1, 1), (2, 2);
+}
+
+do_execsql_test 1320 {
+  SELECT * FROM t1;
+} {1 1 2 2}
+
+do_test 1330 {
+  db deserialize main $blob
+} {}
+
+do_execsql_test 1340 {
+  SELECT * FROM t1;
+} {1 1 2 2}
+
+# Also test that deserializing does not interrupt statements reading 
+# from other databases. 
+do_execsql_test 1350 {
+  ATTACH '' AS aux;
+  CREATE TABLE aux.t3(x);
+  INSERT INTO aux.t3 VALUES(1), (2), (3);
+}
+do_test 1360 {
+  set res [list]
+  db eval { SELECT (SELECT x FROM t3 WHERE t3.x=o.x) AS a FROM t3 AS o } {
+    db deserialize main $blob
+    lappend res $a
+  }
+  set res
+} {1 2 3}
+
+#-------------------------------------------------------------------------
+# A TEMP trigger on a table in a database overwritten by a deserialize() 
+# is orphaned in the same way as if the db was DETACHed.
+#
+reset_db
+do_execsql_test 1400 {
+  CREATE TABLE t1(x);
+}
+set blob [db serialize main]
+
+do_execsql_test 1410 {
+  CREATE TEMP TABLE tlog(y);
+  CREATE TEMP TRIGGER tr AFTER INSERT ON main.t1 BEGIN
+    INSERT INTO tlog VALUES(new.x);
+  END;
+  INSERT INTO t1 VALUES(1);
+  SELECT * FROM tlog;
+} {1}
+
+do_test 1420 { db deserialize main $blob } {}
+
+do_execsql_test 1430 {
+  INSERT INTO t1 VALUES(2);
+  SELECT * FROM tlog;
+} {1}
+
+do_execsql_test 1440 {
+  SELECT name, tbl_name FROM temp.sqlite_schema WHERE type='trigger';
+} {tr t1}
+
+do_execsql_test 1450 {
+  CREATE TEMP TABLE t1(x);
+  INSERT INTO temp.t1 VALUES(3);
+  SELECT * FROM tlog;
+} {1}
+
+do_execsql_test 1460 {
+  DROP TRIGGER temp.tr;
+  SELECT name FROM temp.sqlite_schema WHERE type='trigger';
+} {}
+
 finish_test

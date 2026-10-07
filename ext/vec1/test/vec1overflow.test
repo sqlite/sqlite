@@ -1,0 +1,55 @@
+# 2026-10-06
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test cases where a %_idx list is flushed to disk mid-transaction.
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1overflow
+vec1_load db
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  CREATE TABLE t1(x);
+  WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100)
+  INSERT INTO t1 SELECT random_vector(8) FROM s;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(x, '{nbucket:1}') FROM t1
+  ));
+  INSERT INTO v1(rowid, v) SELECT rowid, x FROM t1;
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO v1(rowid, v) VALUES(4294967296, random_vector(8));
+  PRAGMA integrity_check;
+} {ok}
+
+reset_db
+vec1_load db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  CREATE TABLE t1(x);
+  WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100)
+  INSERT INTO t1 SELECT random_vector(8) FROM s;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(x, '{nbucket:1}') FROM t1
+  ));
+  INSERT INTO v1(cmd, arg) VALUES('blocksize', 1024);
+}
+
+do_execsql_test 2.1 {
+  WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<200)
+  INSERT INTO v1(rowid, v) SELECT i, random_vector(8) FROM s;
+  SELECT count(*)>1 FROM v1_idx;
+  PRAGMA integrity_check;
+} {1 ok}
+
+finish_test

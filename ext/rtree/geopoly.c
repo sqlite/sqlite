@@ -258,7 +258,7 @@ static GeoPoly *geopolyParseJson(const unsigned char *z, int *pRc){
       break;
     }
     if( geopolySkipSpace(&s)==']'
-     && s.nVertex>=4
+     && s.nVertex>=4 && s.nVertex<16777216
      && s.a[0]==s.a[s.nVertex*2-2]
      && s.a[1]==s.a[s.nVertex*2-1]
      && (s.z++, geopolySkipSpace(&s)==0)
@@ -595,7 +595,7 @@ static void geopolyRegularFunc(
   double x = sqlite3_value_double(argv[0]);
   double y = sqlite3_value_double(argv[1]);
   double r = sqlite3_value_double(argv[2]);
-  int n = sqlite3_value_int(argv[3]);
+  i64 n = sqlite3_value_int64(argv[3]);
   int i;
   GeoPoly *p;
   (void)argc;
