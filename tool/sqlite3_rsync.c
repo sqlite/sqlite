@@ -2038,6 +2038,10 @@ static char *hostSeparator(const char *zIn){
   return zPath;
 }
 
+/* work-around the Microsoft "WorstFit" bug */
+#if defined(_WIN32) && !defined(__MINGW32__) && !defined(main)
+#define main utf8_main
+#endif
 
 /*
 ** Parse command-line arguments.  Dispatch subroutines to do the
