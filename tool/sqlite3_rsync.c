@@ -382,22 +382,7 @@ static int pclose2(FILE *pIn, FILE *pOut, int childPid){
 **    5      First byte of a 4-byte UTF-8
 */
 static const char aSafeChar[256] = {
-#ifdef _WIN32
-/* Windows
-** Prohibit:  all control characters, including tab, \r and \n.
-** Escape:    (space) " # $ % & ' ( ) * ; < > ? [ ] ^ ` { | }
-*/
-/*  x0  x1  x2  x3  x4  x5  x6  x7  x8  x9  xa  xb  xc  xd  xe  xf  */
-     2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2, /* 0x */
-     2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2, /* 1x */
-     1,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0, /* 2x */
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  0,  1,  1, /* 3x */
-     1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, /* 4x */
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  1,  1,  0, /* 5x */
-     1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, /* 6x */
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  0,  1, /* 7x */
-#else
-/* Unix
+/*
 ** Prohibit:  all control characters, including tab, \r and \n
 ** Escape:    (space) ! " # $ % & ' ( ) * ; < > ? [ \ ] ^ ` { | }
 */
@@ -410,7 +395,6 @@ static const char aSafeChar[256] = {
      0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  0, /* 5x */
      1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, /* 6x */
      0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  0,  1, /* 7x */
-#endif
     /* all bytes 0x80 through 0xbf are unescaped, being secondary
     ** bytes to UTF8 characters.  Bytes 0xc0 through 0xff are the
     ** first byte of a UTF8 character and do get escaped */
@@ -425,51 +409,55 @@ static const char aSafeChar[256] = {
 };
 
 /*
+** Return true if the input contains special characters that need
+** to be escaped.
+*/
+int need_escape(const char *zIn){
+  size_t i;
+  unsigned char c;
+
+  /* Look for characters that need to be escaped */
+  for(i=0; (c = (unsigned char)zIn[i])!=0; i++){
+    if( aSafeChar[c] ) return 1;
+  }
+  return 0;
+}
+
+/*
+** Increment this global variable whenever the isFilename==2 hex encoding
+** is used.
+*/
+static int nHexEncode = 0;
+
+/*
 ** pStr is a shell command under construction.  This routine safely
-** appends filename argument zIn.  It returns 0 on success or non-zero
-** on any error.
+** appends filename argument zIn.
 **
 ** The argument is escaped if it contains white space or other characters
 ** that need to be escaped for the shell.  If zIn contains characters
 ** that cannot be safely escaped, then throw a fatal error.
 **
-** If the isFilename argument is true, then the argument is expected
-** to be a filename.  As shell commands commonly have command-line
+** If the isFilename argument is 1 or 2, then the argument is expected
+** to be a filename.  isFilename==1 means to use shell-style escaping
+** as the argument is going directly to the shell.  isFilename==2 means
+** to escape as hexadecimal (using A-P as the hex digits) instead of
+** shell escaping.  isFilename==2 argument are interpreted by another
+** instance of sqlite3_rsync which knows how to decode them.
+**
+** For isFilename==1, because shell commands commonly have command-line
 ** options that begin with "-" and since we do not want an attacker
 ** to be able to invoke these switches using filenames that begin
-** with "-", if zIn begins with "-", prepend an additional "./"
-** (or ".\\" on Windows).
+** with "-", if zIn begins with "-", prepend an additional "./".
+**
+** For isFilename==2, if the filename could be mistaken for a hexadecimal
+** string (if it is an even number of characters and all characters are
+** between A and P) then "./" is prepended so that the receiver
+** will know that it is not an encoded filename.
 */
-int append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
-  int i;
-  unsigned char c;
-  int needEscape = 0;
+void append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
   int n = sqlite3_str_length(pStr);
   char *z = sqlite3_str_value(pStr);
-
-  /* Look for illegal byte-sequences and byte-sequences that require
-  ** escaping.  No control-characters are allowed.  All spaces and
-  ** non-ASCII unicode characters and some punctuation characters require
-  ** escaping. */
-  for(i=0; (c = (unsigned char)zIn[i])!=0; i++){
-    if( aSafeChar[c] ){
-      unsigned char x = aSafeChar[c];
-      needEscape = 1;
-      if( x==2 ){
-        /* Bad ASCII character */
-        return 1;
-      }else if( x>2 ){
-        if( (zIn[i+1]&0xc0)!=0x80
-         || (x>=4 && (zIn[i+2]&0xc0)!=0x80)
-         || (x==5 && (zIn[i+3]&0xc0)!=0x80)
-        ){
-          /* Bad UTF8 character */
-          return 1;
-        }
-        i += x-2;
-      }
-    }
-  }
+  size_t nIn = strlen(zIn);
 
   /* Separate from the previous argument by a space */
   if( n>0 && !isspace(z[n-1]) ){
@@ -477,22 +465,31 @@ int append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
   }
 
   /* Check for characters that need quoting */
-  if( !needEscape ){
-    if( isFilename && zIn[0]=='-' ){
+  if( !need_escape(zIn) ){
+    if( (isFilename>=1 && zIn[0]=='-')
+     || (isFilename==2 && (nIn&1)==0 && strspn(zIn,"ABCDEFGHIJKLMNOP")==nIn)
+    ){
       sqlite3_str_appendchar(pStr, 1, '.');
-#if defined(_WIN32)
-      sqlite3_str_appendchar(pStr, 1, '\\');
-#else
       sqlite3_str_appendchar(pStr, 1, '/');
-#endif
     }
     sqlite3_str_appendall(pStr, zIn);
+  }else if( isFilename==2 ){
+    /* Encode as hexadecimal using A-P as the hex digits. */
+    size_t j;
+    for(j=0; j<nIn; j++){
+      sqlite3_str_appendchar(pStr, 1, (((zIn[j])>>4)&0xf)+'A');
+      sqlite3_str_appendchar(pStr, 1, ((zIn[j])&0xf)+'A');
+    }
+    nHexEncode++;
   }else{
+    /* Use shell escapes */
 #if defined(_WIN32)
     /* Quoting strategy for windows:
     ** Put the entire name inside of "...".  Any " characters within
     ** the name get doubled.
     */
+    size_t i;
+    unsigned char c;
     sqlite3_str_appendchar(pStr, 1, '"');
     if( isFilename && zIn[0]=='-' ){
       sqlite3_str_appendchar(pStr, 1, '.');
@@ -514,6 +511,8 @@ int append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
     ** name, then put \ before each special character.
     */
     if( strchr(zIn,'\'') ){
+      unsigned char c;
+      size_t i;
       if( isFilename && zIn[0]=='-' ){
         sqlite3_str_appendchar(pStr, 1, '.');
         sqlite3_str_appendchar(pStr, 1, '/');
@@ -535,7 +534,6 @@ int append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
     }
 #endif
   }
-  return 0;
 }
 
 /* Add an approprate PATH= argument to the SSH command under construction
@@ -583,6 +581,36 @@ void add_path_argument(sqlite3_str *pStr){
   append_escaped_arg(pStr,
      "PATH=$HOME/bin:/usr/local/bin:/opt/homebrew/bin"
      ":/opt/local/bin:$PATH", 0);
+}
+
+/*
+** The input is a filename, possibly encoded as hexadecimal using
+** characters 'A' through 'P' as the hexadecimal digits (instead of
+** the usual '0' through 'F').
+**
+** Return a copy of that filename, decoded if necessary.
+*/
+static char *decode_filename(const char *zIn){
+  size_t n;
+  if( zIn==0 ) return 0;
+  n = strlen(zIn);
+  if( (n&1)==1 || strspn(zIn,"ABCDEFGHIJKLMNOP")!=n ){
+    /* Name is literal.  No decoding required. */
+    return sqlite3_mprintf("%s", zIn);
+  }else{
+    /* Name is hex encoded.  Need to decode it. */
+    char *zOut = sqlite3_malloc64(n/2 + 1);
+    size_t i;
+    if( zOut==0 ){
+      fprintf(stderr, "out of memory\n");
+      exit(1);
+    }
+    for(i=0; i<n/2; i++){
+      zOut[i] = (zIn[i*2]-'A')*16 + zIn[i*2+1]-'A';
+    }
+    zOut[i] =  0;
+    return zOut;
+  }
 }
 
 /*****************************************************************************
@@ -2087,6 +2115,7 @@ int main(int argc, char const * const *argv){
   sqlite3_int64 tmElapse;
   const char *zRemoteErrFile = 0;
   const char *zRemoteDebugFile = 0;
+  int nEncoded = 0;
 
 #define cli_opt_val cmdline_option_value(argc, argv, ++i)
   memset(&ctx, 0, sizeof(ctx));
@@ -2131,10 +2160,24 @@ int main(int argc, char const * const *argv){
     }
     if( strcmp(z, "-exe")==0 ){
       zExe = cli_opt_val;
+      if( need_escape(zExe) ){
+        fprintf(stderr, "executable name uses special characters: \"%s\"\n",
+                zExe);
+        return 1;
+      }
       continue;
     }
     if( strcmp(z, "-wal-only")==0 ){
       ctx.bWalOnly = 1;
+      continue;
+    }
+    if( strcmp(z, "-encoded-filenames")==0 ){
+      /* Internal use only */
+      nEncoded = atoi(cli_opt_val);
+      if( nEncoded<1 ){
+        fprintf(stderr, "invalid argument to %s\n", argv[i-1]);
+        return 1;
+      }
       continue;
     }
     if( strcmp(z, "-version")==0 ){
@@ -2201,6 +2244,15 @@ int main(int argc, char const * const *argv){
         append_escaped_arg(pStr, argv[k], i!=k);
       }
       printf("%s\n", sqlite3_str_value(pStr));
+
+      /* Do it a second time using the hex encoding */
+      pStr = sqlite3_str_new(0);
+      nHexEncode = 0;
+      for(k=0; k<argc; k++){
+        append_escaped_arg(pStr, argv[k], (i!=k)*2);
+      }
+      printf("%s\n", sqlite3_str_value(pStr));
+      printf("nHexEncode: %d\n", nHexEncode);
       return 0;
     }
     if( z[0]=='-' ){
@@ -2225,9 +2277,23 @@ int main(int argc, char const * const *argv){
     fprintf(stderr, "missing REPLICA database filename\n");
     return 1;
   }
-  if( isOrigin && isReplica ){
-    fprintf(stderr, "bad option combination\n");
-    return 1;
+  if( isOrigin || isReplica ){
+    if( isOrigin && isReplica ){
+      fprintf(stderr, "bad option combination\n");
+      return 1;
+    }
+    if( nEncoded ){
+      ctx.zOrigin = decode_filename(ctx.zOrigin);
+      ctx.zReplica = decode_filename(ctx.zReplica);
+      ctx.zErrFile = decode_filename(ctx.zErrFile);
+      ctx.zDebugFile = decode_filename(ctx.zDebugFile);
+    }
+  }else{
+    /* Must be the local side */
+    if( nHexEncode ){
+      fprintf(stderr,"incorrect use of \"--encoded-filenames\"\n");
+      return 1;
+    }
   }
   if( isOrigin ){
     ctx.pIn = stdin;
@@ -2250,10 +2316,6 @@ int main(int argc, char const * const *argv){
 #endif
     replicaSide(&ctx);
     return 0;
-  }
-  if( ctx.zReplica==0 ){
-    fprintf(stderr, "missing REPLICA database filename\n");
-    return 1;
   }
   tmStart = currentTime();
   zDiv = hostSeparator(ctx.zOrigin);
@@ -2282,17 +2344,20 @@ int main(int argc, char const * const *argv){
       }
       if( zRemoteErrFile ){
         append_escaped_arg(pStr, "--errorfile", 0);
-        append_escaped_arg(pStr, zRemoteErrFile, 1);
+        append_escaped_arg(pStr, zRemoteErrFile, 2);
       }
       if( zRemoteDebugFile ){
         append_escaped_arg(pStr, "--debugfile", 0);
-        append_escaped_arg(pStr, zRemoteDebugFile, 1);
+        append_escaped_arg(pStr, zRemoteDebugFile, 2);
       }
       if( ctx.bWalOnly ){
         append_escaped_arg(pStr, "--wal-only", 0);
       }
-      append_escaped_arg(pStr, zDiv, 1);
-      append_escaped_arg(pStr, file_tail(ctx.zReplica), 1);
+      append_escaped_arg(pStr, zDiv, 2);
+      append_escaped_arg(pStr, file_tail(ctx.zReplica), 2);
+      if( nHexEncode>0 ){
+        sqlite3_str_appendf(pStr, " --encoded-filenames %d", nHexEncode);
+      }
       if( ctx.eVerbose<2 && iRetry==0 ){
         append_escaped_arg(pStr, "2>/dev/null", 0);
       }
@@ -2331,17 +2396,20 @@ int main(int argc, char const * const *argv){
       }
       if( zRemoteErrFile ){
         append_escaped_arg(pStr, "--errorfile", 0);
-        append_escaped_arg(pStr, zRemoteErrFile, 1);
+        append_escaped_arg(pStr, zRemoteErrFile, 2);
       }
       if( zRemoteDebugFile ){
         append_escaped_arg(pStr, "--debugfile", 0);
-        append_escaped_arg(pStr, zRemoteDebugFile, 1);
+        append_escaped_arg(pStr, zRemoteDebugFile, 2);
       }
       if( ctx.bWalOnly ){
         append_escaped_arg(pStr, "--wal-only", 0);
       }
-      append_escaped_arg(pStr, file_tail(ctx.zOrigin), 1);
-      append_escaped_arg(pStr, zDiv, 1);
+      append_escaped_arg(pStr, file_tail(ctx.zOrigin), 2);
+      append_escaped_arg(pStr, zDiv, 2);
+      if( nHexEncode>0 ){
+        sqlite3_str_appendf(pStr, " --encoded-filenames %d", nHexEncode);
+      }
       if( ctx.eVerbose<2 && iRetry==0 ){
         append_escaped_arg(pStr, "2>/dev/null", 0);
       }
@@ -2370,14 +2438,17 @@ int main(int argc, char const * const *argv){
     }
     if( zRemoteErrFile ){
       append_escaped_arg(pStr, "--errorfile", 0);
-      append_escaped_arg(pStr, zRemoteErrFile, 1);
+      append_escaped_arg(pStr, zRemoteErrFile, 2);
     }
     if( zRemoteDebugFile ){
       append_escaped_arg(pStr, "--debugfile", 0);
-      append_escaped_arg(pStr, zRemoteDebugFile, 1);
+      append_escaped_arg(pStr, zRemoteDebugFile, 2);
     }
-    append_escaped_arg(pStr, ctx.zOrigin, 1);
-    append_escaped_arg(pStr, ctx.zReplica, 1);
+    append_escaped_arg(pStr, ctx.zOrigin, 2);
+    append_escaped_arg(pStr, ctx.zReplica, 2);
+    if( nHexEncode>0 ){
+      sqlite3_str_appendf(pStr, " --encoded-filenames %d", nHexEncode);
+    }
     zCmd = sqlite3_str_finish(pStr);
     if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
     if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
