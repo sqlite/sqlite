@@ -2655,9 +2655,10 @@ void sqlite3Pragma(
   ** disables the timeout.
   */
   /*case PragTyp_BUSY_TIMEOUT*/ default: {
+    int n = 0;
     assert( pPragma->ePragTyp==PragTyp_BUSY_TIMEOUT );
-    if( zRight ){
-      sqlite3_busy_timeout(db, sqlite3Atoi(zRight));
+    if( zRight && sqlite3GetInt32(zRight,&n) ){
+      sqlite3_busy_timeout(db, n);
     }
     returnSingleInt(v, db->busyTimeout);
     break;
