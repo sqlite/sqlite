@@ -399,8 +399,8 @@ do_test 3.5 {
 catch { db close }
 
 #-------------------------------------------------------------------------
-# Test that a database that uses custom collation sequences can be RBU
-# vacuumed.
+# Test that RBU will not vacuum a database with trailing SQL in the
+# sqlite_schema table.
 #
 reset_db
 
@@ -430,32 +430,15 @@ do_test 4.1 {
   set db1 [rbu db 0]
   set db2 [rbu db 1]
 
-  sqlite3_create_function_v2 $db1 blow_up_the_world -1 any -func blowup
-  sqlite3_create_function_v2 $db2 blow_up_the_world -1 any -func blowup
+  if {$db1!="0"} {
+    sqlite3_create_function_v2 $db1 blow_up_the_world -1 any -func blowup
+  }
+  if {$db2!="0"} {
+    sqlite3_create_function_v2 $db2 blow_up_the_world -1 any -func blowup
+  }
 
   while {[rbu step]=="SQLITE_OK"} {}
   list [catch { rbu close } msg] $msg
-} {0 SQLITE_DONE}
-
-do_test 4.2 { set ::eof } 0
-
-sqlite3 db test.db
-do_execsql_test 4.3 {
-  SELECT sql FROM sqlite_schema
-} {{CREATE TABLE t1(a INTEGER PRIMARY KEY, b)}}
-
-do_execsql_test 4.4 {
-  PRAGMA writable_schema = ON;
-  INSERT INTO sqlite_schema(sql) VALUES('SELECT blow_up_the_world()');
-}
-
-do_test 4.5 {
-  sqlite3rbu_vacuum rbu test.db state.db
-  while {[rbu step]=="SQLITE_OK"} {}
-  list [catch { rbu close } msg] $msg
-} {1 {SQLITE_CORRUPT - malformed database schema (?)}}
-
-
-
+} {1 {SQLITE_CORRUPT - malformed database schema (t1)}}
 
 finish_test

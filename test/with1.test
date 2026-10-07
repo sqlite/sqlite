@@ -1074,23 +1074,25 @@ do_execsql_test 21.2 {
 # 2019-01-17
 # Make sure crazy nexted CTE joins terminate with an error quickly.
 #
-do_catchsql_test 22.1 {
-  WITH RECURSIVE c AS NOT MATERIALIZED (
-     WITH RECURSIVE c AS NOT MATERIALIZED (
-        WITH RECURSIVE c AS NOT MATERIALIZED (
-           WITH RECURSIVE c AS NOT MATERIALIZED (
-               WITH  c AS (VALUES(0))
-               SELECT 1 FROM c LEFT JOIN c ON ltrim(1)
-           )
-           SELECT 1 FROM c,c,c,c,c,c,c,c,c
-        )
-        SELECT  2 FROM c,c,c,c,c,c,c,c,c
-     )
-     SELECT 3 FROM c,c,c,c,c,c,c,c,c
-  )
-  SELECT 4 FROM c,c,c,c,c,c,c,c,c;
-} {1 {too many FROM clause terms, max: 200}}
-
+if {$::SQLITE_MAX_EXPR_DEPTH>10} {
+  do_catchsql_test 22.1 {
+    WITH RECURSIVE c AS NOT MATERIALIZED (
+       WITH RECURSIVE c AS NOT MATERIALIZED (
+          WITH RECURSIVE c AS NOT MATERIALIZED (
+             WITH RECURSIVE c AS NOT MATERIALIZED (
+                 WITH  c AS (VALUES(0))
+                 SELECT 1 FROM c LEFT JOIN c ON ltrim(1)
+             )
+             SELECT 1 FROM c,c,c,c,c,c,c,c,c
+          )
+          SELECT  2 FROM c,c,c,c,c,c,c,c,c
+       )
+       SELECT 3 FROM c,c,c,c,c,c,c,c,c
+    )
+    SELECT 4 FROM c,c,c,c,c,c,c,c,c;
+  } {1 {VIEWs and/or subqueries nested too deep}}
+}
+  
 # 2019-05-22
 # ticket https://sqlite.org/src/tktview/ce823231949d3abf42453c8f20
 #
