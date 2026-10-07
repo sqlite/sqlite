@@ -1,0 +1,79 @@
+# 2026 October 5
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is the behaviour of wal databases on windows
+# when some other process has the *-shm file memory-mapped.
+#
+
+if {$tcl_platform(platform) ne "windows"} return
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix win32shm
+
+ifcapable !wal {
+  finish_test
+  return
+}
+
+#-------------------------------------------------------------------------
+# Each test below simulates a abrupt exit by copying the db, *-wal and 
+# *-shm files of an open wal database, then reopens the copy while an 
+# external mapping is held on its *-shm file. Since the *-shm file cannot 
+# be truncated while it is mapped, these test that recovery still runs and
+# all committed data is visible.
+#
+#   1.1-1.2: The *-shm file is current.
+#
+#   1.3-1.4: The *-shm file is out of date. If this file were trusted 
+#            instead of running recovery, row 4 would be lost.
+#
+do_execsql_test 1.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+} {wal}
+
+do_test 1.1 {
+  db_save_and_close
+  db_restore
+  map_win32_file shmmap test.db-shm
+} {shmmap}
+
+sqlite3 db test.db
+do_execsql_test 1.2 {
+  SELECT * FROM t1
+} {1 one 2 two 3 three}
+
+shmmap destroy
+
+do_test 1.3 {
+  forcedelete bak-shm
+  forcecopy test.db-shm bak-shm
+  execsql {
+    INSERT INTO t1 VALUES(4, 'four');
+  }
+  db_save_and_close
+  db_restore
+  forcecopy bak-shm test.db-shm
+  map_win32_file shmmap test.db-shm
+} {shmmap}
+
+sqlite3 db test.db
+do_execsql_test 1.4 {
+  SELECT * FROM t1
+} {1 one 2 two 3 three 4 four}
+
+shmmap destroy
+
+finish_test

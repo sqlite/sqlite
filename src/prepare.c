@@ -165,6 +165,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     int rc;
     u8 saved_iDb = db->init.iDb;
     sqlite3_stmt *pStmt;
+    const char *zEnd;
     TESTONLY(int rcp);            /* Return code from sqlite3_prepare() */
 
     assert( db->init.busy );
@@ -180,9 +181,9 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     db->init.azInit = (const char**)argv;
     pStmt = 0;
 #ifdef SQLITE_ENABLE_SHARED_SCHEMA
-    TESTONLY(rcp = ) sqlite3LockAndPrepare(db, argv[4], -1, 0, 0, &pStmt, 0);
+    TESTONLY(rcp = ) sqlite3LockAndPrepare(db, argv[4], -1, 0, 0, &pStmt,&zEnd);
 #else
-    TESTONLY(rcp = ) sqlite3Prepare(db, argv[4], -1, 0, 0, &pStmt, 0);
+    TESTONLY(rcp = ) sqlite3Prepare(db, argv[4], -1, 0, 0, &pStmt, &zEnd);
 #endif
     rc = db->errCode;
     assert( (rc&0xFF)==(rcp&0xFF) );
@@ -203,6 +204,8 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
           corruptSchema(pData, argv, sqlite3_errmsg(db));
         }
       }
+    }else if( zEnd[0] ){
+      corruptSchema(pData, argv, 0);
     }
     db->init.azInit = sqlite3StdType; /* Any array of string ptrs will do */
     sqlite3_finalize(pStmt);

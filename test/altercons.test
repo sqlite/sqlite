@@ -453,4 +453,47 @@ do_catchsql_test 10.3 {
   ALTER TABLE t1 ADD CONSTRAINT c1 CHECK( x>#2 );
 } {1 {near "#2": syntax error}}
 
+#-------------------------------------------------------------------------
+# A CHECK constraint that evaluates to NULL for existing rows is not
+# a constraint violation.
+#
+reset_db
+do_execsql_test 11.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, NULL, 6);
+  INSERT INTO t1 VALUES(NULL, NULL, NULL);
+}
+
+set sql "CREATE TABLE t1(a, b, c"
+foreach {tn cons} {
+  1 "CONSTRAINT c1 CHECK (b!=5)"
+  2 "CONSTRAINT c2 CHECK (a<b)"
+  3 "CONSTRAINT c3 CHECK (a+b+c>0)"
+  4 "CONSTRAINT c4 CHECK (NULL)"
+} {
+  do_execsql_test 11.2.$tn "ALTER TABLE t1 ADD $cons"
+  append sql ", $cons"
+}
+append sql ")"
+
+do_execsql_test 11.3 {
+  SELECT sql FROM sqlite_schema WHERE name='t1';
+} [list $sql]
+
+do_catchsql_test 11.3.1 {
+  ALTER TABLE t1 ADD CONSTRAINT c5 CHECK (b>2);
+} {1 {constraint failed}}
+do_execsql_test 11.3.2 {
+  UPDATE t1 SET b=NULL WHERE b=2;
+  ALTER TABLE t1 ADD CONSTRAINT c5 CHECK (b>2);
+}
+
+do_execsql_test 11.4.1 {
+  INSERT INTO t1 VALUES(7, NULL, 8);
+}
+do_catchsql_test 11.4.2 {
+  INSERT INTO t1 VALUES(5, 1, 0);
+} {1 {CHECK constraint failed: c2}}
+
 finish_test

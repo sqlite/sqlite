@@ -261,16 +261,20 @@ proc print_query_timings {} {
 
   set nTotal $A(total.cycle);
   set total_percent 0.0
+  set total_cycle 0
   foreach name $lTopic {
     set cnt $A(${name}.cnt)
     set cycle $A(${name}.cycle)
 
     set percent [expr (100.0 * $cycle) / $nTotal]
     set total_percent [expr $total_percent + $percent]
+    set total_cycle [expr $total_cycle + $cycle]
     set c [format_cycles $cycle]
     puts "[format {% -12s%8s%6.2f%%} $name: $c $percent] ($cnt)"
   }
-  puts [format {% -12s%6.2f%%} total: $total_percent]
+
+  set c [format_cycles $total_cycle]
+  puts "[format {% -12s%8s%6.2f%%} "total:" $c $total_percent]"
 }
 
 
@@ -359,7 +363,7 @@ proc get_distance_function {} {
   set f(cosine)     vec1_cos_distance
   set f(angular)    vec1_cos_distance
   set f(euclidean)  vec1_l2_distance
-  set f(normalized) vec1_l2_distance
+  set f(normalized) vec1_cos_distance
 
   if {[info exists f($dm)]==0} {
     puts "Unrecognized distance metric: $dm"
@@ -577,6 +581,14 @@ proc test_build_index {lSpec} {
       set val "\"$v\""
     }
     lappend pairs "$k:$val"
+  }
+
+  # Unless the --index spec specifies a distance explicitly, use the
+  # distance metric of the dataset.
+  #
+  array set S $lSpec
+  if {[info exists S(distance)]==0} {
+    lappend pairs "distance:$DIST($func)"
   }
   set showspec "{[join $pairs {, }]}"
   lappend pairs "svd_verify: $C(--svd-verify)"

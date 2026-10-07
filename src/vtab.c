@@ -1351,6 +1351,17 @@ void sqlite3VtabEponymousTableClear(sqlite3 *db, Module *pMod){
 }
 
 /*
+** Erase all eponymous virtual table instances associated with database
+** handle db.  
+*/
+void sqlite3VtabEponymousTableClearAll(sqlite3 *db){
+  HashElem *pElem;
+  for(pElem=sqliteHashFirst(&db->aModule); pElem; pElem=sqliteHashNext(pElem)){
+    sqlite3VtabEponymousTableClear(db, (Module*)sqliteHashData(pElem));
+  }
+}
+
+/*
 ** Return the ON CONFLICT resolution mode in effect for the virtual
 ** table update operation currently in progress.
 **

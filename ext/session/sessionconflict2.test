@@ -293,6 +293,381 @@ do_conflict_test 5.2 0 {
 } {
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test 6.0 {
+  do_common_sql {
+    PRAGMA foreign_keys=ON;
+    CREATE TABLE parent(
+      id INTEGER PRIMARY KEY,
+      code TEXT NOT NULL UNIQUE
+    );
+    CREATE TABLE child(
+      parent_id INTEGER PRIMARY KEY
+        REFERENCES parent(id) ON DELETE CASCADE,
+      payload TEXT NOT NULL
+    );
+    INSERT INTO parent VALUES(1, 'A'), (2, 'B');
+    INSERT INTO child VALUES(1, 'child A'), (2, 'child B');
+  }
+} {}
+
+do_test 6.1 {
+  do_then_apply_sql {
+   UPDATE parent SET code='temporary' WHERE id=1;
+    UPDATE parent SET code='A' WHERE id=2;
+    UPDATE parent SET code='B' WHERE id=1;
+  }
+} {}
+
+do_test 6.2 {
+  compare_db db db2
+} {}
+
+
+#-------------------------------------------------------------------------
+# Test that the ON DELETE actions of a foreign key are not triggered when
+# the update loop is used to resolve a constraint conflict.
+#
+db2 close
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test 7.0 {
+  do_common_sql {
+    PRAGMA foreign_keys=ON;
+    CREATE TABLE parent(id INTEGER PRIMARY KEY, code TEXT UNIQUE);
+    CREATE TABLE child(
+      cid INTEGER PRIMARY KEY, 
+      pid INTEGER REFERENCES parent(id) ON DELETE SET NULL
+    );
+    INSERT INTO parent VALUES(1, 'A'), (2, 'B'), (3, 'C');
+    INSERT INTO child VALUES(10, 1), (20, 2), (30, 3);
+  }
+} {}
+
+do_test 7.1 {
+  do_then_apply_sql {
+    UPDATE parent SET code=NULL WHERE id IN (1, 2, 3);
+    UPDATE parent SET code='A' WHERE id=2;
+    UPDATE parent SET code='B' WHERE id=3;
+    UPDATE parent SET code='C' WHERE id=1;
+  }
+} {}
+
+do_execsql_test -db db2 7.2 {
+  SELECT * FROM parent;
+  SELECT * FROM child;
+} {1 C 2 A 3 B   10 1 20 2 30 3}
+
+do_test 7.3 { compare_db db db2 } {}
+
+#-------------------------------------------------------------------------
+# Test that an UPDATE does not fire DELETE or INSERT triggers. 
+#
+db2 close
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test 8.0 {
+  do_common_sql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE, c);
+    INSERT INTO t1 VALUES(1, 'one', 1), (2, 'two', 2);
+  }
+  execsql {
+    UPDATE t1 SET c = c*100;
+    CREATE TABLE log(x);
+    CREATE TRIGGER t1d AFTER DELETE ON t1 BEGIN
+      INSERT INTO log VALUES('delete ' || old.a);
+    END;
+    CREATE TRIGGER t1i AFTER INSERT ON t1 BEGIN
+      INSERT INTO log VALUES('insert ' || new.a);
+    END;
+    CREATE TRIGGER t1u AFTER UPDATE ON t1 BEGIN
+      INSERT INTO log VALUES('update ' || new.a);
+    END;
+  } db2
+} {}
+
+do_conflict_test 8.1 0 {
+  swap t1 a b 1 2
+} {
+}
+
+do_execsql_test -db db2 8.2 {
+  SELECT * FROM t1;
+  SELECT DISTINCT x FROM log ORDER BY 1;
+} {
+  1 two 100 2 one 200
+  {update 1} {update 2}
+}
+
+#-------------------------------------------------------------------------
+# Test cases where setting a column to a random value fails with
+# a constraint. The random value for a text column is a random integer
+# cast to text, so a CHECK constraint on the length of the value is used
+# to cause this. In this case the change should be treated as if the
+# final UPDATE failed with a constraint error - i.e. the savepoint is
+# rolled back and the next UPDATE in the buffer is tried.
+#
+db2 close
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test 9.0 {
+  do_common_sql {
+    CREATE TABLE t1(a TEXT PRIMARY KEY, b UNIQUE);
+    INSERT INTO t1 VALUES('one', 'one');
+    INSERT INTO t1 VALUES('two', 'two');
+    INSERT INTO t1 VALUES('three', 'three');
+  }
+  execsql {
+    CREATE TABLE t2(a TEXT PRIMARY KEY, b UNIQUE);
+    CREATE TABLE t3(a TEXT PRIMARY KEY, b UNIQUE);
+    CREATE TABLE t4(a TEXT PRIMARY KEY, b UNIQUE);
+    INSERT INTO t2 SELECT * FROM t1;
+    INSERT INTO t3 SELECT * FROM t1;
+    INSERT INTO t4 SELECT * FROM t1;
+  }
+  execsql {
+    CREATE TABLE t2(a TEXT PRIMARY KEY, b UNIQUE CHECK( length(b)<=5 ));
+    CREATE TABLE t3(
+      a TEXT PRIMARY KEY, 
+      b UNIQUE CHECK( a!='one' OR length(b)<=5 )
+    );
+    CREATE TABLE t4(
+      a TEXT PRIMARY KEY, 
+      b UNIQUE CHECK( a!='two' OR length(b)<=5 )
+    );
+    INSERT INTO t2 SELECT * FROM t1;
+    INSERT INTO t3 SELECT * FROM t1;
+    INSERT INTO t4 SELECT * FROM t1;
+  } db2
+} {}
+
+proc xConflict {args} {
+  lappend ::conflict_list $args
+  return "OMIT"
+}
+
+do_conflict_test 9.1 0 {
+  swap t2 a b one two
+} {
+ {UPDATE t2 CONSTRAINT {t two t two} {{} {} t one}} 
+ {UPDATE t2 CONSTRAINT {t one t one} {{} {} t two}}
+}
+do_execsql_test -db db2 9.2 {
+  SELECT * FROM t2
+} {one one two two three three}
+
+do_conflict_test 9.3 0 {
+  swap t3 a b one two
+  swap t4 a b one two
+} {
+}
+do_execsql_test -db db2 9.4 {
+  SELECT * FROM t3;
+  SELECT * FROM t4;
+} {one two two one three three  one two two one three three}
+
+do_conflict_test 9.5 0 {
+  swap t3 a b two one
+  swap t4 a b two one
+} {
+}
+do_execsql_test -db db2 9.6 {
+  SELECT * FROM t3;
+  SELECT * FROM t4;
+} {one one two two three three  one one two two three three}
+
+# With the -noupdateloop option. The conflict handler is invoked for 
+# both changes.
+do_conflict_test 9.7 1 {
+  swap t3 a b one two
+} {
+ {UPDATE t3 CONSTRAINT {t two t two} {{} {} t one}} 
+ {UPDATE t3 CONSTRAINT {t one t one} {{} {} t two}}
+}
+
+#-------------------------------------------------------------------------
+# Test the update loop with:
+#
+#   * composite primary keys,
+#   * UPDATE changes that modify more than one column,
+#   * patchsets,
+#   * tables with no PRIMARY KEY (sessions "rowid" mode),
+#   * the -invert option.
+#
+db2 close
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test 10.0 {
+  do_common_sql {
+    CREATE TABLE t1(a, b, c UNIQUE, d UNIQUE, e, PRIMARY KEY(b, a));
+    INSERT INTO t1 VALUES(1, 'x', 'c1', 'd1', 'e1');
+    INSERT INTO t1 VALUES(2, 'x', 'c2', 'd2', 'e2');
+    INSERT INTO t1 VALUES(3, 'y', 'c3', 'd3', 'e3');
+  }
+} {}
+
+do_test 10.1 {
+  do_then_apply_sql {
+    UPDATE t1 SET c=NULL, d=NULL;
+    UPDATE t1 SET c='c1', d='d1', e='E2' WHERE a=2;
+    UPDATE t1 SET c='c2', d='d2' WHERE a=3;
+    UPDATE t1 SET c='c3', d='d3' WHERE a=1;
+  }
+} {}
+do_execsql_test -db db2 10.2 {
+  SELECT * FROM t1 ORDER BY a
+} {1 x c3 d3 e1  2 x c1 d1 E2  3 y c2 d2 e3}
+do_test 10.3 { compare_db db db2 } {}
+
+# Procedure do_then_apply_sql, used by earlier tests, overwrites [xConflict].
+proc xConflict {args} {
+  lappend ::conflict_list $args
+  return "OMIT"
+}
+
+proc do_patchset_test {tn script} {
+  uplevel [list do_test $tn.1 [subst -nocommands {
+    sqlite3session S db "main"
+    S attach *
+    eval {$script}
+    set ::patchset [S patchset]
+    S delete
+    set ::conflict_list [list]
+    sqlite3changeset_apply_v2 db2 \$::patchset xConflict
+    set ::conflict_list
+  }] {}]
+  uplevel [list do_test $tn.2 { compare_db db db2 } {}]
+}
+
+do_patchset_test 10.4 {
+  swap t1 a c 1 2
+  swap t1 a d 2 3
+}
+
+do_test 10.5 {
+  set ::before [db eval {SELECT * FROM t1 ORDER BY a}]
+  sqlite3session S db main
+  S attach *
+  swap t1 a c 3 1
+  swap t1 a d 1 2
+  set ::changeset [S changeset]
+  S delete
+  set ::conflict_list [list]
+  sqlite3changeset_apply_v2 db2 $::changeset xConflict
+  compare_db db db2
+  set ::conflict_list
+} {}
+
+# Apply the inverse of the changeset from 10.5 to both databases. This
+# requires the update loop on both.
+do_test 10.6 {
+  sqlite3changeset_apply_v2 -invert db $::changeset xConflict
+  sqlite3changeset_apply_v2 -invert db2 $::changeset xConflict
+  compare_db db db2
+  set ::conflict_list
+} {}
+do_test 10.7 {
+  db2 eval {SELECT * FROM t1 ORDER BY a}
+} $::before
+
+db2 close
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test 11.0 {
+  do_common_sql {
+    CREATE TABLE t1(x UNIQUE, y);
+    INSERT INTO t1 VALUES('a', 1), ('b', 2), ('c', 3);
+  }
+} {}
+do_test 11.1 {
+  do_then_apply_sql {
+    UPDATE t1 SET x=NULL WHERE x IN ('a', 'b');
+    UPDATE t1 SET x='a' WHERE y=2;
+    UPDATE t1 SET x='b' WHERE y=1;
+  }
+} {}
+do_execsql_test -db db2 11.2 {
+  SELECT rowid, * FROM t1
+} {1 b 1 2 a 2 3 c 3}
+do_test 11.3 { compare_db db db2 } {}
+
+
+#-------------------------------------------------------------------------
+# Test with STRICT tables. 
+#
+
+foreach {tn wr} {1 "" 2 ", WITHOUT ROWID"} {
+  db2 close
+  reset_db
+  forcedelete test.db2
+  sqlite3 db2 test.db2
+
+  proc xConflict {args} {
+    lappend ::conflict_list $args
+    return "OMIT"
+  }
+
+  do_test 12.$tn.0 {
+    do_common_sql "
+      CREATE TABLE t1(
+        a INTEGER PRIMARY KEY, 
+        i INTEGER UNIQUE, 
+        r REAL UNIQUE, 
+        t TEXT UNIQUE, 
+        b BLOB UNIQUE, 
+        x ANY UNIQUE
+      ) STRICT $wr;
+      INSERT INTO t1 VALUES(1, 1, 1.5, 'one',   x'01', 1);
+      INSERT INTO t1 VALUES(2, 2, 2.5, 'two',   x'02', 2.5);
+      INSERT INTO t1 VALUES(3, 3, 3.5, 'three', x'03', 'three');
+      INSERT INTO t1 VALUES(4, 4, 4.5, 'four',  x'04', x'04');
+      INSERT INTO t1 VALUES(5, 5, 5.5, 'five',  x'05', NULL);
+    "
+  } {}
+
+  foreach {tn2 col pk1 pk2} {1 i 1 2   2 r 2 3   3 t 3 4   4 b 4 5} {
+    do_conflict_test 12.$tn.1.$tn2 0 [list swap t1 a $col $pk1 $pk2] {
+    }
+    do_test 12.$tn.2.$tn2 { compare_db db db2 } {}
+  }
+
+  do_conflict_test 12.$tn.3 0 {
+    db eval {
+      UPDATE t1 SET x=NULL;
+      UPDATE t1 SET x=2.5     WHERE a=1;
+      UPDATE t1 SET x='three' WHERE a=2;
+      UPDATE t1 SET x=x'04'   WHERE a=3;
+      UPDATE t1 SET x=1       WHERE a=4;
+    }
+  } {
+  }
+  do_test 12.$tn.4 { compare_db db db2 } {}
+
+  do_execsql_test -db db2 12.$tn.5 {
+    SELECT a, i, r, t, hex(b), quote(x) FROM t1 ORDER BY a
+  } {
+    1 2 1.5 one   01 2.5
+    2 1 3.5 two   02 'three'
+    3 3 2.5 four  03 X'04'
+    4 4 4.5 three 05 1
+    5 5 5.5 five  04 NULL
+  }
+}
 
 finish_test
 

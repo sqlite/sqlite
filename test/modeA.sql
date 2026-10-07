@@ -629,3 +629,26 @@ SELECT 1.23456789e+12;
 .mode list -fpfmt "" -ifmt ""
 SELECT 1.25e+12, 0x1234;
 .check 1250000000000.0|4660
+
+# Bug 2026-10-04T05:35:43Z
+#
+.testcase 1200
+.mode jobject --fpfmt auto
+SELECT 1 AS a, +9.0e+999 AS b, -9.0e+999 AS c, 0.0 AS d;
+.check {"a":1,"b":9e+999,"c":-9e+999,"d":0}
+.open :memory:
+.testcase 1210
+CREATE TABLE t1(a);
+INSERT INTO t1 VALUES(123),(9e999),('hello'),(-9e999),(x'313233');
+.dump
+.check <<END
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(a);
+INSERT INTO t1 VALUES(123);
+INSERT INTO t1 VALUES(9e+999);
+INSERT INTO t1 VALUES('hello');
+INSERT INTO t1 VALUES(-9e+999);
+INSERT INTO t1 VALUES(x'313233');
+COMMIT;
+END

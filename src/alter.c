@@ -3079,7 +3079,7 @@ void sqlite3AlterAddConstraint(
   /* Search for a constraint violation. Throw an exception if one is found. */
   sqlite3NestedParse(pParse,
       "SELECT sqlite_fail('constraint failed', %d) "
-      "FROM %Q.%Q WHERE (%.*s) IS NOT TRUE", 
+      "FROM %Q.%Q WHERE (%.*s) IS FALSE", 
       SQLITE_CONSTRAINT, zDb, pTab->zName, nExpr, zExpr
   );
 
