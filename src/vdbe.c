@@ -5381,24 +5381,6 @@ case OP_SeekHit: {           /* ncycle */
   break;
 }
 
-/* Opcode: IfNotOpen P1 P2 * * *
-** Synopsis: if( !csr[P1] ) goto P2
-**
-** If cursor P1 is not open or if P1 is set to a NULL row using the
-** OP_NullRow opcode, then jump to instruction P2. Otherwise, fall through.
-*/
-case OP_IfNotOpen: {        /* jump */
-  VdbeCursor *pCur;
-
-  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  pCur = p->apCsr[pOp->p1];
-  VdbeBranchTaken( NEVER(pCur==0) || pCur->nullRow, 2);
-  if( NEVER(pCur==0) || pCur->nullRow ){
-    goto jump_to_p2_and_check_for_interrupt;
-  }
-  break;
-}
-
 /* Opcode: Found P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
