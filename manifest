@@ -1,5 +1,5 @@
-C Update\scheck-in\s[e71b0465b9fa13db]\sso\sthat\sit\sdoes\snot\stry\sto\sto\sgenerate\nan\sOP_NullRow\sopcode\sfor\scursors\sof\san\sIN\soperator\sthat\sdo\snot\sactually\nexist.
-D 2026-10-08T09:57:08.006
+C Sanitize\s"*/"\sin\stables\snames\sof\sthe\soutput\sof\sthe\s.diskused\scommand\nin\sthe\sCLI,\sand\sin\ssqlite3_analyzer,\sso\sthat\sit\sdoesn't\sprematurely\nclose\sthe\scomment.\sANT-2026-XQM1QD48
+D 2026-10-08T10:55:33.466
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -375,7 +375,7 @@ F ext/misc/compress.c c4597f0e3c63a5f89af55486490f9d69896b0482898f2ddb8a46aa11e4
 F ext/misc/csv.c 5ca451b9ce77322c4ce8476766e7ed18160e5c8b19e7cab76e13006d631b9e8f
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
 F ext/misc/decimal.c 0e5504e949c45df8cc69e3754bfa4f35cb341f7c055e74187693cc1f2c33afbd
-F ext/misc/diskused.c 6cf94f90cb4254ad5a90fc5992d594f3b0f4e0fa635c3549859b57d77153adda
+F ext/misc/diskused.c 444139c01398df6f73e8a021c91e24d97d7914f5c1b49f55dd503abbca347c6e
 F ext/misc/eval.c d4ea2d9898fbe4d30d38ff675ee51958d3bb0601a145bade56dee8b8f438cc5b
 F ext/misc/explain.c 04c9270fd8cf93a9bceb12d2f5f67e3f09a4e58b3e0efe14d24531444d2fffdf
 F ext/misc/fileio.c f32d7488e229cc52283b6f8d9370b004aa92e7a3054aef320cbdbdecb08c4ee5
@@ -2256,7 +2256,7 @@ F tool/showstat4.c b706fcbc4cd1a6e4a73ac32549afc4b460479d650402d64b23e8d813516e8
 F tool/showtmlog.c 86b2dcb722f2c23f0fb59800c086913561428b4be700b7236480f6a9a3726e4a
 F tool/showwal.c c1ac318c635ccfc24b247ebbcebdd96e2ab6c44346e144cac347015f5b571533
 F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdaddf
-F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
+F tool/spaceanal.tcl cf693cae76f88cf4e378ccb9de1a6c84dcb9762b336ade56cd3206d10a446db1
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 4969fd642dad0ea483e4e104163021d92baf98f6a8eac981fe48525f9b873430
 F tool/sqldiff.c c07b741de3fc629e30d7fcab9db04de94e94d7743ab38cadd778b2b1363f8d92
@@ -2280,8 +2280,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a8895cb047a3aeed35642111fa79bde9db962a5d7bc3f0cc472b4dbe510cb3f9
-R 35c12a6a462a8f190b32d299e9acc1b1
+P ea315175a8076f22f85a57a01c5b490630ab20d5ed80144118ced61c8c24886d
+R 18024763a3fbda0383de27f5c0513084
 U drh
-Z 30598d7be2bdf6d4de07633cb55737f0
+Z 76d376039b6ed741253a12c8a345e19d
 # Remove this line to create a well-formed Fossil manifest.
