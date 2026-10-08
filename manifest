@@ -1,5 +1,5 @@
-C Make\sthe\ssqlite3_incomplete()\sSQL\sfunction\savailable\sin\sdebugging\sbuilds\nof\sthe\sCLI,\sfor\stesting.
-D 2026-10-08T13:26:45.449
+C Fix\stest\sscript\serrors\scausing\sproblems\son\swindows.
+D 2026-10-08T16:17:45.650
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -147,7 +147,7 @@ F ext/fts5/test/fts5auxdata.test 372549088ff792655f73e62b9dfaf4863ce74f5e604c06c
 F ext/fts5/test/fts5bigid.test 2860854c2561a57594192b00c33a29f91cb85e25f3d6c03b5c2b8f62708f39dd
 F ext/fts5/test/fts5bigpl.test 8f09858aab866c33593560e6480b2b6975ae7ff29ca32ad7b77e2da61402f8ef
 F ext/fts5/test/fts5bigtok.test 541119e616c637caea925a8c028c37c2c29e94383e00aa2f9198d530724b6e36
-F ext/fts5/test/fts5bigtok2.test d519c0c7c45fcbe75093cb9f4ea47defabbb4e8dd5d44411c8b12da47df538d9
+F ext/fts5/test/fts5bigtok2.test bb8ffeb9127493ae5bb56194e4295879bf1169d421bac15a533eb99b51d52a95
 F ext/fts5/test/fts5blob.test 9644a5f917306690e08c5f89a470a3f2489376eaa52026eeca3209d149d6af74
 F ext/fts5/test/fts5cat.test bf67dd335f964482ee658287521b81e2b88697b45eb7f73933e15f198ed447cb
 F ext/fts5/test/fts5circref.test 0918c69440a73fff429bc9797b07086fc74d018eb3abb1cf9738980390bb2713
@@ -564,7 +564,7 @@ F ext/session/sessionblob.test 87faf667870b72f08e91969abd9f52a383ab7b514506ee194
 F ext/session/sessionchange.test 6618cb1c1338a4b6df173b6ac42d09623fb71269962abf23ebb7617fe9f45a50
 F ext/session/sessionchange2.test eaf97490cd4931fc4b5f8be48a3143093b607de3fe72f9df33976012c0bdbeb6
 F ext/session/sessionconflict.test 19e4a53795c4c930bfec49e809311e09b2a9e202d9446e56d7a8b139046a0c07 x
-F ext/session/sessionconflict2.test 7d193d56a5208ecf08c6f933b26ae2bbc0248517b926130c8da078d5e60691d4 x
+F ext/session/sessionconflict2.test dcaa9979a71d47ff524d01757d137a66cd1dee8faaf93395fcb55b1838851379 x
 F ext/session/sessioncorrupt.test e4e4c346415b09f3354a1ade13d25cf08bb073beb750ebaea9fc6d6313f857d9 x
 F ext/session/sessiondiff.test e89f7aedcdd89e5ebac3a455224eb553a171e9586fc3e1e6a7b3388d2648ba8d
 F ext/session/sessionfault.test c2b43d01213b389a3f518e90775fca2120812ba51e50444c4066962263e45c11
@@ -2280,8 +2280,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ac6ac0c22d98878cdf6042b5801cf5b5dc98c7b48077360d24a70b876921b428
-R 690921a8d9076817ab49d27964ce6937
-U drh
-Z eadf217207bfdfca8b20ac177a7a2e3c
+P 07095b76c1f086790d35a5acd0a22b081e346bc2dca48a8fb0c0c978be2c2243
+R 7a54fa65b9b69f4c705f05d71f2222b5
+U dan
+Z 476c0935a325c7de1c4c493c7780b56d
 # Remove this line to create a well-formed Fossil manifest.
