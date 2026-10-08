@@ -1,5 +1,5 @@
-C Disable\slegacy\s"go"\sand\s"/"\scommand\sterminator\soptions\sin\sthe\sCLI\nunless\scompiled\swith\s-DSQLITE_SHELL_LEGACY_COMMAND_TERMINATOR.\nANT-2026-FE9980M1\sand\sANT-2026-G9MMWYGM.
-D 2026-10-08T12:09:35.768
+C Make\sthe\ssqlite3_incomplete()\sSQL\sfunction\savailable\sin\sdebugging\sbuilds\nof\sthe\sCLI,\sfor\stesting.
+D 2026-10-08T13:26:45.449
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -802,7 +802,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 0e0990f60c93db38c735d85e5d1741130e72dd0670aec204b5a39118b53c8044
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 8d2e31c0a88c30aabea7acc5a5e1e20ae24481d55e9fb187d53313d3080e3fcf
-F src/shell.c.in 9dfe9b34c59200db0c5f53dadb0675be37f97678e87cfcf027341e76c42634de
+F src/shell.c.in a897bd05415770110b3a31c422e16f9cc5f831c2e925dbed031d66bdceb91b3f
 F src/sqlite.h.in 884996e07cfb7681efc76661b79d56a93f9edaea7f6fc4a3c82636dc84783486
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5e113c4c0442f2f1b3345d44cbe4b82fad45f2fc0c35f0ed4eef27fb8f1cb394
@@ -2280,8 +2280,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bcde8f991a86aed6280c1b6164bc14cc1aff1a966a694a5fb32341ffa0202960
-R 21c67656e8aff87f1ca0280c46836fb7
+P ac6ac0c22d98878cdf6042b5801cf5b5dc98c7b48077360d24a70b876921b428
+R 690921a8d9076817ab49d27964ce6937
 U drh
-Z 4ae8d315502f3ac358507f0bd2c25902
+Z eadf217207bfdfca8b20ac177a7a2e3c
 # Remove this line to create a well-formed Fossil manifest.
