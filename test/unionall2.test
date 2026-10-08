@@ -53,6 +53,67 @@ do_execsql_test 2.2 {
   )
 }
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/forumpost/b6e0cf3df3
+#
+reset_db
+
+do_execsql_test 3.0 {
+  CREATE TABLE t0(c0);
+  CREATE TABLE t1(c0);
+  INSERT INTO t0 VALUES (NULL);
+}
+
+do_execsql_test 3.1 {
+  SELECT 5 FROM t0 WHERE (SELECT 0) 
+  UNION ALL 
+  SELECT 7 FROM t1 RIGHT JOIN t0 ON 0
+} 7
+
+do_execsql_test 3.2 {
+  SELECT * FROM (
+    SELECT 5 FROM t0 WHERE (SELECT 0) 
+    UNION ALL 
+    SELECT 7 FROM t1 RIGHT JOIN t0 ON 0
+  );
+} {7}
+
+do_execsql_test 3.3 {
+  SELECT * FROM (
+    SELECT c0 FROM t0 
+    UNION ALL 
+    SELECT a.c0 FROM t0 AS a RIGHT JOIN t0 AS b ON 0
+  )
+} {{} {}}
+
+do_execsql_test 3.4 {
+  SELECT * FROM (
+    SELECT c0 FROM t0 
+    UNION ALL 
+    SELECT a.c0 FROM t0 AS a RIGHT JOIN t0 AS b ON 0
+  ) WHERE abs(c0)
+} {}
+
+do_execsql_test 3.5 {
+  CREATE TABLE t2(a, x);  CREATE INDEX t2x ON t2(x);
+  CREATE TABLE t3(b, y);  CREATE INDEX t3y ON t3(y);
+  CREATE TABLE t4(c, d);  CREATE INDEX t4d ON t4(d);
+}
+
+do_eqp_test 3.6 {
+  SELECT * FROM t4 CROSS JOIN (
+    SELECT a, x FROM t2 UNION ALL SELECT b, y FROM t3
+  ) AS s WHERE s.a=t4.d AND s.x=5;
+} {
+  QUERY PLAN
+  `--COMPOUND QUERY
+     |--LEFT-MOST SUBQUERY
+     |  |--SCAN t4
+     |  `--SEARCH t2 USING INDEX t2x (x=?)
+     `--UNION ALL
+        |--SCAN t4
+        `--SEARCH t3 USING INDEX t3y (y=?)
+}
 
 
 finish_test
