@@ -1,5 +1,5 @@
-C Fix\sprocessing\sof\sLEFT\sJOIN\swhen\sthe\sright\soperand\sis\scontrolled\sby\san\sIN\nloop.\s\s[bugs:/info/2026-10-07T23:22:09Z|Bug\s2026-10-07T23:22:09Z].
-D 2026-10-08T02:55:50.494
+C Assign\sthe\scorrect\sencoding\sto\sthe\sBLOB\svalues\sread\sfrom\san\soverflow\spage.\n[bugs:/info/2026-10-07T15:44:40Z|Bug\s2026-10-07T15:44:40Z]
+D 2026-10-08T03:28:50.240
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -868,7 +868,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c c5bec56770b71fe75e12f1f7b0a512032e1fd3d1f83c50c4ab4474ced20347a4
 F src/util.c 4437408e09cef6dbb63a8b8ba28be53bdc098ec890e5e64ad7ae1fc83448962e
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 4f9b982b9f77d9110090019a375e67e67bc800a54608298f933216f924804fc1
+F src/vdbe.c 247e0b7d43eeec8727f5446391a633f638df9cd9aaee637b079163ea3a801d42
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 68e5ab63f184f2871780c83ce78b425d0360869611baea4c65575f91f76ac1d3
 F src/vdbeapi.c 8015628172d959885d5df592b9ddc07c66a803f61f86f1197cc17929c095b2ca
@@ -1158,7 +1158,7 @@ F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 16e7d006e8687654ee59e7ad5a6d285ba23f0fe0eeb87f790afd6bc9cf1d1924
 F test/e_walhook.test 01b494287ba9e60b70f6ebf3c6c62e0ffe01788e344a4846b08e5de0b344cb66
 F test/emptytable.test a38110becbdfa6325cd65cb588dca658cd885f62
-F test/enc.test b5503a87b31cea8a5084c6e447383f9ca08933bd2f29d97b6b6201081b2343eb
+F test/enc.test ce88f1b942a3d9e535671634ef868c5d478f20bc0365cef9394923312b0add12
 F test/enc2.test 872afe58db772e7dfa1ad8e0759f8cc820e9efc8172d460fae83023101c2e435
 F test/enc3.test 55ef64416d72975c66167310a51dc9fc544ba3ae4858b8d5ab22f4cb6500b087
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
@@ -2280,8 +2280,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P eaec2f7f3744d4cdf0cdafce22e1909208f93734bf55263a042938919bd81310
-R 8856ccd0e3800f2f41e7561ca92aab48
+P e71b0465b9fa13db3922e767c1d8979d221516475670dcd3fa4df1fab30176c6
+R 3ba57802622c7216dadd15136148181e
 U drh
-Z 99e408b0993cd1c60bdf847a68a5044b
+Z 2592076f203546fc76e2c9f4e228680b
 # Remove this line to create a well-formed Fossil manifest.
