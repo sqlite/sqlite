@@ -7726,7 +7726,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( ws & WHERE_IN_ABLE ){
         int m;
         for(m=0; m<pLevel->u.in.nIn; m++){
-          sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->u.in.aInLoop[m].iCur);
+          struct InLoop *pIn = &pLevel->u.in.aInLoop[m];
+          if( pIn->eEndLoopOp!=OP_Noop ){
+            sqlite3VdbeAddOp1(v, OP_NullRow, pIn->iCur);
+          }
         }
       }
       if( pLevel->op==OP_Return ){
