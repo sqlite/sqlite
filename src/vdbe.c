@@ -5391,8 +5391,8 @@ case OP_IfNotOpen: {        /* jump */
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pCur = p->apCsr[pOp->p1];
-  VdbeBranchTaken(pCur==0 || pCur->nullRow, 2);
-  if( pCur==0 || pCur->nullRow ){
+  VdbeBranchTaken( NEVER(pCur==0) || pCur->nullRow, 2);
+  if( NEVER(pCur==0) || pCur->nullRow ){
     goto jump_to_p2_and_check_for_interrupt;
   }
   break;
