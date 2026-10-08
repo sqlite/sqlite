@@ -1,5 +1,5 @@
-C Fix\stest\sscript\serrors\scausing\sproblems\son\swindows.
-D 2026-10-08T16:17:45.650
+C Avoid\sclearing\sunrelated\sjoin\srelated\sexpression\sflags\swhen\sprocessing\swindow\sfunction\squeries.\sReport\s[bugs:/info/2026-10-08T15:38:26Z\s|\s2026-10-08T15:38:26Z].
+D 2026-10-08T17:57:48.429
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -887,7 +887,7 @@ F src/where.c f2a92a7bb2b0e2295c1715a1461a7df2b81d2306cbe4698b78df740dd2ae1aef
 F src/whereInt.h f039ad303bc2913de673e431821ef8db3b619d249e6e5548d90072a684e72285
 F src/wherecode.c 1a6d2999159b28d8c0b968458b90ec183b3813cb332c11515ab60a73db5c07fd
 F src/whereexpr.c 76f72a95c5cf0e8a8edb679ca4fb7afa17ba45ff4effe73c414266510109e701
-F src/window.c 566d0f2e9cc843f5cd5b22c861862ef4d10f6040ddf6b13c97bf39950ec2fc2a
+F src/window.c 79a17de595e62aa45961ef1cbe3392e7ebae69fdde3fd0b0200254bc4647025e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
 F test/affinity3.test 9b7d1133e11d5edd7805573c4ab6f3ba73b0b74a1f280d5b130d4bf3506a93ff
@@ -2157,7 +2157,7 @@ F test/window9.test 234309555c3d449753e8773a0339cc380ec61e6f03d778cb54bbfa3fc42b
 F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af23be
 F test/windowB.test bba3bee77c1d3321077ff8951d543161d74f08f78633d84433ced7d6261dc2c2
 F test/windowC.test 6fd75f5bb2f1343d34e470e36e68f0ff638d8a42f6aa7d99471261b31a0d42f2
-F test/windowD.test 65cf5a765fb8072450e8a0de2979ce7f09a38d87724fe1280c6444073e3da49b
+F test/windowD.test bbd5407fb3a69ced03c1d1fe928ceb6170d2a3f935a3e470ab1d4e4f44c7ac55
 F test/windowE.test a82a4213c7b923220de5e457cb76c537a5d10d5e94641e3055ba21b79870a7fb
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
@@ -2280,8 +2280,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 07095b76c1f086790d35a5acd0a22b081e346bc2dca48a8fb0c0c978be2c2243
-R 7a54fa65b9b69f4c705f05d71f2222b5
+P 379c017e8f999c35e3b3de64fcc3923e45570ba20bee50a3dd00f6996990a033
+R 3156990cdaece5d003bc49023dbc7a57
 U dan
-Z 476c0935a325c7de1c4c493c7780b56d
+Z 3dd92ef155fa5ce137a9bc3172e75d4d
 # Remove this line to create a well-formed Fossil manifest.

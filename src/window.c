@@ -808,7 +808,9 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
         p->pSub = sqlite3ExprListAppend(pParse, p->pSub, pDup);
       }
       if( p->pSub ){
-        int f = pExpr->flags & EP_Collate;
+        int f = pExpr->flags & (EP_Collate|EP_OuterON|EP_InnerON);
+        int iJoin = pExpr->w.iJoin;
+
         assert( ExprHasProperty(pExpr, EP_Static)==0 );
         ExprSetProperty(pExpr, EP_Static);
         sqlite3ExprDelete(pParse->db, pExpr);
@@ -820,6 +822,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
         pExpr->iTable = p->pWin->iEphCsr;
         pExpr->y.pTab = p->pTab;
         pExpr->flags = f;
+        if( (f & (EP_OuterON|EP_InnerON)) ) pExpr->w.iJoin = iJoin;
       }
       if( pParse->db->mallocFailed ) return WRC_Abort;
       break;
