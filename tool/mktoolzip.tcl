@@ -9,7 +9,6 @@
 #     testfixture             -- used to run this script
 #     sqlite3                 -- the SQLite CLI
 #     sqldiff                 -- Program to diff two databases
-#     sqlite3_analyzer        -- Space analyzer
 #     sqlite3_rsync           -- Remote db sync
 #
 # On Windows, add:
@@ -82,7 +81,7 @@ if {$bSnapshot} {
 }
 
 set name sqlite-tools-$OS-$ARCH-$v2.zip
-set filelist "sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE sqlite3_rsync$EXE"
+set filelist "sqlite3$EXE sqldiff$EXE sqlite3_rsync$EXE"
 proc make_zip_archive {name filelist} {
   file delete -force $name
   puts "fossil test-filezip $name $filelist"

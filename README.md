@@ -115,7 +115,6 @@ For example:
         make tclextension-install     ;#  Install the SQLite TCL extension
         make test                     ;#  Run development tests
         make releasetest              ;#  Run full release tests
-        make sqlite3_analyzer         ;#  Builds the "sqlite3_analyzer" tool
 
 See the makefile for additional targets.  For debugging builds, the
 core developers typically run "configure" with options like this:
@@ -179,7 +178,6 @@ file:
         make tclextension-install
         make test
         make releasetest
-        make sqlite3_analyzer.exe
  
 There are many other makefile targets.  See comments in Makefile.msc for
 details.
