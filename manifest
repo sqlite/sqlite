@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
-D 2026-10-09T14:40:03.013
+C Version\s3.54.0
+D 2026-10-09T15:46:58.543
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2281,8 +2281,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a3332bd623d997921c3186433cd1eab0c9413aa0f68d93b1731cf80128ec3a36
+P 7b468f6f1d63645c8d8132790831dac6916006f81cf97e99abec711de93feb23
 R a6cae6f434f258279146ca72f37fda6c
+T +sym-major-release *
+T +sym-release *
+T +sym-version-3.54.0 *
 U drh
-Z baf001039725f95ab6353e59995575b4
+Z 1cdb953778001bf49dacd8ca58c6a09e
 # Remove this line to create a well-formed Fossil manifest.
