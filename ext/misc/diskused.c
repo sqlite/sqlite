@@ -441,6 +441,7 @@ static void diskusedFunc(
   int rc;
   sqlite3_stmt *pStmt;
   int n;
+  char *z;
   sqlite3_int64 ii;
   sqlite3_int64 pgsz;
   sqlite3_int64 nPage;
@@ -764,9 +765,11 @@ static void diskusedFunc(
   sqlite3_str_appendf(s.pOut,
     "The following SQL will create a table named \"space_used\" which\n"
     "contains most of the information used to generate the report above.\n"
-    "*/\n"
   );
+  z = sqlite3_str_value(s.pOut);
+  while( z && (z = strstr(z,"*/"))!=0 ){ z[0] = '+'; }
   sqlite3_str_appendf(s.pOut,
+    "*/\n"
     "BEGIN;\n"
     "CREATE TABLE space_used(\n"
     "   name text,                -- A table or index\n"                /* 0 */

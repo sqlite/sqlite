@@ -802,6 +802,7 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
     }else{
       rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, 0,
                                 sqlite3RCStrUnref);
+      pDest->enc = encoding;
     }
   }else{
     rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, iOffset, len, pDest);
@@ -5376,24 +5377,6 @@ case OP_SeekHit: {           /* ncycle */
     }       
 #endif
     pC->seekHit = pOp->p3;
-  }
-  break;
-}
-
-/* Opcode: IfNotOpen P1 P2 * * *
-** Synopsis: if( !csr[P1] ) goto P2
-**
-** If cursor P1 is not open or if P1 is set to a NULL row using the
-** OP_NullRow opcode, then jump to instruction P2. Otherwise, fall through.
-*/
-case OP_IfNotOpen: {        /* jump */
-  VdbeCursor *pCur;
-
-  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  pCur = p->apCsr[pOp->p1];
-  VdbeBranchTaken(pCur==0 || pCur->nullRow, 2);
-  if( pCur==0 || pCur->nullRow ){
-    goto jump_to_p2_and_check_for_interrupt;
   }
   break;
 }

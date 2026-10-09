@@ -12803,7 +12803,7 @@ static int initExtension(
   for(ii=0; rc==SQLITE_OK && ii<size_of_array(aAgg); ii++){
     struct AggFunc *p = &aAgg[ii];
     rc = sqlite3_create_function(
-        db, p->zName, p->nArg, SQLITE_UTF8|SQLITE_INNOCUOUS, (void*)pList, 0, 
+        db, p->zName, p->nArg, SQLITE_UTF8|SQLITE_DIRECTONLY, (void*)pList, 0, 
         p->xStep, p->xFinal
     );
   }
