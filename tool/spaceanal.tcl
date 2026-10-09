@@ -351,6 +351,7 @@ proc quote {txt} {
 # Output a title line
 #
 proc titleline {title} {
+  set title [string map {*/ +/} $title]
   if {$title==""} {
     puts [string repeat * 79]
   } else {
@@ -364,6 +365,7 @@ proc titleline {title} {
 # report.
 #
 proc statline {title value {extra {}}} {
+  set title [string map {*/ +/} $title]
   set len [string length $title]
   set dots [string repeat . [expr 50-$len]]
   set len [string length $value]
@@ -615,7 +617,8 @@ set user_percent [percent $user_payload $file_bytes]
 
 # Output the summary statistics calculated above.
 #
-puts "/** Disk-Space Utilization Report For $root_filename"
+regsub -all {[^-a-zA-Z0-9_,~./]} $root_filename _ sanitized_filename
+puts "/** Disk-Space Utilization Report For $sanitized_filename"
 puts ""
 statline {Page size in bytes} $pageSize
 statline {Pages in the whole file (measured)} $file_pgcnt

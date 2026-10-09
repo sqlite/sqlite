@@ -21,7 +21,7 @@ do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t USING fts5(x);
 }
 
-do_catchsql_test 1.1 { INSERT INTO t VALUES($big); } {1 {out of memory}}
+do_catchsql_test 1.1 { INSERT INTO t VALUES($big); } {0 {}}
 
 set big {}
 

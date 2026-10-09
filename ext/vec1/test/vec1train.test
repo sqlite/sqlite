@@ -156,5 +156,44 @@ do_catchsql_test 6.1 {
   ));
 } {1 {too few training vectors (require 512, have 12)}}
 
+#-------------------------------------------------------------------------
+# vec1_train() is SQLITE_DIRECTONLY. It may not be used within a view
+# or trigger.
+#
+reset_db
+vec1_load db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100
+  ) INSERT INTO t1 SELECT random_vector(16) FROM s;
+  CREATE TABLE log(x);
+}
+
+do_execsql_test 7.1.0 {
+  CREATE VIEW v1 AS SELECT vec1_train(a) FROM t1;
+  CREATE VIEW v2 AS SELECT vec1_train(a, '{nbucket: 8}') FROM t1;
+}
+do_catchsql_test 7.1.1 {
+  SELECT * FROM v1
+} {1 {unsafe use of vec1_train()}}
+do_catchsql_test 7.1.2 {
+  SELECT * FROM v2
+} {1 {unsafe use of vec1_train()}}
+
+do_execsql_test 7.2.0 {
+  CREATE TABLE t2(x);
+  CREATE TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+    INSERT INTO log SELECT vec1_train(a, '{nbucket: 8}') FROM t1;
+  END;
+}
+do_catchsql_test 7.2.1 {
+  INSERT INTO t2 VALUES(1);
+} {1 {unsafe use of vec1_train()}}
+do_execsql_test 7.2.2 {
+  SELECT count(*) FROM t2;
+  SELECT count(*) FROM log;
+} {0 0}
+
 finish_test
 
