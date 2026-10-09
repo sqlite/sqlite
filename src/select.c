@@ -4671,7 +4671,7 @@ static int flattenSubquery(
   pSub = pSub1;
   for(pParent=p; pParent; pParent=pParent->pPrior, pSub=pSub->pPrior){
     int nSubSrc;
-    u8 jointype = pSubitem->fg.jointype;
+    u8 jointype = pParent->pSrc->a[iFrom].fg.jointype;
     assert( pSub!=0 );
     pSubSrc = pSub->pSrc;     /* FROM clause of subquery */
     nSubSrc = pSubSrc->nSrc;  /* Number of terms in subquery FROM clause */
@@ -4696,7 +4696,6 @@ static int flattenSubquery(
       pSrc = sqlite3SrcListEnlarge(pParse, pSrc, nSubSrc-1,iFrom+1);
       if( pSrc==0 ) break;
       pParent->pSrc = pSrc;
-      pSubitem = &pSrc->a[iFrom];
     }
 
     /* Transfer the FROM clause terms from the subquery into the
@@ -4714,7 +4713,7 @@ static int flattenSubquery(
       pItem->fg.jointype |= (jointype & JT_LTORJ);
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
-    pSubitem->fg.jointype |= jointype;
+    pSrc->a[iFrom].fg.jointype |= jointype;
  
     /* Begin substituting subquery result set expressions for
     ** references to the iParent in the outer query.

@@ -449,4 +449,19 @@ do_execsql_test 13.1 {
    ORDER BY t2.d2 DESC;
 } {33 2 33 1}
 
+# Bug 2026-10-07T23:22:09Z
+#
+db null NULL
+do_execsql_test 14.0 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  CREATE TABLE t1(a INT,b INT,c INT);
+  CREATE TABLE t2(x INT,y INT,z INT);
+  INSERT INTO t1 VALUES(1,NULL,5),(2,NULL,NULL);
+  INSERT INTO t2 SELECT * FROM t1;
+  CREATE INDEX t2yz ON t2(y,z);
+  SELECT *, '|' FROM t1 LEFT JOIN t2 ON y=c AND z IN (5,0) ORDER BY +a;
+} {1 NULL 5 NULL NULL NULL | 2 NULL NULL NULL NULL NULL |}
+
+
 finish_test
