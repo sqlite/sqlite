@@ -1,5 +1,5 @@
-C Remove\sthe\sOP_IfNotOpen\sopcode.\s\sThe\sOP_IfNullRow\sopcode\sis\ssufficient\sto\nget\sthe\sjob\sdone.\s\sThis\sis\sa\sfollow-up\sto\s[e71b0465b9fa13db].
-D 2026-10-08T23:59:13.467
+C Fix\sa\sbuild\sscript\sproblem\scausing\sgenerated\sfile\ssqlite3-all.c\sto\s#include\s"sqlite-10.c"\sinstead\sof\s"sqlite-A.c".
+D 2026-10-09T11:22:17.592
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2259,7 +2259,7 @@ F tool/showwal.c c1ac318c635ccfc24b247ebbcebdd96e2ab6c44346e144cac347015f5b57153
 F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdaddf
 F tool/spaceanal.tcl cf693cae76f88cf4e378ccb9de1a6c84dcb9762b336ade56cd3206d10a446db1
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
-F tool/split-sqlite3c.tcl 4969fd642dad0ea483e4e104163021d92baf98f6a8eac981fe48525f9b873430
+F tool/split-sqlite3c.tcl fca49ffd65f54b2d219200ed6b199433a9e6a0a397835045e478601c4c0ea89c
 F tool/sqldiff.c c038c3a058f8d8c992eefee6f7e173b1361b81d7f3e3bd871b9808f7d0e96a9a
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
 F tool/sqlite3_rsync.c a342f9762653f968e12993bb2dc9083c52ad755c23f6005c575d8a376f970422
@@ -2281,8 +2281,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P cfa69ea48a7aa379ee0c30ae81d2802da862d610f829c933e5eb358c23fc2b9d
-R 426a085b5ad6bc6a844b020b6fb5e871
-U drh
-Z ce6a8dfa7f67609ddc2e6787f9d350d0
+P 797081cb705c65a466379e180344d0c9d781f10415c8ed8f72edc6ea065a1a28
+R 459ddf1fc5c28573caf164b485180572
+U dan
+Z e503e2bdda1a0f59d7658cce1714a502
 # Remove this line to create a well-formed Fossil manifest.
