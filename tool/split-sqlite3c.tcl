@@ -59,7 +59,7 @@ proc write_one_file {content} {
   fconfigure $out -translation text
   puts -nonewline $out $content
   close $out
-  puts $::out1 "#include \"sqlite3-$filecnt.c\""
+  puts $::out1 "#include \"sqlite3-$label.c\""
 }
 
 # Continue reading input.  Store chunks in separate files and add
