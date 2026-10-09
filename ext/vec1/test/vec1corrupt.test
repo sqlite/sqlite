@@ -45,13 +45,450 @@ do_execsql_test 1.3 {
 
 #-------------------------------------------------------------------------
 
+reset_db
+
+do_test 2.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+| size 28672 pagesize 4096 filename poc_oob_read.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 17 00 00 00 07   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 07 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 17   ................
+|     96: 00 2e 99 b0 0d 00 00 00 07 0d a6 00 0f ca 0f 74   ...............t
+|    112: 0f 1b 0e 9f 0e 4b 0d f7 0d a6 00 00 00 00 00 00   .....K..........
+|   3488: 00 00 00 00 00 00 4f 07 06 17 19 19 01 7b 74 61   ......O.......ta
+|   3504: 62 6c 65 74 5f 6d 65 74 61 74 5f 6d 65 74 61 07   blet_metat_meta.
+|   3520: 43 52 45 41 54 45 20 54 41 42 4c 45 20 27 74 5f   CREATE TABLE 't_
+|   3536: 6d 65 74 61 27 28 69 64 20 49 4e 54 45 47 45 52   meta'(id INTEGER
+|   3552: 20 50 52 49 4d 41 52 59 20 4b 45 59 2c 20 76 61    PRIMARY KEY, va
+|   3568: 6c 20 42 4c 4f 42 29 52 06 06 17 1b 1b 01 7d 74   l BLOB)R.......t
+|   3584: 61 62 6c 65 74 5f 6d 6f 64 65 6c 74 5f 6d 6f 64   ablet_modelt_mod
+|   3600: 65 6c 06 43 52 45 41 54 45 20 54 41 42 4c 45 20   el.CREATE TABLE 
+|   3616: 27 74 5f 6d 6f 64 65 6c 27 28 69 64 20 49 4e 54   't_model'(id INT
+|   3632: 45 47 45 52 20 50 52 49 4d 41 52 59 20 4b 45 59   EGER PRIMARY KEY
+|   3648: 2c 20 76 61 6c 20 42 4c 4f 42 29 52 05 06 17 1f   , val BLOB)R....
+|   3664: 17 01 7d 69 6e 64 65 78 74 5f 69 64 78 5f 69 64   ...indext_idx_id
+|   3680: 78 74 5f 69 64 78 05 43 52 45 41 54 45 20 49 4e   xt_idx.CREATE IN
+|   3696: 44 45 58 20 27 74 5f 69 64 78 5f 69 64 78 27 20   DEX 't_idx_idx' 
+|   3712: 4f 4e 20 27 74 5f 69 64 78 27 28 62 75 63 6b 65   ON 't_idx'(bucke
+|   3728: 74 2c 20 66 69 72 73 74 2c 20 6c 61 73 74 29 7a   t, first, last)z
+|   3744: 04 07 17 17 17 01 81 53 74 61 62 6c 65 74 5f 69   .......Stablet_i
+|   3760: 64 78 74 5f 69 64 78 04 43 52 45 41 54 45 20 54   dxt_idx.CREATE T
+|   3776: 41 42 4c 45 20 27 74 5f 69 64 78 27 28 69 64 20   ABLE 't_idx'(id 
+|   3792: 49 4e 54 45 47 45 52 20 50 52 49 4d 41 52 59 20   INTEGER PRIMARY 
+|   3808: 4b 45 59 2c 20 62 75 63 6b 65 74 20 49 4e 54 45   KEY, bucket INTE
+|   3824: 47 45 52 2c 20 66 69 72 73 74 20 49 4e 54 45 47   GER, first INTEG
+|   3840: 45 52 2c 20 6c 61 73 74 20 49 4e 54 45 47 45 52   ER, last INTEGER
+|   3856: 2c 20 76 61 6c 20 42 4c 4f 42 29 57 03 07 17 19   , val BLOB)W....
+|   3872: 19 01 81 09 74 61 62 6c 65 74 5f 62 61 73 65 74   ....tablet_baset
+|   3888: 5f 62 61 73 65 03 43 52 45 41 54 45 20 54 41 42   _base.CREATE TAB
+|   3904: 4c 45 20 27 74 5f 62 61 73 65 27 28 69 64 20 49   LE 't_base'(id I
+|   3920: 4e 54 45 47 45 52 20 50 52 49 4d 41 52 59 20 4b   NTEGER PRIMARY K
+|   3936: 45 59 2c 20 76 65 63 74 6f 72 20 42 4c 4f 42 2c   EY, vector BLOB,
+|   3952: 20 63 30 29 54 02 06 17 1d 1d 01 7d 74 61 62 6c    c0)T.......tabl
+|   3968: 65 74 5f 63 6f 6e 66 69 67 74 5f 63 6f 6e 66 69   et_configt_confi
+|   3984: 67 02 43 52 45 41 54 45 20 54 41 42 4c 45 20 27   g.CREATE TABLE '
+|   4000: 74 5f 63 6f 6e 66 69 67 27 28 69 64 20 49 4e 54   t_config'(id INT
+|   4016: 45 47 45 52 20 50 52 49 4d 41 52 59 20 4b 45 59   EGER PRIMARY KEY
+|   4032: 2c 20 76 61 6c 20 41 4e 59 29 34 01 06 17 0f 0f   , val ANY)4.....
+|   4048: 08 5b 74 61 62 6c 65 74 74 43 52 45 41 54 45 20   .[tablettCREATE 
+|   4064: 56 49 52 54 55 41 4c 20 54 41 42 4c 45 20 74 20   VIRTUAL TABLE t 
+|   4080: 55 53 49 4e 47 20 76 65 63 31 28 76 2c 20 6d 29   USING vec1(v, m)
+| page 2 offset 4096
+|      0: 0d 00 00 00 03 0f ef 00 0f f5 0f ef 0f fa 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04   ................
+|   4080: 02 03 00 01 04 03 00 03 00 09 04 05 03 00 01 04   ................
+| page 3 offset 8192
+|      0: 0d 00 00 00 14 0e e8 00 0f f2 0f e4 0f d6 0f c8   ................
+|     16: 0f ba 0f ac 0f 9e 0f 90 0f 82 0f 74 0f 66 0f 58   ...........t.f.X
+|     32: 0f 4a 0f 3c 0f 2e 0f 20 0f 12 0f 04 0e f6 0e e8   .J.<... ........
+|   3808: 00 00 00 00 00 00 00 00 0c 14 04 00 08 07 40 69   ..............@i
+|   3824: 00 00 00 00 00 00 0c 13 04 00 08 07 40 67 c0 00   ............@g..
+|   3840: 00 00 00 00 0c 12 04 00 08 07 40 66 80 00 00 00   ..........@f....
+|   3856: 00 00 0c 11 04 00 08 07 40 65 40 00 00 00 00 00   ........@e@.....
+|   3872: 0c 10 04 00 08 07 40 64 00 00 00 00 00 00 0c 0f   ......@d........
+|   3888: 04 00 08 07 40 62 c0 00 00 00 00 00 0c 0e 04 00   ....@b..........
+|   3904: 08 07 40 61 80 00 00 00 00 00 0c 0d 04 00 08 07   ..@a............
+|   3920: 40 60 40 00 00 00 00 00 0c 0c 04 00 08 07 40 5e   @`@...........@^
+|   3936: 00 00 00 00 00 00 0c 0b 04 00 08 07 40 5b 80 00   ............@[..
+|   3952: 00 00 00 00 0c 0a 04 00 08 07 40 59 00 00 00 00   ..........@Y....
+|   3968: 00 00 0c 09 04 00 08 07 40 56 80 00 00 00 00 00   ........@V......
+|   3984: 0c 08 04 00 08 07 40 54 00 00 00 00 00 00 0c 07   ......@T........
+|   4000: 04 00 08 07 40 51 80 00 00 00 00 00 0c 06 04 00   ....@Q..........
+|   4016: 08 07 40 4e 00 00 00 00 00 00 0c 05 04 00 08 07   ..@N............
+|   4032: 40 49 00 00 00 00 00 00 0c 04 04 00 08 07 40 44   @I............@D
+|   4048: 00 00 00 00 00 00 0c 03 04 00 08 07 40 3e 00 00   ............@>..
+|   4064: 00 00 00 00 0c 02 04 00 08 07 40 34 00 00 00 00   ..........@4....
+|   4080: 00 00 0c 01 04 00 08 07 40 24 00 00 00 00 00 00   ........@$......
+| page 4 offset 12288
+|      0: 0d 00 00 00 01 0e 59 00 0e 59 00 00 00 00 00 00   ......Y..Y......
+|   3664: 00 00 00 00 00 00 00 00 00 83 24 01 07 00 08 09   ..........$.....
+|   3680: 01 86 44 14 00 00 00 02 00 00 00 14 00 00 00 00   ..D.............
+|   3696: 00 00 00 01 00 00 00 02 00 00 00 03 00 00 00 04   ................
+|   3712: 00 00 00 05 00 00 00 06 00 00 00 07 00 00 00 08   ................
+|   3728: 00 00 00 09 00 00 00 0a 00 00 00 0b 00 00 00 0c   ................
+|   3744: 00 00 00 0d 00 00 00 0e 00 00 00 0f 00 00 00 10   ................
+|   3760: 00 00 00 11 00 00 00 12 00 00 00 13 00 00 00 14   ................
+|   3776: 00 00 80 3f 00 00 00 40 00 00 40 40 00 00 80 40   ...?...@..@@...@
+|   3792: 00 00 00 40 00 00 40 40 00 00 80 40 00 00 a0 40   ...@..@@...@...@
+|   3808: 00 00 40 40 00 00 80 40 00 00 a0 40 00 00 c0 40   ..@@...@...@...@
+|   3824: 00 00 80 40 00 00 a0 40 00 00 c0 40 00 00 e0 40   ...@...@...@...@
+|   3840: 00 00 a0 40 00 00 c0 40 00 00 e0 40 00 00 00 41   ...@...@...@...A
+|   3856: 00 00 c0 40 00 00 e0 40 00 00 00 41 00 00 10 41   ...@...@...A...A
+|   3872: 00 00 e0 40 00 00 00 41 00 00 10 41 00 00 20 41   ...@...A...A.. A
+|   3888: 00 00 00 41 00 00 10 41 00 00 20 41 00 00 30 41   ...A...A.. A..0A
+|   3904: 00 00 10 41 00 00 20 41 00 00 30 41 00 00 40 41   ...A.. A..0A..@A
+|   3920: 00 00 20 41 00 00 30 41 00 00 40 41 00 00 50 41   .. A..0A..@A..PA
+|   3936: 00 00 30 41 00 00 40 41 00 00 50 41 00 00 60 41   ..0A..@A..PA..`A
+|   3952: 00 00 40 41 00 00 50 41 00 00 60 41 00 00 70 41   ..@A..PA..`A..pA
+|   3968: 00 00 50 41 00 00 60 41 00 00 70 41 00 00 80 41   ..PA..`A..pA...A
+|   3984: 00 00 60 41 00 00 70 41 00 00 80 41 00 00 88 41   ..`A..pA...A...A
+|   4000: 00 00 70 41 00 00 80 41 00 00 88 41 00 00 90 41   ..pA...A...A...A
+|   4016: 00 00 80 41 00 00 88 41 00 00 90 41 00 00 98 41   ...A...A...A...A
+|   4032: 00 00 88 41 00 00 90 41 00 00 98 41 00 00 a0 41   ...A...A...A...A
+|   4048: 00 00 90 41 00 00 98 41 00 00 a0 41 00 00 a8 41   ...A...A...A...A
+|   4064: 00 00 98 41 00 00 a0 41 00 00 a8 41 00 00 b0 41   ...A...A...A...A
+|   4080: 00 00 a0 41 00 00 a8 41 00 00 b0 41 00 00 b8 41   ...A...A...A...A
+| page 5 offset 16384
+|      0: 0a 00 00 00 01 0f f9 00 0f f9 00 00 00 00 00 00   ................
+|   4080: 00 00 00 00 00 00 00 00 00 06 05 08 09 01 09 14   ................
+| page 6 offset 20480
+|      0: 0d 00 00 00 01 0f e3 00 0f e3 00 00 00 00 00 00   ................
+|   4064: 00 00 00 1b 01 03 00 3c 00 00 00 04 00 00 00 01   .......<........
+|   4080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01   ................
+| page 7 offset 24576
+|      0: 0d 00 00 00 01 0f f2 00 0f f2 00 00 00 00 00 00   ................
+|   3920: 81 2c 82 00 04 00 82 5c 00 00 00 08 00 00 00 14   .,..............
+|   3936: 40 24 00 00 00 00 00 00 40 34 00 00 00 00 00 00   @$......@4......
+|   3952: 40 3e 00 00 00 00 00 00 40 44 00 00 00 00 00 00   @>......@D......
+|   3968: 40 49 00 00 00 00 00 00 40 4e 00 00 00 00 00 00   @I......@N......
+|   3984: 40 51 80 00 00 00 00 00 40 54 00 00 00 00 00 00   @Q......@T......
+|   4000: 40 56 80 00 00 00 00 00 40 59 00 00 00 00 00 00   @V......@Y......
+|   4016: 40 5b 80 00 00 00 00 00 40 5e 00 00 00 00 00 00   @[......@^......
+|   4032: 40 60 40 00 00 00 00 00 40 61 80 00 00 00 00 00   @`@.....@a......
+|   4048: 40 62 c0 00 00 00 00 00 40 64 00 00 00 00 00 00   @b......@d......
+|   4064: 40 65 40 00 00 00 00 00 40 66 80 00 00 00 00 00   @e@.....@f......
+|   4080: 40 67 0b 82 00 03 00 1c 00 00 00 08 00 00 00 00   @g..............
+| end poc_oob_read.db
+}]} {}
+
+vec1_load db
+
+do_catchsql_test 2.1 {
+  SELECT rowid FROM t(vec1_from_json('[1,2,3,4]'), 10) WHERE m > 5.0;
+} {1 {database disk image is malformed}}
+
+reset_db
+do_test 3.0 {
+  sqlite3 db {}
+  db deserialize [decode_hexdb {
+| size 28672 pagesize 4096 filename poc_oob_write.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 04 00 00 00 07   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 07 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04   ................
+|     96: 00 2e 99 b0 0d 00 00 00 07 0d a6 00 0f ca 0f 74   ...............t
+|    112: 0f 1b 0e 9f 0e 4b 0d f7 0d a6 00 00 00 00 00 00   .....K..........
+|   3488: 00 00 00 00 00 00 4f 07 06 17 19 19 01 7b 74 61   ......O.......ta
+|   3504: 62 6c 65 74 5f 6d 65 74 61 74 5f 6d 65 74 61 07   blet_metat_meta.
+|   3520: 43 52 45 41 54 45 20 54 41 42 4c 45 20 27 74 5f   CREATE TABLE 't_
+|   3536: 6d 65 74 61 27 28 69 64 20 49 4e 54 45 47 45 52   meta'(id INTEGER
+|   3552: 20 50 52 49 4d 41 52 59 20 4b 45 59 2c 20 76 61    PRIMARY KEY, va
+|   3568: 6c 20 42 4c 4f 42 29 52 06 06 17 1b 1b 01 7d 74   l BLOB)R.......t
+|   3584: 61 62 6c 65 74 5f 6d 6f 64 65 6c 74 5f 6d 6f 64   ablet_modelt_mod
+|   3600: 65 6c 06 43 52 45 41 54 45 20 54 41 42 4c 45 20   el.CREATE TABLE 
+|   3616: 27 74 5f 6d 6f 64 65 6c 27 28 69 64 20 49 4e 54   't_model'(id INT
+|   3632: 45 47 45 52 20 50 52 49 4d 41 52 59 20 4b 45 59   EGER PRIMARY KEY
+|   3648: 2c 20 76 61 6c 20 42 4c 4f 42 29 52 05 06 17 1f   , val BLOB)R....
+|   3664: 17 01 7d 69 6e 64 65 78 74 5f 69 64 78 5f 69 64   ...indext_idx_id
+|   3680: 78 74 5f 69 64 78 05 43 52 45 41 54 45 20 49 4e   xt_idx.CREATE IN
+|   3696: 44 45 58 20 27 74 5f 69 64 78 5f 69 64 78 27 20   DEX 't_idx_idx' 
+|   3712: 4f 4e 20 27 74 5f 69 64 78 27 28 62 75 63 6b 65   ON 't_idx'(bucke
+|   3728: 74 2c 20 66 69 72 73 74 2c 20 6c 61 73 74 29 7a   t, first, last)z
+|   3744: 04 07 17 17 17 01 81 53 74 61 62 6c 65 74 5f 69   .......Stablet_i
+|   3760: 64 78 74 5f 69 64 78 04 43 52 45 41 54 45 20 54   dxt_idx.CREATE T
+|   3776: 41 42 4c 45 20 27 74 5f 69 64 78 27 28 69 64 20   ABLE 't_idx'(id 
+|   3792: 49 4e 54 45 47 45 52 20 50 52 49 4d 41 52 59 20   INTEGER PRIMARY 
+|   3808: 4b 45 59 2c 20 62 75 63 6b 65 74 20 49 4e 54 45   KEY, bucket INTE
+|   3824: 47 45 52 2c 20 66 69 72 73 74 20 49 4e 54 45 47   GER, first INTEG
+|   3840: 45 52 2c 20 6c 61 73 74 20 49 4e 54 45 47 45 52   ER, last INTEGER
+|   3856: 2c 20 76 61 6c 20 42 4c 4f 42 29 57 03 07 17 19   , val BLOB)W....
+|   3872: 19 01 81 09 74 61 62 6c 65 74 5f 62 61 73 65 74   ....tablet_baset
+|   3888: 5f 62 61 73 65 03 43 52 45 41 54 45 20 54 41 42   _base.CREATE TAB
+|   3904: 4c 45 20 27 74 5f 62 61 73 65 27 28 69 64 20 49   LE 't_base'(id I
+|   3920: 4e 54 45 47 45 52 20 50 52 49 4d 41 52 59 20 4b   NTEGER PRIMARY K
+|   3936: 45 59 2c 20 76 65 63 74 6f 72 20 42 4c 4f 42 2c   EY, vector BLOB,
+|   3952: 20 63 30 29 54 02 06 17 1d 1d 01 7d 74 61 62 6c    c0)T.......tabl
+|   3968: 65 74 5f 63 6f 6e 66 69 67 74 5f 63 6f 6e 66 69   et_configt_confi
+|   3984: 67 02 43 52 45 41 54 45 20 54 41 42 4c 45 20 27   g.CREATE TABLE '
+|   4000: 74 5f 63 6f 6e 66 69 67 27 28 69 64 20 49 4e 54   t_config'(id INT
+|   4016: 45 47 45 52 20 50 52 49 4d 41 52 59 20 4b 45 59   EGER PRIMARY KEY
+|   4032: 2c 20 76 61 6c 20 41 4e 59 29 34 01 06 17 0f 0f   , val ANY)4.....
+|   4048: 08 5b 74 61 62 6c 65 74 74 43 52 45 41 54 45 20   .[tablettCREATE 
+|   4064: 56 49 52 54 55 41 4c 20 54 41 42 4c 45 20 74 20   VIRTUAL TABLE t 
+|   4080: 55 53 49 4e 47 20 76 65 63 31 28 76 2c 20 6d 29   USING vec1(v, m)
+| page 2 offset 4096
+|      0: 0d 00 00 00 03 0f ef 00 0f f5 0f ef 0f fa 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04   ................
+|   4080: 02 03 00 01 04 03 00 03 00 09 04 05 03 00 01 04   ................
+| page 3 offset 8192
+|      0: 0d 00 00 00 01 0f f2 00 0f f2 00 00 00 00 00 00   ................
+|   4080: 00 00 0c 01 04 00 08 07 40 45 00 00 00 00 00 00   ........@E......
+| page 4 offset 12288
+|      0: 0d 00 00 00 01 0f d8 00 0f d8 00 00 00 00 00 00   ................
+|   4048: 00 00 00 00 00 00 00 00 26 01 06 00 08 09 09 4c   ........&......L
+|   4064: 00 00 00 02 00 00 00 01 00 00 00 00 00 00 00 01   ................
+|   4080: 00 00 80 3f 00 00 00 40 00 00 40 40 00 00 80 40   ...?...@..@@...@
+| page 5 offset 16384
+|      0: 0a 00 00 00 01 0f fa 00 0f fa 00 00 00 00 00 00   ................
+|   4080: 00 00 00 00 00 00 00 00 00 00 05 05 08 09 09 09   ................
+| page 6 offset 20480
+|      0: 0d 00 00 00 01 0f e3 00 0f e3 00 00 00 00 00 00   ................
+|   4064: 00 00 00 1b 01 03 00 3c 00 00 00 04 00 00 00 01   .......<........
+|   4080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01   ................
+| page 7 offset 24576
+|      0: 0d 00 00 00 01 0e 2e 00 0e 2e 00 00 00 00 00 00   ................
+|   3616: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 83 4e   ...............N
+|   3632: 82 00 04 00 87 20 00 00 00 09 00 00 00 00 04 41   ..... .........A
+|   3648: 41 41 41 41 41 41 41 04 41 41 41 41 41 41 41 41   AAAAAAA.AAAAAAAA
+|   3664: 04 41 41 41 41 41 41 41 41 04 41 41 41 41 41 41   .AAAAAAAA.AAAAAA
+|   3680: 41 41 04 41 41 41 41 41 41 41 41 04 41 41 41 41   AA.AAAAAAAA.AAAA
+|   3696: 41 41 41 41 04 41 41 41 41 41 41 41 41 04 41 41   AAAA.AAAAAAAA.AA
+|   3712: 41 41 41 41 41 41 04 41 41 41 41 41 41 41 41 04   AAAAAA.AAAAAAAA.
+|   3728: 41 41 41 41 41 41 41 41 04 41 41 41 41 41 41 41   AAAAAAAA.AAAAAAA
+|   3744: 41 04 41 41 41 41 41 41 41 41 04 41 41 41 41 41   A.AAAAAAAA.AAAAA
+|   3760: 41 41 41 04 41 41 41 41 41 41 41 41 04 41 41 41   AAA.AAAAAAAA.AAA
+|   3776: 41 41 41 41 41 04 41 41 41 41 41 41 41 41 04 41   AAAAA.AAAAAAAA.A
+|   3792: 41 41 41 41 41 41 41 04 41 41 41 41 41 41 41 41   AAAAAAA.AAAAAAAA
+|   3808: 04 41 41 41 41 41 41 41 41 04 41 41 41 41 41 41   .AAAAAAAA.AAAAAA
+|   3824: 41 41 04 41 41 41 41 41 41 41 41 04 41 41 41 41   AA.AAAAAAAA.AAAA
+|   3840: 41 41 41 41 04 41 41 41 41 41 41 41 41 04 41 41   AAAA.AAAAAAAA.AA
+|   3856: 41 41 41 41 41 41 04 41 41 41 41 41 41 41 41 04   AAAAAA.AAAAAAAA.
+|   3872: 41 41 41 41 41 41 41 41 04 41 41 41 41 41 41 41   AAAAAAAA.AAAAAAA
+|   3888: 41 04 41 41 41 41 41 41 41 41 04 41 41 41 41 41   A.AAAAAAAA.AAAAA
+|   3904: 41 41 41 04 41 41 41 41 41 41 41 41 04 41 41 41   AAA.AAAAAAAA.AAA
+|   3920: 41 41 41 41 41 04 41 41 41 41 41 41 41 41 04 41   AAAAA.AAAAAAAA.A
+|   3936: 41 41 41 41 41 41 41 04 41 41 41 41 41 41 41 41   AAAAAAA.AAAAAAAA
+|   3952: 04 41 41 41 41 41 41 41 41 04 41 41 41 41 41 41   .AAAAAAAA.AAAAAA
+|   3968: 41 41 04 41 41 41 41 41 41 41 41 04 41 41 41 41   AA.AAAAAAAA.AAAA
+|   3984: 41 41 41 41 04 41 41 41 41 41 41 41 41 04 41 41   AAAA.AAAAAAAA.AA
+|   4000: 41 41 41 41 41 41 04 41 41 41 41 41 41 41 41 04   AAAAAA.AAAAAAAA.
+|   4016: 41 41 41 41 41 41 41 41 04 41 41 41 41 41 41 41   AAAAAAAA.AAAAAAA
+|   4032: 41 04 41 41 41 41 41 41 41 41 04 41 41 41 41 41   A.AAAAAAAA.AAAAA
+|   4048: 41 41 41 04 41 41 41 41 41 41 41 41 04 41 41 41   AAA.AAAAAAAA.AAA
+|   4064: 41 41 41 41 41 04 41 41 41 41 41 41 41 41 04 41   AAAAA.AAAAAAAA.A
+|   4080: 41 41 41 41 41 41 41 04 41 41 41 41 41 41 41 41   AAAAAAA.AAAAAAAA
+| end poc_oob_write.db
+}]} {}
 
 
+vec1_load db
+do_catchsql_test 3.1 {
+  INSERT INTO t(rowid, v, m) 
+  VALUES (2, vec1_from_json('[5.0,6.0,7.0,8.0]'), 99.0);
+} {1 {database disk image is malformed}}
 
 
+#-------------------------------------------------------------------------
+# Tests for corrupt GENERIC format meta-value arrays. Each test case builds
+# a table with a single list in %_idx and a GENERIC meta-value array in
+# %_meta, corrupts the meta-value array using an SQL UPDATE, then attempts
+# one of the following:
+#
+#   .1  a query with a meta-value filter (vec1DoMetaFilters()),
+#   .2  PRAGMA integrity_check,
+#   .3  an INSERT that appends to the existing list (vec1ListBuilderLoad()
+#       followed by vec1WriteMeta()),
+#   .4  two DELETEs, the second of which causes the list to be compacted
+#       (vec1ListBuilderCompress()).
+#
+# GENERIC meta-value arrays are not checked when they are loaded. Corruption
+# is only reported if an operation actually trips over it while parsing the
+# array. So:
+#
+#   * The INSERT (.3) never parses the existing array, so it succeeds 
+#     unless the 8-byte header itself is corrupt.
+#
+#   * Corruption that leaves every value parseable within the bounds of
+#     the array, such as extra data following the last value, is not 
+#     reported by .1 or .4. PRAGMA integrity_check (.2) only reports it if
+#     the values it parses do not match those in %_base.
+#
+# The meta-value array contains one value of each type. Its layout, with
+# 1-based byte offsets, is:
+#
+#    1..8   header (flags=GENERIC|HASNULL, nEntry=7)
+#    9..12  'one'           0B 6F6E65
+#   13..14  2               01 02
+#   15..23  3.5             04 400C000000000000
+#   24      NULL            00
+#   25..27  x'0102'         0A 0102
+#   28..32  100000          02 000186A0
+#   33..41  10000000000     03 00000002540BE400
+#
+proc vec1corrupt_build {} {
+  reset_db
+  vec1_load db
+  execsql {
+    CREATE VIRTUAL TABLE v1 USING vec1(v, m);
+    INSERT INTO v1(rowid, v, m) VALUES
+      (1, vec1_from_json('[1,0,0,0]'), 'one'),
+      (2, vec1_from_json('[0,1,0,0]'), 2),
+      (3, vec1_from_json('[0,0,1,0]'), 3.5),
+      (4, vec1_from_json('[0,0,0,1]'), NULL),
+      (5, vec1_from_json('[1,1,0,0]'), x'0102'),
+      (6, vec1_from_json('[1,1,1,0]'), 100000),
+      (7, vec1_from_json('[1,1,1,1]'), 10000000000);
+    INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  }
+}
 
+# Return the varint encoding of integer $v, as written by vec1PutVarint(),
+# as a hex string.
+proc vec1corrupt_varint {v} {
+  set res [format %02X [expr {$v & 0x7F}]]
+  set v [expr {$v >> 7}]
+  while {$v>0} {
+    set res "[format %02X [expr {($v & 0x7F) | 0x80}]]$res"
+    set v [expr {$v >> 7}]
+  }
+  set res
+}
 
+# Expected results for the 4 operations described above.
+#
+#   vec1corrupt_ok:      results for an array that is either not corrupt,
+#                        or is corrupt in a way that is never tripped over.
+#
+#   vec1corrupt_parse:   results for an array with a valid header, but that
+#                        cannot be parsed. Everything except the INSERT
+#                        reports corruption.
+#
+#   vec1corrupt_header:  results for an array with a corrupt header. All 
+#                        4 operations report corruption.
+#
+set vec1corrupt_malformed {1 {database disk image is malformed}}
+set vec1corrupt_intck [list "v1: error reading meta-list id=1,meta=0"]
+set vec1corrupt_ok [list {0 1} ok {0 {}} {0 {}}]
+set vec1corrupt_parse [list \
+  $vec1corrupt_malformed $vec1corrupt_intck {0 {}} $vec1corrupt_malformed
+]
+set vec1corrupt_header [list \
+  $vec1corrupt_malformed $vec1corrupt_intck \
+  $vec1corrupt_malformed $vec1corrupt_malformed
+]
 
+# Run the 4 operations described above against the meta-value array 
+# produced by SQL expression $expr (which may refer to the uncorrupted
+# array as "val"). Test case names are $tn.1 through $tn.4. Parameter
+# $lExpect is a list of the 4 expected results.
+proc vec1corrupt_generic_test {tn expr lExpect} {
+  set corrupt "UPDATE v1_meta SET val = ($expr) WHERE id=256"
+
+  vec1corrupt_build
+  execsql $corrupt
+  do_catchsql_test $tn.1 {
+    SELECT rowid FROM v1(vec1_from_json('[1,0,0,0]'), 10) WHERE m='one'
+  } [lindex $lExpect 0]
+
+  vec1corrupt_build
+  execsql $corrupt
+  do_execsql_test $tn.2 {
+    PRAGMA integrity_check
+  } [lindex $lExpect 1]
+
+  vec1corrupt_build
+  execsql $corrupt
+  do_catchsql_test $tn.3 {
+    INSERT INTO v1(rowid, v, m) VALUES(8, vec1_from_json('[1,2,3,4]'), 'eight')
+  } [lindex $lExpect 2]
+
+  vec1corrupt_build
+  execsql $corrupt
+  do_catchsql_test $tn.4 {
+    DELETE FROM v1 WHERE rowid=1;
+    DELETE FROM v1 WHERE rowid=2;
+  } [lindex $lExpect 3]
+}
+
+# Check the layout of the meta-value array is as described above. And
+# that the uncorrupted array works.
+vec1corrupt_build
+do_execsql_test 4.0 {
+  SELECT id, hex(val) FROM v1_meta;
+} {256 
+  00000011000000070B6F6E65010204400C000000000000000A010202000186A00300000002540BE400
+}
+vec1corrupt_generic_test 4.1 { val } $vec1corrupt_ok
+
+# Truncate the array at every possible point. Truncating it to less than
+# 8 bytes corrupts the header.
+for {set n 0} {$n<41} {incr n} {
+  set lExpect [expr {$n<8 ? $vec1corrupt_header : $vec1corrupt_parse}]
+  vec1corrupt_generic_test 4.2.$n " 
+    unhex(substr(hex(val), 1, $n*2)) 
+  " $lExpect
+}
+
+# Extra data following the last value. This is never tripped over.
+vec1corrupt_generic_test 4.3.1 { unhex(hex(val) || '00') } $vec1corrupt_ok
+vec1corrupt_generic_test 4.3.2 { 
+  unhex(hex(val) || '0B6F6E65') 
+} $vec1corrupt_ok
+
+# Bad text/blob length varints for the first value. Lengths that are too
+# small, too large, negative when cast to a 32-bit int, or a varint that
+# runs off the end of the array.
+#
+# Case 9 is a length just smaller than 2^31. When added to the offset of
+# the value within the array (8), plus the size of the varint (5), this
+# overflows a 32-bit signed int.
+#
+# Case 2 makes the first value 1 byte longer than it should be. This
+# misaligns the rest of the array, but by chance all 7 values can still
+# be parsed without running off the end of it. So the query and DELETE
+# succeed, and integrity_check only notices because the parsed values do
+# not match those in %_base.
+set vec1corrupt_misaligned [list \
+  {0 {}} [list "v1: meta-value value mismatch for row 1"] {0 {}} {0 {}}
+]
+foreach {tn varint lExpect} [list \
+  1 09                                        $vec1corrupt_parse      \
+  2 0D                                        $vec1corrupt_misaligned \
+  3 8F7F                                      $vec1corrupt_parse      \
+  4 FF                                        $vec1corrupt_parse      \
+  5 [vec1corrupt_varint [expr {0x1FFFFFFFF}]] $vec1corrupt_parse      \
+  6 [vec1corrupt_varint [expr {2*0xFFFFFF00 + 5}]] $vec1corrupt_parse \
+  7 [vec1corrupt_varint [expr {2*0x7FFFFFFF + 5}]] $vec1corrupt_parse \
+  8 FFFFFFFFFFFFFFFFFF7F                      $vec1corrupt_parse      \
+  9 [vec1corrupt_varint [expr {2*0x7FFFFFF6 + 5}]] $vec1corrupt_parse \
+] {
+  vec1corrupt_generic_test 4.4.$tn "
+    unhex(substr(hex(val), 1, 16) || '$varint' || substr(hex(val), 19))
+  " $lExpect
+}
+
+# Bad blob length varint for the 5th value.
+foreach {tn varint} [list \
+  1 08                                                   \
+  2 [vec1corrupt_varint [expr {2*0xFFFFFF00 + 6}]]       \
+] {
+  vec1corrupt_generic_test 4.5.$tn "
+    unhex(substr(hex(val), 1, 48) || '$varint' || substr(hex(val), 51))
+  " $vec1corrupt_parse
+}
+
+# A varint that is not terminated before the end of the array. 
+vec1corrupt_generic_test 4.6.1 { 
+  unhex(substr(hex(val), 1, 16) || 'FFFFFFFF') 
+} $vec1corrupt_parse
+vec1corrupt_generic_test 4.6.2 { 
+  unhex(substr(hex(val), 1, 64) || 'FFFFFFFFFFFFFFFFFF') 
+} $vec1corrupt_parse
 
 finish_test
-

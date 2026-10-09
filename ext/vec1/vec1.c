@@ -668,7 +668,7 @@ static void vec1HeapInsert(Vec1AnnHeap *p, sqlite3_int64 iRowid, double fDist){
 ** encountered.
 */
 static int vec1BufferGrow(Vec1Buffer *pBuf, sqlite3_int64 nByte){
-  if( pBuf->n+nByte>pBuf->nAlloc ){
+  if( nByte>pBuf->nAlloc-pBuf->n ){
     sqlite3_int64 nNew = pBuf->nAlloc;
     unsigned char *aNew = 0;
 
@@ -5421,6 +5421,11 @@ static void vec1ModelFreeTCent(Vec1Model *pMod){
 #define VEC1_META_4BYTEMAX   +2147483646
 #define VEC1_META_4BYTENULL  +2147483647
 
+/* When a meta-value array is loaded from disk, at least VEC1_META_PADDING
+** extra bytes of memory are allocated. This is to allow readers to safely
+** overread the record slightly if it is corrupt.  */
+#define VEC1_META_PADDING 20
+
 typedef struct Vec1Tab Vec1Tab;
 typedef struct Vec1Csr Vec1Csr;
 
@@ -7020,13 +7025,21 @@ static int vec1PutVarint(u8 *aBuf, u64 v){
 }
 
 static int vec1GetVarint(const u8 *aBuf, u64 *piVal){
-  int nRet = 0;
   u64 out = 0;
-  do {
-    out = (out<<7) + (aBuf[nRet] & 0x7F);
-  } while( aBuf[nRet++] & 0x80 );
+  int ii = 0;
+
+  out = (aBuf[0] & 0x7F);
+  if( aBuf[0] & 0x80 ){
+    for(ii=1; ii<9; ii++){
+      out = (out<<7) + (aBuf[ii] & 0x7F);
+      if( (aBuf[ii] & 0x80)==0 ){
+        break;
+      }
+    }
+  }
+
   *piVal = out;
-  return nRet;
+  return ii+1;
 }
 
 /*
@@ -7122,6 +7135,7 @@ static void vec1BinaryQuantLUTBuild(
 */
 static int vec1ReadMeta(
   Vec1Tab *pTab,                  /* Vec1 virtual table */
+  u32 nExpect,                    /* Expected number of entries */
   Vec1Buffer *pBuf,               /* Buffer to read into */
   i64 iId,                        /* Id of %_idx row */
   int iMeta                       /* Index of meta-column */
@@ -7137,18 +7151,47 @@ static int vec1ReadMeta(
     sqlite3_bind_int64(pStmt, 1, iMetaId);
     if( SQLITE_ROW==sqlite3_step(pStmt) ){
       int nByte = sqlite3_column_bytes(pStmt, 0);
-      rc = vec1BufferGrow(pBuf, nByte);
+      rc = vec1BufferGrow(pBuf, nByte + VEC1_META_PADDING);
       if( rc==SQLITE_OK ){
         const u8 *a = sqlite3_column_blob(pStmt, 0);
         memcpy(pBuf->a, a, nByte);
+        memset(&pBuf->a[nByte], 0, VEC1_META_PADDING);
         pBuf->n = nByte;
       }
     }
-
     vec1StmtReset(&rc, pStmt);
-    if( rc==SQLITE_OK && pBuf->n==0 ){
-      rc = VEC1_CORRUPT;
+
+    /* Check, so far as is possible, that the meta-value blob is the 
+    ** expected size. It is not possible to check if the meta-value blob
+    ** uses the GENERIC format, due to the variable length fields. Code
+    ** that handles GENERIC meta-value blobs has to dynamically verify
+    ** the buffer size. */
+    if( rc==SQLITE_OK ){
+      if( pBuf->n<VEC1_META_SZHDR ){
+        rc = VEC1_CORRUPT;
+      }else{
+        u32 tflag = (vec1GetU32(&pBuf->a[0]) & VEC1_META_TYPEMASK);
+        u32 nEntry = vec1GetU32(&pBuf->a[4]);
+        i64 sz = 0;
+        if( nEntry!=nExpect ){
+          rc = VEC1_CORRUPT;
+        }
+        if( tflag==VEC1_META_1BYTEINT ){
+          sz = 1;
+        }else if( tflag==VEC1_META_4BYTEINT ){
+          sz = sizeof_u32;
+        }else if( tflag==VEC1_META_REAL ){
+          sz = sizeof_f64;
+        }else if( tflag!=VEC1_META_GENERIC ){
+          rc = VEC1_CORRUPT;
+        }
+
+        if( sz && pBuf->n!=(VEC1_META_SZHDR + sz*nEntry) ){
+          rc = VEC1_CORRUPT;
+        }
+      }
     }
+
   }
 
   return rc;
@@ -7162,11 +7205,12 @@ static int vec1ReadMeta(
 **        4: Real value. 8 byte payload.
 */
 static int vec1MetaValueRead(
-  Vec1Buffer *pMeta, 
-  int *piOff, 
+  Vec1Buffer *pMeta,
+  int *piOff,
   Vec1MetaValue *pVal
 ){
-  int iOff = *piOff;
+  i64 iOff = (i64)*piOff;
+
   switch( pMeta->a[iOff] ){
     case 0: {
       pVal->eType = SQLITE_NULL;
@@ -7207,14 +7251,18 @@ static int vec1MetaValueRead(
       u64 eType = 0;
       iOff += vec1GetVarint(&pMeta->a[iOff], &eType);
       pVal->pPtr = &pMeta->a[iOff];
-      pVal->iVal = (eType-5) / 2;
-      iOff += (int)pVal->iVal;
+      pVal->iVal = (((eType-5) / 2) & (u64)0xFFFFFFFF);
+      iOff += pVal->iVal;
       pVal->eType = (eType & 0x01) ? SQLITE_TEXT : SQLITE_BLOB;
       break;
     }
   }
 
-  *piOff = iOff;
+  if( iOff>pMeta->n || iOff<0 ){
+    return VEC1_CORRUPT;
+  }
+
+  *piOff = (int)iOff;
   return SQLITE_OK;
 }
 
@@ -7907,7 +7955,7 @@ static VEC1_NOINLINE int vec1DoMetaFilters(
   for(ii=0; rc==SQLITE_OK && ii<pQuery->nFilter; ii++){
     Vec1Filter *pFilter = &pQuery->aFilter[ii];
     VEC1_QINSTR_START(pTab, VEC1_QINSTR_METAREAD);
-    rc = vec1ReadMeta(pTab, pMeta, iId, pFilter->iMeta);
+    rc = vec1ReadMeta(pTab, nEntry, pMeta, iId, pFilter->iMeta);
     VEC1_QINSTR_STOP(pTab, VEC1_QINSTR_METAREAD);
 
     VEC1_QINSTR_START(pTab, VEC1_QINSTR_METASCAN);
@@ -7944,7 +7992,8 @@ static VEC1_NOINLINE int vec1DoMetaFilters(
         int iOff = VEC1_META_SZHDR;
         for(jj=0; jj<nEntry; jj++){
           Vec1MetaValue val;
-          vec1MetaValueRead(pMeta, &iOff, &val);
+          rc = vec1MetaValueRead(pMeta, &iOff, &val);
+          if( rc!=SQLITE_OK ) break;
           if( vec1MetaValueFilter(pFilter, &val) ){
             pBitmask->a[jj / 8] |= (1 << (jj % 8));
           }
@@ -9805,7 +9854,8 @@ static int vec1WriteMeta(
     if( rc!=SQLITE_OK ) return rc;
 
     while( iIn<p->buf.n ){
-      vec1MetaValueRead(&p->buf, &iIn, &val);
+      rc = vec1MetaValueRead(&p->buf, &iIn, &val);
+      if( rc!=SQLITE_OK ) break;
       if( val.eType==SQLITE_NULL ){
         val.iVal = iNull;
       }else if( p->format==VEC1_META_REAL ){
@@ -9839,7 +9889,7 @@ static int vec1WriteMeta(
 ** A serialized meta-value is stored in buffer aBuf. Return the size in
 ** bytes of the meta value.
 */
-static int vec1MetaValueSize(const u8 *aBuf){
+static i64 vec1MetaValueSize(const u8 *aBuf){
   switch( aBuf[0] ){
     case 0: return 1;               /* NULL */
     case 1: return 2;               /* 1-byte integer */
@@ -9855,26 +9905,10 @@ static int vec1MetaValueSize(const u8 *aBuf){
       */
       i64 V = 0;
       int n = vec1GetVarint(aBuf, (u64*)&V);
-      return (int)(((V-5)/2) + n);
+      return (((V-5)/2) & (i64)0xFFFFFFFF) + n;
     }
   }
 }
-
-#ifndef NDEBUG
-/*
-** This may be used in assert() statements to check that the meta-value
-** list contains the expected number of elements.
-*/
-static int vec1MetaValueCheck(Vec1Buffer *pBuf, int nEntry){
-  int iOff = 0;
-  int ii;
-  for(ii=0; ii<nEntry; ii++){
-    iOff += vec1MetaValueSize(&pBuf->a[iOff]);
-  }
-  assert( iOff==pBuf->n );
-  return 1;
-}
-#endif
 
 static int vec1ListBuilderLoad(
   Vec1ListBuilder *p,
@@ -9932,7 +9966,7 @@ static int vec1ListBuilderLoad(
   /* Load the array for each meta-data column from the %_meta table */
   for(ii=0; rc==SQLITE_OK && ii<pTab->nMeta; ii++){
     Vec1MetaBuilder *pMeta = &p->aMeta[ii];
-    rc = vec1ReadMeta(pTab, &pMeta->buf, iId, ii);
+    rc = vec1ReadMeta(pTab, nEntry, &pMeta->buf, iId, ii);
     if( rc==SQLITE_OK ){
       u32 f = vec1GetU32(pMeta->buf.a);
       pMeta->format = (f & VEC1_META_TYPEMASK);
@@ -10159,9 +10193,12 @@ static int vec1ListBuilderCompress(
       Vec1MetaBuilder *pMeta = &p->aMeta[iMeta];
       u8 *a = pMeta->buf.a;
 
-
       if( pMeta->format==VEC1_META_GENERIC ){
-        int nIn = vec1MetaValueSize(&a[aMetaIn[iMeta]]);
+        i64 nIn = vec1MetaValueSize(&a[aMetaIn[iMeta]]);
+        if( nIn<=0 || nIn>pMeta->buf.n-aMetaIn[iMeta] ){
+          sqlite3_free(aMetaIn);
+          return VEC1_CORRUPT;
+        }
         if( bTombstone==0 ){
           if( aMetaIn[iMeta]!=aMetaOut[iMeta] ){
             memmove(&a[ aMetaOut[iMeta] ], &a[ aMetaIn[iMeta] ], nIn);
@@ -10758,6 +10795,10 @@ static int vec1WriterMetaFromStmt(
 /*
 ** Read nMeta values from buffer pBuf. Use them as the meta values associated
 ** with the (compressed) vector just appended to bucket iBucket.
+**
+** This is only called on a buffer that has been constructed in process,
+** not one loaded from disk, so it is safe to assume that pBuf really does
+** contain nMeta well-formed values.
 */
 static int vec1WriterMetaFromPacked(
   Vec1Writer *pWriter,            /* Writer object accumulating changes */
@@ -10769,7 +10810,7 @@ static int vec1WriterMetaFromPacked(
   int iOff = *piOff;
   for(ii=0; ii<pWriter->pTab->nMeta; ii++){
     Vec1MetaBuilder *pTo = &pWriter->aBld[iBucket].aMeta[ii];
-    int n = vec1MetaValueSize(&pBuf->a[iOff]);
+    i64 n = vec1MetaValueSize(&pBuf->a[iOff]);
     int rc = vec1BufferGrow(&pTo->buf, n);
     vec1MetaValueUpdateFlags(&pBuf->a[iOff], &pTo->flags);
     if( rc!=SQLITE_OK ) return rc;
@@ -11551,7 +11592,7 @@ static int vec1DeleteByRowid(Vec1Tab *pTab, i64 iRowid){
           ** the threshold. So reorganize the list and remove iRowid in
           ** one go.  */
           if( loc.pList ){
-            vec1ListBuilderCompress(loc.pList, iRowid);
+            rc = vec1ListBuilderCompress(loc.pList, iRowid);
           }else{
             /* Load the list into memory, compress it so there are no
             ** tombstones, then write it back to the database.  */
@@ -11910,7 +11951,7 @@ static int vec1IntegrityMetaValue(
     vec1MetaValueRead(pBuf, &iOff, &val);
   }
 
-  if( pVal ){
+  if( rc==SQLITE_OK && pVal ){
     int eType = sqlite3_value_type(pVal);
     int bMatch = 0;
     switch( eType ){
@@ -12076,6 +12117,27 @@ static int vec1IntegrityCheckEncoded(
 }
 
 /*
+** The buffer passed as the only argument contains a meta-value array. If
+** it is of type GENERIC, test that it is well-formed. Return VEC1_CORRUPT
+** if it is not, or SQLITE_OK if it looks ok.
+*/
+static int vec1IntegrityCheckMetaArray(Vec1Buffer *pBuf){
+  int rc = SQLITE_OK;
+  int bGeneric = vec1GetU32(pBuf->a) & VEC1_META_GENERIC;
+  if( bGeneric ){
+    u32 nEntry = vec1GetU32(&pBuf->a[4]);
+    u32 ii;
+    int iOff = VEC1_META_SZHDR;
+    for(ii=0; rc==SQLITE_OK && ii<nEntry; ii++){
+      Vec1MetaValue dummy;
+      rc = vec1MetaValueRead(pBuf, &iOff, &dummy);
+    }
+  }
+  return rc;
+}
+
+
+/*
 ** Integrity check method. If the table has been supplied with a model,
 ** loop through the %_idx table. For each 
 */
@@ -12172,7 +12234,11 @@ static int vec1IntegrityMethod(
 
       /* Load the array for each meta-value column from disk */
       for(iMeta=0; iMeta<pTab->nMeta; iMeta++){
-        rc = vec1ReadMeta(pTab, &aBufMeta[iMeta], iId, iMeta);
+        rc = vec1ReadMeta(pTab, nEntry, &aBufMeta[iMeta], iId, iMeta);
+
+        if( rc==SQLITE_OK ){
+          rc = vec1IntegrityCheckMetaArray(&aBufMeta[iMeta]);
+        }
         if( rc!=SQLITE_OK ){
           if( rc==SQLITE_CORRUPT_VTAB ){
             const char *zFmt = "%s: error reading meta-list id=%lld,meta=%d";
