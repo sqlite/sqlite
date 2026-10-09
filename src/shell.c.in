@@ -1066,6 +1066,9 @@ static const char *shellPromptAppDef(int c){
 /*
 ** SQL function:  sqlite3_incomplete(TEXT)
 **
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
+**
 ** Invoke the sqlite3_incomplete() interface and return its result.
 */
 static void shellIncompleteFunc(
@@ -1222,6 +1225,9 @@ static void appendCompletion(
 /*
 ** SQL function:  shell_complete_sql(SQL)
 **                shell_complete_sql(SQL, FLAGS)
+**
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
 **
 ** If the SQL input is a string, return a new string which is the same
 ** text with all pending quotes and comments finish, so that the
@@ -1801,6 +1807,9 @@ static char *shellFakeSchema(
 /*
 ** SQL function:  strtod(X)
 **
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
+**
 ** Use the C-library strtod() function to convert string X into a double.
 ** Used for comparing the accuracy of SQLite's internal text-to-float conversion
 ** routines against the C-library.
@@ -1818,6 +1827,9 @@ static void shellStrtod(
 
 /*
 ** SQL function:  dtostr(X)
+**
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
 **
 ** Use the C-library printf() function to convert real value X into a string.
 ** Used for comparing the accuracy of SQLite's internal float-to-text conversion
@@ -1840,6 +1852,9 @@ static void shellDtostr(
 
 /*
 ** SQL function:  shell_add_schema(S,X,N)
+**
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
 **
 ** Add the schema X to the CREATE statement in S for table N and return
 ** the result.
@@ -1912,6 +1927,9 @@ static void shellAddSchemaName(
 
 /*
 ** SQL function:  shell_prompt_test(PROMPT,PRIOR,FILENAME,FLAGS)
+**
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
 **
 ** Return the shell prompt, with escapes expanded, for testing purposes.
 ** The first argument is the raw (unexpanded) prompt string.  Or if the
@@ -2398,6 +2416,9 @@ static void shellLog(void *pArg, int iErrCode, const char *zMsg){
 
 /*
 ** SQL function:  shell_putsnl(X)
+**
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
 **
 ** Write the text X to the screen (or whatever output is being directed)
 ** adding a newline at the end, and then return X.
@@ -2981,6 +3002,9 @@ static int wsToEol(const char *z){
 
 /*
 ** SQL Function:  shell_format_schema(SQL,FLAGS)
+**
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
 **
 ** This function is internally by the CLI to assist with the
 ** ".schema", ".fullschema", and ".dump" commands.  The first
@@ -5062,6 +5086,9 @@ static void shellUSleepFunc(
 /*
 ** SQL function:  shell_module_schema(X)
 **
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
+**
 ** Return a fake schema for the table-valued function or eponymous virtual
 ** table X.
 */
@@ -6672,6 +6699,9 @@ static void newTempFile(ShellState *p, const char *zSuffix){
 
 /*
 ** SQL function:  shell_temp_filename(SUFFIX)
+**
+** For use internally and for debugging and testing only.  This function
+** is subject to change or removal in future versions.
 **
 ** Return a randomly generated temporary filename.
 */
