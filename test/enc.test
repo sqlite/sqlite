@@ -278,4 +278,15 @@ ifcapable rtree {
   } {ok ok ok}
 }
 
+# Bug 2026-10-07T15:44:40Z
+#
+do_execsql_test enc-14.1 {
+  CREATE TABLE t14(n, c);
+  INSERT INTO t14 VALUES
+     (1000, CAST(printf('%.*c', 1000, 'a') AS BLOB)),
+     (5000, CAST(printf('%.*c', 5000, 'a') AS BLOB));
+  SELECT n, length(c), length(CAST(c AS TEXT))
+    FROM t14 ORDER BY +n;
+} {1000 2000 1000 5000 10000 5000}
+
 finish_test

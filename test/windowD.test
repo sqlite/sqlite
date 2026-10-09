@@ -85,10 +85,63 @@ do_execsql_test 2.6 {
   SELECT * FROM v2 WHERE 500 IS c;
 } {}
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/info/2026-10-08T15:38:26Z
+#
 
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  CREATE TABLE t3(c);
+  INSERT INTO t1 VALUES (NULL);
+  INSERT INTO t2 VALUES (NULL);
+  INSERT INTO t3 VALUES (NULL);
+}
 
+do_execsql_test 3.1 {
+  SELECT 
+    (SELECT count(*) FROM t1 LEFT JOIN t2 ON t3.c) 
+  FROM t3;
+} {1}
 
+do_execsql_test 3.2 {
+  SELECT 
+    count(*) OVER (), 
+    (SELECT count(*) FROM t1 LEFT JOIN t2 ON t3.c) 
+  FROM t3;
+} {1 1}
 
+do_execsql_test 3.3 {
+  SELECT count(*) FROM t1 LEFT JOIN t2 ON t1.a=t2.b
+} {1}
+
+do_execsql_test 3.4 {
+  SELECT count(*) OVER (), count(*) FROM t1 LEFT JOIN t2 ON t1.a=t2.b
+} {1 1}
+
+do_execsql_test 3.5 {
+  CREATE TABLE t4(d);
+  INSERT INTO t4 VALUES (NULL);
+  SELECT
+    count(*) OVER (),
+    (SELECT count(*) FROM t1 JOIN t2 ON t3.c RIGHT JOIN t4 ON 1)
+  FROM t3;
+} {1 1}
+
+do_execsql_test 3.6 {
+  SELECT
+    count(*) OVER (),
+    (SELECT count(*) FROM t1 RIGHT JOIN t2 ON t3.c)
+  FROM t3;
+} {1 1}
+
+do_execsql_test 3.7 {
+  SELECT
+    count(*) OVER (),
+    (SELECT count(*) FROM t1 FULL JOIN t2 ON t3.c)
+  FROM t3;
+} {1 2}
 
 finish_test
 

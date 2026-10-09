@@ -1656,13 +1656,15 @@ proc sqlite-handle-dll-basename {} {
 }
 
 ########################################################################
+# Handles the --out-implib flag.
+#
 # [define]s LDFLAGS_OUT_IMPLIB to either an empty string or to a
 # -Wl,... flag for the platform-specific --out-implib flag, which is
 # used for building an "import library .dll.a" file on some platforms
-# (e.g. msys2, mingw). SQLITE_OUT_IMPLIB is defined to the name of the
-# import lib or an empty string. Returns 1 if supported, else 0.
+# (e.g. msys2, mingw). Returns 1 if supported, else 0.
 #
-# The name of the import library is [define]d in SQLITE_OUT_IMPLIB.
+# The name of the import library is [define]d in SQLITE_OUT_IMPLIB,
+# as an empty string if it's not supported.
 #
 # If the configure flag --out-implib is not used (or programmatically
 # set) then this simply sets the above-listed defines to empty strings
@@ -2125,10 +2127,12 @@ proc sqlite-check-tcl {} {
       if {"" ne $with_tclsh &&
           [catch {exec echo "puts stdout \$auto_path" | "$with_tclsh"} result] == 0} {
         foreach i $result {
-          if {[file isdir $i]} {
+          if {![string match "//zipfs:*" $i] && [file isdir $i]} {
+            # Tcl9 may report //zipfs paths as dirs. Filter those out.
             set tcllibdir $i/sqlite${sq3Ver}
             break
           }
+          # proj-warn "filtering out auto_path $i"
         }
       } else {
         proj-warn "Cannot determine TCLLIBDIR."
