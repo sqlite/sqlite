@@ -25,7 +25,7 @@ set CLI [test_cli_invocation]
 proc do_clitest {name args} {
   set mapping [list <NAME> $::testdir/$name <CLI> $::CLI <ARGS> $args]
   set script [string map $mapping {
-    catch {exec <CLI> <ARGS> :memory: ".read <NAME>" 2>@stdout} res
+    catch {exec <CLI> <ARGS> :memory: <NAME> 2>@stdout} res
     set ntest 0
     set nerr 999
     regexp {(\d+) tests? run with (\d+) errors?} $res all ntest nerr
@@ -68,6 +68,12 @@ do_clitest imposter1.sql
 do_clitest sha1.sql
 do_clitest complete_sql.sql
 do_clitest clierrors.sql
+set probe $testdir/probe.txt
+forcedelete $probe
+set f [open $probe wb]
+puts -nonewline $f xyzzy
+close $f
+do_clitest safemode.sql --safe
 ifcapable vtab {
   do_clitest dotcmd01.sql
   do_clitest import01.sql
