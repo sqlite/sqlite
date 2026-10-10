@@ -12719,6 +12719,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
              unsigned int bDsply;  /* Display this on output */
              const char *zLabel;   /* Name of optimization */
           } aLabel[] = {
+            /* Keep these values in sync with the th3dbOpt() function of TH3 */
             { 0x00000001, 1, "QueryFlattener" },
             { 0x00000001, 0, "Flatten" },
             { 0x00000002, 1, "WindowFunc" },
