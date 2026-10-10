@@ -1594,6 +1594,7 @@ TESTEXT = \
   $(TOP)\ext\misc\mmapwarm.c \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\normalize.c \
+  $(TOP)\ext\misc\optname.c \
   $(TOP)\ext\misc\prefixes.c \
   $(TOP)\ext\misc\qpvtab.c \
   $(TOP)\ext\misc\randomjson.c \

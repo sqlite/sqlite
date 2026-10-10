@@ -291,6 +291,7 @@ INCLUDE ../ext/misc/uint.c
 INCLUDE ../ext/misc/decimal.c
 INCLUDE ../ext/misc/base64.c
 INCLUDE ../ext/misc/base85.c
+INCLUDE ../ext/misc/optname.c
 INCLUDE ../ext/misc/ieee754.c
 INCLUDE ../ext/misc/series.c
 INCLUDE ../ext/misc/regexp.c
@@ -12714,51 +12715,14 @@ static int do_meta_command(const char *zLine, ShellState *p){
         **      INTEGER      Mask of optimizations to disable
         */
         case SQLITE_TESTCTRL_OPTIMIZATIONS: {
-          static const struct {
-             unsigned int mask;    /* Mask for this optimization */
-             unsigned int bDsply;  /* Display this on output */
-             const char *zLabel;   /* Name of optimization */
-          } aLabel[] = {
-            /* Keep these values in sync with the th3dbOpt() function of TH3 */
-            { 0x00000001, 1, "QueryFlattener" },
-            { 0x00000001, 0, "Flatten" },
-            { 0x00000002, 1, "WindowFunc" },
-            { 0x00000004, 1, "GroupByOrder" },
-            { 0x00000008, 1, "JoinMiss" },
-            { 0x00000010, 1, "DistinctOpt" },
-            { 0x00000020, 1, "CoverIdxScan" },
-            { 0x00000040, 1, "OrderByIdxJoin" },
-            { 0x00000080, 1, "Transitive" },
-            { 0x00000100, 1, "OmitNoopJoin" },
-            { 0x00000200, 1, "CountOfView" },
-            { 0x00000400, 1, "CursorHints" },
-            { 0x00000800, 1, "Stat4" },
-            { 0x00001000, 1, "PushDown" },
-            { 0x00002000, 1, "SimplifyJoin" },
-            { 0x00004000, 1, "SkipScan" },
-            { 0x00008000, 1, "PropagateConst" },
-            { 0x00010000, 1, "MinMaxOpt" },
-            { 0x00020000, 1, "SeekScan" },
-            { 0x00040000, 1, "OmitOrderBy" },
-            { 0x00080000, 1, "BloomFilter" },
-            { 0x00200000, 1, "BalancedMerge" },
-            { 0x00400000, 1, "ReleaseReg" },
-            { 0x00800000, 1, "FlttnUnionAll" },
-            { 0x01000000, 1, "IndexedEXpr" },
-            { 0x02000000, 1, "Coroutines" },
-            { 0x04000000, 1, "NullUnusedCols" },
-            { 0x08000000, 1, "OnePass" },
-            { 0x10000000, 1, "OrderBySubq" },
-            { 0x20000000, 1, "StarQuery" },
-            { 0x40000000, 1, "ExistsToJoin" },
-            { 0x80000000, 1, "UnionLimit" },
-            { 0xffffffff, 0, "All" },
-          };
-          unsigned int curOpt;
-          unsigned int newOpt;
-          unsigned int m;
-          int ii;
-          int nOff;
+          unsigned int curOpt;       /* Current opt-disabled mask */
+          unsigned int newOpt;       /* New opt-disabled mask */
+          unsigned int m;            /* A working mask value */
+          sqlite3_uint64 mm;         /* 64-bit working mask value */
+          int ii, jj;                /* Loop counters */
+          int nOff;                  /* Number of disabled optimizations */
+          const char *zName;         /* Name of an optimization */
+
           sqlite3_test_control(SQLITE_TESTCTRL_GETOPT, p->db, &curOpt);
           newOpt = curOpt;
           for(ii=2; ii<nArg; ii++){
@@ -12775,25 +12739,23 @@ static int do_meta_command(const char *zLine, ShellState *p){
               newOpt = (unsigned int)strtol(z,0,0);
             }
             if( useLabel ){
-              int jj;
-              for(jj=0; jj<ArraySize(aLabel); jj++){
-                if( sqlite3_stricmp(zLabel, aLabel[jj].zLabel)==0 ) break;
-              }
-              if( jj>=ArraySize(aLabel) ){
+              if( sqlite3_optimization_mask(zLabel,&mm)==SQLITE_NOTFOUND ){
                 cli_printf(stderr,
                     "Error: no such optimization: \"%s\"\n", zLabel);
-                cli_puts("Should be one of:", stderr);
-                for(jj=0; jj<ArraySize(aLabel); jj++){
-                  cli_printf(stderr," %s", aLabel[jj].zLabel);
+                cli_puts("Should be one of: All", stderr);
+                for(jj=0; jj<32; jj++){
+                  zName = sqlite3_optimization_name(1ull<<jj);
+                  if( zName ) cli_printf(stderr," %s", zName);
                 }
                 cli_puts("\n", stderr);
                 rc = 1;
                 goto meta_command_exit;
               }
+              m = (u32)mm;
               if( useLabel=='+' ){
-                newOpt &= ~aLabel[jj].mask;
+                newOpt &= ~m;
               }else{
-                newOpt |= aLabel[jj].mask;
+                newOpt |= m;
               }
             }
           }
@@ -12805,18 +12767,17 @@ static int do_meta_command(const char *zLine, ShellState *p){
           }
           if( nOff<12 ){
             cli_puts("+All", p->out);
-            for(ii=0; ii<ArraySize(aLabel); ii++){
-              if( !aLabel[ii].bDsply  ) continue;
-              if( (newOpt & aLabel[ii].mask)!=0 ){
-                cli_printf(p->out, " -%s", aLabel[ii].zLabel);
+            for(ii=0, m=1; ii<32; ii++, m <<= 1){
+              const char *zName;
+              if( (newOpt & m)!=0 && (zName = sqlite3_optimization_name(m))!=0 ){
+                cli_printf(p->out, " -%s", zName);
               }
             }
           }else{
             cli_puts("-All", p->out);
-            for(ii=0; ii<ArraySize(aLabel); ii++){
-              if( !aLabel[ii].bDsply  ) continue;
-              if( (newOpt & aLabel[ii].mask)==0 ){
-                cli_printf(p->out, " +%s", aLabel[ii].zLabel);
+            for(ii=0, m=1; ii<32; ii++, m <<= 1){
+              if( (newOpt & m)==0 && (zName = sqlite3_optimization_name(m))!=0 ){
+                cli_printf(p->out, " +%s", zName);
               }
             }
           }

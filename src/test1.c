@@ -8539,35 +8539,15 @@ static int SQLITE_TCLAPI optimization_control(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int i;
+  size_t i, j, k;
   sqlite3 *db;
   const char *zOpt;
   int onoff;
-  int mask = 0;
-  int cnt = 0;
-  static const struct {
-    const char *zOptName;
-    int mask;
-  } aOpt[] = {
-    { "all",                 SQLITE_AllOpts        },
-    { "none",                0                     },
-    { "query-flattener",     SQLITE_QueryFlattener },
-    { "groupby-order",       SQLITE_GroupByOrder   },
-    { "distinct-opt",        SQLITE_DistinctOpt    },
-    { "cover-idx-scan",      SQLITE_CoverIdxScan   },
-    { "order-by-idx-join",   SQLITE_OrderByIdxJoin },
-    { "order-by-subquery",   SQLITE_OrderBySubq    },
-    { "transitive",          SQLITE_Transitive     },
-    { "omit-noop-join",      SQLITE_OmitNoopJoin   },
-    { "stat4",               SQLITE_Stat4          },
-    { "skip-scan",           SQLITE_SkipScan       },
-    { "push-down",           SQLITE_PushDown       },
-    { "balanced-merge",      SQLITE_BalancedMerge  },
-    { "propagate-const",     SQLITE_PropagateConst },
-    { "one-pass",            SQLITE_OnePass        },
-    { "exists-to-join",      SQLITE_ExistsToJoin   },
-    { "count-of-view",       SQLITE_CountOfView    },
-  };
+  u64 m = 0, mask = 0;
+  int m32;
+  char zBuf[50];
+  extern int sqlite3_optimization_mask(const char*,sqlite3_uint64*);
+  extern const char *sqlite3_optimization_name(sqlite3_uint64);
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB OPT BOOLEAN");
@@ -8576,23 +8556,36 @@ static int SQLITE_TCLAPI optimization_control(
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   if( Tcl_GetBooleanFromObj(interp, objv[3], &onoff) ) return TCL_ERROR;
   zOpt = Tcl_GetString(objv[2]);
-  for(i=0; i<sizeof(aOpt)/sizeof(aOpt[0]); i++){
-    if( strstr(zOpt, aOpt[i].zOptName)!=0 ){
-      mask |= aOpt[i].mask;
-      cnt++;
+  while( zOpt && zOpt[0] ){
+    while( zOpt[0]==' ' || zOpt[0]==',' ) zOpt++;
+    for(i=0; zOpt[i] && zOpt[i]!=',' && zOpt[i]!=' '; i++){}
+    if( i==0 ) break;
+    if( i<sizeof(zBuf)-1 ){
+      for(j=k=0; j<i; j++){
+        if( zOpt[j]!='-' ) zBuf[k++] = zOpt[j];
+      }
+      zBuf[k] = 0;
+      if( sqlite3_optimization_mask(zBuf, &m)==SQLITE_NOTFOUND ){
+        const char *zName;
+        Tcl_AppendResult(interp, "unknown optimization \"", zBuf,
+                         "\" - should be one of:", (char*)0);
+        for(i=0; i<64; i++){
+          m = 1ull<<i;
+          zName = sqlite3_optimization_name(m);
+          if( zName ){
+            Tcl_AppendResult(interp, " ", zName, (char*)0);
+          }
+        }
+        return TCL_ERROR;
+      }
+      mask |= m;
     }
+    zOpt += i;
   }
   if( onoff ) mask = ~mask;
-  if( cnt==0 ){
-    Tcl_AppendResult(interp, "unknown optimization - should be one of:",
-                     (char*)0);
-    for(i=0; i<sizeof(aOpt)/sizeof(aOpt[0]); i++){
-      Tcl_AppendResult(interp, " ", aOpt[i].zOptName, (char*)0);
-    }
-    return TCL_ERROR;
-  }
-  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, db, mask);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(mask));
+  m32 = (int)(mask & 0xffffffff);
+  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,db, m32);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(m32));
   return TCL_OK;
 }
 

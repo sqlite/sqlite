@@ -1713,7 +1713,6 @@ struct sqlite3 {
   int errByteOffset;            /* Byte offset of error in SQL statement */
   int errMask;                  /* & result codes with this before returning */
   int iSysErrno;                /* Errno value from last system error */
-  u32 dbOptFlags;               /* Flags to enable/disable optimizations */
   u8 enc;                       /* Text encoding */
   u8 autoCommit;                /* The auto-commit flag. */
   u8 temp_store;                /* 1: file 2: memory 0: default */
@@ -1732,6 +1731,7 @@ struct sqlite3 {
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   i64 nChange;                  /* Value returned by sqlite3_changes() */
   i64 nTotalChange;             /* Value returned by sqlite3_total_changes() */
+  u32 dbOptFlags;               /* Flags to enable/disable optimizations */
   int aLimit[SQLITE_N_LIMIT];   /* Limits */
   int nMaxSorterMmap;           /* Maximum size of regions mapped by sorter */
   struct sqlite3InitInfo {      /* Information used during initialization */
@@ -1931,51 +1931,49 @@ struct sqlite3 {
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
 ** sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,...) interface to
-** selectively disable various optimizations.
+** selectively disable various optimizations. The numbers in each macro
+** are the one-based bit position (for improved readability).
 **
-** Keep these values in sync with the ".testctrl" command of the CLI
-** and the th3dbOpt() function of TH3.  Note also that TH3 expects the
-** STAT4 optimization to always be 0x800.
+** Keep these values in sync with the ext/misc/optname.c extension.
 */
-#define SQLITE_QueryFlattener 0x00000001 /* Query flattening */
-#define SQLITE_WindowFunc     0x00000002 /* Use xInverse for window functions */
-#define SQLITE_GroupByOrder   0x00000004 /* GROUPBY cover of ORDERBY */
-#define SQLITE_JoinMiss       0x00000008 /* Unwind join loops on a lookup miss*/
-#define SQLITE_DistinctOpt    0x00000010 /* DISTINCT using indexes */
-#define SQLITE_CoverIdxScan   0x00000020 /* Covering index scans */
-#define SQLITE_OrderByIdxJoin 0x00000040 /* ORDER BY of joins via index */
-#define SQLITE_Transitive     0x00000080 /* Transitive constraints */
-#define SQLITE_OmitNoopJoin   0x00000100 /* Omit unused tables in joins */
-#define SQLITE_CountOfView    0x00000200 /* The count-of-view optimization */
-#define SQLITE_CursorHints    0x00000400 /* Add OP_CursorHint opcodes */
-#define SQLITE_Stat4          0x00000800 /* Use STAT4 data */
-#define SQLITE_PushDown       0x00001000 /* WHERE-clause push-down opt */
-#define SQLITE_SimplifyJoin   0x00002000 /* Convert LEFT JOIN to JOIN */
-#define SQLITE_SkipScan       0x00004000 /* Skip-scans */
-#define SQLITE_PropagateConst 0x00008000 /* The constant propagation opt */
-#define SQLITE_MinMaxOpt      0x00010000 /* The min/max optimization */
-#define SQLITE_SeekScan       0x00020000 /* The OP_SeekScan optimization */
-#define SQLITE_OmitOrderBy    0x00040000 /* Omit pointless ORDER BY */
-#define SQLITE_BloomFilter    0x00080000 /* Use a Bloom filters */
-                          /*  0x00100000 -- Available for reuse */
-#define SQLITE_BalancedMerge  0x00200000 /* Balance multi-way merges */
-#define SQLITE_ReleaseReg     0x00400000 /* Use OP_ReleaseReg for testing */
-#define SQLITE_FlttnUnionAll  0x00800000 /* Disable the UNION ALL flattener */
-#define SQLITE_IndexedExpr    0x01000000 /* Pull exprs from index when able */
-#define SQLITE_Coroutines     0x02000000 /* Co-routines for subqueries */
-#define SQLITE_NullUnusedCols 0x04000000 /* NULL unused columns in subqueries */
-#define SQLITE_OnePass        0x08000000 /* Single-pass DELETE and UPDATE */
-#define SQLITE_OrderBySubq    0x10000000 /* ORDER BY in subquery helps outer */
-#define SQLITE_StarQuery      0x20000000 /* Heurists for star queries */
-#define SQLITE_ExistsToJoin   0x40000000 /* The EXISTS-to-JOIN optimization */
-#define SQLITE_UnionLimit     0x80000000 /* Optimizations for UNION + LIMIT */
-#define SQLITE_AllOpts        0xffffffff /* All optimizations */
+#define SQLITE_QueryFlattener  1 /* Query flattening */
+#define SQLITE_WindowFunc      2 /* Use xInverse for window functions */
+#define SQLITE_GroupByOrder    3 /* GROUPBY cover of ORDERBY */
+#define SQLITE_JoinMiss        4 /* Unwind join loops on a lookup miss*/
+#define SQLITE_DistinctOpt     5 /* DISTINCT using indexes */
+#define SQLITE_CoverIdxScan    6 /* Covering index scans */
+#define SQLITE_OrderByIdxJoin  7 /* ORDER BY of joins via index */
+#define SQLITE_Transitive      8 /* Transitive constraints */
+#define SQLITE_OmitNoopJoin    9 /* Omit unused tables in joins */
+#define SQLITE_CountOfView    10 /* The count-of-view optimization */
+#define SQLITE_CursorHints    11 /* Add OP_CursorHint opcodes */
+#define SQLITE_Stat4          12 /* Use STAT4 data */
+#define SQLITE_PushDown       13 /* WHERE-clause push-down opt */
+#define SQLITE_SimplifyJoin   14 /* Convert LEFT JOIN to JOIN */
+#define SQLITE_SkipScan       15 /* Skip-scans */
+#define SQLITE_PropagateConst 16 /* The constant propagation opt */
+#define SQLITE_MinMaxOpt      17 /* The min/max optimization */
+#define SQLITE_SeekScan       18 /* The OP_SeekScan optimization */
+#define SQLITE_OmitOrderBy    19 /* Omit pointless ORDER BY */
+#define SQLITE_BloomFilter    20 /* Use a Bloom filters */
+                          /*  21 -- Available for reuse */
+#define SQLITE_BalancedMerge  22 /* Balance multi-way merges */
+#define SQLITE_ReleaseReg     23 /* Use OP_ReleaseReg for testing */
+#define SQLITE_FlttnUnionAll  24 /* Disable the UNION ALL flattener */
+#define SQLITE_IndexedExpr    25 /* Pull exprs from index when able */
+#define SQLITE_Coroutines     26 /* Co-routines for subqueries */
+#define SQLITE_NullUnusedCols 27 /* NULL unused columns in subqueries */
+#define SQLITE_OnePass        28 /* Single-pass DELETE and UPDATE */
+#define SQLITE_OrderBySubq    29 /* ORDER BY in subquery helps outer */
+#define SQLITE_StarQuery      30 /* Heurists for star queries */
+#define SQLITE_ExistsToJoin   31 /* The EXISTS-to-JOIN optimization */
+#define SQLITE_UnionLimit     32 /* Optimizations for UNION + LIMIT */
 
 /*
 ** Macros for testing whether or not optimizations are enabled or disabled.
 */
-#define OptimizationDisabled(db, mask)  (((db)->dbOptFlags&(mask))!=0)
-#define OptimizationEnabled(db, mask)   (((db)->dbOptFlags&(mask))==0)
+#define OptimizationDisabled(D,M)  (((D)->dbOptFlags&(1ul<<((M)-1)))!=0)
+#define OptimizationEnabled(D,M)   (((D)->dbOptFlags&(1ul<<((M)-1)))==0)
 
 /*
 ** Return true if it OK to factor constant expressions into the initialization
