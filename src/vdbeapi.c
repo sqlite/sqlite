@@ -159,11 +159,9 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 #if SQLITE_THREADSAFE
   sqlite3_mutex *mutex;
 #endif
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( pStmt==0 ){
+  if( vdbeSafetyNotNull(p) ){
     return SQLITE_MISUSE_BKPT;
   }
-#endif
 #if SQLITE_THREADSAFE
   mutex = p->db->mutex;
 #endif
@@ -1961,6 +1959,9 @@ int sqlite3_bind_text16(
 #endif /* SQLITE_OMIT_UTF16 */
 int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
   int rc;
+  if( pValue==0 ){
+    return sqlite3_bind_null(pStmt, i);
+  }
   switch( sqlite3_value_type((sqlite3_value*)pValue) ){
     case SQLITE_INTEGER: {
       rc = sqlite3_bind_int64(pStmt, i, pValue->u.i);
@@ -2011,9 +2012,9 @@ int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
 int sqlite3_bind_zeroblob64(sqlite3_stmt *pStmt, int i, sqlite3_uint64 n){
   int rc;
   Vdbe *p = (Vdbe *)pStmt;
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( p==0 ) return SQLITE_MISUSE_BKPT;
-#endif
+  if( vdbeSafetyNotNull(p) ){
+    return SQLITE_MISUSE_BKPT;
+  }
   sqlite3_mutex_enter(p->db->mutex);
   if( n>(u64)p->db->aLimit[SQLITE_LIMIT_LENGTH] ){
     rc = SQLITE_TOOBIG;
@@ -2140,9 +2141,9 @@ int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt){
 int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode){
   Vdbe *v = (Vdbe*)pStmt;
   int rc;
-#ifdef SQLITE_ENABLE_API_ARMOR
-  if( pStmt==0 ) return SQLITE_MISUSE_BKPT;
-#endif
+  if( vdbeSafetyNotNull(v) ){
+    return SQLITE_MISUSE_BKPT;
+  }
   sqlite3_mutex_enter(v->db->mutex);
   if( ((int)v->explain)==eMode ){
     rc = SQLITE_OK;

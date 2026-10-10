@@ -239,6 +239,13 @@ void sqlite3_str_vappendf(
   etByte flag_dp;            /* True if decimal point should be shown */
   etByte flag_rtz;           /* True if trailing zeros should be removed */
 
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pAccum==0 || fmt==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return;
+  }
+#endif
+
   PrintfArguments *pArgList = 0; /* Arguments for SQLITE_PRINTF_SQLFUNC */
   char buf[etBUFSIZE];       /* Conversion buffer */
 
@@ -1264,6 +1271,12 @@ int sqlite3StrAccumEnlargeIfNeeded(StrAccum *p, i64 N){
 ** Append N copies of character c to the given string buffer.
 */
 void sqlite3_str_appendchar(sqlite3_str *p, int N, char c){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return;
+  }
+#endif
   testcase( p->nChar + (i64)N > 0x7fffffff );
   if( p->nChar+(i64)N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ){
     return;
@@ -1300,6 +1313,12 @@ static void SQLITE_NOINLINE enlargeAndAppend(StrAccum *p, const char *z, int N){
 ** size of the memory allocation for StrAccum if necessary.
 */
 void sqlite3_str_append(sqlite3_str *p, const char *z, int N){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return;
+  }
+#endif
   assert( z!=0 || N==0 );
   assert( p->zText!=0 || p->nChar==0 || p->accError );
   assert( N>=0 );
@@ -1331,6 +1350,12 @@ static void sqlite3StrAppend64(sqlite3_str *p, const char *z, i64 N){
 ** Append the complete text of zero-terminated string z[] to the p string.
 */
 void sqlite3_str_appendall(sqlite3_str *p, const char *z){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( p==0 || z==0 ){
+    (void)SQLITE_MISUSE_BKPT;
+    return;
+  }
+#endif
   sqlite3_str_append(p, z, sqlite3Strlen30(z));
 }
 
@@ -1405,6 +1430,7 @@ char *sqlite3_str_value(sqlite3_str *p){
 ** Reset an StrAccum string.  Reclaim all malloced memory.
 */
 void sqlite3_str_reset(StrAccum *p){
+  if( p==0 ) return;
   if( isMalloced(p) ){
     sqlite3DbFree(p->db, p->zText);
     p->printfFlags &= ~SQLITE_PRINTF_MALLOCED;
