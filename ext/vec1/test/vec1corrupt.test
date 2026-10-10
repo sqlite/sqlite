@@ -487,8 +487,45 @@ foreach {tn varint} [list \
 vec1corrupt_generic_test 4.6.1 { 
   unhex(substr(hex(val), 1, 16) || 'FFFFFFFF') 
 } $vec1corrupt_parse
-vec1corrupt_generic_test 4.6.2 { 
-  unhex(substr(hex(val), 1, 64) || 'FFFFFFFFFFFFFFFFFF') 
+vec1corrupt_generic_test 4.6.2 {
+  unhex(substr(hex(val), 1, 64) || 'FFFFFFFFFFFFFFFFFF')
 } $vec1corrupt_parse
+
+#-------------------------------------------------------------------------
+# A vector in the %_base table that is shorter than the model's vector
+# size. The integrity-check must detect this as corruption.
+#
+reset_db
+vec1_load db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1;
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO v1(rowid, vector) SELECT i, random_vector(128) FROM s;
+}
+
+do_test 5.1 {
+  set T [db one {
+    SELECT vec1_train(vector, '{codesize:16, distance:"cos"}') FROM v1
+  }]
+  execsql { INSERT INTO v1(cmd, vector) VALUES('rebuild', $T) }
+} {}
+
+do_execsql_test 5.2 {
+  PRAGMA integrity_check
+} {ok}
+
+# Truncate the vector stored in one %_base row to 4 bytes. Without the
+# length check in the right place, the integrity-check below reads 128
+# floats from this 4 byte buffer.
+do_execsql_test 5.3 {
+  UPDATE v1_base SET vector = x'00000000' WHERE id=1;
+} {}
+
+do_execsql_test 5.4 {
+  PRAGMA integrity_check
+} {{v1: vector in %_base row 1 is wrong size}}
 
 finish_test

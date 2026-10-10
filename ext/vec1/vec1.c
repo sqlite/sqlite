@@ -2020,7 +2020,7 @@ static float *vec1TrainingVector(Vec1TrainVectors *p, int iVec){
 ** nCode vectors, each of nCodeElem elements. Return the index of the best
 ** match for aSub in aCodebook[].
 */
-static int vec1PqBestMatch(
+static int vec1BestMatchSimple(
   const float *aCodebook,         /* Codebook of nCodeElem element vectors */
   int nCode,                      /* Number of vectors in aCodebook */
   const float *aSub,              /* nCodeElem element vector */
@@ -2698,10 +2698,10 @@ static void vec1LloydsWork(void *pCtx){
     }
 
 #if 0
-    /* Check (assert) using vec1PqBestMatch() that the fancy code above
+    /* Check (assert) using vec1BestMatchSimple() that the fancy code above
     ** actually worked.  */
     for(vv=0; vv<VEC1_MULTIMATCH_NVEC; vv++){
-      int iBest2 = vec1PqBestMatch(
+      int iBest2 = vec1BestMatchSimple(
           p->aCentroid, p->nK, aVec[vv], nElem, 0
       );
       if( iBest2!=aBest[vv] ){
@@ -2722,7 +2722,9 @@ static void vec1LloydsWork(void *pCtx){
   ** part of a batch of VEC1_MULTIMATCH_NVEC. */
   for(; ii<p->iEof; ii++){
     const float *aSub = vec1TrainingVector(pVec, ii);
-    int iBest = vec1PqBestMatch(p->aCentroid, p->nK, aSub, nElem, &p->fTotal);
+    int iBest = vec1BestMatchSimple(
+        p->aCentroid, p->nK, aSub, nElem, &p->fTotal
+    );
     assert( iBest>=0 && iBest<p->nK );
     p->aCount[iBest]++;
     vec1AddInPlace(&p->aSum[iBest * nElem], aSub, nElem);
@@ -4418,7 +4420,7 @@ static void vec1CovarianceWork(void *pArg){
   for(; ii<nVec; ii++){
     float *aVec = vec1TrainingVector(pJob->pVec, ii);
     const float *aSub = &aVec[iSubOff];
-    int iBest = vec1PqBestMatch(
+    int iBest = vec1BestMatchSimple(
         aCode, VEC1_PQ_CODEBOOK_SZ, aSub, pJob->nCodeElem, &pJob->fTotalDist
     );
     float *aSubHat = &aCode[iBest * pJob->nCodeElem];
@@ -4882,7 +4884,7 @@ static void vec1TrainResidualWorker(void *pCtx){
 
   for(ii=p->iFirst; ii<p->iEof; ii++){
     float *a = vec1TrainingVector(p->pVec, ii);
-    int iBest = vec1PqBestMatch(p->aCentroid, p->nCentroid, a, nElem, 0);
+    int iBest = vec1BestMatchSimple(p->aCentroid, p->nCentroid, a, nElem, 0);
     vec1SubInPlace(a, &p->aCentroid[iBest * nElem], nElem);
   }
 }
@@ -8091,7 +8093,7 @@ static void vec1EncodeVectorPQSimple(
   for(ii=0; ii<nCodebook; ii++){
     const float *pCodebook = &pMod->aModel[ii*nCodeElem*VEC1_PQ_CODEBOOK_SZ];
     const float *aSub = &aVec[ii*nCodeElem];
-    aOut[ii] = (u8)vec1PqBestMatch(
+    aOut[ii] = (u8)vec1BestMatchSimple(
         pCodebook, VEC1_PQ_CODEBOOK_SZ, aSub, nCodeElem, pfTotalDist
     );
   }
@@ -9525,7 +9527,7 @@ static void vec1DistanceStats(sqlite3_context *ctx, Vec1Csr *pCsr){
   
       /* Find bucket and coarse error if applicable. */
       if( pMod->hdr.nBucket>1 ){
-        iBucket = vec1PqBestMatch(
+        iBucket = vec1BestMatchSimple(
             pMod->aCentroid, pMod->hdr.nBucket, aVec, nElem, &fCoarseError
         );
         if( aTransform!=pTab->aTmpVec ){
@@ -10417,7 +10419,7 @@ static void vec1QuantizeVector(
   aVec = vec1TransformInputVector(pMod, aTmp, aVector);
   if( nBucket>0 ){
     int nElem = pMod->hdr.nElem;
-    iBucket = vec1PqBestMatch(pMod->aCentroid, nBucket, aVec, nElem, 0);
+    iBucket = vec1BestMatchSimple(pMod->aCentroid, nBucket, aVec, nElem, 0);
     if( pMod->hdr.nCodebook>0 && (pMod->hdr.flags & VEC1_MODEL_RESIDUAL) ){
       vec1Sub(aTmp, aVec, &pMod->aCentroid[iBucket*nElem], nElem);
       aVec = aTmp;
@@ -11552,6 +11554,9 @@ static int vec1DeleteByRowid(Vec1Tab *pTab, i64 iRowid){
   rc = vec1GetSql(pTab, VEC1_SQL_DEL_LOOKUP_BASE, &pDelete);
   if( rc==SQLITE_OK ){
     int iBucket = 0;
+
+    /* Delete the row from the %_base table. Also set variable iBucket to
+    ** the index of the bucket containing the vector.  */
     sqlite3_bind_int64(pDelete, 1, iRowid);
     if( SQLITE_ROW==sqlite3_step(pDelete) && pTab->mod.hdr.nBucket>0 ){
       if( pTab->mod.hdr.nCodebook==0 ){
@@ -11568,7 +11573,7 @@ static int vec1DeleteByRowid(Vec1Tab *pTab, i64 iRowid){
         if( nVec!=(pTab->cfg.nElem*sizeof_f32) ){
           rc = VEC1_CORRUPT;
         }else{
-          iBucket = vec1PqBestMatch(
+          iBucket = vec1BestMatchSimple(
               pTab->mod.aCentroid, pTab->mod.hdr.nBucket, 
               aTransform, pTab->cfg.nElem, 0
           );
@@ -12117,6 +12122,46 @@ static int vec1IntegrityCheckEncoded(
 }
 
 /*
+** Check that a vector with transformed value aVec[] may legitimately be
+** stored in bucket iBucket.
+**
+** If vec1BestMatchSimple() selects bucket iBucket for aVec[], then it
+** may. Otherwise, the vector may have been assigned to its bucket by
+** different code - either a different routine, such as the batched
+** routines used by 'rebuild', or the same routine on a different platform.
+** Rounding differences mean such code may select a different bucket when
+** aVec[] is (almost) equidistant from two or more centroids. So iBucket
+** is also accepted if the distance from aVec[] to centroid iBucket is
+** within a small tolerance of the distance to the centroid selected by
+** vec1BestMatchSimple().
+**
+** Return non-zero if aVec[] may not be stored in bucket iBucket, or zero
+** otherwise.
+*/
+static int vec1IntegrityCheckBucket(
+  const Vec1Model *pMod,          /* Model used to quantize vectors */
+  const float *aVec,              /* Transformed vector */
+  int iBucket                     /* Bucket the vector is stored in */
+){
+  const int nElem = (int)pMod->hdr.nElem;
+  const int nBucket = (int)pMod->hdr.nBucket;
+  const float fTol = 0.00001f;
+  double fBest = 0.0;
+  double fDist = 0.0;
+  int iBest = 0;
+
+  if( nBucket==0 ) return (iBucket!=0);
+  if( iBucket<0 || iBucket>=nBucket ) return 1;
+
+  iBest = vec1BestMatchSimple(pMod->aCentroid, nBucket, aVec, nElem, &fBest);
+  if( iBest==iBucket ) return 0;
+
+  fDist = vec1L2Dist(aVec, &pMod->aCentroid[iBucket*nElem], nElem);
+  if( fDist==fBest ) return 0;
+  return vec1FloatWithinTolerance((float)fBest, (float)fDist, fTol)==0;
+}
+
+/*
 ** The buffer passed as the only argument contains a meta-value array. If
 ** it is of type GENERIC, test that it is well-formed. Return VEC1_CORRUPT
 ** if it is not, or SQLITE_OK if it looks ok.
@@ -12302,13 +12347,8 @@ static int vec1IntegrityMethod(
             const u8 *aBaseVec = sqlite3_column_blob(pLookup, 1);
             const float *aTransform = 0;
             int nBaseVec = sqlite3_column_bytes(pLookup, 1);
-            int iCalc = 0;
   
             assert( nCodebook>0 );
-
-            aTransform = vec1TransformInputVector(
-                &pTab->mod, pTab->aTmpVec, (const float*)aBaseVec
-            ); 
   
             /* Check the vector is the right size. */
             if( nBaseVec!=nElem*sizeof_f32 ){
@@ -12316,14 +12356,13 @@ static int vec1IntegrityMethod(
               zErr = sqlite3_mprintf(zFmt, zTabName, iRowid);
               goto integrity_failed;
             }
+
+            aTransform = vec1TransformInputVector(
+                &pTab->mod, pTab->aTmpVec, (const float*)aBaseVec
+            ); 
   
             /* Check the vector is in the right bucket. */
-            if( pMod->hdr.nBucket>0 ){
-              iCalc = vec1PqBestMatch(pMod->aCentroid, 
-                  pMod->hdr.nBucket, aTransform, nElem, 0
-              );
-            }
-            if( iCalc!=iBucket ){
+            if( vec1IntegrityCheckBucket(pMod, aTransform, iBucket) ){
               const char *zFmt = "%s: vector from row %lld is in wrong bucket";
               zErr = sqlite3_mprintf(zFmt, zTabName, iRowid);
               goto integrity_failed;
@@ -12337,7 +12376,8 @@ static int vec1IntegrityMethod(
               ** aPQ[] just contains the nCodebook bytes of encoded vector. */
               const float *aEnc = (const float*)aTransform;
               if( (pMod->hdr.flags & VEC1_MODEL_RESIDUAL) ){
-                vec1Sub(aResidual, aEnc, &pMod->aCentroid[iCalc*nElem], nElem);
+                const float *aCent = &pMod->aCentroid[iBucket*nElem];
+                vec1Sub(aResidual, aEnc, aCent, nElem);
                 aEnc = aResidual;
               }
               if( vec1IntegrityCheckEncoded(&rc, pMod, aEnc, ii, aBlob, &tmp) ){
