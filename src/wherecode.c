@@ -1565,22 +1565,17 @@ static int findNoMatchContinuation(
     /* If there are less than two outer loops, this optimization is no help */
     return 0;
   }
-  if( OptimizationDisabled(pWInfo->pParse->db, SQLITE_JoinMiss) ){
-    return 0;
-  }
 
   /* The OP_SeekGE and OP_SeekLE opcodes only work right for this
   ** optimization on a pure equality constraint, so skip the optimization
   ** for anything else.
   */
   pLoop = pWInfo->a[iLevel].pWLoop;
-#if 1
   if( (pLoop->wsFlags & WHERE_CONSTRAINT)!=WHERE_COLUMN_EQ ) return 0;
   if( pLoop->wsFlags & WHERE_SKIPSCAN ) return 0;
   if( pLoop->wsFlags & WHERE_BIGNULL_SORT ) return 0;
   assert( (pLoop->wsFlags & (WHERE_VIRTUALTABLE|WHERE_MULTI_OR))==0 );
   assert( pLoop->u.btree.nEq>0 );
-#endif
 
   /* Find a mask of all outer tables that influence the key.  At the same
   ** time, check to see if any keys values are computed from subqueries and
@@ -1610,10 +1605,17 @@ static int findNoMatchContinuation(
     if( pTabList->a[pWInfo->a[i].iFrom].fg.jointype & JT_OUTER ) return 0;
   }
 
+  /* If we reach this point, that means the conditions of the optimization
+  ** have been met.  Even so, disallow the optimization if it is disabled.
+  */
+  if( OptimizationDisabled(pWInfo->pParse->db, SQLITE_JoinMiss) ){
+    return 0;
+  }
+
   /* If the inner-most outer loop that influences the key for iLevel
-  ** is controlled by an automatic index and if it is the only outer
-  ** loop that influences the key, then arrange to delete the automatic
-  ** index entry if there is no match on the iLevel key.
+  ** is controlled by an automatic index and if the automatic index is
+  ** the only outer loop that influences the key, then arrange to delete
+  ** the automatic index entry if there is no match on the key.
   */
   pParent = &pWInfo->a[iParent];
   if( (pParent->pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0
@@ -1625,6 +1627,7 @@ static int findNoMatchContinuation(
     return pParent->addrDeleteCont;
   }
 
+  testcase( iParent<iLevel-1 );
   return pParent->addrCont;
 }
 
