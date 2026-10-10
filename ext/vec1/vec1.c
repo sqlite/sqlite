@@ -2045,6 +2045,21 @@ static int vec1BestMatchSimple(
 }
 
 /*
+** Relative tolerance used by vec1BucketIsNearTie().
+*/
+#define VEC1_BUCKET_TOLERANCE 0.00001
+
+/*
+** fBest is the distance from a vector to its nearest IVF centroid, as
+** found by vec1BestMatchSimple(). fDist is the distance from the same
+** vector to some other centroid. Return true if the two distances are
+** close enough that rounding differences could account for the difference.
+*/
+static int vec1BucketIsNearTie(double fBest, double fDist){
+  return (fDist - fBest) <= (fBest * VEC1_BUCKET_TOLERANCE);
+}
+
+/*
 ** Return a pseudo-random positive 32-bit value.
 */
 static int vec1Rand31(){
@@ -11541,6 +11556,70 @@ static int vec1SpecialInsert(
 #define VEC1_TOMBSTONE_THRESHOLD(nEntry) ((nEntry * 2) / 10)
 
 /*
+** Locate the index entry for row iRowid, for writing. Array aVec[] is the
+** row's transformed vector. 
+**
+** The bucket selected for aVec[] by vec1BestMatchSimple() is searched
+** first. If the model has no buckets, this is bucket 0 and it is the only
+** bucket searched. Otherwise, if the row is not found there, it may have
+** been assigned to a different bucket by code that rounds differently -
+** either a different routine, such as the batched routines used by 
+** 'rebuild', or the same routine on a different platform. In that case
+** all other buckets that are near-ties with the selected bucket (see 
+** vec1BucketIsNearTie()) are searched, followed by all remaining buckets.
+**
+** If the row is found, (*pLoc) is populated and (*piBucket) is set to
+** the bucket it was found in. If it is not found, (*pLoc) is zeroed and
+** SQLITE_OK returned. The caller must then treat the row as missing.
+*/
+static int vec1DeleteFindRowid(
+  Vec1Tab *pTab,                  /* Table to search */
+  const float *aVec,              /* Transformed vector */
+  i64 iRowid,                     /* Rowid to locate */
+  int *piBucket,                  /* OUT: Bucket containing iRowid */
+  Vec1RowidLocation *pLoc         /* OUT: Location of iRowid */
+){
+  const Vec1Model *pMod = &pTab->mod;
+  const int nElem = (int)pMod->hdr.nElem;
+  const int nBucket = (int)pMod->hdr.nBucket;
+  int iBest = 0;
+  double fBest = 0.0;
+  int rc = SQLITE_OK;
+
+  int iPass;
+
+  if( nBucket>0 ){
+    iBest = vec1BestMatchSimple(pMod->aCentroid, nBucket, aVec, nElem, &fBest);
+  }
+  rc = vec1FindByRowid(pTab, iBest, 1, iRowid, pLoc);
+  if( rc!=SQLITE_OK || pLoc->pList || pLoc->pBlob ){
+    *piBucket = iBest;
+    return rc;
+  }
+
+  /* Pass 0 searches buckets that are near-ties with iBest. Pass 1 searches
+  ** all others.  */
+  for(iPass=0; iPass<2; iPass++){
+    int ii;
+    for(ii=0; ii<nBucket; ii++){
+      if( ii!=iBest ){
+        double fDist;
+        fDist = vec1L2Dist(aVec, &pMod->aCentroid[ii*nElem], nElem);
+        if( vec1BucketIsNearTie(fBest, fDist)==(iPass==0) ){
+          rc = vec1FindByRowid(pTab, ii, 1, iRowid, pLoc);
+          if( rc!=SQLITE_OK || pLoc->pList || pLoc->pBlob ){
+            *piBucket = ii;
+            return rc;
+          }
+        }
+      }
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+/*
 ** Delete the %_base entry for the row with rowid=iRowid. Also zero-out
 ** the corresponding %_idx entry.
 */
@@ -11553,40 +11632,34 @@ static int vec1DeleteByRowid(Vec1Tab *pTab, i64 iRowid){
 
   rc = vec1GetSql(pTab, VEC1_SQL_DEL_LOOKUP_BASE, &pDelete);
   if( rc==SQLITE_OK ){
-    int iBucket = 0;
 
     /* Delete the row from the %_base table. Also set variable iBucket to
-    ** the index of the bucket containing the vector.  */
+    ** the index of the bucket containing the vector. Statement pDelete is
+    ** not reset until the end of this function, as aTransform[] may point
+    ** to the vector it returns.  */
     sqlite3_bind_int64(pDelete, 1, iRowid);
-    if( SQLITE_ROW==sqlite3_step(pDelete) && pTab->mod.hdr.nBucket>0 ){
+    if( (SQLITE_ROW==sqlite3_step(pDelete))
+     && (pTab->mod.hdr.flags & VEC1_MODEL_INDEX)
+    ){
+      int iBucket = 0;
+      Vec1RowidLocation loc;
+
       if( pTab->mod.hdr.nCodebook==0 ){
         iBucket = sqlite3_column_int(pDelete, 0);
+        rc = vec1FindByRowid(pTab, iBucket, 1, iRowid, &loc);
       }else{
         const u8 *aVec = sqlite3_column_blob(pDelete, 0);
         int nVec = sqlite3_column_bytes(pDelete, 0);
-        const float *aTransform = 0;
-
-        aTransform = vec1TransformInputVector(
-            &pTab->mod, pTab->aTmpVec, (const float*)aVec
-        );
 
         if( nVec!=(pTab->cfg.nElem*sizeof_f32) ){
           rc = VEC1_CORRUPT;
         }else{
-          iBucket = vec1BestMatchSimple(
-              pTab->mod.aCentroid, pTab->mod.hdr.nBucket, 
-              aTransform, pTab->cfg.nElem, 0
+          const float *aTransform = vec1TransformInputVector(
+              &pTab->mod, pTab->aTmpVec, (const float*)aVec
           );
+          rc = vec1DeleteFindRowid(pTab, aTransform, iRowid, &iBucket, &loc);
         }
       }
-    }
-
-    vec1StmtReset(&rc, pDelete);
-
-    if( rc==SQLITE_OK && (pTab->mod.hdr.flags & VEC1_MODEL_INDEX) ){
-      Vec1RowidLocation loc;
-
-      rc = vec1FindByRowid(pTab, iBucket, 1, iRowid, &loc);
 
       if( rc==SQLITE_OK ){
         if( loc.pList==0 && loc.pBlob==0 ){
@@ -11652,6 +11725,8 @@ static int vec1DeleteByRowid(Vec1Tab *pTab, i64 iRowid){
         }
       }
     }
+
+    vec1StmtReset(&rc, pDelete);
   }
 
   return rc;
@@ -12008,7 +12083,7 @@ static int vec1IntegrityMetaValue(
 }
 
 /*
-** Return true if the difference between f1 and f2 is greater than 
+** Return true if the difference between f1 and f2 is smaller than 
 ** (fTol * max(f1, f2)). Or false if they differ by more than this.
 */
 static int vec1FloatWithinTolerance(float f1, float f2, float fTol){
@@ -12145,7 +12220,6 @@ static int vec1IntegrityCheckBucket(
 ){
   const int nElem = (int)pMod->hdr.nElem;
   const int nBucket = (int)pMod->hdr.nBucket;
-  const float fTol = 0.00001f;
   double fBest = 0.0;
   double fDist = 0.0;
   int iBest = 0;
@@ -12157,8 +12231,7 @@ static int vec1IntegrityCheckBucket(
   if( iBest==iBucket ) return 0;
 
   fDist = vec1L2Dist(aVec, &pMod->aCentroid[iBucket*nElem], nElem);
-  if( fDist==fBest ) return 0;
-  return vec1FloatWithinTolerance((float)fBest, (float)fDist, fTol)==0;
+  return vec1BucketIsNearTie(fBest, fDist)==0;
 }
 
 /*
