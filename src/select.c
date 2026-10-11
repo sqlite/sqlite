@@ -4124,7 +4124,9 @@ static int renumberCursorsCb(Walker *pWalker, Expr *pExpr){
   if( op==TK_COLUMN || op==TK_IF_NULL_ROW ){
     renumberCursorDoMapping(pWalker, &pExpr->iTable);
   }
-  if( ExprHasProperty(pExpr, EP_OuterON) ){
+  if( ExprHasProperty(pExpr, (EP_OuterON|EP_InnerON)) ){
+    testcase( ExprHasProperty(pExpr, EP_OuterON) );
+    testcase( ExprHasProperty(pExpr, EP_InnerON) );
     renumberCursorDoMapping(pWalker, &pExpr->w.iJoin);
   }
   return WRC_Continue;
