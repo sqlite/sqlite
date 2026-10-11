@@ -398,6 +398,7 @@ struct JsonParse {
 */
 #define JSON_EDITABLE  0x01   /* Generate a writable JsonParse object */
 #define JSON_KEEPERROR 0x02   /* Return non-NULL even if there is an error */
+#define JSON_NOCACHE   0x04   /* Do not use the JSON cache */
 
 /**************************************************************************
 ** Forward references
@@ -3841,7 +3842,9 @@ static JsonParse *jsonParseFuncArg(
   if( eType==SQLITE_NULL ){
     return 0;
   }
-  pFromCache = jsonCacheSearch(ctx, pArg);
+  if( (flgs & JSON_NOCACHE)==0 ){
+    pFromCache = jsonCacheSearch(ctx, pArg);
+  }
   if( pFromCache ){
     pFromCache->nJPRef++;
     if( (flgs & JSON_EDITABLE)==0 ){
@@ -4916,7 +4919,7 @@ static void jsonValidFunc(
       if( (flags & 0x3)==0 ) break;
       memset(&px, 0, sizeof(px));
      
-      p = jsonParseFuncArg(ctx, argv[0], JSON_KEEPERROR);
+      p = jsonParseFuncArg(ctx, argv[0], JSON_KEEPERROR|JSON_NOCACHE);
       if( p ){
         if( p->oom ){
           sqlite3_result_error_nomem(ctx);

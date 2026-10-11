@@ -839,5 +839,36 @@ do_execsql_test json102-1831 {
   SELECT '["zero","one","two"]'->1;
 } {{"one"}}
 
+# Bug 2026-10-11T18:32:23Z
+#
+do_execsql_test json102-1900 {
+  SELECT json_set('[0x1F]', '$[1]', 2),
+         json_valid(json_set('[0x1F]', '$[1]', 2));
+} {{[31,2]} 1}
+do_execsql_test json102-1900 {
+  SELECT typeof(jsonb_set('[0x1F]', '$[1]', 2)),
+         json_valid(jsonb_set('[0x1F]', '$[1]', 2),6);
+} {blob 1}
+do_execsql_test json102-1910 {
+  SELECT json_set('[0x1F]', '$[1]', 2),
+         json_valid(' '||json_set('[0x1F]', '$[1]', 2));
+} {{[31,2]} 1}
+do_execsql_test json102-1920 {
+  SELECT json_set('[0x1F]', '$[1]', 2),
+         json_valid('[31,2]');
+} {{[31,2]} 1}
+do_execsql_test json102-1930 {
+  SELECT json_valid('[31,2]'),
+         json_set('[0x1F]', '$[1]', 2);
+} {1 {[31,2]}}
+do_execsql_test json102-1940 {
+  SELECT json_valid(json_set('{k:1}','$.v', printf('%.*c',120,'x')));
+} {1}
+do_execsql_test json102-1940 {
+  SELECT json_valid(jsonb_set('{k:1}','$.v', printf('%.*c',120,'x')),6);
+} {1}
+do_execsql_test json102-1950 {
+  SELECT json_valid(json_set('{k:1}','$.v', printf('%.*c',120,'x'))||' ');
+} {1}
 
 finish_test
