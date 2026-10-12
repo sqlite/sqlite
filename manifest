@@ -1,5 +1,5 @@
-C Avoid\sever\srepreparing\sa\sstatement\sif\sa\scall\sto\ssqlite3_bind_int64()\sdoes\snot\sactually\schange\sthe\sbound\svalue.
-D 2026-10-12T14:05:08.235
+C Fix\sa\sharmless\scompiler\swarning\sin\s[7f154192db5a3a79].
+D 2026-10-12T15:11:53.555
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -871,7 +871,7 @@ F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 2954169319fef68d5119e9855637e7a44dc64f34ee474d68001a05c03072cb48
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 68e5ab63f184f2871780c83ce78b425d0360869611baea4c65575f91f76ac1d3
-F src/vdbeapi.c 4f7ad184ca2cd3770c5da3ce707f348965f9a2677acc25dcc256237ccdd0b99f
+F src/vdbeapi.c 62dde4b2763b061b2cef7a2ebcfc7d54ada04471189011cb0c9315dcaea2fc86
 F src/vdbeaux.c 27d92528e7953a80f64782ef75e65a6694277214082e87d125e74e52d9e7ecd5
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c b2113c949e2ed918294e16a5ebaacdaca6be4f820f670517e3362e94c7019432
@@ -2284,8 +2284,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 085dca9d30e5ce500e22374573b553f6bcd934549bc5b25305b0b97d6b37a104
-R eb4b1159f59ceaf74db08801163c192e
-U dan
-Z 8a563abeff3722e462d3eade902cf9a5
+P 4708cfe5f7fe1874870564956f0f81ba79226657c6d07ea1edffba7d5a6e4e3b
+R d007889b5b0fc4503ba7b58aa1d9889f
+U drh
+Z 1f1e2ee8b34a1196dfd886ad98aebece
 # Remove this line to create a well-formed Fossil manifest.

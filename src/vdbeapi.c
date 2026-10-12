@@ -1755,7 +1755,7 @@ static int vdbeUnbind(Vdbe *p, unsigned int i){
     ** the value being clobbered was integer value 0 or 1. */
     if( (p->smimask==0) 
      || (p->smimask & (i>=31 ? 0x80000000 : (u32)1<<i))==0 
-     || (pVar->flags & MEM_Int)!=0 && pVar->u.i>=0 && pVar->u.i<=1
+     || ((pVar->flags & MEM_Int)!=0 && pVar->u.i>=0 && pVar->u.i<=1)
     ){
       p->expired = 1;
     }
