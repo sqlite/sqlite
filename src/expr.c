@@ -2955,10 +2955,7 @@ int sqlite3ExprContainsSubquery(Expr *p){
 ** is marked so as to cause the statement to be reprepared each time a new
 ** value is bound to it. Except, if parameter bRSI is true, then the statement
 ** will only be reprepared if the rebind changes the value to or from a
-** "small integer" (either 0 or 1).  Note that if p is a variable then
-** reprepare is always enabled for that variable, regardless of its current
-** binding.  The RSI is only enabled if the current binding is a small
-** integer.  "RSI" stands for "Reprepare Small Integers".
+** "small integer" (either 0 or 1).  
 */
 int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse, int bRSI){
   int iSign = 1;   /* Either +1 or -1. */
@@ -2981,7 +2978,6 @@ int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse, int bRSI){
     }
     if( p->op==TK_VARIABLE && pParse!=0 ){
       sqlite3_value *pVal; /* The variable */
-      int isSmall = 0;     /* Only reprepare if change to/from small integer */
       int rc = 0;          /* 1 if successful, 0 if failed */
       assert( iSign==1 );
       if( NEVER(pParse->pVdbe==0) ) break;
@@ -2995,14 +2991,11 @@ int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse, int bRSI){
          && vv<=0x7fffffff
         ){
           *pValue = (int)vv;
-          if( bRSI ){
-            isSmall = vv<=1;
-          }
           rc = 1;       
         }
         sqlite3ValueFree(pVal);
       }
-      sqlite3VdbeReprepareOnBind(pParse->pVdbe, p->iColumn, isSmall);
+      sqlite3VdbeReprepareOnBind(pParse->pVdbe, p->iColumn, bRSI);
       return rc;
     }
     break;
@@ -4043,6 +4036,12 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   }
   sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
 
+  if( dest.eDest==SRT_Mem 
+   && sqlite3ExprCanReturnSubtype(pParse, pSel->pEList->a[0].pExpr) 
+  ){
+    sqlite3VdbeAddOp1(v, OP_ClrSubtype, rReg);
+  }
+
   /* Subroutine return */
   assert( ExprUseYSub(pExpr) );
   assert( sqlite3VdbeGetOp(v,pExpr->y.sub.iAddr-1)->opcode==OP_BeginSubrtn
@@ -4798,7 +4797,7 @@ static int exprCodeInlineFunction(
 **
 ** The only expressions that can return a subtype are:
 **
-**    1.  A function
+**    1.  A function, including an aggregate function
 **    2.  The no-op "+" operator
 **    3.  A CASE...END expression
 **    4.  A CAST() expression
@@ -4823,14 +4822,19 @@ static int exprNodeCanReturnSubtype(Walker *pWalker, Expr *pExpr){
   ){
     return WRC_Continue;
   }
-  if( pExpr->op!=TK_FUNCTION ){
+  if( pExpr->op!=TK_FUNCTION && pExpr->op!=TK_AGG_FUNCTION ){
     return WRC_Prune;
   }
   assert( ExprUseXList(pExpr) );
   db = pWalker->pParse->db;
   n = pExpr->x.pList ? pExpr->x.pList->nExpr : 0;
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
-  if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
+#ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  if( pDef==0 ) return WRC_Continue;
+#else
+  assert( pDef!=0 );
+#endif
+  if( (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
     pWalker->eCode = 1;
     return WRC_Abort;
   }
@@ -7636,7 +7640,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               if( pOBList->nExpr==1
                && nArg==1
                && sqlite3ExprCompare(0,pOBList->a[0].pExpr,
-                               pExpr->x.pList->a[0].pExpr,0)==0
+                               pExpr->x.pList->a[0].pExpr,-1)==0
               ){
                 pItem->bOBPayload = 0;
                 pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
