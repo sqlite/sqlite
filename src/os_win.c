@@ -5793,7 +5793,7 @@ static int winDelete(
   }
   if( osIsNT() ){
     do {
-      attr = osGetFileAttributesW(zConverted);
+      attr = osGetFileAttributesW((LPCWSTR)zConverted);
       if ( attr==INVALID_FILE_ATTRIBUTES ){
         lastErrno = osGetLastError();
         if( lastErrno==ERROR_FILE_NOT_FOUND
@@ -5808,7 +5808,7 @@ static int winDelete(
         rc = SQLITE_ERROR; /* Files only. */
         break;
       }
-      if ( osDeleteFileW(zConverted) ){
+      if ( osDeleteFileW((LPCWSTR)zConverted) ){
         rc = SQLITE_OK; /* Deleted OK. */
         break;
       }
@@ -5821,7 +5821,7 @@ static int winDelete(
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
     do {
-      attr = osGetFileAttributesA(zConverted);
+      attr = osGetFileAttributesA((LPCSTR)zConverted);
       if ( attr==INVALID_FILE_ATTRIBUTES ){
         lastErrno = osGetLastError();
         if( lastErrno==ERROR_FILE_NOT_FOUND
@@ -5836,7 +5836,7 @@ static int winDelete(
         rc = SQLITE_ERROR; /* Files only. */
         break;
       }
-      if ( osDeleteFileA(zConverted) ){
+      if ( osDeleteFileA((LPCSTR)zConverted) ){
         rc = SQLITE_OK; /* Deleted OK. */
         break;
       }
