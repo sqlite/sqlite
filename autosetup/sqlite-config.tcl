@@ -1229,6 +1229,7 @@ proc sqlite-check-line-editing {} {
     set failIfNotFound 1
     set libsForReadline {edit}
     set editLibName editline
+    set editLibDef HAVE_EDITLINE
   } elseif {![opt-bool readline]} {
     msg-result "Readline support explicitly disabled with --disable-readline"
     return "none"
