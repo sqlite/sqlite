@@ -13669,7 +13669,7 @@ static int process_input(ShellState *p, const char *zSrc){
 #endif
     if( strchr(zLine,';')!=0 ) hasSemi = 1;
     nLine = strlen(zLine);
-    if( nSql+nLine+2>=nAlloc ){
+    if( nSql+nLine+4>=nAlloc ){
       /* Grow buffer by half-again increments when big. */
       nAlloc = nSql+(nSql>>1)+nLine+100;
       zSql = realloc(zSql, nAlloc);
