@@ -1,5 +1,5 @@
-C Temporarily\sback\sout\sthe\spenultimate\scheck-in\son\sthis\sbranch\sin\sorder\sto\nprevent\san\sassertion\sfault.\s\sNeed\sto\sreconsider\sthis\sapproach\sin\slight\sof\n[bug:/info/2026-05-18T14:04:01Z|Bug\s2026-05-18T14:04:01Z].\s\sThat\sother\nbug\smight\sbe\sfixed\sincorrectly,\sand\smight\salso\sneed\sto\sbe\sbacked\sout.\nBoth\sbugs\sreopened\suntil\swe\scan\scomplete\sthe\sanalysis.
-D 2026-10-12T17:52:40.694
+C Avoid\sleaking\spages\swhen\sremapping\sa\sdatabase\sfile\son\sunix.\sForum\spost\s[forum:3cfba36128\s|\s3cfba36128].
+D 2026-10-12T18:20:50.776
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -786,7 +786,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 713336d0c646720a9ccbd5bc6fe217bb4924dd28adea25d83a2af5346cb030e6
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c 6aa08e19db17a5c2cb8fad0fbf0a47951b6585fd0c385cf74dcf0aa1c0360f05
+F src/os_unix.c fb0aafe175ba95233e0dc80eae297caa597e2d6679246752eb58f6c918cc2b23
 F src/os_win.c 74473c76517956865581f12e4afc06c09a499ea70002cf9cedb3316301138be8
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fd9ca8fe01b09c490e66a440e2f56648d489ccb9e0e3b5508424079b046fc824
@@ -1526,6 +1526,7 @@ F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
 F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
 F test/mmapcorrupt.test 470fb44fe92e99c1d23701d156f8c17865f5b027063c9119dcfdb842791f4465
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
+F test/mmapleak.test 7542cafa4771abba531d072ea905f474a2875a153337a04f327f0a9319cdb72c
 F test/mmapwarm.test 2272005969cd17a910077bd5082f70bc1fefad9a875afec7fc9af483898ecaf3
 F test/modeA.sql e75c4c54df584fade33769ec1ef88ed746c174a7cc1b9ccb972d09c4c7839375
 F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4dac1f08
@@ -1799,7 +1800,7 @@ F test/temptrigger.test a00f258ed8d21a0e8fd4f322f15e8cfb5cef2e43655670e07a753e3f
 F test/tester.tcl dfd8dd05b54bc493a8db6cc1263ee364c36e3c27fab258dad7305cd79b948f3f
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
 F test/testrunner.tcl c63207535fc86a438a1a5ffa7af497a95dd45df38ebd3fa27adf85defddad2c6 x
-F test/testrunner_data.tcl 72ffc35e17dc332af3114faecc03109a91dd5ba8ef239d1879d15b7139df46cf
+F test/testrunner_data.tcl 18307aded2cc7d61e0f1fa15a7134ba08b34c5646006fafacabc1037af63f324
 F test/testrunner_estwork.tcl 81e2ae10238f50540f42fbf2d94913052a99bfb494b69e546506323f195dcff9
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2284,9 +2285,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ffe3f056f1789f188a0afece0363dc2ea74912510bbbd4edcb656ad8a1acc704
-Q -af3c900e2b5251bcbc0611dbe2f86b13fd2daa07bcf42563a9d6db46dfdd6b3d
-R 1ee008533bacf16d5a11ec948df6271a
-U drh
-Z 03283ce8edef75ca3cf9cd863ba9d8c3
+P 163413d8e19b97e36b2a1f6734c271b3944195a213973e2975e43f45a1e80735
+R 14af62c5c6fa84e9b5fb778b7d1785df
+U dan
+Z c50dc0affc2c87cf84f9973e6d795fe3
 # Remove this line to create a well-formed Fossil manifest.
