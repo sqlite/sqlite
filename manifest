@@ -1,5 +1,5 @@
-C Merge\sfixes\sfrom\sbranch-3.54
-D 2026-10-12T07:37:25.384
+C Update\stest/fossildelta.sql\sfor\soutput\sexpectation\schanges.
+D 2026-10-12T09:36:07.602
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1205,7 +1205,7 @@ F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
 F test/fork-test.c 9ac2e6423a1d38df3d6be0e8ac15608b545de21e2b19d9d876254c5931b63edb
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
-F test/fossildelta.sql f8636a793e6a05e6c93d31e6530cc588279bc7282a7cbada445ff0537ba30ee3
+F test/fossildelta.sql 0040d1807fb4742b89679b22ca6827c48dc32500c91f14cccd4fafba21fe656e
 F test/fp-speed-1.c 34a2fe8dc30d0b24bb3e7c16efca0a30452287da6caff7dde86eef882db155a4
 F test/fp-speed-2.c 15830b061832bb51f68f0985cf7a06f4f5d49eb25cc399854f1ff60d6a878ee9
 F test/fpconv1.test 63f352682fa65601a326563ad633086df6ab194e6ed5e7366786f38a525a7fd7
@@ -2284,8 +2284,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P dc388e83b05dd637aafa684eee5f7b51627d39ddfbc97633958266803e882e93 ba74c33b6a69f8eeca3f8c497f9f74dd6dc92bfe8f4b0dcf0325595a5664c9d9
-R febabaeffe2623b8a063033f2840accb
-U drh
-Z 3434142f3886fba0d4108249e77da47f
+P 7b86d92cf510477eefc92555efed99d482b23086dd83eff1a1c5bd6cea1dfe1b
+R 591fd4433281b3594cdee1488956c95c
+U stephan
+Z bb03b3190b0c286ba595786c67c4deb1
 # Remove this line to create a well-formed Fossil manifest.
