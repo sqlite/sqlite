@@ -1,5 +1,5 @@
-C Failed\sto\sincrease\sthe\smemory\sallocation\ssize\sas\srequired\sin\sthe\sprevious\ncheck-in.\s\sFixed\shere.
-D 2026-10-12T20:12:35.632
+C An\sunknown\sfunction\scan\sbe\sseen\sin\sexprNodeCanReturnSubtype(),\sbut\sonly\nif\sSQLite\sis\scompiled\swith\sSQLITE_ENABLE_UNKNOWN_SQL_FUNCTIONS.\s\sAdjust\nasserts\saccordingly.
+D 2026-10-12T21:24:29.331
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -752,7 +752,7 @@ F src/date.c 080641f59097d14fc7341f8bc0458d273b3a62d8381916db8ccbc89c2aae07b3
 F src/dbpage.c ec8590c5e7a564cef28ca3c6156521316a4d26cb572a34841b0bcb26b67b3f97
 F src/dbstat.c 34d4e825fbf763640ce3dbc56910ab080495ef4a6efb48b2b1852a43d43763fc
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
-F src/expr.c b80229730263f70ef39a7ca46f847df6c124ec3bd7de43ba570b994757d51d9f
+F src/expr.c b02c1ae0014ba03a6384c2666c80fa561df46ab5f73f83a6e79cd82f65c7e73e
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 26788ae6c785d70f9829c4176e9764447014fc73e6ba31e9f1881720a64ae7f1
 F src/func.c 54d96eeafcb6ec4cff92028ea0f7bb09e27b375b248d969aeb80a61e560ef302
@@ -2285,8 +2285,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 51f69864e716501cae4f756a158256cefa38482bf9dcdf29f7eedf9f1af8752c
-R 1c4ea80ff1f6ed0d3fce54465e28285c
+P 7b827c44ab843248b66de6fb753aad83af153085d501462b138954ceca7fee81
+R ade8985437b50a2e56e14a3954f8e317
 U drh
-Z c5218a678e61c2040cc7f243690c486b
+Z 4a20ae8ecf4e3ae1d676ccb681a9f0bb
 # Remove this line to create a well-formed Fossil manifest.

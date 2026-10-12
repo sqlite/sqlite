@@ -4825,7 +4825,12 @@ static int exprNodeCanReturnSubtype(Walker *pWalker, Expr *pExpr){
   db = pWalker->pParse->db;
   n = pExpr->x.pList ? pExpr->x.pList->nExpr : 0;
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
-  if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
+#ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  if( pDef==0 ) return WRC_Continue;
+#else
+  assert( pDef!=0 );
+#endif
+  if( (pDef->funcFlags & SQLITE_RESULT_SUBTYPE)!=0 ){
     pWalker->eCode = 1;
     return WRC_Abort;
   }
