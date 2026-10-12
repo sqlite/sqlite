@@ -116,6 +116,26 @@ void sqlite3MemoryBarrier(void){
 }
 
 /*
+** The TryEnterCriticalSection() interface is only available on WinNT,
+** and it did not appear until Windows NT 4.0 Service Pack 3.  Some
+** Windows compilers complain if you try to use it without first doing
+** some #defines that prevent SQLite from building on Win98.  See
+** ticket #2685.
+**
+** Guarding on SQLITE_OS_WINNT as well as on the version macro is what
+** keeps a Windows 9x build out of the executable's import table: the
+** mere act of taking TryEnterCriticalSection's address in code that is
+** compiled in is enough to make the linker import it, and Windows 95
+** has no such export to import, so the loader would refuse to start the
+** executable before any runtime guard could run.
+*/
+#if SQLITE_OS_WINNT && (!defined(_WIN32_WINNT) || _WIN32_WINNT >= 0x0400)
+# define SQLITE_MUTEX_HAVE_TRYENTER 1
+#else
+# define SQLITE_MUTEX_HAVE_TRYENTER 0
+#endif
+
+/*
 ** Static mutexes.
 **
 ** The ALIGN128 macro on the static mutex array forces 128-byte alignment
@@ -130,7 +150,9 @@ static ALIGN128 union staticMutexes {
   char spacer[128];
 } aWindowsMutex[12];
 static int winMutex_isInit = 0;
+#if SQLITE_MUTEX_HAVE_TRYENTER
 static int winMutex_isNt = -1; /* <0 means "need to query" */
+#endif
 
 /* As the winMutexInit() and winMutexEnd() functions are called as part
 ** of the sqlite3_initialize() and sqlite3_shutdown() processing, the
@@ -138,7 +160,9 @@ static int winMutex_isNt = -1; /* <0 means "need to query" */
 */
 static LONG SQLITE_WIN32_VOLATILE winMutex_lock = 0;
 
+#if SQLITE_MUTEX_HAVE_TRYENTER
 int sqlite3_win32_is_nt(void); /* os_win.c */
+#endif
 void sqlite3_win32_sleep(DWORD milliseconds); /* os_win.c */
 
 static int winMutexInit(void){
@@ -331,15 +355,10 @@ static int winMutexTry(sqlite3_mutex *p){
   /*
   ** The sqlite3_mutex_try() routine is very rarely used, and when it
   ** is used it is merely an optimization.  So it is OK for it to always
-  ** fail.
-  **
-  ** The TryEnterCriticalSection() interface is only available on WinNT.
-  ** And some windows compilers complain if you try to use it without
-  ** first doing some #defines that prevent SQLite from building on Win98.
-  ** For that reason, we will omit this optimization for now.  See
-  ** ticket #2685.
+  ** fail.  SQLITE_MUTEX_HAVE_TRYENTER is defined near the top of this
+  ** file, where the reason for the guard is spelled out.
   */
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0400
+#if SQLITE_MUTEX_HAVE_TRYENTER
   assert( winMutex_isInit==1 );
   assert( winMutex_isNt>=-1 && winMutex_isNt<=1 );
   if( winMutex_isNt<0 ){

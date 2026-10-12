@@ -147,6 +147,29 @@
 #endif
 
 /*
+** Check to see if the GetSystemTimeAsFileTime function is available.  It
+** first appeared in Windows 98 and Windows NT 4.0, so it is unavailable
+** when targeting Windows 95.
+**
+** Windows 95 and Windows NT 4.0 both report _WIN32_WINNT as 0x0400, so
+** they cannot be told apart by the version macro alone.  SQLITE_OS_WINNT
+** is what distinguishes them: only a build that explicitly opts out of NT
+** with SQLITE_OS_WINNT=0 *and* targets a version below 0x0410 is a
+** Windows 95 build.  When no _WIN32_WINNT is specified, assume the most
+** recent version of the SDK is in use.
+*/
+#ifndef SQLITE_WIN32_HAS_GETSYSTEMTIMEASFILETIME
+#  if SQLITE_OS_WINCE
+#    define SQLITE_WIN32_HAS_GETSYSTEMTIMEASFILETIME  0
+#  elif defined(SQLITE_OS_WINNT) && !SQLITE_OS_WINNT && \
+        defined(_WIN32_WINNT) && _WIN32_WINNT < 0x0410
+#    define SQLITE_WIN32_HAS_GETSYSTEMTIMEASFILETIME  0
+#  else
+#    define SQLITE_WIN32_HAS_GETSYSTEMTIMEASFILETIME  1
+#  endif
+#endif
+
+/*
 ** This constant should already be defined (in the "WinDef.h" SDK file).
 */
 #ifndef MAX_PATH
@@ -824,7 +847,7 @@ static struct win_syscall {
   { "GetSystemTime",           (SYSCALL)GetSystemTime,           0 },
 #define osGetSystemTime ((VOID(WINAPI*)(LPSYSTEMTIME))aSyscall[31].pCurrent)
 
-#if !SQLITE_OS_WINCE
+#if SQLITE_WIN32_HAS_GETSYSTEMTIMEASFILETIME
   { "GetSystemTimeAsFileTime", (SYSCALL)GetSystemTimeAsFileTime, 0 },
 #else
   { "GetSystemTimeAsFileTime", (SYSCALL)0,                       0 },
@@ -6427,8 +6450,21 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   e.i = 0;
   {
     FILETIME x;
+#if SQLITE_WIN32_HAS_GETSYSTEMTIMEASFILETIME
     osGetSystemTimeAsFileTime(&x);
     xorMemory(&e, (unsigned char*)&x, sizeof(x));
+#else
+    /*
+    ** Unlike GetSystemTimeAsFileTime(), SystemTimeToFileTime() can fail.
+    ** Contribute nothing on failure rather than mixing uninitialized
+    ** bytes into the entropy pool.
+    */
+    SYSTEMTIME st;
+    osGetSystemTime(&st);
+    if( osSystemTimeToFileTime(&st, &x) ){
+      xorMemory(&e, (unsigned char*)&x, sizeof(x));
+    }
+#endif
   }
   {
     DWORD pid = osGetCurrentProcessId();
@@ -6508,15 +6544,19 @@ static int winCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *piNow){
       (sqlite3_int64)2000000000 + (sqlite3_int64)2000000000 +
       (sqlite3_int64)294967296;
 
-#if SQLITE_OS_WINCE
+#if SQLITE_WIN32_HAS_GETSYSTEMTIMEASFILETIME
+  osGetSystemTimeAsFileTime( &ft );
+#else
+  /*
+  ** GetSystemTimeAsFileTime() is not available on Windows CE or Windows
+  ** 95, so synthesize the FILETIME out of the SYSTEMTIME instead.  If
+  ** SystemTimeToFileTime() fails, it returns zero.
+  */
   SYSTEMTIME time;
   osGetSystemTime(&time);
-  /* if SystemTimeToFileTime() fails, it returns zero. */
-  if (!osSystemTimeToFileTime(&time,&ft)){
+  if( !osSystemTimeToFileTime(&time,&ft) ){
     return SQLITE_ERROR;
   }
-#else
-  osGetSystemTimeAsFileTime( &ft );
 #endif
 
   *piNow = winFiletimeEpoch +
