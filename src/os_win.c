@@ -515,8 +515,8 @@ static LONG SQLITE_WIN32_VOLATILE sqlite3_os_type = 0;
 #endif
 
 #ifndef SQLITE_UWP
-static BOOL winGetFileSizeEx(HANDLE h, PLARGE_INTEGER pFileSize);
-static BOOL winSetFilePointerEx(
+static BOOL WINAPI winGetFileSizeEx(HANDLE h, PLARGE_INTEGER pFileSize);
+static BOOL WINAPI winSetFilePointerEx(
   HANDLE h,                       /* File handle */
   LARGE_INTEGER liDistanceToMove, /* Number of bytes to move */
   PLARGE_INTEGER pNewFilePointer, /* New file pointer - may be NULL */
@@ -1257,7 +1257,7 @@ static struct win_syscall {
 ** the older GetFileSize() and SetFilePointer() interfaces.  Both routines
 ** return non-zero upon success and zero upon failure.
 */
-static BOOL winGetFileSizeEx(HANDLE h, PLARGE_INTEGER pFileSize){
+static BOOL WINAPI winGetFileSizeEx(HANDLE h, PLARGE_INTEGER pFileSize){
   DWORD szHigh = 0;
   DWORD szLow = osGetFileSize(h, &szHigh);
   if( szLow==0xFFFFFFFF && osGetLastError()!=NO_ERROR ) return 0;
@@ -1266,7 +1266,7 @@ static BOOL winGetFileSizeEx(HANDLE h, PLARGE_INTEGER pFileSize){
   return 1;
 }
 
-static BOOL winSetFilePointerEx(
+static BOOL WINAPI winSetFilePointerEx(
   HANDLE h,                       /* File handle */
   LARGE_INTEGER liDistanceToMove, /* Number of bytes to move */
   PLARGE_INTEGER pNewFilePointer, /* New file pointer - may be NULL */
