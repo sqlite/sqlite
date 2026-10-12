@@ -7637,7 +7637,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
               if( pOBList->nExpr==1
                && nArg==1
                && sqlite3ExprCompare(0,pOBList->a[0].pExpr,
-                               pExpr->x.pList->a[0].pExpr,0)==0
+                               pExpr->x.pList->a[0].pExpr,-1)==0
               ){
                 pItem->bOBPayload = 0;
                 pItem->bOBUnique = ExprHasProperty(pExpr, EP_Distinct);
