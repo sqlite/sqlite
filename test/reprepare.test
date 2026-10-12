@@ -85,6 +85,16 @@ do_reprepare_test 1.3 {
   { sqlite3_bind_int64 $stmt 1   2      } 1
 }
 
+do_reprepare_test 1.4 {
+  SELECT * FROM t1 LIMIT ?1
+} {
+  { sqlite3_bind_int64 $stmt 1  12      } 1
+  { sqlite3_bind_int64 $stmt 1  12      } 0
+  { sqlite3_bind_int64 $stmt 1  13      } 1
+  { sqlite3_bind_int64 $stmt 1  13      } 0
+  { sqlite3_bind_int64 $stmt 1  14      } 1
+}
+
 #-------------------------------------------------------------------------
 # Test that if a variable is used both in a context where only a change
 # to or from a small integer requires a reprepare (an equality comparison)

@@ -1892,7 +1892,7 @@ int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, sqlite_int64 iValue){
         if( sm1!=sm2 ){
           p->expired = 1;
         }
-      }else{
+      }else if( (pVar->flags & MEM_Int)==0 || iValue!=pVar->u.i ){
         /* Always expire if the smimask bit is clear */
         p->expired = 1;
       }
