@@ -5006,7 +5006,7 @@ static int propagateConstantExprRewrite(Walker *pWalker, Expr *pExpr){
 **
 ** If the WHERE clause contains terms of the form COLUMN=CONSTANT or
 ** CONSTANT=COLUMN that are top-level AND-connected terms that are not
-** part of a ON clause from a LEFT JOIN, then throughout the query
+** part of a ON clause from an OUTER JOIN, then throughout the query
 ** replace all other occurrences of COLUMN with CONSTANT.
 **
 ** For example, the query:
