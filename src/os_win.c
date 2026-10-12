@@ -124,6 +124,29 @@
 #endif
 
 /*
+** Check to see if the GetNativeSystemInfo function is available.  It first
+** appeared in Windows XP, so it is unavailable when targeting earlier
+** systems such as Windows 9x or Windows NT4.  When no _WIN32_WINNT is
+** specified, assume the most recent version of the SDK is in use.
+**
+** Taking the address of an unavailable function in the aSyscall[] table
+** is enough to make the linker add it to the executable's import table,
+** which prevents the executable from loading at all on a system that
+** lacks the export -- the runtime guard in the table is not sufficient.
+*/
+#ifndef SQLITE_WIN32_HAS_GETNATIVESYSTEMINFO
+#  if defined(SQLITE_UWP)
+#    define SQLITE_WIN32_HAS_GETNATIVESYSTEMINFO  1
+#  elif defined(_WIN32_WCE)
+#    define SQLITE_WIN32_HAS_GETNATIVESYSTEMINFO  0
+#  elif !defined(_WIN32_WINNT) || _WIN32_WINNT>=0x0501
+#    define SQLITE_WIN32_HAS_GETNATIVESYSTEMINFO  1
+#  else
+#    define SQLITE_WIN32_HAS_GETNATIVESYSTEMINFO  0
+#  endif
+#endif
+
+/*
 ** This constant should already be defined (in the "WinDef.h" SDK file).
 */
 #ifndef MAX_PATH
@@ -1086,7 +1109,11 @@ static struct win_syscall {
 #define osWaitForSingleObjectEx ((DWORD(WINAPI*)(HANDLE,DWORD, \
         BOOL))aSyscall[68].pCurrent)
 
+#if SQLITE_WIN32_HAS_GETNATIVESYSTEMINFO
   { "GetNativeSystemInfo",     (SYSCALL)GetNativeSystemInfo,     0 },
+#else
+  { "GetNativeSystemInfo",     (SYSCALL)0,                       0 },
+#endif
 
 #define osGetNativeSystemInfo ((VOID(WINAPI*)( \
         LPSYSTEM_INFO))aSyscall[69].pCurrent)
