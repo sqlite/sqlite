@@ -13584,19 +13584,19 @@ static char *one_input_line(
 ** except that if the final semicolon is followed by whitespace, it
 ** still returns true.
 */
-static int line_is_complete(char *zSql){
-  char *zSemi;
-  char c;
-  int rc;
-  if( sqlite3_complete(zSql) ) return 1;
-  zSemi = strrchr(zSql, ';');
-  if( zSemi==0 ) return 0;
-  if( !line_is_all_whitespace(&zSemi[1]) ) return 0;
-  c = zSemi[1];
-  zSemi[1] = 0;
-  rc = sqlite3_complete(zSql);
-  zSemi[1] = c;
-  return rc;
+static int line_is_complete(char *zSql, int nSql){
+  sqlite3_int64 x;
+  assert( nSql>=0 && zSql[nSql]==0 );
+  x = sqlite3_incomplete(zSql);
+  if( x==0x00 || x==0x10 ) return 1;
+  if( x==0x2d0001 ){
+    zSql[nSql] = '\n';
+    zSql[nSql+1] = 0;
+    x = sqlite3_incomplete(zSql);
+    zSql[nSql] = 0;
+    if( x==0x00 || x==0x10 ) return 1;
+  }
+  return 0;
 }
 
 /*
@@ -13696,7 +13696,7 @@ static int process_input(ShellState *p, const char *zSrc){
       errCnt++;
       break;
     }
-    if( nSql && hasSemi && line_is_complete(zSql) ){
+    if( nSql && hasSemi && line_is_complete(zSql, nSql) ){
       echo_group_input(p, zSql);
       errCnt += runOneSqlLine(p, zSql, p->zInFile, startline);
       nSql = 0;
