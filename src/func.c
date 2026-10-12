@@ -333,6 +333,14 @@ static void printfFunc(
   }
 }
 
+/* Return true if any of the eight bytes in word is NUL or non-ASCII. */
+static SQLITE_INLINE int containsNulOrNonAscii(u64 word){
+  const u64 byteOnes = UINT64_C(0x0101010101010101);
+  const u64 byteHighBits = UINT64_C(0x8080808080808080);
+  /* NUL causes a borrow into a high bit; non-ASCII already has one set. */
+  return ((word | (word - byteOnes)) & byteHighBits)!=0;
+}
+
 /*
 ** Implementation of the substr() function.
 **
@@ -416,6 +424,20 @@ static void substrFunc(
   }
   assert( p1>=0 && p2>=0 );
   if( p0type!=SQLITE_BLOB ){
+    if( p1>=8 ){
+      /* Skip 8 characters at a time while all 8 bytes are in 0x01..0x7f */
+      const unsigned char *zEnd = z + sqlite3_value_bytes(argv[0]);
+      while( p1>=8 && zEnd-z>=8 ){
+        u64 word;
+        memcpy(&word, z, sizeof(word));
+        /* Handle NUL and UTF-8 with the scalar loop below. */
+        if( containsNulOrNonAscii(word) ){
+          break;
+        }
+        z += 8;
+        p1 -= 8;
+      }
+    }
     for( ; p1>0; p1--){
                     /*  vvvvvv----  See tag-20260418-01 */
       if( (u8)(z[0]-1)<(0x80-1) ){

@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings,\smostly\sassociated\swith\sthe\snew\sext/misc/optname.c\nextension.
-D 2026-10-12T22:42:19.474
+C Speed\sup\ssubstr()\sfor\sthe\scommon\scase\sof\sASCII\stext.
+D 2026-10-12T23:38:03.213
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -757,7 +757,7 @@ F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
 F src/expr.c 38825d6dae7c37d1bff1734df60046c9d6c5f314c36685754618bbbf9959a04b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 26788ae6c785d70f9829c4176e9764447014fc73e6ba31e9f1881720a64ae7f1
-F src/func.c 54d96eeafcb6ec4cff92028ea0f7bb09e27b375b248d969aeb80a61e560ef302
+F src/func.c 9372b65d0e5e6fc9fff7c4fc20558c5e68babcc7f54f033bba67da39f47acc37
 F src/global.c 7eea537ac0c113ac55cb2dd4d8fc2a6a91ae478be34231b4efaffc46817fee85
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2287,8 +2287,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5a05aded7f54507305edeabbcb54e25d67299769557ae5dc54d0f59d639ac2c6
-R 1d215f86641e43ed4fe85300b5f62690
+P 9d1bc870de51a35d2ecb362a728643d751f33efef2399dccd0d64438e8e48979 5749b0489c50a9ea3ee576cb565810cb2f6d766635c6f1dd38cdc65a76a6d237
+R 832491edcb8eda2a1f6318fa46571950
 U drh
-Z be0fa6413559344ae98ff5048d354022
+Z cfc9ee2ee6ef5ee89c46c6bf6c51cf56
 # Remove this line to create a well-formed Fossil manifest.
