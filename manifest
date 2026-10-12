@@ -1,5 +1,5 @@
-C Update\stest/fossildelta.sql\sfor\soutput\sexpectation\schanges.
-D 2026-10-12T09:36:07.602
+C Minor\shardening\sof\sthe\sfossil\sdelta\sextension\sagainst\smalformed\sdeltas.\sBased\son\ssuggestions\sfrom\sDan\sMestas.
+D 2026-10-12T09:49:25.936
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -379,7 +379,7 @@ F ext/misc/diskused.c 444139c01398df6f73e8a021c91e24d97d7914f5c1b49f55dd503abbca
 F ext/misc/eval.c d4ea2d9898fbe4d30d38ff675ee51958d3bb0601a145bade56dee8b8f438cc5b
 F ext/misc/explain.c 04c9270fd8cf93a9bceb12d2f5f67e3f09a4e58b3e0efe14d24531444d2fffdf
 F ext/misc/fileio.c f32d7488e229cc52283b6f8d9370b004aa92e7a3054aef320cbdbdecb08c4ee5
-F ext/misc/fossildelta.c 6442919f254791e3298d030fd8a612d4ad0dbbadbe39d21b568ef783d97c9e3a
+F ext/misc/fossildelta.c 0af6a5ef3db6bba299271c29b604489e4a5d9e75395c6b83460405a9ccf05c2a
 F ext/misc/fuzzer.c 32cef9a29864a1bc1329ccb6dfa613f197bb83491a7612c2ca2c83ee26cd8f14
 F ext/misc/ieee754.c 2901d08a586d00a1d3c0fd89e03c57ee9e2b5f013b0daab9e49c7a48a9d5946b
 F ext/misc/memstat.c 03ab52d2d841eb3f55118105c1964d5225f152b23bd708844c648b48d14ccbcf
@@ -2284,8 +2284,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7b86d92cf510477eefc92555efed99d482b23086dd83eff1a1c5bd6cea1dfe1b
-R 591fd4433281b3594cdee1488956c95c
+P 41e0466cb861e1567e2884667e8186063bd3343f2055e20fb9866e2acbcf896e
+R 89e149695a3a20d0e6eaa319a3d47438
 U stephan
-Z bb03b3190b0c286ba595786c67c4deb1
+Z 1a4b163bde0b2ea0ca8d7091195b6040
 # Remove this line to create a well-formed Fossil manifest.
