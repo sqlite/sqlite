@@ -13542,6 +13542,27 @@ static char *one_input_line(
 #endif /* SQLITE_SHELL_FIDDLE */
 
 /*
+** Return true if the input would is complete SQL, or complete SQL
+** followed by only whitespace.  This is similar to sqlite3_complete()
+** except that if the final semicolon is followed by whitespace, it
+** still returns true.
+*/
+static int line_is_complete(char *zSql){
+  char *zSemi;
+  char c;
+  int rc;
+  if( sqlite3_complete(zSql) ) return 1;
+  zSemi = strrchr(zSql, ';');
+  if( zSemi==0 ) return 0;
+  if( !line_is_all_whitespace(&zSemi[1]) ) return 0;
+  c = zSemi[1];
+  zSemi[1] = 0;
+  rc = sqlite3_complete(zSql);
+  zSemi[1] = c;
+  return rc;
+}
+
+/*
 ** Read input from *in and process it.  If *in==0 then input
 ** is interactive - the user is typing it it.  Otherwise, input
 ** is coming from a file or device.  A prompt is issued and history
@@ -13609,7 +13630,7 @@ static int process_input(ShellState *p, const char *zSrc){
       memcpy(zLine,";",2);
     }
 #endif
-    hasSemi = strchr(zLine,';')!=0;
+    if( strchr(zLine,';')!=0 ) hasSemi = 1;
     nLine = strlen(zLine);
     if( nSql+nLine+2>=nAlloc ){
       /* Grow buffer by half-again increments when big. */
@@ -13638,7 +13659,7 @@ static int process_input(ShellState *p, const char *zSrc){
       errCnt++;
       break;
     }
-    if( nSql && hasSemi && sqlite3_complete(zSql) ){
+    if( nSql && hasSemi && line_is_complete(zSql) ){
       echo_group_input(p, zSql);
       errCnt += runOneSqlLine(p, zSql, p->zInFile, startline);
       nSql = 0;
