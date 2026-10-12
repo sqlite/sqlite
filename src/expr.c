@@ -4902,10 +4902,16 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
 
     v = pParse->pVdbe;
     assert( v!=0 );
-    if( p->bMaybeNullRow ){
-      /* If the index is on a NULL row due to an outer join, then we
-      ** cannot extract the value from the index.  The value must be
-      ** computed using the original expression. */
+    if( p->bMaybeNullRow || sqlite3ExprIsConstant(pParse, pExpr) ){
+      /* The value of pExpr should be computed from the original expression,
+      ** not from the index, if either:
+      **
+      **    1.   The index might be on a NULL row due to an outer join.
+      **
+      **    2.   The expression is a constant.  This prevents an attempt to
+      **         use an index value outside of the loop that positions the
+      **         index.  (Bug 2026-10-11T19:26:40Z).
+      */
       int addr = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp3(v, OP_IfNullRow, p->iIdxCur, addr+3, target);
       VdbeCoverage(v);
