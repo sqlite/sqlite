@@ -4038,12 +4038,6 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   }
   sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
 
-  if( dest.eDest==SRT_Mem 
-   && sqlite3ExprCanReturnSubtype(pParse, pSel->pEList->a[0].pExpr) 
-  ){
-    sqlite3VdbeAddOp1(v, OP_ClrSubtype, rReg);
-  }
-
   /* Subroutine return */
   assert( ExprUseYSub(pExpr) );
   assert( sqlite3VdbeGetOp(v,pExpr->y.sub.iAddr-1)->opcode==OP_BeginSubrtn
@@ -4799,7 +4793,7 @@ static int exprCodeInlineFunction(
 **
 ** The only expressions that can return a subtype are:
 **
-**    1.  A function, including an aggregate function
+**    1.  A function
 **    2.  The no-op "+" operator
 **    3.  A CASE...END expression
 **    4.  A CAST() expression
@@ -4824,7 +4818,7 @@ static int exprNodeCanReturnSubtype(Walker *pWalker, Expr *pExpr){
   ){
     return WRC_Continue;
   }
-  if( pExpr->op!=TK_FUNCTION && pExpr->op!=TK_AGG_FUNCTION ){
+  if( pExpr->op!=TK_FUNCTION ){
     return WRC_Prune;
   }
   assert( ExprUseXList(pExpr) );
