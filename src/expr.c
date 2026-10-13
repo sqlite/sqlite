@@ -2742,7 +2742,7 @@ static int exprSelectWalkTableConstant(Walker *pWalker, Select *pSelect){
 ** Consider uncorrelated subqueries to be constants if the bAllowSubq
 ** parameter is true.
 */
-static int sqlite3ExprIsTableConstant(Expr *p, int iCur, int bAllowSubq){
+int sqlite3ExprIsTableConstant(Expr *p, int iCur, int bAllowSubq){
   Walker w;
   w.eCode = 3;
   w.pParse = 0;

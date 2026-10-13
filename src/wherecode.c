@@ -1621,10 +1621,16 @@ static int findNoMatchContinuation(
   if( (pParent->pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0
    && (mKey & (mKey-1))==0
   ){
-    if( pParent->addrDeleteCont==0 ){
-      pParent->addrDeleteCont = sqlite3VdbeMakeLabel(pWInfo->pParse);
+    for(i=0; i<pLoop->nLTerm; i++){
+      Expr *pX = pLoop->aLTerm[i]->pExpr;
+      if( !sqlite3ExprIsTableConstant(pX->pRight,pParent->iTabCur,0) ) break;
     }
-    return pParent->addrDeleteCont;
+    if( i==pLoop->nLTerm ){    
+      if( pParent->addrDeleteCont==0 ){
+        pParent->addrDeleteCont = sqlite3VdbeMakeLabel(pWInfo->pParse);
+      }
+      return pParent->addrDeleteCont;
+    }
   }
 
   testcase( iParent<iLevel-1 );
