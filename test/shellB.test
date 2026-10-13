@@ -74,6 +74,7 @@ set f [open $probe wb]
 puts -nonewline $f xyzzy
 close $f
 do_clitest safemode.sql --safe
+do_clitest cliparse.sql --test-parse
 ifcapable vtab {
   do_clitest dotcmd01.sql
   do_clitest import01.sql
