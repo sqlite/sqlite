@@ -2166,7 +2166,18 @@ case OP_AddImm: {            /* in1 */
 case OP_MustBeInt: {            /* jump0, in1 */
   pIn1 = &aMem[pOp->p1];
   if( (pIn1->flags & MEM_Int)==0 ){
-    applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
+    if( (pIn1->flags & MEM_Real)!=0 ){
+      sqlite3_int64 ix;
+      if( pIn1->u.r>=-9223372036854775808.0
+       && pIn1->u.r<+9223372036854775808.0
+       && (double)(ix = sqlite3RealToI64(pIn1->u.r))==pIn1->u.r
+      ){
+        pIn1->u.i = ix;
+        MemSetTypeFlag(pIn1, MEM_Int);
+      }
+    }else{
+      applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
+    }
     if( (pIn1->flags & MEM_Int)==0 ){
       VdbeBranchTaken(1, 2);
       if( pOp->p2==0 ){

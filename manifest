@@ -1,5 +1,5 @@
-C Merge\swasm-post-3.54\sinto\sbranch-3.54:\swasm\sbuild\supdates\sfor\semcc\schanges\sand\san\sOPFS\sfix\sfor\san\sas-yet-hypothetical\sfailure\scase.
-D 2026-10-13T06:45:28.194
+C Enhance\sOP_MustBeInt\sso\sthat\sit\sis\sable\sto\shandle\s-9223372036854775808.0.\n[bugs:/info/2026-10-11T20:33:51Z|Bug\s2026-10-11T20:33:51Z].\s\sSee\nalso\s[987ba5a3dc5f2a22].
+D 2026-10-13T10:51:49.307
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -868,7 +868,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c c5bec56770b71fe75e12f1f7b0a512032e1fd3d1f83c50c4ab4474ced20347a4
 F src/util.c 4437408e09cef6dbb63a8b8ba28be53bdc098ec890e5e64ad7ae1fc83448962e
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 2954169319fef68d5119e9855637e7a44dc64f34ee474d68001a05c03072cb48
+F src/vdbe.c e8f89a20f1f4511cbe4bfd73e20017ae872cd2444b3c10e05b7d9676c120231a
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 68e5ab63f184f2871780c83ce78b425d0360869611baea4c65575f91f76ac1d3
 F src/vdbeapi.c 62dde4b2763b061b2cef7a2ebcfc7d54ada04471189011cb0c9315dcaea2fc86
@@ -1395,7 +1395,7 @@ F test/intarray.test 095e2a13ccb3a37735a4134c5bd3f2b46a21d1a02f6a8b61e9dc6a85adb
 F test/intck01.sql cc67c49bb0dbffd8ede29d3e095ba2b758eaa3907eeeca3fd44048a01c4071d3
 F test/interrupt.test ac1ef50ec9ab8e4f0e17c47629f82539d4b22558904e321ed5abea2e6187da7a
 F test/interrupt2.test 7eaa40a975d950826cd56e6c37f0f0629adfa2d1a8d3333aff0ff7cf86069963
-F test/intpkey.test b01eaec83b7ba9e249ef591a78c9e419bbdb2d27e148cce1a30dbebb56e21b3d
+F test/intpkey.test f416445b14f92f7d4a04576b1ae156cdb50b358c18849551868d77a1ef6f36d9
 F test/intreal.test 0f77b6931491ee0e47d2d849a8cc82b8e5fdcceb43ade1ac4cc80005c2479e96
 F test/io.test d267fdc8915444a45e19841489033ebe70bb69f6db605b00df70be16b2a80f59
 F test/ioerr.test 78552a95d53b9674d85f63bdf3d76a8df70b4d5dba5a6a1b8a1d60f166cd2c6b
@@ -2286,9 +2286,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d0fe92e0ce8662b9f3391769e4602a5495c2c69591ded7d4e464e90517c1f407 837fee6e45464bd3fcb5064cfdb91ec15d7cf0c010106797e28e744c3cb39bbc
-R 9b3fcb0f751806ddbd0df95da3a3353e
-T +closed 837fee6e45464bd3fcb5064cfdb91ec15d7cf0c010106797e28e744c3cb39bbc Closed\sby\sintegrate-merge.
-U stephan
-Z 9463bba979ad3b6c114d86ee424a4e3d
+P c32cf3e355c4656a4415c7f3cf4de4701f9da6aa5f928487e257293b6e78b274
+R 3136bca19759717338d9a74b4d983307
+U drh
+Z 5d8992118ed199f548ad6963bcfaad6d
 # Remove this line to create a well-formed Fossil manifest.
