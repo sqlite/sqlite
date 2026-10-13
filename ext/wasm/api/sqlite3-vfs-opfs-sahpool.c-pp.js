@@ -774,8 +774,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        into the given SAH. If path is an empty string then the file is
        disassociated from the pool but its previous name is preserved
        in the metadata.
+
+       If nameToRemove is truthy then it must be the "old" name when path
+       is falsy. This function removes the mapping of that name to an
+       SAH.
     */
-    setAssociatedPath(sah, path, flags){
+    setAssociatedPath(sah, path, flags, nameToRemove){
       const enc = textEncoder.encodeInto(path, this.#apBody);
       if(HEADER_MAX_PATH_SIZE <= enc.written + 1/*NUL byte*/){
         toss("Path too long:",path);
@@ -792,6 +796,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const digest = this.computeDigest(this.#apBody, flags);
       //console.warn("setAssociatedPath(",path,") digest",digest);
       sah.write(this.#apBody, {at: 0});
+      if(nameToRemove){
+        /* The placement of this is very specific: between the above
+           write and the digest. If the above write fails,
+           nameToRemove remains in the mapping pool. If it succeeds,
+           nameToRemove is no longer available and needs to be removed
+           from the SAH mapping. If the write() _below_ fails, that
+           leaves us with a consistent world view.
+
+           Discussion: bugs:432f260aa787a53 */
+        this.#mapFilenameToSAH.delete(nameToRemove);
+      }
       sah.write(digest, {at: HEADER_OFFSET_DIGEST});
       sah.flush();
 
@@ -881,9 +896,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     deletePath(path) {
       const sah = this.#mapFilenameToSAH.get(path);
       if(sah) {
-        // Un-associate the name from the SAH.
-        this.#mapFilenameToSAH.delete(path);
-        this.setAssociatedPath(sah, '', 0);
+        this.setAssociatedPath(sah, '', 0, path);
       }
       return !!sah;
     }

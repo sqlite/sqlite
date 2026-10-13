@@ -534,7 +534,7 @@ static ShellState shellState;
 */
 static const char *qrfEscNames[] = { "auto", "off", "ascii", "symbol" };
 static const char *qrfQuoteNames[] = 
-      { "off","off","sql","hex","csv","tcl","json","relaxed"};
+      { "off","off","sql","csv","html","tcl","json","relaxed"};
 
 /*
 ** These are the allowed shellFlgs values
@@ -623,7 +623,7 @@ static const ModeInfo aModeInfo[] = {
   { "c",        4,     1,    10,   5,    5,    4,   1,   12,    0,  0 },
   { "column",   0,     0,    9,    1,    1,    0,   3,   2,     2,  0 },
   { "count",    0,     0,    0,    0,    0,    0,   0,   3,     0,  0 },
-  { "csv",      4,     5,    9,    3,    3,    0,   1,   4,     0,  0 },
+  { "csv",      4,     5,    9,    3,    3,    0,   1,   12,    0,  0 },
   { "html",     0,     0,    9,    4,    4,    0,   3,   7,     0,  0 },
   { "insert",   0,     0,    10,   2,    2,    0,   1,   8,     0,  0 },
   { "jatom",    4,     1,    11,   6,    6,    0,   1,   12,    0,  0 },
@@ -9403,7 +9403,8 @@ static int dotCmdMode(ShellState *p){
     if( bAll 
      || (pI->eText!=p->mode.spec.eText && (pI->eText>1 || p->mode.spec.eText>1))
     ){
-      sqlite3_str_appendf(pDesc," --quote %s",qrfQuoteNames[p->mode.spec.eText]);
+      sqlite3_str_appendf(pDesc," --quote %s",
+                          qrfQuoteNames[p->mode.spec.eText]);
     }
     if( bAll 
      || ((p->mode.spec.bRowCount==QRF_Yes) != ((pI->mFlg&4)!=0))
