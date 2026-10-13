@@ -1,4 +1,4 @@
-# 2023 September 23
+# 2023-09-23
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -346,5 +346,24 @@ do_execsql_test 8.1 {
 } {
   1 4 1  2 4 2
 }
+
+# Bug 2026-10-11T20:18:09Z
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a, b TEXT);
+  INSERT INTO t1 VALUES(1, '5.0');
+  CREATE INDEX t1a ON t1(a) WHERE b = CAST(5 AS INT);
+  SELECT b, typeof(b) FROM t1 WHERE b = CAST(5 AS INT);
+} {5.0 text}
+do_execsql_test 9.1 {
+  SELECT count(*) FROM t1 WHERE b = CAST(5 AS INT) AND b LIKE '%.0';
+} 1
+do_execsql_test 9.2 {
+  CREATE TABLE t2(a INT, b INT) STRICT;
+  INSERT INTO t2 VALUES(1, -9223372036854775808);
+  CREATE INDEX t2a ON t2(a) WHERE b = -9223372036854775808.0;
+  SELECT b, typeof(b) FROM t2 WHERE b = -9223372036854775808.0;
+} {-9223372036854775808 integer}
 
 finish_test
