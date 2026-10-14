@@ -1,5 +1,5 @@
-C Improve\sthe\serror\smessages\semitted\sby\sfts5\sin\ssome\scases.\sReport\s[forum:2026-10-13T21:57:58Z\s|\s2026-10-13T21:57:58Z].
-D 2026-10-14T16:11:09.944
+C Have\stestrunner.tcl\sunset\senvironment\svariable\sDEBUGINFOD_URLS.\sLeaving\sit\sset\sslows\sdown\ssome\ssanitizer\srelease\stests.
+D 2026-10-14T17:52:21.757
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1803,7 +1803,7 @@ F test/temptrigfault.tes fc5918e64f3867156fefe7cfca9d8e1f495134a5229b2b511b0dc11
 F test/temptrigger.test a00f258ed8d21a0e8fd4f322f15e8cfb5cef2e43655670e07a753e3fb4769d61
 F test/tester.tcl dfd8dd05b54bc493a8db6cc1263ee364c36e3c27fab258dad7305cd79b948f3f
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
-F test/testrunner.tcl c63207535fc86a438a1a5ffa7af497a95dd45df38ebd3fa27adf85defddad2c6 x
+F test/testrunner.tcl 235c2f1ee60f4cdbd092156b9cb5481d3512a9d9ea799ac1f14721a7774ddd2c x
 F test/testrunner_data.tcl 18307aded2cc7d61e0f1fa15a7134ba08b34c5646006fafacabc1037af63f324
 F test/testrunner_estwork.tcl 81e2ae10238f50540f42fbf2d94913052a99bfb494b69e546506323f195dcff9
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 96a56e7cf9fe91ee8519e5a991c206cea74c53ad596cd78873b74954b2afef9a
-R a954fbf612a996b12804f96db30656dd
+P dabff5c1cde60883f23d41f713f44a5942ae229c3abe280778dc2df41c894907
+R 4b5be89660c013e09134f29cfb5bd25f
 U dan
-Z b3b48002bf7768f6285748ab747a23b3
+Z 5c757519b05c9f98504f3f397cdcd79c
 # Remove this line to create a well-formed Fossil manifest.
