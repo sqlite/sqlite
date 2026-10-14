@@ -73,6 +73,7 @@ foreach {tn schema sql} {
   db_restore_and_reopen
   do_execsql_test 1.1.$tn.1 $schema
   do_catchsql_test 1.1.$tn.2 $sql {1 {database disk image is malformed}}
+  do_test 1.1.$tn.3 { sqlite3_errcode db } {SQLITE_CORRUPT}
   db close
 }
 
