@@ -1181,6 +1181,42 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
   }
 }
 
+#if SQLITE_ENABLE_SANDBOX_FUNCTION+0>0
+/*
+** Magical SQL function:    sandbox(N1, E, N2)
+**
+** This function is magical in that it is evaluated at compile-time:  No
+** bytecode is generated.  Instead sandbox() transforms the AST.
+**
+** The AST for the sandbox() itself is replaced with the middle expression E
+** if and only if all of the following are true:
+**
+**    *  N1 and N2 must compare equal using sqlite3ExprCompare().
+**
+**    *  N1 (and hence N2 also, due to the prior constrant) must both be
+**       a constant expression.  It cannot use variables or table references.
+**
+**    *  E does not contain any subqueries - either scalar subqueries or
+**       "EXISTS" expressions or IN operators where the RHS is a subquery.
+*/
+static SQLITE_NOINLINE Expr *exprSandbox(Parse *pParse, Expr *pOrig){
+  struct ExprList_item *a = pOrig->x.pList->a;
+  Expr *pMid = a[1].pExpr;
+  if( sqlite3ExprCompare(pParse, a[0].pExpr, a[2].pExpr, 0)!=0
+   || sqlite3ExprIsConstant(pParse, a[0].pExpr)==0
+   || sqlite3ExprIsConstantOrFunction(a[0].pExpr, 0)==0
+   || sqlite3ExprContainsSubquery(pMid)
+  ){
+    sqlite3ErrorMsg(pParse, "sandbox violation");
+    return pOrig;
+  }
+  a[1] = a[2];
+  pOrig->x.pList->nExpr = 2;
+  sqlite3ExprDelete(pParse->db, pOrig);
+  return pMid;
+}
+#endif /* SQLITE_ENABLE_SANDBOX_FUNCTION */
+
 /*
 ** Construct a new expression node for a function with multiple
 ** arguments.
@@ -1194,6 +1230,12 @@ Expr *sqlite3ExprFunction(
   Expr *pNew;
   sqlite3 *db = pParse->db;
   assert( pToken );
+  if( pList
+   && pList->nExpr > pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG]
+   && !pParse->nested
+  ){
+    sqlite3ErrorMsg(pParse, "too many arguments on function %T", pToken);
+  }
   pNew = sqlite3ExprAlloc(db, TK_FUNCTION, pToken, 1);
   if( pNew==0 ){
     sqlite3ExprListDelete(db, pList); /* Avoid memory leak when malloc fails */
@@ -1201,17 +1243,20 @@ Expr *sqlite3ExprFunction(
   }
   assert( !ExprHasProperty(pNew, EP_InnerON|EP_OuterON) );
   pNew->w.iOfst = (int)(pToken->z - pParse->zTail);
-  if( pList
-   && pList->nExpr > pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG]
-   && !pParse->nested
-  ){
-    sqlite3ErrorMsg(pParse, "too many arguments on function %T", pToken);
-  }
   pNew->x.pList = pList;
   ExprSetProperty(pNew, EP_HasFunc);
   assert( ExprUseXList(pNew) );
   sqlite3ExprSetHeightAndFlags(pParse, pNew);
   if( eDistinct==SF_Distinct ) ExprSetProperty(pNew, EP_Distinct);
+#if SQLITE_ENABLE_SANDBOX_FUNCTION+0>0
+  if( pToken->n==7
+   && pList!=0
+   && pList->nExpr==3
+   && sqlite3_strnicmp(pToken->z,"SANDBOX",7)==0
+  ){
+    pNew = exprSandbox(pParse, pNew);
+  }
+#endif /* SQLITE_ENABLE_SANDBOX_FUNCTION */
   return pNew;
 }
 
@@ -2901,7 +2946,7 @@ int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
 ** in a CREATE TABLE statement.  Return non-zero if the expression is
 ** acceptable for use as a DEFAULT.  That is to say, return non-zero if
 ** the expression is constant or a function call with constant arguments.
-** Return and 0 if there are any variables.
+** Return 0 if there are any variables.
 **
 ** isInit is true when parsing from sqlite_schema.  isInit is false when
 ** processing a new CREATE TABLE statement.  When isInit is true, parameters
