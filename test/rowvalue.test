@@ -859,6 +859,25 @@ do_execsql_test 35.1 {
   SELECT (1, 'a') IN (SELECT c2, c1 from t1);
 } 1
 
+# Bug 2026-10-14T05:52:10Z
+#
+reset_db
+do_execsql_test 35.2 {
+  CREATE TABLE t1(x,y,z);
+  INSERT INTO t1 VALUES(1,9,1);
+  CREATE UNIQUE INDEX t1xz ON t1(x,z);
+  CREATE TABLE t2(w);
+  INSERT INTO t2 VALUES(8);
+  CREATE TABLE t3(a,b);
+  INSERT INTO t3 VALUES(4,5);
+  CREATE TABLE t4(p,q);
+  CREATE INDEX t4qp ON t4(q,p);
+  INSERT INTO t4 VALUES(1,2),(4,5),(7,8);
+  SELECT *
+    FROM (SELECT avg(w) FROM t2),
+         (SELECT sum(x) FROM t1 WHERE x=z AND ((SELECT * FROM t3) IN t4) = x);
+} {8.0 1}
+
 # Forum post 2026-05-09T07:55:45Z
 #
 do_execsql_test 36.0 {

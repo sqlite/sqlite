@@ -4261,7 +4261,6 @@ static void sqlite3ExprCodeIN(
         testcase( aiMap[i]!=i );
         sqlite3VdbeAddOp3(v, OP_Copy, rLhsOrig+i, rLhs+aiMap[i], 0);
       }
-      sqlite3ReleaseTempReg(pParse, rLhsOrig);
     }
   }
 
@@ -7728,6 +7727,13 @@ int sqlite3GetTempReg(Parse *pParse){
 */
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
   if( iReg ){
+#ifdef SQLITE_DEBUG
+    /* Verify that iReg is not already on the unused register list */
+    int kk;
+    for(kk=0; kk<pParse->nTempReg; kk++){
+      assert( pParse->aTempReg[kk]!=iReg );
+    }
+#endif
     sqlite3VdbeReleaseRegisters(pParse, iReg, 1, 0, 0);
     if( pParse->nTempReg<ArraySize(pParse->aTempReg) ){
       pParse->aTempReg[pParse->nTempReg++] = iReg;
