@@ -13441,9 +13441,7 @@ static int doAutoDetectRestore(ShellState *p, const char *zSql){
 */
 static void runTestParse(
   ShellState *p,            /* Execution context */
-  char *zSql,               /* SQL to be run */
-  const char *zFilename,    /* Source file of the sql */
-  int startline             /* linenumber */
+  char *zSql                /* SQL to be run */
 ){
   int nNL = 0;
   char *zNL;
@@ -13508,7 +13506,7 @@ static int runOneSqlLine(
   if( ShellHasFlag(p,SHFLG_Backslash) ) resolve_backslashes(zSql);
   if( p->flgProgress & SHELL_PROGRESS_RESET ) p->nProgress = 0;
   if( p->bTestParse ){
-    runTestParse(p, zSql, zFilename, startline);
+    runTestParse(p, zSql);
     rc = SQLITE_OK;
   }else{
     BEGIN_TIMER(p);
