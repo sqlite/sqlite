@@ -326,12 +326,16 @@ static SQLITE_NOINLINE const char *indexInAffinityOk(
 
   assert( pTerm->eOperator & WO_IN );
 
-  if( sqlite3ExprIsVector(pX->pLeft) ){
-    int iField = pTerm->u.x.iField - 1;
+  if( ExprUseXSelect(pX) ){
+    int iField = 0;
     inexpr.flags = 0;
     inexpr.op = TK_EQ;
-    inexpr.pLeft = pX->pLeft->x.pList->a[iField].pExpr;
-    assert( ExprUseXSelect(pX) );
+    if( sqlite3ExprIsVector(pX->pLeft) ){
+      iField = pTerm->u.x.iField - 1;
+      inexpr.pLeft = pX->pLeft->x.pList->a[iField].pExpr;
+    }else{
+      inexpr.pLeft = pX->pLeft;
+    }
     inexpr.pRight = pX->x.pSelect->pEList->a[iField].pExpr;
     pX = &inexpr;
   }
