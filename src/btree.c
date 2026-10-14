@@ -8464,6 +8464,7 @@ static int balance_nonroot(
     u16 maskPage = pOld->maskPage;
     u8 *piCell = aData + pOld->cellOffset;
     u8 *piEnd;
+    u8 **ppCell;
     VVA_ONLY( int nCellAtStart = b.nCell; )
 
     /* Verify that all sibling pages are of the same "type" (table-leaf,
@@ -8499,10 +8500,10 @@ static int balance_nonroot(
       }
       limit = pOld->aiOvfl[0];
       for(j=0; j<limit; j++){
-        b.apCell[b.nCell] = aData + (maskPage & get2byteAligned(piCell));
+        b.apCell[b.nCell+j] = aData + (maskPage & get2byteAligned(piCell));
         piCell += 2;
-        b.nCell++;
       }
+      b.nCell += limit;
       for(k=0; k<pOld->nOverflow; k++){
         assert( k==0 || pOld->aiOvfl[k-1]+1==pOld->aiOvfl[k] );/* NOTE 1 */
         b.apCell[b.nCell] = pOld->apOvfl[k];
@@ -8510,12 +8511,14 @@ static int balance_nonroot(
       }
     }
     piEnd = aData + pOld->cellOffset + 2*pOld->nCell;
+    /* Collect cell pointers before updating the cell count. */
+    ppCell = &b.apCell[b.nCell];
     while( piCell<piEnd ){
-      assert( b.nCell<nMaxCells );
-      b.apCell[b.nCell] = aData + (maskPage & get2byteAligned(piCell));
+      assert( ppCell<&b.apCell[nMaxCells] );
+      *ppCell++ = aData + (maskPage & get2byteAligned(piCell));
       piCell += 2;
-      b.nCell++;
     }
+    b.nCell = (int)(ppCell - b.apCell);
     assert( (b.nCell-nCellAtStart)==(pOld->nCell+pOld->nOverflow) );
 
     cntOld[i] = b.nCell;
