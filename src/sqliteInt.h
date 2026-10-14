@@ -5186,7 +5186,8 @@ int sqlite3ExprIsConstant(Parse*,Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);
 int sqlite3ExprIsConstantOrGroupBy(Parse*, Expr*, ExprList*);
 int sqlite3ExprIsSingleTableConstraint(Expr*,const SrcList*,int,int);
-#ifdef SQLITE_ENABLE_CURSOR_HINTS
+#if defined(SQLITE_ENABLE_CURSOR_HINTS) \
+ || defined(SQLITE_ENABLE_SANDBOX_FUNCTION)
 int sqlite3ExprContainsSubquery(Expr*);
 #endif
 int sqlite3ExprIsInteger(const Expr*, int*, Parse*);
