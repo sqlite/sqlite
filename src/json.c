@@ -5512,17 +5512,16 @@ static int jsonEachPathLength(JsonEachCursor *p){
   u32 n = p->path.nUsed;
   char *z = p->path.zBuf;
   if( p->iRowid==0 && p->bRecursive && n>=2 ){
-    while( n>1 ){
+    while( ALWAYS(n>1) ){
       n--;
       if( z[n]=='[' || z[n]=='.' ){
-        u32 x, sz = 0;
+        u32 x;
         char cSaved = z[n];
         z[n] = 0;
         assert( p->sParse.eEdit==0 );
         x = jsonLookupStep(&p->sParse, 0, z+1, 0);
         z[n] = cSaved;
-        if( JSON_LOOKUP_ISERROR(x) ) continue;
-        if( x + jsonbPayloadSize(&p->sParse, x, &sz) == p->i ) break;
+        if( !JSON_LOOKUP_ISERROR(x) ) break;
       }
     }
   }
