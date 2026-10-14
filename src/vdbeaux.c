@@ -70,12 +70,16 @@ void sqlite3VdbeError(Vdbe *p, const char *zFormat, ...){
 void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, u8 prepFlags){
   if( p==0 ) return;
   p->prepFlags = prepFlags;
+  assert( p->zSql==0 );
   if( (prepFlags & SQLITE_PREPARE_SAVESQL)==0 ){
     p->expmask = 0;
     p->smimask = 0;
   }
-  assert( p->zSql==0 );
-  p->zSql = sqlite3DbStrNDup(p->db, z, n);
+  if( (prepFlags & SQLITE_PREPARE_STATIC_SQL)!=0 ){
+    p->zSql = (char*)z;
+  }else{
+    p->zSql = sqlite3DbStrNDup(p->db, z, n);
+  }
 }
 
 #ifdef SQLITE_ENABLE_NORMALIZE
@@ -3765,7 +3769,9 @@ static void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
     if( p->pFree ) sqlite3DbNNFreeNN(db, p->pFree);
   }
   vdbeFreeOpArray(db, p->aOp, p->nOp);
-  if( p->zSql ) sqlite3DbNNFreeNN(db, p->zSql);
+  if( p->zSql && (p->prepFlags & SQLITE_PREPARE_STATIC_SQL)==0 ){
+    sqlite3DbNNFreeNN(db, p->zSql);
+  }
 #ifdef SQLITE_ENABLE_NORMALIZE
   sqlite3DbFree(db, p->zNormSql);
   {

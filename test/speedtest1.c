@@ -117,6 +117,7 @@ static struct Global {
   const char *zDbName;       /* Name of the database file */
   const char *zVfs;          /* --vfs NAME */
   sqlite3_stmt *pStmt;       /* Current SQL statement */
+  char *zSql;                /* SQL for pStmt */
   sqlite3_int64 iStart;      /* Start-time for the current test */
   sqlite3_int64 iTotal;      /* Total time */
   int bWithoutRowid;         /* True for --without-rowid */
@@ -133,6 +134,7 @@ static struct Global {
   int nReserve;              /* Reserve bytes */
   int stmtScanStatus;        /* True to activate Stmt ScanStatus reporting */
   int doBigTransactions;     /* Enable transactions on tests 410 and 510 */
+  int prepFlags;             /* Argument to sqlite3_prepare_v3() */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
   const char *zPK;           /* Might be UNIQUE or PRIMARY KEY */
@@ -461,6 +463,10 @@ void speedtest1_end_test(void){
     g.iTotal += iElapseTime;
     printf("%4d.%03ds\n", (int)(iElapseTime/1000), (int)(iElapseTime%1000));
   }
+  if( g.zSql ){
+    sqlite3_free(g.zSql);
+    g.zSql = 0;
+  }
   if( g.pStmt ){
     sqlite3_finalize(g.pStmt);
     g.pStmt = 0;
@@ -556,7 +562,7 @@ char *speedtest1_once(const char *zFormat, ...){
   if( g.bSqlOnly ){
     printSql(zSql);
   }else{
-    int rc = sqlite3_prepare_v2(g.db, zSql, -1, &pStmt, 0);
+    int rc = sqlite3_prepare_v3(g.db, zSql, -1, g.prepFlags, &pStmt, 0);
     if( rc ){
       fatal_error("SQL error: %s\n", sqlite3_errmsg(g.db));
     }
@@ -584,21 +590,22 @@ char *speedtest1_once(const char *zFormat, ...){
 /* Prepare an SQL statement */
 void speedtest1_prepare(const char *zFormat, ...){
   va_list ap;
-  char *zSql;
   va_start(ap, zFormat);
-  zSql = sqlite3_vmprintf(zFormat, ap);
+  if( g.zSql ) sqlite3_free(g.zSql);
+  g.zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( g.bSqlOnly ){
-    printSql(zSql);
+    printSql(g.zSql);
+    sqlite3_free(g.zSql);
+    g.zSql = 0;
   }else{
     int rc;
     if( g.pStmt ) sqlite3_finalize(g.pStmt);
-    rc = sqlite3_prepare_v2(g.db, zSql, -1, &g.pStmt, 0);
+    rc = sqlite3_prepare_v3(g.db, g.zSql, -1, g.prepFlags, &g.pStmt, 0);
     if( rc ){
       fatal_error("SQL error: %s\n", sqlite3_errmsg(g.db));
     }
   }
-  sqlite3_free(zSql);
 }
 
 /* Run an SQL statement previously prepared */
@@ -661,7 +668,7 @@ void speedtest1_run(void){
 #if SQLITE_VERSION_NUMBER>=3006001
   if( g.bReprepare ){
     sqlite3_stmt *pNew;
-    sqlite3_prepare_v2(g.db, sqlite3_sql(g.pStmt), -1, &pNew, 0);
+    sqlite3_prepare_v3(g.db, g.zSql, -1, g.prepFlags, &pNew, 0);
     rc = sqlite3_finalize(g.pStmt);
     if( rc!=SQLITE_OK ){
       fatal_error("%s\nError code %d: %s\n",
@@ -3011,6 +3018,9 @@ int main(int argc, char **argv){
   /* Resetting all state is important for the WASM build, which may
   ** call main() multiple times. */
   memset(&g, 0, sizeof(g));
+#ifdef SQLITE_PREPARE_STATIC_SQL
+  g.prepFlags = SQLITE_PREPARE_STATIC_SQL;
+#endif
   iTestNumber = 0;
 #endif
 #ifdef SQLITE_CKSUMVFS_STATIC

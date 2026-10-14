@@ -4501,6 +4501,14 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** to return an error (error code SQLITE_ERROR) if the statement uses
 ** any virtual tables.
 **
+** [[SQLITE_PREPARE_STATIC_SQL]] <dt>SQLITE_PREPARE_STATIC_SQL</dt>
+** <dd>The SQLITE_PREPARE_STATIC_SQL flag causes the prepared statement
+** to remember the original SQL text passed into sqlite3_prepare_v3(),
+** rather than making its own copy.  This can be used to reduce the
+** memory required for a prepared statement if (and only if) the application
+** guarantees that the input SQL is zero-terminated and will not change
+** for the lifetime of the prepared statement.  
+**
 ** [[SQLITE_PREPARE_DONT_LOG]] <dt>SQLITE_PREPARE_DONT_LOG</dt>
 ** <dd>The SQLITE_PREPARE_DONT_LOG flag prevents SQL compiler
 ** errors from being sent to the error log defined by
@@ -4531,6 +4539,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 #define SQLITE_PREPARE_PERSISTENT              0x01
 #define SQLITE_PREPARE_NORMALIZE               0x02
 #define SQLITE_PREPARE_NO_VTAB                 0x04
+#define SQLITE_PREPARE_STATIC_SQL              0x08
 #define SQLITE_PREPARE_DONT_LOG                0x10
 #define SQLITE_PREPARE_FROM_DDL                0x20
 

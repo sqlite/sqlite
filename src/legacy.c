@@ -50,7 +50,9 @@ int sqlite3_exec(
     char **azVals = 0;
 
     pStmt = 0;
-    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
+    rc = sqlite3_prepare_v3(db, zSql, -1,
+                            SQLITE_PREPARE_STATIC_SQL,
+                            &pStmt, &zLeftover);
     assert( rc==SQLITE_OK || pStmt==0 );
     if( rc!=SQLITE_OK ){
       continue;
