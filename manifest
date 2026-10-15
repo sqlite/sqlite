@@ -1,5 +1,5 @@
-C Merge\sthe\s24:00:00\sfix\sfrom\sbranch-3.54\sinto\strunk
-D 2026-10-15T13:33:20.847
+C Remove\scode\sthat\sis\sno\slonger\sreachable\safter\s[bbdd13370de93035].\s\sAdd\nan\sassert()\sto\sverify\sthat\sthe\scode\sis\sunreachable.
+D 2026-10-15T13:55:05.210
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -755,7 +755,7 @@ F src/date.c 7719f64947e718a38897af459259eeac1aeda7daf7b87860c4d37fc687101004
 F src/dbpage.c ec8590c5e7a564cef28ca3c6156521316a4d26cb572a34841b0bcb26b67b3f97
 F src/dbstat.c 34d4e825fbf763640ce3dbc56910ab080495ef4a6efb48b2b1852a43d43763fc
 F src/delete.c f3f07c1fb6ac87fac2425d48fd40ecb2f24a4495a9966f5a939668d3576916c8
-F src/expr.c e4097826bbb853e233c1f4f27fd93f2ebc48104eb88d7ac9ba0541ddb631d5c7
+F src/expr.c b14e0b95e2c819727a77348d2d0764b958072cd766c0207fedb3d09acc337b5b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 26788ae6c785d70f9829c4176e9764447014fc73e6ba31e9f1881720a64ae7f1
 F src/func.c 9372b65d0e5e6fc9fff7c4fc20558c5e68babcc7f54f033bba67da39f47acc37
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bbdd13370de9303561bf501f88bf62d2ba363c6e5d950d8d7416e59874768ee0 69071e25cad52b7fe15749f5fb969e847f9cd65e66341e8d1d4e5f5282283cd4
-R 997bf1f7e3f0c95c82dc0a4870242ace
+P 3ce64081cab882b60ad73db77da961e479cd84eb151444f420da9fcc370f740d
+R 76f43338ac789d41d3609cb388d0106d
 U drh
-Z 0c8a9a0f0e92ca8d8f1848fdc3b11728
+Z 03d6a8e5c145c41269fb248d2afbccb9
 # Remove this line to create a well-formed Fossil manifest.
