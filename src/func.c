@@ -815,10 +815,20 @@ static int patternCompare(
       if( c<0x80 ){
         char zStop[3];
         int bMatch;
+        /* If the next pattern character is an ordinary ASCII character,
+        ** then a candidate position can only match if the next input
+        ** character is nx or ny.  Check that inline, to avoid most of the
+        ** recursive calls.  nx==0 disables this check. */
+        u8 nx = zPattern[0], ny = nx;
+        if( nx>=0x80 || nx==matchAll || nx==matchOne || nx==matchOther ){
+          nx = 0;
+        }
         if( noCase ){
           zStop[0] = sqlite3Toupper(c);
           zStop[1] = sqlite3Tolower(c);
           zStop[2] = 0;
+          nx = sqlite3Toupper(nx);
+          ny = sqlite3Tolower(ny);
         }else{
           zStop[0] = c;
           zStop[1] = 0;
@@ -827,6 +837,7 @@ static int patternCompare(
           zString += strcspn((const char*)zString, zStop);
           if( zString[0]==0 ) break;
           zString++;
+          if( nx && zString[0]!=nx && zString[0]!=ny ) continue;
           bMatch = patternCompare(zPattern,zString,pInfo,matchOther);
           if( bMatch!=SQLITE_NOMATCH ) return bMatch;
         }
