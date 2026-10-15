@@ -7665,16 +7665,18 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
     }
     if( pLevel->addrNxt!=pLevel->addrBrk ){
-      /* This occurs in two cases - (a) for a LIKE/GLOB scan that must visit
+      /* This occurs in three cases - (a) for a LIKE/GLOB scan that must visit
       ** ranges of text and blob values separately, and (b) when there is
-      ** an IN(...) constraint driving the index. This is asserted() in the
-      ** next block, inside the #ifndef. */
+      ** an IN(...) constraint driving the index, and (c) when a prior error
+      ** such as an OOM has left us in an unusual state. This is asserted()
+      ** in the next block, inside the #ifndef. */
       sqlite3VdbeResolveLabel(v, pLevel->addrNxt);
     }
 #ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
     assert( (pLevel->addrNxt==pLevel->addrBrk)
          || (pLevel->addrLikeRep)                                    /* (a) */
          || ((pLoop->wsFlags & WHERE_IN_ABLE) && pLevel->u.in.nIn>0) /* (b) */
+         || pWInfo->pParse->nErr>0                                   /* (c) */
     );
     if( pLevel->addrLikeRep ){
       /* The LIKE optimization loop is nested inside any IN(...) and
