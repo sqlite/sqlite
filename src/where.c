@@ -5316,7 +5316,7 @@ static i8 wherePathSatisfiesOrderBy(
           nColumn = 1;
         }
         pIndex = 0;
-        nKeyCol = 0;
+        nKeyCol = 1;
       }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
         return 0;
       }else{
@@ -5458,7 +5458,7 @@ static i8 wherePathSatisfiesOrderBy(
         }
         if( isMatch && (pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_BIGNULL) ){
           if( j==pLoop->u.btree.nEq 
-           && (HasRowid(pIndex->pTable)||!IsPrimaryKeyIndex(pIndex)||j<nKeyCol)
+           && (j<nKeyCol||HasRowid(pIndex->pTable)||!IsPrimaryKeyIndex(pIndex))
           ){
             /* If this is the PK of a WITHOUT ROWID table, do not use any
             ** field past nKeyCol for a NULLS LAST sort. If ALTER TABLE has
@@ -5478,7 +5478,8 @@ static i8 wherePathSatisfiesOrderBy(
           obSat |= MASKBIT(i);
         }else{
           /* No match found */
-          if( j==0 || j<nKeyCol ){
+          assert( nKeyCol>0 );
+          if( j<nKeyCol ){
             testcase( isOrderDistinct!=0 );
             isOrderDistinct = 0;
           }

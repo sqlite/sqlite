@@ -447,5 +447,11 @@ do_execsql_test 13.4 {
   SELECT * FROM t2 WHERE a IN (1, 2, 3) ORDER BY b NULLS LAST;
 } {1 5 2 5 3 {}}
 
+do_execsql_test 13.5 {
+  CREATE TABLE t3(a);
+  INSERT INTO t3 VALUES(1),(2);
+  SELECT * FROM t3 ORDER BY rowid NULLS LAST;
+} {1 2}
+
 
 finish_test
