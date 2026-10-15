@@ -2093,9 +2093,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         assert( pRangeStart!=0 );                     /* LIKE opt constraints */
         assert( pRangeStart->wtFlags & TERM_LIKEOPT );   /* occur in pairs */
         pLevel->iLikeRepCntr = (u32)++pParse->nMem;
-        sqlite3VdbeAddOp2(v, OP_Integer, 1, (int)pLevel->iLikeRepCntr);
-        VdbeComment((v, "LIKE loop counter"));
-        pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
         /* iLikeRepCntr actually stores 2x the counter register number.  The
         ** bottom bit indicates whether the search order is ASC or DESC. */
         testcase( bRev );
@@ -2159,6 +2156,20 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     codeCursorHint(pTabItem, pWInfo, pLevel, pRangeEnd);
     regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
     assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
+#ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
+    if( pLevel->iLikeRepCntr ){
+      /* The LIKE optimization loop must be the innermost of any IN(...)
+      ** or skip-scan loops. Otherwise rows may not be visited in index 
+      ** order. This means it needs an addrNxt label for the same reason
+      ** IN(...) scans do.  */
+      if( pLevel->addrNxt==pLevel->addrBrk ){
+        pLevel->addrNxt = sqlite3VdbeMakeLabel(pParse);
+      }
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, (int)(pLevel->iLikeRepCntr>>1));
+      VdbeComment((v, "LIKE loop counter"));
+      pLevel->addrLikeRep = sqlite3VdbeCurrentAddr(v);
+    }
+#endif
     if( zStartAff && nTop ){
       zEndAff = sqlite3DbStrDup(db, &zStartAff[nEq]);
     }
