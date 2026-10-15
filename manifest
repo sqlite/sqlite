@@ -1,5 +1,5 @@
-C Avoid\sa\scrash\sprocessing\s"ORDER\sBY\srowid\sNULLS\sLAST"\sintroduced\sby\sthe\sprevious\scommit.
-D 2026-10-15T19:59:06.198
+C Deal\swith\sharmless\s32-bit\sinteger\soverflow\son\sparameters\sto\ssome\sextension\nSQL\sfunctions.\n[bugs:/info/2026-10-15T04:34:08Z|Bug\s2026-10-15T04:34:08Z]
+D 2026-10-15T21:46:13.627
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -375,7 +375,7 @@ F ext/misc/completion.c 3f5db28e88c3313103b2dd86d910a2944fd500c46754e473493968ce
 F ext/misc/compress.c c4597f0e3c63a5f89af55486490f9d69896b0482898f2ddb8a46aa11e4d13016
 F ext/misc/csv.c 5ca451b9ce77322c4ce8476766e7ed18160e5c8b19e7cab76e13006d631b9e8f
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
-F ext/misc/decimal.c 0e5504e949c45df8cc69e3754bfa4f35cb341f7c055e74187693cc1f2c33afbd
+F ext/misc/decimal.c 46187504723ec91894fb82bcbfd381a18fb96910556f08c5e7799d7529600eb5
 F ext/misc/diskused.c 444139c01398df6f73e8a021c91e24d97d7914f5c1b49f55dd503abbca347c6e
 F ext/misc/eval.c d4ea2d9898fbe4d30d38ff675ee51958d3bb0601a145bade56dee8b8f438cc5b
 F ext/misc/explain.c 04c9270fd8cf93a9bceb12d2f5f67e3f09a4e58b3e0efe14d24531444d2fffdf
@@ -758,7 +758,7 @@ F src/delete.c f3f07c1fb6ac87fac2425d48fd40ecb2f24a4495a9966f5a939668d3576916c8
 F src/expr.c b14e0b95e2c819727a77348d2d0764b958072cd766c0207fedb3d09acc337b5b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 26788ae6c785d70f9829c4176e9764447014fc73e6ba31e9f1881720a64ae7f1
-F src/func.c 9372b65d0e5e6fc9fff7c4fc20558c5e68babcc7f54f033bba67da39f47acc37
+F src/func.c 9f242c987c63327600a0333f6b297a70228d3a0c15fb894c6e8ac62b0abc4900
 F src/global.c 7eea537ac0c113ac55cb2dd4d8fc2a6a91ae478be34231b4efaffc46817fee85
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -805,7 +805,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 0e0990f60c93db38c735d85e5d1741130e72dd0670aec204b5a39118b53c8044
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 23bf5cd12a116bef8458f1277a0e6a17ac244c039d41a052cd63f3d6aef714fa
-F src/shell.c.in ed317426de12dc7985dd6f5eb533e80f203e951dd05ee8fda4cf08178b40aa22
+F src/shell.c.in 289d00bc3802915705cdf09dde4398547d51cb52663f77ed065b5a32d45ea3d5
 F src/sqlite.h.in 648fdc66f52433fc0f6cf9564ac924cde544eca9605bbac36aa22d8c944f11ed
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5e113c4c0442f2f1b3345d44cbe4b82fad45f2fc0c35f0ed4eef27fb8f1cb394
@@ -1574,6 +1574,7 @@ F test/oserror.test ee3fad06ec8671c4d047c2c92a567fc2e0e8161caaec7edd6d48325c5ac9
 F test/ossfuzz.c b5d232d9717fc999a121c82c4880ae5b9d7fb3ae55d2d87a8da906bc80020906
 F test/ossshell.c f125c5bd16e537a2549aa579b328dd1c59905e7ab1338dfc210e755bb7b69f17
 F test/output-redirect-test.txt aeebac99f766f1e54bb2628b13c2d89a3d77de942138a01210c8a814b54c2bc8
+F test/overflow1.sql 4badd43e2ec55e6bf07afe5a61c68f56355d5352fb17541313eabeac3ac8e31e
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test b083c2d5d89df8e979658d9320bfc0b9d50b4ef8ae1d9e115a692ff0b9768393
 F test/pager2.test c0ede15952b607f9a38f653acdfa73c19e657958e9104aab1a71950ea7b71831
@@ -1718,7 +1719,7 @@ F test/shell7.test 6b006d296b569a7ec78b8168af77578b3bde8f58b79c32d9f46cff1eaf763
 F test/shell8.test d2fc95f7467c3d93834cac3327bdac03554991afed6d9a07e6a2b204b037f9d7
 F test/shell9.test c0e8871061a92151450b3332279a893b516fa73a6c46d4f51a0998407cbf8c89
 F test/shellA.test 05cdaafa1f79913654487ce3aefa038d4106245d58f52e02faf506140a76d480
-F test/shellB.test ed1b19bd3ac0fb049d02aeac603bd552e651c7c3a3bc1d52f426d65299b68fd1
+F test/shellB.test c374b053206db1ae1ea585d12ed849ee4fe6ebf8fd72f1ebebea33042ab4b3b5
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2290,8 +2291,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a2a20c54a2ce7a43a253f496210e8ff39215cd18b17895b62ef963fe449f3ab2
-R 09c4909860ce8acaec1b7d307e13c53e
-U dan
-Z c5382cfd243fbd775aed2e56df56fe53
+P 90cab4aceaee8955e57694231f025a22ad86924e036f3ce271cbb332cbd1bb4b
+R 00aa0d7b8566f18aaeef1bdc48f5e899
+U drh
+Z 5dff44861822421062eedc6dbc38e13f
 # Remove this line to create a well-formed Fossil manifest.

@@ -68,6 +68,7 @@ do_clitest imposter1.sql
 do_clitest sha1.sql
 do_clitest complete_sql.sql
 do_clitest clierrors.sql
+do_clitest overflow1.sql
 set probe $testdir/probe.txt
 forcedelete $probe
 set f [open $probe wb]

@@ -714,6 +714,31 @@ static Decimal *decimalFromDouble(double r){
 }
 
 /*
+** Extract a 32-bit signed integer from argument pVal and write the
+** results into *pResult.  Return 0 on success and 1 if the value is
+** too larger to fit in 32-bits.
+*/
+static int decimalSafeInt(
+  sqlite3_context *context,
+  sqlite3_value *pVal,
+  int *pResult
+){
+  sqlite3_int64 i64 = sqlite3_value_int64(pVal);
+  if( i64<-2147483648LL || i64>2147483647LL ){
+    char *zMsg = sqlite3_mprintf(
+      "value %lld is too large: range limit -2147483648..+2147483647",
+      i64);
+    sqlite3_result_error(context, zMsg, -1);
+    sqlite3_free(zMsg);
+    *pResult = 0;
+    return 1;
+  }else{
+    *pResult = (int)i64;
+    return 0;
+  }
+}
+
+/*
 ** SQL Function:   decimal(X)
 ** OR:             decimal_exp(X)
 **
@@ -734,8 +759,12 @@ static void decimalFunc(
   Decimal *p =  decimal_new(context, argv[0], 0);
   int N;
   if( argc==2 ){
-    N = sqlite3_value_int(argv[1]);
-    if( N>0 ) decimal_round(p, N);
+    if( decimalSafeInt(context, argv[1], &N) ){
+      decimal_free(p);
+      p = 0;
+    }else if( N>0 ){
+      decimal_round(p, N);
+    }
   }else{
     N = 0;
   }
@@ -910,9 +939,13 @@ static void decimalPow2Func(
 ){
   UNUSED_PARAMETER(argc);
   if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
-    Decimal *pA = decimalPow2(sqlite3_value_int(argv[0]));
-    decimal_result_sci(context, pA, 0);
-    decimal_free(pA);
+    int N;
+    if( decimalSafeInt(context, argv[0], &N) ) return;
+    Decimal *pA = decimalPow2(N);
+    if( pA ){
+      decimal_result_sci(context, pA, 0);
+      decimal_free(pA);
+    }
   }
 }
 

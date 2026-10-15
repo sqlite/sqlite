@@ -1104,14 +1104,20 @@ static void compileoptiongetFunc(
   int argc,
   sqlite3_value **argv
 ){
-  int n;
+  i64 n;
+  const char *zRes;
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   /* IMP: R-04922-24076 The sqlite_compileoption_get() SQL function
   ** is a wrapper around the sqlite3_compileoption_get() C/C++ function.
   */
-  n = sqlite3_value_int(argv[0]);
-  sqlite3_result_text(context, sqlite3_compileoption_get(n), -1, SQLITE_STATIC);
+  n = sqlite3_value_int64(argv[0]);
+  /* Use a negative lower bound to assist testing of the
+  ** sqlite3_compileoption_get() C-language interface and its handling
+  ** of negative inputs.
+  **         vvvvv */
+  zRes = (n>=(-10) && n<10000) ? sqlite3_compileoption_get((int)n) : 0;
+  sqlite3_result_text(context, zRes, -1, SQLITE_STATIC);
 }
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
 

@@ -1843,10 +1843,16 @@ static void shellDtostr(
   sqlite3_value **apVal
 ){
   double r = sqlite3_value_double(apVal[0]);
-  int n = nVal>=2 ? sqlite3_value_int(apVal[1]) : 26;
+  i64 nn = nVal>=2 ? sqlite3_value_int64(apVal[1]) : 26;
+  int n;
   char z[400];
-  if( n<1 ) n = 1;
-  if( n>350 ) n = 350;
+  if( nn<1 ){
+    n = 1;
+  }else if( nn>350 ){
+    n = 350;
+  }else{
+    n = (int)nn;
+  }
   z[sizeof(z)-1] = 0;
   snprintf(z, sizeof(z)-1, "%#+.*e", n, r);
   sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
