@@ -279,12 +279,18 @@ void sqlite3BtreeEnter(Btree *p){
 }
 void sqlite3BtreeEnterAll(sqlite3 *db){
   int i;
+  u8 skipOk = 1;
+  /* As in the threadsafe build: set db->noSharedCache when no attached
+  ** Btree is sharable, so that schema and table-lock checks are skipped */
+  if( db->noSharedCache ) return;
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
     if( p ){
       p->pBt->db = p->db;
+      if( p->sharable ) skipOk = 0;
     }
   }
+  db->noSharedCache = skipOk;
 }
 #endif /* if SQLITE_THREADSAFE */
 
