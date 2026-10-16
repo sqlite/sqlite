@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\szero-length\scalls\sto\smemmove().
-D 2026-10-16T13:14:42.304
+C In\stest\sfile\stest1.c,\suse\sa\sstatic\sSQLite\smutex\sto\sprotect\sthe\shash\stable\sinstead\sof\sa\sTcl\smutex.\sA\sTcl\smutex\sis\sa\sno-op\son\sunix\sunless\sTCL_THREADS\sis\sdefined\sat\sruntime,\sand\sSQLite\stest\sconfigurations\sdo\snot\sdefine\sthis,\swhich\swas\scausing\serrors\sin\smulti-threaded\stests\slike\snotify2.test.
+D 2026-10-16T14:31:53.543
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -815,7 +815,7 @@ F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ef6b69d919800d1b2d3e1b57a1a0e78872c3bddd413a4bc639a865226cf91b16
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
-F src/test1.c 3ebd3dccf43e0723793c6577c5290e1cced9648bd710ce20b57f5c440f5b98fc
+F src/test1.c 18f656131b0de7856760b8ea293c1732ed237268d669d99a7316ad5be570ee45
 F src/test2.c a61ed01d9264a1db74ab42fbc981fc66165f85d5e3947e92be61a73e79ec4f2d
 F src/test3.c c959fe0c3b04157483f5a6fa1950c1f222e062d920fee0a8e70410c6b6d45522
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -1544,7 +1544,7 @@ F test/nockpt.test 3db354270fc63b6871eebd40285d4c55324fb27be629c958adbff6d7fcaa8
 F test/nolock.test 40e0639fcc774420b8c1d2189a7a2f54e4b1de2408e965cf68d1ecbc5b3797c7
 F test/normalize.test 88ba50b75feaa16735ac780f675c9e111179f81da40e5e026ecb777664e18da2
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
-F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
+F test/notify2.test eb68b8e31875f780d9f175b6644c7a8605c18075e6799efec5f29f40fe8d6322
 F test/notify3.test 796c7b7157f55c93b4e672b724e9c923a6fc6aa72ac419379a623e2350472e22
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
 F test/notnull2.test c2c7b670fb8fa6ffe5f9cc08af88864fbb8237e28b56ad528e8dee921019c5fe
@@ -2291,9 +2291,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a787e60de2592e4000cf9717296ade45e246e4f499af249e778fc9e552918c16 d75a9fd3cf5d805e57173356bf60c100e2c089a0fc94d7fccdc777fe6cc27da7
-R a5a7921585ec9d66ae61272a6a7d12ec
-T +closed d75a9fd3cf5d805e57173356bf60c100e2c089a0fc94d7fccdc777fe6cc27da7
-U drh
-Z 9985033a43c1fbfb1f1a8c064cb0fac7
+P 155b341bb4f1fa65bb6801fea982cfd81a4dcf5e2e75eaa56e22c0091406652d
+R 04f1a8bc59161e7aee3f55df0c31a8d0
+U dan
+Z f54954af60f33b317eff4c0fb665ceec
 # Remove this line to create a well-formed Fossil manifest.

@@ -51,9 +51,16 @@
 */
 static struct Test1Global {
   int isInit;
-  Tcl_Mutex m;
   Tcl_HashTable h;
 } g;
+
+static void testEnterHashMutex(){
+  sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP3) );
+}
+static void testLeaveHashMutex(){
+  sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_APP3) );
+}
+
 
 /*
 ** Convert a pointer to a string, and return a pointer to a buffer containing
@@ -69,7 +76,7 @@ static const char *testPointerToString(void *pPtr){
   if( pPtr==0 ){
     zRet = "0";
   }else{
-    Tcl_MutexLock(&g.m);
+    testEnterHashMutex();
     if( g.isInit==0 ){
       Tcl_InitHashTable(&g.h, TCL_STRING_KEYS);
       g.isInit = 1;
@@ -78,7 +85,7 @@ static const char *testPointerToString(void *pPtr){
     pEntry = Tcl_CreateHashEntry(&g.h, aKey, &dummy);
     Tcl_SetHashValue(pEntry, pPtr);
     zRet = Tcl_GetHashKey(&g.h, pEntry);
-    Tcl_MutexUnlock(&g.m);
+    testLeaveHashMutex();
   }
 
   return zRet;
@@ -92,14 +99,14 @@ static void *testStringToPointer(const char *zStr){
   void *pRet = 0;
 
   if( zStr[0]!='0' ){
-    Tcl_MutexLock(&g.m);
+    testEnterHashMutex();
     if( g.isInit ){
       Tcl_HashEntry *pEntry = Tcl_FindHashEntry(&g.h, zStr);
       if( pEntry ){
         pRet = Tcl_GetHashValue(pEntry);
       }
     }
-    Tcl_MutexUnlock(&g.m);
+    testLeaveHashMutex();
   }
 
   return pRet;
