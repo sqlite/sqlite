@@ -6383,29 +6383,30 @@ static int selectExpander(Walker *pWalker, Select *p){
                 continue;
               }
             }
-            pRight = sqlite3Expr(db, TK_ID, zName);
-            if( (pTabList->nSrc>1
-                 && (  (pFrom->fg.jointype & JT_LTORJ)==0
-                     || zTName!=0
-                     || (selFlags & SF_NestedFrom)!=0
-                     || !inAnyUsingClause(zName,pFrom,pTabList->nSrc-i-1)
-                    )
-                )
-             || IN_RENAME_OBJECT
-            ){
+            pExpr = pRight = sqlite3Expr(db, TK_ID, zName);
+            if( IN_RENAME_OBJECT && pE->pLeft ){
               Expr *pLeft;
+              assert( pE->op==TK_DOT && pE->pRight->op==TK_ASTERISK );
               pLeft = sqlite3Expr(db, TK_ID, zTabName);
               pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
-              if( IN_RENAME_OBJECT && pE->pLeft ){
-                assert( pE->op==TK_DOT && pE->pRight->op==TK_ASTERISK );
-                sqlite3RenameTokenRemap(pParse, pLeft, pE->pLeft);
+              sqlite3RenameTokenRemap(pParse, pLeft, pE->pLeft);
+            }else if( pTabList->nSrc>1 ){
+              if( (pFrom->fg.jointype & JT_LTORJ)==0
+               || zTName!=0
+               || (selFlags & SF_NestedFrom)!=0
+               || !inAnyUsingClause(zName,pFrom,pTabList->nSrc-i-1)
+              ){
+                Expr *pLeft;
+                pLeft = sqlite3Expr(db, TK_ID, zTabName);
+                pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
+                if( zSchemaName ){
+                  pLeft = sqlite3Expr(db, TK_ID, zSchemaName);
+                  pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pExpr);
+                }
+              }else if( pParse->nErr==0 ){
+                assert( pRight!=0 );
+                pRight->pLeft = sqlite3Expr(db, TK_ASTERISK,0);
               }
-              if( zSchemaName ){
-                pLeft = sqlite3Expr(db, TK_ID, zSchemaName);
-                pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pExpr);
-              }
-            }else{
-              pExpr = pRight;
             }
             sqlite3ExprSetErrorOffset(pExpr, iErrOfst);
             pNew = sqlite3ExprListAppend(pParse, pNew, pExpr);

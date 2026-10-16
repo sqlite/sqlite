@@ -609,6 +609,9 @@ void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
     case TK_ID: {
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3TreeViewLine(pView,"ID \"%w\"", pExpr->u.zToken);
+      if( pExpr->pLeft ){
+        sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+      }
       break;
     }
     case TK_ASTERISK: {
