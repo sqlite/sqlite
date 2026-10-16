@@ -1196,24 +1196,44 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
 **    *  N1 (and hence N2 also, due to the prior constrant) must both be
 **       a constant expression.  It cannot use variables or table references.
 **
+**    *  N1 must be unique for all sandbox() calls within the same SQL
+**       statement.
+**
 **    *  E does not contain any subqueries - either scalar subqueries or
 **       "EXISTS" expressions or IN operators where the RHS is a subquery.
 */
 static SQLITE_NOINLINE Expr *exprSandbox(Parse *pParse, Expr *pOrig){
-  struct ExprList_item *a = pOrig->x.pList->a;
-  Expr *pMid = a[1].pExpr;
-  if( sqlite3ExprCompare(pParse, a[0].pExpr, a[2].pExpr, 0)!=0
+  struct ExprList_item *a;
+  Expr *pMid;
+  ParseCleanup *pX;
+  assert( pOrig!=0 && pOrig->op==TK_FUNCTION );
+  assert( ExprUseXList(pOrig) );
+  if( pOrig->x.pList==0 ) goto sandbox_violation;
+  a = pOrig->x.pList->a;
+  if( pOrig->x.pList->nExpr!=3
+   || sqlite3ExprCompare(pParse, a[0].pExpr, a[2].pExpr, 0)!=0
    || sqlite3ExprIsConstant(pParse, a[0].pExpr)==0
    || sqlite3ExprIsConstantOrFunction(a[0].pExpr, 0)==0
-   || sqlite3ExprContainsSubquery(pMid)
+   || sqlite3ExprContainsSubquery(pMid = a[1].pExpr)
   ){
-    sqlite3ErrorMsg(pParse, "sandbox violation");
-    return pOrig;
+    goto sandbox_violation;
   }
-  a[1] = a[2];
-  pOrig->x.pList->nExpr = 2;
+  for(pX=pParse->pCleanup; pX; pX=pX->pNext){
+    if( pX->xCleanup==(void(*)(sqlite3*,void*))sqlite3ExprDelete
+     && sqlite3ExprCompare(pParse, a[0].pExpr, (Expr*)pX->pPtr, 0)==0
+    ){
+      goto sandbox_violation;
+    }
+  }
+  sqlite3ParserAddCleanup(pParse, (void(*)(sqlite3*,void*))sqlite3ExprDelete,
+                          a[2].pExpr);
+  pOrig->x.pList->nExpr = 1;
   sqlite3ExprDelete(pParse->db, pOrig);
   return pMid;
+
+sandbox_violation:
+  sqlite3ErrorMsg(pParse, "sandbox violation");
+  return pOrig;
 }
 #endif /* SQLITE_ENABLE_SANDBOX_FUNCTION */
 
@@ -1249,11 +1269,7 @@ Expr *sqlite3ExprFunction(
   sqlite3ExprSetHeightAndFlags(pParse, pNew);
   if( eDistinct==SF_Distinct ) ExprSetProperty(pNew, EP_Distinct);
 #if SQLITE_ENABLE_SANDBOX_FUNCTION+0>0
-  if( pToken->n==7
-   && pList!=0
-   && pList->nExpr==3
-   && sqlite3_strnicmp(pToken->z,"SANDBOX",7)==0
-  ){
+  if( pToken->n==7 && sqlite3_strnicmp(pToken->z,"SANDBOX",7)==0 ){
     pNew = exprSandbox(pParse, pNew);
   }
 #endif /* SQLITE_ENABLE_SANDBOX_FUNCTION */
