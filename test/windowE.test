@@ -163,5 +163,49 @@ do_execsql_test 5.2 {
   4 0.5
 }
 
+#-------------------------------------------------------------------------
+# Report <https://sqlite.org/bugs/forumpost/ef313c69fc>
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE x1(y);
+  INSERT INTO x1 VALUES('abc'), ('def'), (''), ('ghi');
+}
+
+foreach {tn ins res} {
+  1 {
+    INSERT INTO x1 VALUES('abc'), ('def'), (''), ('ghi');
+  } {
+    abc,def
+    def,
+    ,ghi
+    ghi
+  }
+
+  2 {
+    INSERT INTO x1 VALUES(''), (''), (''), ('');
+  } {
+    ,
+    ,
+    ,
+    {}
+  }
+
+  3 {
+    INSERT INTO x1 VALUES('');
+  } {
+    {}
+  }
+} {
+  execsql { DELETE FROM x1 }
+  execsql $ins
+
+  do_execsql_test 6.$tn {
+    SELECT group_concat(y) OVER (
+        ORDER BY rowid ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING
+    ) FROM x1
+  } $res
+}
+
 finish_test
 
