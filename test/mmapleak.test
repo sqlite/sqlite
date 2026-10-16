@@ -1,0 +1,81 @@
+# 2026 October 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file tests that growing an mmap() mapping of a database file
+# whose page-size is not a multiple of the OS page size does not leak
+# mappings in HAVE_MREMAP=0 builds.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix mmapleak
+
+ifcapable !mmap {
+  finish_test
+  return
+}
+if {![file readable /proc/self/maps]} {
+  finish_test
+  return
+}
+
+# Return the number of entries in /proc/self/maps for test.db
+#
+proc n_db_mappings {} {
+  set path [file normalize test.db]
+  set fd [open /proc/self/maps]
+  set n 0
+  foreach line [split [read $fd] "\n"] {
+    if {[string match "*$path*" $line]} { incr n }
+  }
+  close $fd
+  return $n
+}
+
+do_execsql_test 1.0 {
+  PRAGMA page_size = 512;
+  PRAGMA mmap_size = 10000000;
+  CREATE TABLE t1(x);
+} {10000000}
+
+for {set ii 0} {$ii < 100} {incr ii} {
+  do_execsql_test 1.$ii.1 {
+    INSERT INTO t1 VALUES(randomblob(700));
+    SELECT count(*) FROM t1;
+  } [expr $ii+1]
+
+  do_test 1.$ii.2 { n_db_mappings } 1
+}
+
+reset_db
+do_execsql_test 2.0 {
+  PRAGMA page_size = 512;
+  PRAGMA auto_vacuum = full;
+  PRAGMA mmap_size = 10000000;
+  CREATE TABLE t1(x);
+} {10000000}
+
+for {set ii 0} {$ii < 10} {incr ii} {
+  do_execsql_test 2.$ii.1 {
+    WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<20)
+    INSERT INTO t1 SELECT randomblob(700) FROM s;
+    SELECT count(*) FROM t1;
+  } 20
+
+  do_execsql_test 2.$ii.2 {
+    DELETE FROM t1;
+    SELECT count(*) FROM t1;
+  } 0
+
+  do_test 2.$ii.3 { n_db_mappings } 1
+}
+
+finish_test

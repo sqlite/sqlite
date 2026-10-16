@@ -645,7 +645,7 @@ static void xLloydsTiled(
   }
 
   for(; ii<nTrain; ii++){
-    aBest[ii] = vec1PqBestMatch(
+    aBest[ii] = vec1BestMatchSimple(
         aCentroid, nCentroid, &aTrain[ii*nElem], nElem, 0
     );
   }

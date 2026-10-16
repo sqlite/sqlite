@@ -1,0 +1,194 @@
+# 2026-10-10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for vectors that lie (almost) exactly on the boundary between two
+# IVF buckets. The bucket each such vector is assigned to depends only on
+# rounding in the L2 distance calculation. The 'rebuild' command, integrity
+# check and DELETE must all agree on which bucket each vector is in.
+#
+# A real PQ model is trained, then its centroids are overwritten with known
+# values. Centroids 0 and 1 are random, the others are far away from
+# everything. All vectors are inserted near the midpoint of centroids
+# 0 and 1. Using 8 centroids matters - with fewer than 8 the AVX2 rebuild
+# code falls back to the same routine used by integrity-check and DELETE.
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1bucket
+vec1_load db
+
+set nElem 128
+set nVec  2000
+set noise 1e-6
+
+proc rlist {n} {
+  set v {}
+  for {set i 0} {$i<$n} {incr i} { lappend v [expr {rand()*2.0-1.0}] }
+  set v
+}
+
+# Train a model with 8 buckets, plain PQ, no rotation and no residuals.
+do_test 1.0 {
+  db eval { CREATE TEMP TABLE tr(v) }
+  for {set i 0} {$i<600} {incr i} {
+    db eval { INSERT INTO tr VALUES( random_vector($nElem) ) }
+  }
+  set T [db one {
+    SELECT vec1_train(v, '{codesize:8, nbucket:8, quantizer:"pq", residual:0}')
+    FROM tr
+  }]
+  binary scan $T I6 hdr
+  lassign $hdr iVersion flags nE nCodebook nBucket eDist
+  list [expr {$flags & 0x16}] $nBucket
+} {0 8}
+
+# Replace the centroids in the model blob.
+set nCodeElem [expr {($nElem + $nCodebook - 1) / $nCodebook}]
+set iCentOff [expr {24 + $nCodebook*$nCodeElem*256*4}]
+set c0 [rlist $nElem]
+set c1 [rlist $nElem]
+set aCent [concat $c0 $c1]
+for {set i 2} {$i<$nBucket} {incr i} {
+  foreach x [rlist $nElem] { lappend aCent [expr {$x + 100.0}] }
+}
+set T [string replace $T $iCentOff [expr {$iCentOff+$nBucket*$nElem*4-1}] \
+    [binary format f* $aCent]]
+
+# Insert vectors near the midpoint of c0 and c1, plus a little noise.
+set mid {}
+foreach a $c0 b $c1 { lappend mid [expr {($a+$b)/2.0}] }
+do_test 1.1 {
+  db eval { CREATE VIRTUAL TABLE v1 USING vec1 }
+  db transaction {
+    for {set i 1} {$i<=$nVec} {incr i} {
+      set v {}
+      foreach m $mid { lappend v [expr {$m + (rand()-0.5)*$noise}] }
+      set blob [binary format f* $v]
+      db eval { INSERT INTO v1(rowid, vector) VALUES($i, $blob) }
+    }
+  }
+  db one { SELECT count(*) FROM v1 }
+} $nVec
+
+# Rebuild (batched N-vector path), then integrity-check (per-vector path).
+do_execsql_test 1.2 { INSERT INTO v1(cmd, vector) VALUES('rebuild', $T) }
+do_execsql_test 1.3 { PRAGMA integrity_check } ok
+
+# Delete rows with rowids from iFirst to nVec, stepping by 2. Each DELETE
+# recomputes the bucket using the per-vector path, so may compute a
+# different bucket to the one used by 'rebuild'. Return the number of rows
+# that could not be deleted.
+proc delete_rows {tbl iFirst} {
+  global nVec
+  set nFail 0
+  for {set i $iFirst} {$i<=$nVec} {incr i 2} {
+    if {[catch { db eval "DELETE FROM $tbl WHERE rowid=$i" }]} {
+      incr nFail
+    }
+  }
+  set nFail
+}
+
+# Delete every row, checking the index is still consistent half way.
+# Deleting rows causes lists to be rewritten once they contain enough
+# tombstones, which must be done using the bucket the row was actually
+# found in, not the one calculated for it.
+do_test 1.4 { delete_rows v1 1 } 0
+do_execsql_test 1.5 { PRAGMA integrity_check } ok
+do_test 1.6 { delete_rows v1 2 } 0
+do_execsql_test 1.7 {
+  SELECT count(*) FROM v1;
+  PRAGMA integrity_check;
+} {0 ok}
+
+#-------------------------------------------------------------------------
+# Same again, but this time move all of bucket 1's lists into bucket 7,
+# which is nowhere near any of the vectors. Integrity-check reports this.
+# But DELETE should still be able to find and delete the rows.
+#
+do_test 2.0 {
+  db eval { CREATE VIRTUAL TABLE v2 USING vec1 }
+  db transaction {
+    for {set i 1} {$i<=$nVec} {incr i} {
+      set v {}
+      foreach m $mid { lappend v [expr {$m + (rand()-0.5)*$noise}] }
+      set blob [binary format f* $v]
+      db eval { INSERT INTO v2(rowid, vector) VALUES($i, $blob) }
+    }
+  }
+  db eval { INSERT INTO v2(cmd, vector) VALUES('rebuild', $T) }
+  db one { SELECT count(*)>0 FROM v2_idx WHERE bucket=1 }
+} 1
+
+do_execsql_test 2.1 {
+  UPDATE v2_idx SET bucket=7 WHERE bucket=1;
+}
+do_test 2.2 {
+  string match "*is in wrong bucket*" [db one { PRAGMA integrity_check }]
+} 1
+do_test 2.3 { delete_rows v2 1 } 0
+do_test 2.4 { delete_rows v2 2 } 0
+do_execsql_test 2.5 { SELECT count(*) FROM v2 } 0
+
+#-------------------------------------------------------------------------
+# Create a list in bucket 1 containing rows that belong in bucket 0 as
+# well as rows that belong in bucket 1. Then delete all the bucket 0 rows.
+# DELETE finds them by searching all buckets. When a list is rewritten to
+# remove tombstones, it must stay in bucket 1, the bucket it was found in.
+# If it were moved to bucket 0, the bucket 1 rows left in it would be in
+# the wrong bucket.
+#
+# The list is created by rebuilding using model $TA, in which centroid 0
+# is far away from everything, so all rows go to bucket 1. The model is
+# then replaced by $T, in which centroid 0 is c0 again.
+#
+set TA [string replace $T $iCentOff [expr {$iCentOff+$nElem*4-1}] \
+    [binary format f* [lmap x $c0 {expr {$x + 200.0}}]]]
+
+do_test 3.0 {
+  db eval { CREATE VIRTUAL TABLE v3 USING vec1 }
+  db transaction {
+    for {set i 1} {$i<=$nVec} {incr i} {
+      set c [expr {$i<=$nVec/2 ? $c0 : $c1}]
+      set v [lmap x $c {expr {$x + (rand()-0.5)*0.001}}]
+      set blob [binary format f* $v]
+      db eval { INSERT INTO v3(rowid, vector) VALUES($i, $blob) }
+    }
+  }
+  db eval { INSERT INTO v3(cmd, vector) VALUES('rebuild', $TA) }
+  db eval { SELECT DISTINCT bucket FROM v3_idx }
+} 1
+
+do_test 3.1 {
+  db eval { UPDATE v3_model SET val = $T WHERE id=1 }
+  db close
+  sqlite3 db test.db
+  vec1_load db
+  string match "*is in wrong bucket*" [db one { PRAGMA integrity_check }]
+} 1
+
+proc delete_range {tbl iFirst iLast} {
+  set nFail 0
+  for {set i $iFirst} {$i<=$iLast} {incr i} {
+    if {[catch { db eval "DELETE FROM $tbl WHERE rowid=$i" }]} {
+      incr nFail
+    }
+  }
+  set nFail
+}
+
+do_test 3.2 { delete_range v3 1 [expr {$nVec/2}] } 0
+do_execsql_test 3.3 {
+  SELECT count(*) FROM v3;
+  PRAGMA integrity_check;
+} [list [expr {$nVec/2}] ok]
+
+finish_test
