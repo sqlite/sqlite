@@ -149,48 +149,6 @@ The command the developers use for building the deliverable DLL on the
 That command generates both the sqlite3.dll and sqlite3.def files.  The same
 command works for both 32-bit and 64-bit builds.
 
-## Statically Linking The TCL Library
-
-Some utility programs associated with SQLite need to be linked
-with TCL in order to function.  The [sqlite3_analyzer.exe program](https://sqlite.org/sqlanalyze.html)
-is an example.  You can build as described above, and then
-enter:
-
-> nmake /f Makefile.msc sqlite3_analyzer.exe
-
-And you will end up with a working executable.  However, that executable
-will depend on having the "tcl98.dll" library somewhere on your %PATH%.
-Use the following steps to build an executable that has the TCL library
-statically linked so that it does not depend on separate DLL:
-
-  1.  Use the appropriate "Command Prompt" window - either x86 or
-      x64, depending on whether you want a 32-bit or 64-bit executable.
-
-  2.  Untar the TCL source tarball into a fresh directory.  CD into
-      the "win/" subfolder.
-
-  3.  Run: `nmake /f makefile.vc OPTS=static shell`
-
-  4.  CD into the "Release*" subfolder that is created (note the
-      wildcard - the full name of the directory might vary).  There
-      you will find the "tcl90s.lib" file.  Copy this file into the
-      same directory that you put the "tcl90.lib" on your initial
-      installation.  (In this document, that directory is
-      "`C:\Tcl32\lib`" for 32-bit builds and
-      "`C:\Tcl\lib`" for 64-bit builds.)
-
-  5.  CD into your SQLite source code directory and build the desired
-      utility program, but add the following extra argument to the
-      nmake command line:
-      <blockquote><pre>STATICALLY_LINK_TCL=1</pre></blockquote>
-      <p>So, for example, to build a statically linked version of
-      sqlite3_analyzer.exe, you might type:
-      <blockquote><pre>nmake /f Makefile.msc STATICALLY_LINK_TCL=1 sqlite3_analyzer.exe</pre></blockquote>
-
-  6.  After your executable is built, you can verify that it does not
-      depend on the TCL DLL by running:
-      <blockquote><pre>dumpbin /dependents sqlite3_analyzer.exe</pre></blockquote>
-
 ## Linking Against ZLIB
 
 Some feature (such as zip-file support in the CLI) require the ZLIB

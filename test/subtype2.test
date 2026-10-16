@@ -1,0 +1,204 @@
+# 2026 October 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. Specifically,
+# it tests that scalar sub-queries never return values with subtypes.
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix subtype2
+
+do_execsql_test 1.0.1 {
+  SELECT 
+  json_group_object(
+      'key',
+      (SELECT CAST(json(0) AS TEXT)
+       FROM (SELECT 1 AS k)
+       WHERE k = 1
+       ORDER BY k)
+  ) AS q1,
+  json_group_object(
+       'key',
+      (SELECT CAST(json(0) AS TEXT)
+       FROM (SELECT 1 AS k)
+       WHERE NOT (NOT (k = 1))
+       ORDER BY k)
+  ) AS q2;
+} {
+  {{"key":"0"}} {{"key":"0"}}
+}
+
+do_execsql_test 1.0.2 {
+  SELECT 
+  json_group_object(
+      'key',
+      (SELECT json(0)
+       FROM (SELECT 1 AS k)
+       WHERE k = 1
+       ORDER BY k)
+  ) AS q1,
+  json_group_object(
+       'key',
+      (SELECT json(0)
+       FROM (SELECT 1 AS k)
+       WHERE NOT (NOT (k = 1))
+       ORDER BY k)
+  ) AS q2;
+} {
+  {{"key":"0"}} {{"key":"0"}}
+}
+
+do_execsql_test 1.0.3 {
+  SELECT json_group_object(
+      'key',
+      (SELECT json(0)
+       FROM (SELECT 1 AS k)
+       WHERE k = 1
+       ORDER BY k)
+  );
+} {
+  {{"key":"0"}}
+}
+
+do_execsql_test 1.0.4 {
+  SELECT json_group_object(
+      'key',
+      (SELECT json(0)
+       FROM (SELECT 1 AS k)
+       WHERE (NOT (NOT (k = 1)))
+       ORDER BY k)
+  );
+} {
+  {{"key":"0"}}
+}
+
+do_execsql_test 1.0.5 {
+  SELECT subtype (
+      (SELECT json(0)
+       FROM (SELECT 1 AS k)
+       WHERE k = 1
+       ORDER BY k)
+  );
+} {0}
+
+do_execsql_test 1.0.6 {
+  SELECT subtype (
+      (SELECT json(0)
+       FROM (SELECT 1 AS k)
+       WHERE (NOT (NOT (k = 1)))
+       ORDER BY k)
+  );
+} {0}
+
+do_execsql_test 2.1 {
+  SELECT json_group_object( 'key', (SELECT CAST(json(0) AS TEXT)) );
+} {{{"key":"0"}}}
+
+do_execsql_test 2.2 {
+  SELECT 'key', typeof( (SELECT CAST(json(0) AS TEXT)) )
+} {key text}
+
+do_execsql_test 2.3 {
+  SELECT 'key', subtype( (SELECT CAST(json(0) AS TEXT)) )
+} {key 0}
+
+do_execsql_test 2.4.1 {
+  SELECT 'key', subtype( json(0) )
+} {key 74}
+do_execsql_test 2.4.2 {
+  SELECT 'key', subtype( (SELECT json(0)) )
+} {key 0}
+
+do_execsql_test 2.5 {
+  SELECT 'key', subtype( max(0) )
+} {key 0}
+
+do_execsql_test 2.6 {
+  SELECT 'key', typeof( json(0) )
+} {key text}
+
+do_execsql_test 2.7 {
+  SELECT 'key', subtype( +json(0) )
+} {key 74}
+
+do_execsql_test 2.8 {
+  SELECT 'key', coalesce(NULL, json(0)) 
+} {key 0}
+
+do_execsql_test 2.9 {
+  SELECT 'key', coalesce(json(0), NULL)
+} {key 0}
+
+#-----------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 values('a', 1);
+  INSERT INTO t1 values('b', 2);
+  INSERT INTO t1 values('c', 3);
+}
+
+do_execsql_test 3.1 {
+  SELECT max( 
+    (SELECT json( b ) FROM t1 WHERE t1.b=o.b)
+  ) FROM t1 AS o;
+} {3}
+
+do_execsql_test 3.2 {
+  SELECT subtype ((
+      SELECT max( 
+        (SELECT json( b ) FROM t1 WHERE t1.b=o.b)
+      ) FROM t1 AS o
+  ))
+} {0}
+
+#-----------------------------------------------------------------------------
+# Test that aggregate scalar sub-queries do not return subtypes as well.
+#
+reset_db
+
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, '[1]');
+  INSERT INTO t1 VALUES(2, '[2]');
+}
+
+do_execsql_test 4.1.1 {
+  SELECT subtype( json_group_array(a) ) FROM t1;
+} {74}
+do_execsql_test 4.1.2 {
+  SELECT subtype( (SELECT json_group_array(a) FROM t1) );
+} {0}
+do_execsql_test 4.1.3 {
+  SELECT json_array( (SELECT json_group_array(a) FROM t1) );
+} {{["[1,2]"]}}
+
+do_execsql_test 4.2.1 {
+  SELECT subtype( (SELECT json_group_object('k', a) FROM t1) );
+} {0}
+do_execsql_test 4.2.2 {
+  SELECT json_array( (SELECT json_group_object('k', a) FROM t1) );
+} {{["{\"k\":1,\"k\":2}"]}}
+
+do_execsql_test 4.3.1 {
+  SELECT subtype( max(json(b)) ) FROM t1;
+} {74}
+do_execsql_test 4.3.2 {
+  SELECT subtype( (SELECT max(json(b)) FROM t1) );
+} {0}
+do_execsql_test 4.3.3 {
+  SELECT json_array( (SELECT min(json(b)) FROM t1) );
+} {{["[1]"]}}
+
+finish_test
+

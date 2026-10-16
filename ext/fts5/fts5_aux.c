@@ -103,7 +103,22 @@ static int fts5CInstIterInit(
   return rc;
 }
 
-
+/*
+** Load error code rc into the context handle pCtx. Except, if 
+** rc==SQLITE_ERROR and there is an error message in the associated db
+** handle, return that error message as well.
+*/
+static void fts5AuxResultError(sqlite3_context *pCtx, int rc){
+  if( rc==SQLITE_ERROR ){
+    sqlite3 *db = sqlite3_context_db_handle(pCtx);
+    if( sqlite3_errcode(db)==SQLITE_ERROR ){
+      const char *zErr = sqlite3_errmsg(db);
+      sqlite3_result_error(pCtx, zErr, -1);
+      return;
+    }
+  }
+  sqlite3_result_error_code(pCtx, rc);
+}
 
 /*************************************************************************
 ** Start of highlight() implementation.
@@ -292,7 +307,7 @@ static void fts5HighlightFunction(
     sqlite3_free(ctx.zOut);
   }
   if( rc!=SQLITE_OK ){
-    sqlite3_result_error_code(pCtx, rc);
+    fts5AuxResultError(pCtx, rc);
   }
 }
 /*
@@ -586,7 +601,7 @@ static void fts5SnippetFunction(
   if( rc==SQLITE_OK ){
     sqlite3_result_text(pCtx, (const char*)ctx.zOut, -1, SQLITE_TRANSIENT);
   }else{
-    sqlite3_result_error_code(pCtx, rc);
+    fts5AuxResultError(pCtx, rc);
   }
   sqlite3_free(ctx.zOut);
   sqlite3_free(aSeen);
@@ -752,7 +767,7 @@ static void fts5Bm25Function(
     }
     sqlite3_result_double(pCtx, -1.0 * score);
   }else{
-    sqlite3_result_error_code(pCtx, rc);
+    fts5AuxResultError(pCtx, rc);
   }
 }
 
@@ -790,13 +805,13 @@ static void fts5GetLocaleFunction(
 
   iCol = fts5ValueClampedInt(apVal[0]);
   if( iCol<0 || iCol>=pApi->xColumnCount(pFts) ){
-    sqlite3_result_error_code(pCtx, SQLITE_RANGE);
+    fts5AuxResultError(pCtx, SQLITE_RANGE);
     return;
   }
 
   rc = pApi->xColumnLocale(pFts, iCol, &zLocale, &nLocale);
   if( rc!=SQLITE_OK ){
-    sqlite3_result_error_code(pCtx, rc);
+    fts5AuxResultError(pCtx, rc);
     return;
   }
 

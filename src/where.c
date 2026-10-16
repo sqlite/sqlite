@@ -326,12 +326,16 @@ static SQLITE_NOINLINE const char *indexInAffinityOk(
 
   assert( pTerm->eOperator & WO_IN );
 
-  if( sqlite3ExprIsVector(pX->pLeft) ){
-    int iField = pTerm->u.x.iField - 1;
+  if( ExprUseXSelect(pX) ){
+    int iField = 0;
     inexpr.flags = 0;
     inexpr.op = TK_EQ;
-    inexpr.pLeft = pX->pLeft->x.pList->a[iField].pExpr;
-    assert( ExprUseXSelect(pX) );
+    if( sqlite3ExprIsVector(pX->pLeft) ){
+      iField = pTerm->u.x.iField - 1;
+      inexpr.pLeft = pX->pLeft->x.pList->a[iField].pExpr;
+    }else{
+      inexpr.pLeft = pX->pLeft;
+    }
     inexpr.pRight = pX->x.pSelect->pEList->a[iField].pExpr;
     pX = &inexpr;
   }
@@ -3934,35 +3938,51 @@ static void wherePartIdxExpr(
   if( (pPart->op==TK_EQ || pPart->op==TK_IS) ){
     Expr *pLeft = pPart->pLeft;
     Expr *pRight = pPart->pRight;
-    u8 aff;
+    Table *pLeftTab;            /* Table of the left operand */
+    Column *pLeftCol;           /* Column of the left operand */
+    u8 affRight, affLeft;
 
     if( pLeft->op!=TK_COLUMN ) return;
     if( !sqlite3ExprIsConstant(0, pRight) ) return;
     if( !sqlite3IsBinary(sqlite3ExprCompareCollSeq(pParse, pPart)) ) return;
     if( pLeft->iColumn<0 ) return;
-    aff = pIdx->pTable->aCol[pLeft->iColumn].affinity;
-    if( aff>=SQLITE_AFF_TEXT ){
-      if( pItem ){
-        sqlite3 *db = pParse->db;
-        IndexedExpr *p = (IndexedExpr*)sqlite3DbMallocRaw(db, sizeof(*p));
-        if( p ){
-          int bNullRow = (pItem->fg.jointype&(JT_LEFT|JT_LTORJ))!=0;
-          p->pExpr = sqlite3ExprDup(db, pRight, 0);
-          p->iDataCur = pItem->iCursor;
-          p->iIdxCur = iIdxCur;
-          p->iIdxCol = pLeft->iColumn;
-          p->bMaybeNullRow = bNullRow;
-          p->pIENext = pParse->pIdxPartExpr;
-          p->aff = aff;
-          pParse->pIdxPartExpr = p;
-          if( p->pIENext==0 ){
-            void *pArg = (void*)&pParse->pIdxPartExpr;
-            sqlite3ParserAddCleanup(pParse, whereIndexedExprCleanup, pArg);
-          }
+    pLeftTab = pIdx->pTable;
+    pLeftCol = &pLeftTab->aCol[pLeft->iColumn];
+    affLeft = pLeftCol->affinity;
+    assert( SQLITE_AFF_BLOB<SQLITE_AFF_TEXT );
+    if( affLeft<SQLITE_AFF_TEXT ) return;
+    affRight = sqlite3ExprAffinity(pRight);
+    if( affRight!=0 && affRight!=affLeft ) return;
+    if( pItem ){
+      sqlite3 *db = pParse->db;
+      IndexedExpr *p = (IndexedExpr*)sqlite3DbMallocRaw(db, sizeof(*p));
+      if( p ){
+        int bNullRow = (pItem->fg.jointype&(JT_LEFT|JT_LTORJ))!=0;
+        pRight = sqlite3ExprDup(db, pRight, 0);
+        if( (pLeftTab->tabFlags & TF_Strict)!=0 ){
+          Token t;
+          t.z = sqlite3ColumnType(pLeftCol, 0);
+          assert( t.z!=0 );  /* Because affLeft>=SQLITE_AFF_TEXT */
+          t.n = (int)strlen(t.z);
+          p->pExpr = sqlite3ExprAlloc(db, TK_CAST, &t, 1);
+          sqlite3ExprAttachSubtrees(db, p->pExpr, pRight, 0);
+        }else{
+          p->pExpr = pRight;
         }
-      }else if( pLeft->iColumn<(BMS-1) ){
-        *pMask &= ~((Bitmask)1 << pLeft->iColumn);
+        p->iDataCur = pItem->iCursor;
+        p->iIdxCur = iIdxCur;
+        p->iIdxCol = pLeft->iColumn;
+        p->bMaybeNullRow = bNullRow;
+        p->pIENext = pParse->pIdxPartExpr;
+        p->aff = affLeft;
+        pParse->pIdxPartExpr = p;
+        if( p->pIENext==0 ){
+          void *pArg = (void*)&pParse->pIdxPartExpr;
+          sqlite3ParserAddCleanup(pParse, whereIndexedExprCleanup, pArg);
+        }
       }
+    }else if( pLeft->iColumn<(BMS-1) ){
+      *pMask &= ~((Bitmask)1 << pLeft->iColumn);
     }
   }
 }
@@ -4195,7 +4215,9 @@ static int whereLoopAddBtree(
         pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
       }else{
         m = pSrc->colUsed & pProbe->colNotIdxed;
-        if( pProbe->pPartIdxWhere ){
+        if( pProbe->pPartIdxWhere 
+         && (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)==0
+        ){
           wherePartIdxExpr(
               pWInfo->pParse, pProbe, pProbe->pPartIdxWhere, &m, 0, 0
           );
@@ -5079,13 +5101,13 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 **      direction because there is no way to run a co-routine backwards.
 */
 static SQLITE_NOINLINE int wherePathMatchSubqueryOB(
-  WhereInfo *pWInfo,      /* The WHERE clause */
   WhereLoop *pLoop,       /* The nested loop term that is a subquery */
   int iLoop,              /* Which level of the nested loop.  0==outermost */
   int iCur,               /* Cursor used by the this loop */
   ExprList *pOrderBy,     /* The ORDER BY clause on the whole query */
   Bitmask *pRevMask,      /* When loops need to go in reverse order */
-  Bitmask *pOBSat         /* Which terms of pOrderBy are satisfied so far */
+  Bitmask *pOBSat,        /* Which terms of pOrderBy are satisfied so far */
+  u16 wctrlFlags          /* WHERE_GROUPBY or _DISTINCTBY or _ORDERBY_LIMIT */
 ){
   int iOB;                /* Index into pOrderBy->a[] */
   int jSub;               /* Index into pSubOB->a[] */
@@ -5103,7 +5125,7 @@ static SQLITE_NOINLINE int wherePathMatchSubqueryOB(
     if( pOBExpr->op!=TK_COLUMN && pOBExpr->op!=TK_AGG_COLUMN ) break;
     if( pOBExpr->iTable!=iCur ) break;
     if( pOBExpr->iColumn!=pSubOB->a[jSub].u.x.iOrderByCol-1 ) break;
-    if( (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ){
+    if( (wctrlFlags & WHERE_GROUPBY)==0 ){
       u8 sfOB = pOrderBy->a[iOB].fg.sortFlags;   /* sortFlags for iOB */
       u8 sfSub = pSubOB->a[jSub].fg.sortFlags;   /* sortFlags for jSub */
       if( (sfSub & KEYINFO_ORDER_BIGNULL) != (sfOB & KEYINFO_ORDER_BIGNULL) ){
@@ -5285,8 +5307,8 @@ static i8 wherePathSatisfiesOrderBy(
       if( pLoop->wsFlags & WHERE_IPK ){
         if( pLoop->u.btree.pOrderBy
          && OptimizationEnabled(db, SQLITE_OrderBySubq)
-         &&  wherePathMatchSubqueryOB(pWInfo,pLoop,iLoop,iCur,
-                                     pOrderBy,pRevMask, &obSat)
+         &&  wherePathMatchSubqueryOB(pLoop,iLoop,iCur,
+                                     pOrderBy,pRevMask, &obSat, wctrlFlags)
         ){
           nColumn = 0;
           isOrderDistinct = 0;
@@ -5294,7 +5316,7 @@ static i8 wherePathSatisfiesOrderBy(
           nColumn = 1;
         }
         pIndex = 0;
-        nKeyCol = 0;
+        nKeyCol = 1;
       }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
         return 0;
       }else{
@@ -5435,7 +5457,14 @@ static i8 wherePathSatisfiesOrderBy(
           }
         }
         if( isMatch && (pOrderBy->a[i].fg.sortFlags & KEYINFO_ORDER_BIGNULL) ){
-          if( j==pLoop->u.btree.nEq ){
+          if( j==pLoop->u.btree.nEq 
+           && (j<nKeyCol||HasRowid(pIndex->pTable)||!IsPrimaryKeyIndex(pIndex))
+          ){
+            /* If this is the PK of a WITHOUT ROWID table, do not use any
+            ** field past nKeyCol for a NULLS LAST sort. If ALTER TABLE has
+            ** been used to add columns to the table, this field may not
+            ** be present in all records, which causes problems for the seeks
+            ** used by NULLS LAST sorts.  */
             pLoop->wsFlags |= WHERE_BIGNULL_SORT;
           }else{
             isMatch = 0;
@@ -5449,7 +5478,8 @@ static i8 wherePathSatisfiesOrderBy(
           obSat |= MASKBIT(i);
         }else{
           /* No match found */
-          if( j==0 || j<nKeyCol ){
+          assert( nKeyCol>0 );
+          if( j<nKeyCol ){
             testcase( isOrderDistinct!=0 );
             isOrderDistinct = 0;
           }
@@ -7610,6 +7640,17 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       ** successful row, it should break out of itself. */
       sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrBrk);
       VdbeComment((v, "EXISTS break %d", i));
+    }else if( pLevel->addrDeleteCont ){
+      /* An inner loop matched no rows on this auto-index driven loop and
+      ** there are outer loops.  So delete the auto-index entry to avoid
+      ** future unnecessary work. */
+      int iBypass = sqlite3VdbeAddOp0(v, OP_Goto);
+      assert( pLoop->wsFlags & WHERE_AUTO_INDEX );
+      sqlite3VdbeResolveLabel(v, pLevel->addrDeleteCont);
+      sqlite3VdbeAddOp1(v, OP_Delete, pLevel->iIdxCur);
+      sqlite3VdbeChangeP5(v, OPFLAG_SAVEPOSITION);
+      VdbeComment((v, "delete useless auto-index entry"));
+      sqlite3VdbeJumpHere(v, iBypass);
     }
     sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     if( pLevel->op!=OP_Noop ){
@@ -7631,10 +7672,31 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         VdbeCoverage(v);
       }
     }
+    if( pLevel->addrNxt!=pLevel->addrBrk ){
+      /* This occurs in three cases - (a) for a LIKE/GLOB scan that must visit
+      ** ranges of text and blob values separately, and (b) when there is
+      ** an IN(...) constraint driving the index, and (c) when a prior error
+      ** such as an OOM has left us in an unusual state. This is asserted()
+      ** in the next block, inside the #ifndef. */
+      sqlite3VdbeResolveLabel(v, pLevel->addrNxt);
+    }
+#ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
+    assert( (pLevel->addrNxt==pLevel->addrBrk)
+         || (pLevel->addrLikeRep)                                    /* (a) */
+         || ((pLoop->wsFlags & WHERE_IN_ABLE) && pLevel->u.in.nIn>0) /* (b) */
+         || pWInfo->pParse->nErr>0                                   /* (c) */
+    );
+    if( pLevel->addrLikeRep ){
+      /* The LIKE optimization loop is nested inside any IN(...) and
+      ** skip-scan loops, so it is closed here, before either of those. */
+      sqlite3VdbeAddOp2(v, OP_DecrJumpZero, (int)(pLevel->iLikeRepCntr>>1),
+                        pLevel->addrLikeRep);
+      VdbeCoverage(v);
+    }
+#endif
     if( (pLoop->wsFlags & WHERE_IN_ABLE)!=0 && pLevel->u.in.nIn>0 ){
       struct InLoop *pIn;
       int j;
-      sqlite3VdbeResolveLabel(v, pLevel->addrNxt);
       for(j=pLevel->u.in.nIn, pIn=&pLevel->u.in.aInLoop[j-1]; j>0; j--, pIn--){
         assert( sqlite3VdbeGetOp(v, pIn->addrInTop+1)->opcode==OP_IsNull
                  || pParse->db->mallocFailed );
@@ -7686,13 +7748,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeJumpHere(v, pLevel->addrSkip);
       sqlite3VdbeJumpHere(v, pLevel->addrSkip-2);
     }
-#ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
-    if( pLevel->addrLikeRep ){
-      sqlite3VdbeAddOp2(v, OP_DecrJumpZero, (int)(pLevel->iLikeRepCntr>>1),
-                        pLevel->addrLikeRep);
-      VdbeCoverage(v);
-    }
-#endif
     if( pLevel->iLeftJoin ){
       int ws = pLoop->wsFlags;
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);

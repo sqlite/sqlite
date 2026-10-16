@@ -89,7 +89,6 @@ guidance on building for Windows.
       <li>  `make tclextension-install`
       <li>  `make test`
       <li>  `make releasetest`
-      <li>  `make sqlite3_analyzer`
       </ul>
 
       It is not required that you run the "tclextension-install" target prior to

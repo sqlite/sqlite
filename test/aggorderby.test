@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix aggorderby
 
 do_execsql_test aggorderby-1.1 {
   CREATE TABLE t1(a TEXT,b INT,c INT,d INT);
@@ -170,5 +171,22 @@ do_catchsql_test aggorderby-10.1 "
   SELECT group_concat(w ORDER BY [join $lExpr ,]) FROM t1
 " {1 {too many terms in ORDER BY clause}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 11.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  INSERT INTO t1 VALUES(42);
+  INSERT INTO t2 VALUES(2);
+}
+
+do_execsql_test 11.1 {
+  SELECT sum(b ORDER BY a) FROM t1, t2;
+} {2}
+
+do_execsql_test 11.2 {
+  SELECT group_concat(b ORDER BY a) FROM t1, t2;
+} {2}
 
 finish_test

@@ -732,4 +732,20 @@ do_execsql_test indexexpr1-2505 {
   SELECT json_array(++json_extract(j,'$.x')) FROM t1 WHERE a=1;
 } {[[1,2]]}
 
+# Bug 2026-10-11T19:26:40Z
+do_execsql_test indexexpr1-2600 {
+  CREATE TABLE t3(a INT, b TEXT, c INT);
+  INSERT INTO t3 VALUES(0,'xyzzy', 1);
+  CREATE INDEX t3a ON t3(a+1);
+  SELECT * FROM (SELECT 99), t3 WHERE a=0 AND a+1=(SELECT 1);
+} {99 0 xyzzy 1}
+do_execsql_test indexexpr1-2610 {
+  DROP INDEX t3a;
+  CREATE INDEX t3ac ON t3(a+c);
+  SELECT * FROM (SELECT 99), t3 WHERE a=0 AND a+c=(SELECT 1);
+} {99 0 xyzzy 1}
+do_execsql_test indexexpr1-2620 {
+  SELECT * FROM (SELECT 99), t3 WHERE a=0 AND c=1 AND a+c=(SELECT 1);
+} {99 0 xyzzy 1}
+
 finish_test

@@ -1930,6 +1930,7 @@ static int valueFromExpr(
     assert( zVal[nVal]=='\'' );
     sqlite3VdbeMemSetStr(pVal, sqlite3HexToBlob(db, zVal, nVal), nVal/2,
                          0, SQLITE_DYNAMIC);
+    pVal->enc = enc;
   }
 #endif
 #ifdef SQLITE_ENABLE_STAT4
