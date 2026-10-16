@@ -940,8 +940,9 @@ static void decimalPow2Func(
   UNUSED_PARAMETER(argc);
   if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
     int N;
+    Decimal *pA;
     if( decimalSafeInt(context, argv[0], &N) ) return;
-    Decimal *pA = decimalPow2(N);
+    pA = decimalPow2(N);
     if( pA ){
       decimal_result_sci(context, pA, 0);
       decimal_free(pA);
