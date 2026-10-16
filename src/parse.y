@@ -1243,6 +1243,13 @@ expr(A) ::= idj(X) LP STAR RP. {
   A = sqlite3ExprFunction(pParse, 0, &X, 0);
 }
 
+expr(A) ::= LEFTCURLY expr(X) RIGHTCURLY. {
+  A = X;
+  if( sqlite3ExprContainsSubquery(X) ){
+    sqlite3ErrorMsg(pParse, "subquery within {...}");
+  }
+}
+
 %ifdef SQLITE_ENABLE_ORDERED_SET_AGGREGATES
 %include {
   /* Generate an expression node that represents an ordered-set aggregate function.

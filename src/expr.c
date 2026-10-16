@@ -2868,7 +2868,6 @@ int sqlite3ExprIsConstantOrFunction(Expr *p, u8 isInit){
   return exprIsConst(0, p, 4+isInit);
 }
 
-#ifdef SQLITE_ENABLE_CURSOR_HINTS
 /*
 ** Walk an expression tree.  Return 1 if the expression contains a
 ** subquery of some kind.  Return 0 if there are no subqueries.
@@ -2884,7 +2883,6 @@ int sqlite3ExprContainsSubquery(Expr *p){
   sqlite3WalkExpr(&w, p);
   return w.eCode==0;
 }
-#endif
 
 /*
 ** If the expression p codes a constant integer that is small enough

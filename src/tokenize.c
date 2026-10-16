@@ -50,7 +50,7 @@
 #define CC_STAR      21    /* '*' */
 #define CC_PERCENT   22    /* '%' */
 #define CC_COMMA     23    /* ',' */
-#define CC_AND       24    /* '&' */
+#define CC_AUX       24    /* '&' or '{' or '}' */
 #define CC_TILDA     25    /* '~' */
 #define CC_DOT       26    /* '.' */
 #define CC_ID        27    /* unicode characters usable in IDs */
@@ -68,7 +68,7 @@ static const unsigned char aiClass[] = {
 /* 4x */    5,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
 /* 5x */    1,  1,  1,  1,  1,  1,  1,  1,  0,  2,  2,  9, 28, 28, 28,  2,
 /* 6x */    8,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
-/* 7x */    1,  1,  1,  1,  1,  1,  1,  1,  0,  2,  2, 28, 10, 28, 25, 28,
+/* 7x */    1,  1,  1,  1,  1,  1,  1,  1,  0,  2,  2, 24, 10, 24, 25, 28,
 /* 8x */   27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
 /* 9x */   27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
 /* Ax */   27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
@@ -92,8 +92,8 @@ static const unsigned char aiClass[] = {
 /* 9x */   28,  1,  1,  1,  1,  1,  1,  1,  1,  1, 28, 28, 28, 28, 28, 28,
 /* Ax */   28, 25,  1,  1,  1,  1,  1,  0,  2,  2, 28, 28, 28, 28, 28, 28,
 /* Bx */   28, 28, 28, 28, 28, 28, 28, 28, 28, 28,  9, 28, 28, 28, 28, 28,
-/* Cx */   28,  1,  1,  1,  1,  1,  1,  1,  1,  1, 28, 28, 28, 28, 28, 28,
-/* Dx */   28,  1,  1,  1,  1,  1,  1,  1,  1,  1, 28, 28, 28, 28, 28, 28,
+/* Cx */   24,  1,  1,  1,  1,  1,  1,  1,  1,  1, 28, 28, 28, 28, 28, 28,
+/* Dx */   24,  1,  1,  1,  1,  1,  1,  1,  1,  1, 28, 28, 28, 28, 28, 28,
 /* Ex */   28, 28,  1,  1,  1,  1,  1,  0,  2,  2, 28, 28, 28, 28, 28, 28,
 /* Fx */    3,  3,  3,  3,  3,  3,  3,  3,  3,  3, 28, 28, 28, 28, 28, 28,
 #endif
@@ -364,12 +364,15 @@ i64 sqlite3GetToken(const unsigned char *z, int *tokenType){
       }
     }
     case CC_BANG: {
-      if( z[1]!='=' ){
-        *tokenType = TK_ILLEGAL;
+      if( z[0]!='!' ){
+        *tokenType = z[0]=='{' ? TK_LEFTCURLY : TK_RIGHTCURLY;
         return 1;
-      }else{
+      }else if( z[1]=='=' ){
         *tokenType = TK_NE;
         return 2;
+      }else{
+        *tokenType = TK_ILLEGAL;
+        return 1;
       }
     }
     case CC_PIPE: {
@@ -385,8 +388,14 @@ i64 sqlite3GetToken(const unsigned char *z, int *tokenType){
       *tokenType = TK_COMMA;
       return 1;
     }
-    case CC_AND: {
-      *tokenType = TK_BITAND;
+    case CC_AUX: {
+      if( z[0]=='&' ){
+        *tokenType = TK_BITAND;
+      }else if( z[0]=='{' ){
+        *tokenType = TK_LEFTCURLY;
+      }else{
+        *tokenType = TK_RIGHTCURLY;
+      }
       return 1;
     }
     case CC_TILDA: {
