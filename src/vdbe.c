@@ -796,14 +796,18 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
     assert( t>=12 );
     sqlite3RCStrRef(pBuf);
     if( t&1 ){
-      rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, encoding,
+      /* Prevents the removal of a BOM in UTF16 text.  Otherwise
+      ** it causes no harm as long as len>=0, and pDest->enc is set
+      ** to the correct encoding afterwards: ----
+      ** (tag-20261016-1)                        `vvvvvvvvvvv    */
+      rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, SQLITE_UTF8,
                                 sqlite3RCStrUnref);
       pDest->flags |= MEM_Term;
     }else{
       rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, 0,
                                 sqlite3RCStrUnref);
-      pDest->enc = encoding;
-    }
+     }
+    pDest->enc = encoding;
   }else{
     rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, iOffset, len, pDest);
     if( rc ) return rc;
