@@ -416,6 +416,42 @@ do_execsql_test 12.9 {
   SELECT DISTINCT c0 FROM t0 INDEXED BY i0 ORDER BY c0 ASC NULLS LAST;
 } {A {}}
 
+#-------------------------------------------------------------------------
+# Report <https://sqlite.org/bugs/forumpost/d459ae35bd>
+#
+reset_db
+
+do_execsql_test 13.0 {
+  CREATE TABLE t1(a PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t1 VALUES(1.5);
+  ALTER TABLE t1 ADD COLUMN b;
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 13.1 {
+  SELECT * FROM t1 WHERE a IN (1.5, 'myval2') ORDER BY b NULLS LAST;
+} {1.5 {}}
+
+do_execsql_test 13.2 {
+  SELECT * FROM t1 WHERE a = 1.5 AND b IS NULL;
+} {1.5 {}}
+
+do_execsql_test 13.3 {
+  CREATE TABLE t2(a PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t2 VALUES(1), (2);
+  ALTER TABLE t2 ADD COLUMN b DEFAULT 5;
+  INSERT INTO t2 VALUES(3, NULL);
+}
+
+do_execsql_test 13.4 {
+  SELECT * FROM t2 WHERE a IN (1, 2, 3) ORDER BY b NULLS LAST;
+} {1 5 2 5 3 {}}
+
+do_execsql_test 13.5 {
+  CREATE TABLE t3(a);
+  INSERT INTO t3 VALUES(1),(2);
+  SELECT * FROM t3 ORDER BY rowid NULLS LAST;
+} {1 2}
 
 
 finish_test

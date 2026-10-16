@@ -664,6 +664,7 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
     for(i=0; i<db->nDb; i++){
       if( DbHasProperty(db, i, DB_ResetWanted) ){
         sqlite3SchemaClearOrDisconnect(db, i);
+        db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
       }
     }
   }

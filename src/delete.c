@@ -997,6 +997,7 @@ int sqlite3GenerateIndexKey(
   regBase = sqlite3GetTempRange(pParse, nCol);
   if( pPrior && (regBase!=regPrior || pPrior->pPartIdxWhere) ) pPrior = 0;
   for(j=0; j<nCol; j++){
+    int iTabCol;
     if( pPrior
      && pPrior->aiColumn[j]==pIdx->aiColumn[j]
      && pPrior->aiColumn[j]!=XN_EXPR
@@ -1005,7 +1006,9 @@ int sqlite3GenerateIndexKey(
       continue;
     }
     sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iDataCur, j, regBase+j);
-    if( pIdx->aiColumn[j]>=0 ){
+    if( (iTabCol = pIdx->aiColumn[j])>=0 
+     && (pIdx->pTable->aCol[iTabCol].colFlags & COLFLAG_VIRTUAL)==0
+    ){
       /* If the column affinity is REAL but the number is an integer, then it
       ** might be stored in the table as an integer (using a compact
       ** representation) then converted to REAL by an OP_RealAffinity opcode.

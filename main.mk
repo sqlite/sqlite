@@ -804,6 +804,7 @@ TESTSRC += \
   $(TOP)/ext/misc/mmapwarm.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/normalize.c \
+  $(TOP)/ext/misc/optname.c \
   $(TOP)/ext/misc/prefixes.c \
   $(TOP)/ext/misc/qpvtab.c \
   $(TOP)/ext/misc/randomjson.c \
@@ -928,7 +929,6 @@ EXTHDR += \
 TESTPROGS = \
   testfixture$(T.exe) \
   sqlite3$(T.exe) \
-  sqlite3_analyzer$(T.exe) \
   sqldiff$(T.exe) \
   dbhash$(T.exe) \
   sqltclsh$(T.exe)
@@ -2161,13 +2161,13 @@ src-archives: sqlite-amalgamation.zip amalgamation-tarball sqlite-src.zip
 # Build a ZIP archive containing various command-line tools.
 #
 tool-zip:	sqlite3$(T.exe) sqldiff$(T.exe) \
-            sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe) $(TOP)/tool/mktoolzip.tcl
-	strip sqlite3$(T.exe) sqldiff$(T.exe) sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe)
+            sqlite3_rsync$(T.exe) $(TOP)/tool/mktoolzip.tcl
+	strip sqlite3$(T.exe) sqldiff$(T.exe) sqlite3_rsync$(T.exe)
 	$(TCLSH_CMD) $(TOP)/tool/mktoolzip.tcl
 
 snapshot-zip:	testfixture$(T.exe) sqlite3$(T.exe) sqldiff$(T.exe) \
-            sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe) $(TOP)/tool/mktoolzip.tcl
-	strip sqlite3$(T.exe) sqldiff$(T.exe) sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe)
+            sqlite3_rsync$(T.exe) $(TOP)/tool/mktoolzip.tcl
+	strip sqlite3$(T.exe) sqldiff$(T.exe) sqlite3_rsync$(T.exe)
 	$(TCLSH_CMD) $(TOP)/tool/mktoolzip.tcl --snapshot
 
 clean-tool-zip:
@@ -2407,6 +2407,7 @@ SHELL_DEP = \
     $(TOP)/ext/misc/fileio.c \
     $(TOP)/ext/misc/ieee754.c \
     $(TOP)/ext/misc/memtrace.c \
+    $(TOP)/ext/misc/optname.c \
     $(TOP)/ext/misc/pcachetrace.c \
     $(TOP)/ext/misc/regexp.c \
     $(TOP)/ext/misc/series.c \

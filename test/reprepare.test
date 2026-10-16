@@ -1,0 +1,157 @@
+# 2026 October 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# Specifically, it tests that statements that should only be reprepared
+# when a bound variable is changed to or from a small integer value
+# (0 or 1), really is only reprepared in those cases.
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix reprepare
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, nm TEXT);
+  INSERT INTO t1 VALUES(4294967296,'a'), (4294967297,'b');
+}
+
+proc do_reprepare_count_test {tn sql lInt nReprepare} {
+  set stmt [sqlite3_prepare_v2 db $sql -1 dummy]
+  foreach ii $lInt {
+    set ii [expr $ii]
+    sqlite3_bind_int64 $stmt 1 $ii
+    sqlite3_step $stmt
+    sqlite3_reset $stmt
+  }
+
+  do_test $tn [list \
+      sqlite3_stmt_status $stmt SQLITE_STMTSTATUS_REPREPARE 0
+  ] [list $nReprepare]
+
+  sqlite3_finalize $stmt
+}
+
+do_reprepare_count_test 1.1 {
+  SELECT * FROM t1 WHERE +t1.id=?1
+} {4294967296 4294967297 4294967296 4294967297} 0
+
+do_reprepare_count_test 1.2 {
+  SELECT a.nm, b.nm FROM t1 a, t1 b WHERE a.id=?1 AND b.id=a.id
+} {4294967296 4294967297 4294967296 4294967297} 0
+
+proc do_reprepare_test {tn sql lTest} {
+  set stmt [sqlite3_prepare_v2 db $sql -1 dummy]
+
+  set cnt 0
+  foreach {t res} $lTest {
+    incr cnt
+    eval $t
+    sqlite3_step $stmt
+    sqlite3_reset $stmt
+    do_test $tn.$cnt [list \
+      sqlite3_stmt_status $stmt SQLITE_STMTSTATUS_REPREPARE 1
+    ] [list $res]
+  }
+
+  sqlite3_finalize $stmt
+}
+
+do_reprepare_test 1.3 {
+  SELECT a.nm, b.nm FROM t1 a, t1 b WHERE a.id=?1 AND b.id=a.id
+} {
+  { sqlite3_bind_int64 $stmt 1  45      } 0
+  { sqlite3_bind_int64 $stmt 1   0      } 1
+  { sqlite3_bind_int64 $stmt 1   1      } 0
+  { sqlite3_bind_int64 $stmt 1 101      } 1
+  { sqlite3_bind_null  $stmt 1          } 0
+  { sqlite3_bind_text  $stmt 1 hello -1 } 0
+  { sqlite3_bind_int64 $stmt 1   1      } 1
+  { sqlite3_bind_text  $stmt 1 world -1 } 1
+  { sqlite3_bind_int64 $stmt 1 450      } 0
+  { sqlite3_bind_int64 $stmt 1   0      } 1
+  { sqlite3_bind_null  $stmt 1          } 1
+  { sqlite3_bind_int64 $stmt 1   0      } 1
+  { sqlite3_bind_int64 $stmt 1   1      } 0
+  { sqlite3_bind_int64 $stmt 1   2      } 1
+}
+
+do_reprepare_test 1.4 {
+  SELECT * FROM t1 LIMIT ?1
+} {
+  { sqlite3_bind_int64 $stmt 1  12      } 1
+  { sqlite3_bind_int64 $stmt 1  12      } 0
+  { sqlite3_bind_int64 $stmt 1  13      } 1
+  { sqlite3_bind_int64 $stmt 1  13      } 0
+  { sqlite3_bind_int64 $stmt 1  14      } 1
+}
+
+#-------------------------------------------------------------------------
+# Test that if a variable is used both in a context where only a change
+# to or from a small integer requires a reprepare (an equality comparison)
+# and in a context where any change requires a reprepare (a LIMIT clause),
+# the statement is reprepared every time a new value is bound.
+#
+do_execsql_test 2.0 {
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y);
+  WITH s(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<10)
+  INSERT INTO t2 SELECT i, i FROM s;
+}
+
+proc do_limit_test {tn sql lTest} {
+  set stmt [sqlite3_prepare_v2 db $sql -1 dummy]
+  set cnt 0
+  foreach {val res} $lTest {
+    incr cnt
+    sqlite3_bind_int64 $stmt 1 $val
+    set nRow 0
+    while {[sqlite3_step $stmt]=="SQLITE_ROW"} { incr nRow }
+    sqlite3_reset $stmt
+    do_test $tn.$cnt [list set {} $nRow] [list $res]
+  }
+  sqlite3_finalize $stmt
+}
+
+do_limit_test 2.1 {
+  SELECT b.x FROM t2 a, t2 b WHERE a.x=?1 AND b.x>=a.x LIMIT ?1
+} {
+  2 2   3 3   0 0   4 4   6 5   1 1   5 5   7 4   4 4
+}
+
+#-------------------------------------------------------------------------
+# Test case from https://sqlite.org/bugs/info/2026-10-11T16:09:34Z
+#
+reset_db
+
+do_execsql_test 3.0 {
+  CREATE TABLE t(k INT, v INT);
+  WITH RECURSIVE c(x) AS (SELECT 0 UNION ALL SELECT x+1 FROM c WHERE x<399)
+   INSERT INTO t SELECT x%10, x FROM c;
+}
+
+set V [list 1 5 7 9]
+for {set ii 0} {$ii < 4} {incr ii} {
+  set val [expr [lindex $V $ii]]
+  do_test 3.1.$ii {
+    set cnt 0
+    db eval {
+      SELECT x.v FROM t x, t y WHERE x.k=$val AND y.v=x.v LIMIT $val 
+    } {
+      incr cnt
+    }
+    set cnt
+  } $val
+}
+
+
+finish_test
+
