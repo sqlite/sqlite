@@ -21,13 +21,19 @@ SELECT * FROM t1, t2 WHERE sandbox($abc, a=x, $abc);
 .check --glob 'sandbox violation'
 .testcase 130
 SELECT * FROM t1, t2 WHERE sandbox(2, a=x, 2, 4);
-.check --glob 'no such function: sandbox'
+.check --glob 'sandbox violation'
 .testcase 140
 SELECT * FROM t1, t2 WHERE sandbox(2, a=x) AND a=x;
-.check --glob 'no such function: sandbox'
+.check --glob 'sandbox violation'
 .testcase 150
 SELECT * FROM t1, t2 WHERE sandbox() AND a=x;
-.check --glob 'no such function: sandbox'
+.check --glob 'sandbox violation'
+.testcase 160
+SELECT * FROM t1, t2 WHERE sandbox(0,a=x,0) AND sandbox(0,b=y,0);
+.check --glob 'sandbox violation'
+.testcase 170
+SELECT * FROM t1, t2 WHERE sandbox(0,a=x,0) AND sandbox(1,b=y,1);
+.check --glob ''
 
 .testcase 200
 .eqp on

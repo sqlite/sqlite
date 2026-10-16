@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\sthe\sexperimental\ssandbox(N1,E,N2)\sfunction.\nThe\sfunction\sresolves\s(by\stransforming\sthe\sAST)\sto\sthe\sexpression\sE\sif\nN1\sand\sN2\sare\sthe\ssame\sconstant\sexpression.\s\sRequires\sthe\n-DSQLITE_ENABLE_SANDBOX_FUNCTION\scompile-time\soption.
-D 2026-10-14T20:14:26.869
+C Do\snot\sallow\stwo\sor\smore\ssandbox()\scalls\swith\sthe\ssame\snonce\swithin\sthe\nsame\sSQL\sstatement.\s\sReport\sa\ssandbox\sviolation\sif\sa\ssandbox()\scontains\nthe\swrong\snumber\sof\sarguments.
+D 2026-10-16T14:02:02.414
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -692,7 +692,7 @@ F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c 98c716bc5c0c70af4e7934bfcddd707f14e78b5d4cf1e0602a07b485e1af2e74
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 1f2268d6fe3c78fc1bf794ba65d7026498b78e2342ffaf85825dedae546e6fde
-F src/expr.c 008844c5f099b2da02b0112dc00dc4c6dad670ea806e6c7bf54219f4702cb577
+F src/expr.c 52b7263b21b93d2d0ef98f3a49932a1fea7254f573de367c0af72fa7e63e7c5f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c 03d6ae4f1b5ccdf44b68691ce7cb6353cf3aa5984fb75d69dd41b5b21031e836
@@ -1578,7 +1578,7 @@ F test/rowvaluefault.test 963ae9cdaed30a85a29668dd514e639f3556cae903ee9f172ea972
 F test/rowvaluevtab.test cd9747bb3f308086944c07968f547ad6b05022e698d80b9ffbdfe09ce0b8da6f
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
-F test/sandbox1.sql 35ec3792bde234d03b446a0d5551dba210d4a7bdfb3ee64cd4b7d18cdbd2a613
+F test/sandbox1.sql c325073f9cfcfd2ad6d89eec3369e4e934fb9638d3f4dbe84ea75daebb64d506
 F test/savepoint.test 6e9804a17767f08432c7a5e738b9a8f4b891d243110b63d3a41d270d3d1378ec
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
@@ -2208,9 +2208,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 872587e1567020e32c6c833b40818ba88a0b02de97b9db7b16daae08762508a8
-Q +035fd52d54a6f8f9c8276a48f466d660832d46d05a02b3ee4a41959922a4bc22
-R 5a6d9e1f449ed3cd72c95e119869a5ff
+P 767597cc116079bedcf84c4d5d2e406de3182cc60f3a89da38bb82ab0c1e9444
+Q +b3c63e883bb7d8f1504bc3fa863487ae7dfd923771e20a71e41114cd06b962db
+R 9e5714202724678602172c675c787151
 U drh
-Z 8bb1081a7b6f8a6403b0d627cac3ffd7
+Z 0510d7124c5c01118246dbc18c026e8d
 # Remove this line to create a well-formed Fossil manifest.
