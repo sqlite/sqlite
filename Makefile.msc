@@ -1595,6 +1595,7 @@ TESTEXT = \
   $(TOP)\ext\misc\mmapwarm.c \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\normalize.c \
+  $(TOP)\ext\misc\optname.c \
   $(TOP)\ext\misc\prefixes.c \
   $(TOP)\ext\misc\qpvtab.c \
   $(TOP)\ext\misc\randomjson.c \
@@ -1680,7 +1681,6 @@ EXTHDR = $(EXTHDR) \
 TESTPROGS = \
   testfixture.exe \
   $(SQLITE3EXE) \
-  sqlite3_analyzer.exe \
   sqldiff.exe \
   dbhash.exe \
   sqltclsh.exe
@@ -2574,10 +2574,10 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
-tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3_rsync.exe sqlite3.dll $(TOP)\tool\mktoolzip.tcl
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_rsync.exe sqlite3.dll $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
 
-snapshot-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3_rsync.exe sqlite3.dll $(TOP)\tool\mktoolzip.tcl
+snapshot-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_rsync.exe sqlite3.dll $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl --snapshot
 
 coretestprogs:	testfixture.exe sqlite3.exe

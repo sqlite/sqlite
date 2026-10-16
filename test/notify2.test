@@ -146,7 +146,7 @@ set sql $zSql
       # Hit an SQLITE_LOCKED error. Rollback the current transaction.
       set rc [catch { execsql_blocking $::DB ROLLBACK } msg]
       if {$rc && [string match "SQLITE_LOCKED*" $msg]} {
-        sqlite3_close $::DB
+        if {[sqlite3_close $::DB]!="SQLITE_OK"} {error "failed sqlite3_close()"}
         opendb
       } 
     } elseif {$rc} {
@@ -163,7 +163,7 @@ set sql $zSql
 
   # Close the database connection and return 0.
   #
-  sqlite3_close $::DB
+  if {[sqlite3_close $::DB]!="SQLITE_OK"} {error "failed sqlite3_close()"}
   list $nOp $nAttempt
 }
 

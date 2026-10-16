@@ -701,4 +701,27 @@ do_test collate4-6.3 {
   }
 } {10 101 15 sort}
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/forumpost/f505c400cf
+reset_db
+
+do_execsql_test collate4-7.0 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES('a'), ('A');
+  CREATE TABLE t2(b);
+  INSERT INTO t2 VALUES('A');
+}
+
+do_execsql_test collate4-7.1 {
+  SELECT a FROM t1 WHERE a IN (SELECT b COLLATE NOCASE FROM t2);
+} {a A}
+
+do_execsql_test collate4-7.2 {
+  CREATE INDEX t1a ON t1(a);
+}
+
+do_execsql_test collate4-7.3 {
+  SELECT a FROM t1 WHERE a IN (SELECT b COLLATE NOCASE FROM t2);
+} {a A}
+
 finish_test

@@ -333,6 +333,14 @@ static void printfFunc(
   }
 }
 
+/* Return true if any of the eight bytes in word is NUL or non-ASCII. */
+static SQLITE_INLINE int containsNulOrNonAscii(u64 word){
+  const u64 byteOnes = UINT64_C(0x0101010101010101);
+  const u64 byteHighBits = UINT64_C(0x8080808080808080);
+  /* NUL causes a borrow into a high bit; non-ASCII already has one set. */
+  return ((word | (word - byteOnes)) & byteHighBits)!=0;
+}
+
 /*
 ** Implementation of the substr() function.
 **
@@ -416,6 +424,20 @@ static void substrFunc(
   }
   assert( p1>=0 && p2>=0 );
   if( p0type!=SQLITE_BLOB ){
+    if( p1>=8 ){
+      /* Skip 8 characters at a time while all 8 bytes are in 0x01..0x7f */
+      const unsigned char *zEnd = z + sqlite3_value_bytes(argv[0]);
+      while( p1>=8 && zEnd-z>=8 ){
+        u64 word;
+        memcpy(&word, z, sizeof(word));
+        /* Handle NUL and UTF-8 with the scalar loop below. */
+        if( containsNulOrNonAscii(word) ){
+          break;
+        }
+        z += 8;
+        p1 -= 8;
+      }
+    }
     for( ; p1>0; p1--){
                     /*  vvvvvv----  See tag-20260418-01 */
       if( (u8)(z[0]-1)<(0x80-1) ){
@@ -795,10 +817,20 @@ static int patternCompare(
       if( c<0x80 ){
         char zStop[3];
         int bMatch;
+        /* If the next pattern character is an ordinary ASCII character,
+        ** then a candidate position can only match if the next input
+        ** character is nx or ny.  Check that inline, to avoid most of the
+        ** recursive calls.  nx==0 disables this check. */
+        u8 nx = zPattern[0], ny = nx;
+        if( nx>=0x80 || nx==matchAll || nx==matchOne || nx==matchOther ){
+          nx = 0;
+        }
         if( noCase ){
           zStop[0] = sqlite3Toupper(c);
           zStop[1] = sqlite3Tolower(c);
           zStop[2] = 0;
+          nx = sqlite3Toupper(nx);
+          ny = sqlite3Tolower(ny);
         }else{
           zStop[0] = c;
           zStop[1] = 0;
@@ -807,6 +839,7 @@ static int patternCompare(
           zString += strcspn((const char*)zString, zStop);
           if( zString[0]==0 ) break;
           zString++;
+          if( nx && zString[0]!=nx && zString[0]!=ny ) continue;
           bMatch = patternCompare(zPattern,zString,pInfo,matchOther);
           if( bMatch!=SQLITE_NOMATCH ) return bMatch;
         }
@@ -1084,14 +1117,20 @@ static void compileoptiongetFunc(
   int argc,
   sqlite3_value **argv
 ){
-  int n;
+  i64 n;
+  const char *zRes;
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   /* IMP: R-04922-24076 The sqlite_compileoption_get() SQL function
   ** is a wrapper around the sqlite3_compileoption_get() C/C++ function.
   */
-  n = sqlite3_value_int(argv[0]);
-  sqlite3_result_text(context, sqlite3_compileoption_get(n), -1, SQLITE_STATIC);
+  n = sqlite3_value_int64(argv[0]);
+  /* Use a negative lower bound to assist testing of the
+  ** sqlite3_compileoption_get() C-language interface and its handling
+  ** of negative inputs.
+  **         vvvvv */
+  zRes = (n>=(-10) && n<10000) ? sqlite3_compileoption_get((int)n) : 0;
+  sqlite3_result_text(context, zRes, -1, SQLITE_STATIC);
 }
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
 

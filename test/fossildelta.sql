@@ -1,5 +1,6 @@
 .load ./fossildelta
 .mode qbox -quote relaxed
+.mode -textjsonb off
 .testcase 100
 SELECT op, a1 FROM delta_parse(delta_create(x'01',x'02'));
 .check <<END

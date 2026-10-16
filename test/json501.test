@@ -332,5 +332,16 @@ for {set c 1} {$c<=0x1f} {incr c} {
   } "{{\"label\":\"abc${e}xyz\"}}"
 }
 
+# Forum post 2026-10-14T08:42:26Z
+#
+do_execsql_test 15.0 {
+  WITH json(jid,jx) AS (VALUES
+    (1,'{"a":"text","b":123,"c":[1,2,3,"t",{"cc":99,"dd":100}],"d":null}'),
+    (2,'[1,"a",{"aa":11,"bb":[9,8,7]},null]')
+  ), paths(pid,px) AS (VALUES(1,'$.c[4]'),(2,'$.c'),(3,'$[2].bb'),(4,'$[2]'))
+  SELECT jj.key, typeof(jj.key) FROM json, paths, json_tree(jx,px) AS jj
+   WHERE parent IS NULL
+   ORDER BY jid, pid;
+} {4 integer c text bb text 2 integer}
 
 finish_test

@@ -38,7 +38,7 @@ do_test 1.1 {
     set res [execsql {
       SELECT input, token, start, end FROM t5($input)
     }]
-    if {$res != $expect} {error "failed at i=$i"}
+    if {$res != $expect} {error "failed at i=$i ($res != $expect)"}
   }
 } {}
 

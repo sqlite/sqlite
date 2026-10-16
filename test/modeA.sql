@@ -281,7 +281,7 @@ SELECT * FROM t1;
 
 .testcase 601
 SELECT 'abc',char(0x05,0x18,0x33),'xyz';
-.check --glob abc,"??3",xyz
+.check --glob abc,"*3",xyz
 
 .testcase 610
 .mode csv -reset
@@ -305,6 +305,11 @@ SELECT * FROM t1;
 .mode csv --title off
 SELECT * FROM t1;
 .check 1,2,3
+
+.testcase 640
+.mode csv --reset --colsep "^" --rowsep "::"
+SELECT 1, 2, 3 UNION ALL SELECT 'a','b','c';
+.check 1^2^3::a^b^c::
 
 # Verification of claims about .insert mode in the climode.html
 # documentation.

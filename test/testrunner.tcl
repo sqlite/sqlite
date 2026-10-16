@@ -95,6 +95,11 @@ if {[info commands clock_milliseconds]==""} {
   }
 }
 
+# Ensure DEBUGINFOD_URLS is unset. Leaving it set causes some sanitizer
+# test cases to run slowly on Ubuntu.
+#
+unset -nocomplain ::env(DEBUGINFOD_URLS)
+
 #-------------------------------------------------------------------------
 # Usage:
 #
