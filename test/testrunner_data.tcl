@@ -137,6 +137,7 @@ namespace eval trd {
     -DHAVE_STRCHRNUL=0
     -DHAVE_USLEEP=0
     -DHAVE_UTIME=0
+    -DHAVE_MREMAP=0
   }
   set build(Unlock-Notify) {
     -O2

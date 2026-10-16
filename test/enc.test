@@ -289,4 +289,17 @@ do_execsql_test enc-14.1 {
     FROM t14 ORDER BY +n;
 } {1000 2000 1000 5000 10000 5000}
 
+# Bug 2026-10-14T17:33:12Z
+reset_db
+do_execsql_test enc-15.0 {
+  PRAGMA encoding = UTF16;
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(123);
+  ALTER TABLE t1 ADD COLUMN b DEFAULT x'9e2e';
+  CREATE TABLE t2(a, b DEFAULT x'9e2e');
+  INSERT INTO t2(a) VALUES(123);
+  SELECT 'match' FROM t1 JOIN t2
+   WHERE CAST(t1.b AS TEXT)=CAST(t2.b AS TEXT);
+} match
+
 finish_test

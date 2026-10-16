@@ -23,7 +23,7 @@ that are public domain include the following:
   *  All of the code used to compile the
      [command-line interface](https://sqlite.org/cli.html)
   *  All of the code used to build various utility programs such as
-     "sqldiff", "sqlite3_rsync", and "sqlite3_analyzer".
+     "sqldiff" and "sqlite3_rsync".
 
 
 The public domain source files usually contain a header comment

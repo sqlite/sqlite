@@ -565,5 +565,20 @@ do_catchsql_test 11.0 {
   VALUES(2) EXCEPT SELECT '' ORDER BY abc
 } {1 {1st ORDER BY term does not match any column in the result set}}
 
+# Bug 2026-10-11T17:00:56Z
+do_execsql_test 12.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1(a) VALUES(1),(2);
+  SELECT a FROM (SELECT a FROM t1 ORDER BY a LIMIT 2)
+   GROUP BY a
+   ORDER BY a DESC;
+} {2 1}
+do_execsql_test 12.1 {
+  SELECT a FROM (SELECT a FROM t1 ORDER BY a LIMIT 2)
+   GROUP BY a
+   ORDER BY a DESC
+   LIMIT 1;
+} {2}
 
 finish_test

@@ -12,7 +12,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix bestindexF
+set testprefix bestindexG
 
 ifcapable !vtab {
   finish_test
@@ -96,6 +96,53 @@ do_execsql_test 1.2 {
   )
   select count(*) from probe join v on v.id = probe.id;
 } {2}
+
+#-------------------------------------------------------------------------
+# Report https://sqlite.org/bugs/forumpost/aec494fd56
+#
+reset_db 
+ifcapable fts5 {
+  sqlite3 db ""
+  register_tcl_module db
+  
+  proc vtab_command {method args} {
+    switch -- $method {
+      xConnect {
+        return "CREATE TABLE x(a PRIMARY KEY, b) WITHOUT ROWID"
+      }
+    }
+    return {}
+  }
+  
+  do_execsql_test 2.0 {
+    CREATE VIRTUAL TABLE v40 USING fts5(c);
+    BEGIN EXCLUSIVE;
+      CREATE VIRTUAL TABLE v115 USING tcl(vtab_command);
+  }
+  
+  do_catchsql_test 2.1 {
+    CREATE VIRTUAL TABLE v123 USING fts5;
+  } {1 {vtable constructor failed: v123}}
+  
+  do_catchsql_test 2.2 {
+    CREATE TABLE v124 (
+        a AS(a),
+        b INT
+    );
+  } {1 {generated column loop on "a"}}
+  
+  do_execsql_test 2.3 {
+    PRAGMA quick_check;
+  } {ok}
+  
+  do_execsql_test 2.4 {
+      INSERT INTO v40 VALUES('one two three');
+      SELECT rowid FROM v40('one');
+    COMMIT;
+    SELECT rowid FROM v40('two');
+  } {1 1}
+}
+
 
 finish_test
 

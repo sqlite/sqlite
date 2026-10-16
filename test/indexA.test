@@ -1,4 +1,4 @@
-# 2023 September 23
+# 2023-09-23
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -346,5 +346,44 @@ do_execsql_test 8.1 {
 } {
   1 4 1  2 4 2
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t(a INT, b);
+  INSERT INTO t VALUES(5,0),(1,0),(5,1);
+}
+
+do_execsql_test 9.1 {
+  SELECT rowid, a, b FROM t WHERE b=0 AND a=5 AND a>1 OR rowid=2;
+} {1 5 0  2 1 0}
+
+do_execsql_test 9.2 {
+  CREATE INDEX i ON t(b) WHERE a=5;
+  SELECT rowid, a, b FROM t WHERE b=0 AND a=5 AND a>1 OR rowid=2;
+} {1 5 0  2 1 0}
+
+do_execsql_test 9.3 {
+  SELECT rowid, a, b FROM t WHERE b=0 AND a=5 AND a>6 OR rowid=2;
+} {2 1 0}
+
+# Bug 2026-10-11T20:18:09Z
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a, b TEXT);
+  INSERT INTO t1 VALUES(1, '5.0');
+  CREATE INDEX t1a ON t1(a) WHERE b = CAST(5 AS INT);
+  SELECT b, typeof(b) FROM t1 WHERE b = CAST(5 AS INT);
+} {5.0 text}
+do_execsql_test 9.1 {
+  SELECT count(*) FROM t1 WHERE b = CAST(5 AS INT) AND b LIKE '%.0';
+} 1
+do_execsql_test 9.2 {
+  CREATE TABLE t2(a INT, b INT) STRICT;
+  INSERT INTO t2 VALUES(1, -9223372036854775808);
+  CREATE INDEX t2a ON t2(a) WHERE b = -9223372036854775808.0;
+  SELECT b, typeof(b) FROM t2 WHERE b = -9223372036854775808.0;
+} {-9223372036854775808 integer}
 
 finish_test
