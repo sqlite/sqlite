@@ -6274,6 +6274,7 @@ static int selectExpander(Walker *pWalker, Select *p){
           assert( ExprUseWOfst(pE->pLeft) );
           iErrOfst = pE->pRight->w.iOfst;
         }else{
+          assert( pE->pLeft==0 );
           assert( ExprUseWOfst(pE) );
           iErrOfst = pE->w.iOfst;
         }
@@ -6396,6 +6397,7 @@ static int selectExpander(Walker *pWalker, Select *p){
               pLeft = sqlite3Expr(db, TK_ID, zTabName);
               pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
               if( IN_RENAME_OBJECT && pE->pLeft ){
+                assert( pE->op==TK_DOT && pE->pRight->op==TK_ASTERISK );
                 sqlite3RenameTokenRemap(pParse, pLeft, pE->pLeft);
               }
               if( zSchemaName ){
