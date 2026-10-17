@@ -799,6 +799,12 @@ do_execsql_test 1523ck {
    LIMIT 3;
 } {9223372036854775805 9223372036854775806 9223372036854775807}
 
+# Bug 2026-10-17T09:24:09Z
+#
+breakpoint
+do_execsql_test 1530 {
+  SELECT value FROM generate_series(1,10) ORDER BY value DESC LIMIT 3;
+} {10 9 8}
 
 #------------------------------------------------------------------------
 #

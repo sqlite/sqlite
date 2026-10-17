@@ -657,3 +657,16 @@ INSERT INTO t1 VALUES(-9e+999);
 INSERT INTO t1 VALUES(x'313233');
 COMMIT;
 END
+
+# Bug 2026-10-17T09:26:21Z
+#
+.testcase 1300
+.mode box --title html --limits on
+SELECT '' AS '';
+.check <<END
+╭──╮
+│  │
+╞══╡
+│  │
+╰──╯
+END

@@ -175,6 +175,7 @@ struct series_cursor {
   sqlite3_int64 iValue;      /* Current value */
   u8 bDesc;                  /* iStep is really negative */
   u8 bDone;                  /* True if stepped past last element */
+  u8 bLimit;                 /* There exists a limit clause */
 };
 
 /*
@@ -286,10 +287,10 @@ static int seriesNext(sqlite3_vtab_cursor *cur){
     pCur->bDone = 1;
   }else if( pCur->bDesc ){
     pCur->iValue = sub64(pCur->iValue, pCur->iStep);
-    assert( pCur->iValue>=pCur->iTerm );
+    assert( pCur->iValue>=pCur->iTerm || pCur->bLimit );
   }else{
     pCur->iValue = add64(pCur->iValue, pCur->iStep);
-    assert( pCur->iValue<=pCur->iTerm );
+    assert( pCur->iValue<=pCur->iTerm || pCur->bLimit );
   }
   return SQLITE_OK;
 }
@@ -519,6 +520,7 @@ static int seriesFilter(
     if( idxNum & 0x40 ){
       iOffset = sqlite3_value_int64(argv[iArg++]);
     }
+    if( iLimit>0 ) pCur->bLimit = 1;
   }
 
   /* Narrow the range of iMin and iMax (the minimum and maximum outputs)
