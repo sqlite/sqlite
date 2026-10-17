@@ -9841,12 +9841,35 @@ static int dotCmdCheck(ShellState *p){
     }
   }
   if( !isOk ){
+    static const char zDL[] = "\342\225\255\342\224\200";
+    static const char zDR[] = "\342\224\200\342\225\256";
+    static const char zUL[] = "\342\225\260\342\224\200";
+    static const char zUR[] = "\342\224\200\342\225\257";
+    static const char zLine[] = "\342\224\200\342\224\200\342\224\200"
+                                "\342\224\200\342\224\200\342\224\200"
+                                "\342\224\200\342\224\200\342\224\200"
+                                "\342\224\200\342\224\200\342\224\200"
+                                "\342\224\200\342\224\200";
     sqlite3_fprintf(stderr,
           "%s:%lld: .check failed for testcase %s\n",
         p->zInFile, iStart, p->zTestcase);
     p->nTestErr++;
-    sqlite3_fprintf(stderr, "Expected: [%s]\n", zPattern);
-    sqlite3_fprintf(stderr, "Got:      [%s]\n", zTest);
+    if( sqlite3_strglob("*\n", zPattern)==0 ){
+      sqlite3_fprintf(stderr, "%s%s Expected %s%s\n%s%s%s Expected %s%s\n",
+                    zDL, zLine+9, zLine+9, zDR,
+                    zPattern,
+                    zUL, zLine+9, zLine+9, zUR);
+    }else{
+      sqlite3_fprintf(stderr, "Expected: [%s]\n", zPattern);
+    }
+    if( sqlite3_strglob("*\n", zTest)==0 ){
+      sqlite3_fprintf(stderr, "%s%s Got %s%s\n%s%s%s Got %s%s\n",
+                     zDL, zLine+3, zLine, zDR,
+                     zTest,
+                     zUL, zLine+3, zLine, zUR);
+    }else{
+      sqlite3_fprintf(stderr, "Got:      [%s]\n", zTest);
+    }
   }
   if( zPattern!=zCheck ){
     sqlite3_free(zPattern);

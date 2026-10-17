@@ -1,5 +1,5 @@
-C Augment\sthe\sAST\sfor\s*-expansion\sof\sa\scolumn\sin\sthe\sleft\stable\sof\sa\sRIGHT\nJOIN\sthat\sis\sjoined\svia\sUSING.\s\sWorking\stoward\sa\sfix\sfor\n[bugs:/info/2026-10-08T15:50:07Z|Bug\s2026-10-08T15:50:07Z].\s\sExperimental\nand\sincomplete.\s\sSaved\sto\swork\son\sother\sthings.
-D 2026-10-16T23:32:43.992
+C Use\sbox-drawing\scharacters\sto\shighlight\sthe\s"Expected"\sand\s"Got"\soutput\nfrom\sfailed\s".check"\slines\sin\sthe\sCLI,\sfor\simproved\sdebug\ssupport.
+D 2026-10-17T18:29:00.682
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -805,7 +805,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 0e0990f60c93db38c735d85e5d1741130e72dd0670aec204b5a39118b53c8044
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 010f3f87ff225029caac07c32d12f58ff9c85a522a5f9958429e0b8802f0c317
-F src/shell.c.in 289d00bc3802915705cdf09dde4398547d51cb52663f77ed065b5a32d45ea3d5
+F src/shell.c.in 4ee8f9634a6ef7180ce3c81b15139287cb6e43feaad8908b610455d4ad66a758
 F src/sqlite.h.in 648fdc66f52433fc0f6cf9564ac924cde544eca9605bbac36aa22d8c944f11ed
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5e113c4c0442f2f1b3345d44cbe4b82fad45f2fc0c35f0ed4eef27fb8f1cb394
@@ -2291,11 +2291,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 69d51c35426f8c93b9e19a68b022beb0fb3d275121833fce35e9099c8f97976c
-R 137434c9fd3d8811941c6f8de316a4f3
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P 4c31bf288a40294e6b36f7ad82ee07cd97a7c54c6c663e5939acbcaa573c0f92
+R 5adf2374431f608f5eddaa7f56eee40b
 U drh
-Z 61a1fe3fe8c49bb4d329498111f1b153
+Z f39b9a4a1ba60b45b1490788b5e74f33
 # Remove this line to create a well-formed Fossil manifest.
