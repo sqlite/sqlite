@@ -1511,8 +1511,8 @@ static int zipfileGetMode(
 ** Both (const char*) arguments point to nul-terminated strings. Argument
 ** nB is the value of strlen(zB). This function returns 0 if the strings are
 ** identical, ignoring any trailing '/' character in either path.  */
-static int zipfileComparePath(const char *zA, const char *zB, int nB){
-  int nA = (int)strlen(zA);
+static int zipfileComparePath(const char *zA, const char *zB, size_t nB){
+  size_t nA = strlen(zA);
   if( nA>0 && zA[nA-1]=='/' ) nA--;
   if( nB>0 && zB[nB-1]=='/' ) nB--;
   if( nA==nB && memcmp(zA, zB, nA)==0 ) return 0;
@@ -1626,7 +1626,7 @@ static int zipfileUpdate(
   u32 mTime = 0;                  /* Modification time for new entry */
   i64 sz = 0;                     /* Uncompressed size */
   const char *zPath = 0;          /* Path for new entry */
-  int nPath = 0;                  /* strlen(zPath) */
+  size_t nPath = 0;                  /* strlen(zPath) */
   const u8 *pData = 0;            /* Pointer to buffer containing content */
   int nData = 0;                  /* Size of pData buffer in bytes */
   int iMethod = 0;                /* Compression method for new entry */
@@ -1648,7 +1648,7 @@ static int zipfileUpdate(
   /* If this is a DELETE or UPDATE, find the archive entry to delete. */
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
     const char *zDelete = (const char*)sqlite3_value_text(apVal[0]);
-    int nDelete = (int)strlen(zDelete);
+    size_t nDelete = strlen(zDelete);
     if( nVal>1 ){
       const char *zUpdate = (const char*)sqlite3_value_text(apVal[1]);
       if( zUpdate && zipfileComparePath(zUpdate, zDelete, nDelete)!=0 ){
@@ -1716,7 +1716,7 @@ static int zipfileUpdate(
     if( rc==SQLITE_OK ){
       zPath = (const char*)sqlite3_value_text(apVal[2]);
       if( zPath==0 ) zPath = "";
-      nPath = (int)strlen(zPath);
+      nPath = strlen(zPath);
       if( nPath>ZIPFILE_MX_NAME ){
         zipfileTableErr(pTab, "filename too long; max: %d bytes",
                         ZIPFILE_MX_NAME);
@@ -1737,7 +1737,7 @@ static int zipfileUpdate(
           rc = SQLITE_NOMEM;
           nPath = 0;
         }else{
-          nPath = (int)strlen(zPath);
+          nPath = strlen(zPath);
         }
       }
     }
