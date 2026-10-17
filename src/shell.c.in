@@ -9252,10 +9252,10 @@ static int dotCmdMode(ShellState *p){
         return 1;
       }
       zW = azArg[++i];
-      /* Every width value takes at least 2 bytes in the input string to
-      ** specify, so strlen(zW) bytes should be plenty of space to hold the
-      ** result. */
-      aWidth = malloc( strlen(zW) );
+      /* Every width value except a single-digit final value takes at
+      ** least 2 bytes in the input string to specify, so strlen(zW)+1
+      ** entries is plenty of space to hold the result. */
+      aWidth = malloc( strlen(zW)+1 );
       while( IsSpace(zW[0]) ) zW++;
       while( zW[0] ){
         int w = 0;
