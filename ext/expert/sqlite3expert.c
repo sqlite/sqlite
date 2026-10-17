@@ -992,12 +992,21 @@ static int idxCreateFromCons(
       do{
         int i;
         char *zFind;
-        for(i=0; zCols[i]; i++){
-          h += ((h<<3) + zCols[i]);
-        }
+
         sqlite3_free(zName);
-        zName = sqlite3_mprintf("%s_idx_%08x", zTable, h);
+        if( collisions<10 ){
+          for(i=0; zCols[i]; i++){
+            h += ((h<<3) + zCols[i]);
+          }
+          zName = sqlite3_mprintf("%s_idx_%08x", zTable, h);
+        }else{
+          /* After several hash attempts, generate a random name */
+          sqlite3_uint64 u;
+          sqlite3_randomness(sizeof(u), &u);
+          zName = sqlite3_mprintf("%s_idx_%llx", zTable, u);
+        }
         if( zName==0 ) break;
+         
         /* Is is unique among table, view and index names? */
         zFmt = "SELECT count(*) FROM sqlite_schema WHERE name=%Q"
           " AND type in ('index','table','view')";
@@ -1011,8 +1020,8 @@ static int idxCreateFromCons(
           break;
         }
         ++collisions;
-      }while( collisions<50 && zName!=0 );
-      if( collisions ){
+      }while( ALWAYS(collisions<500) && zName!=0 );
+      if( NEVER(collisions) ){
         /* This return means "Gave up trying to find a unique index name." */
         rc = SQLITE_BUSY_TIMEOUT;
       }else if( zName==0 ){
@@ -1034,9 +1043,9 @@ static int idxCreateFromCons(
             idxHashAdd(&rc, &p->hIdx, zName, zIdx);
           }
         }
-        sqlite3_free(zName);
         sqlite3_free(zIdx);
       }
+      sqlite3_free(zName);
     }
 
     sqlite3_free(zCols);
