@@ -489,9 +489,9 @@ static void qrfEqpStats(Qrf *p){
   }
   if( p->u.pGraph ) p->u.pGraph->nWidth = nWidth;
   qrfStrErr(p, pLine);
-  sqlite3_free(sqlite3_str_finish(pLine));
+  sqlite3_str_free(pLine);
   qrfStrErr(p, pStats);
-  sqlite3_free(sqlite3_str_finish(pStats));
+  sqlite3_str_free(pStats);
 #endif
 }
 
@@ -2009,6 +2009,21 @@ static void qrfRestrictScreenWidth(qrfColData *pData, Qrf *p){
 }
 
 /*
+** Invoke sqlite3_str_finish().  But if it returns NULL, try to allocate
+** an empty string to replace the result.
+**
+** The result might still be an empty string, but only after an OOM and
+** in that case qrfOom() has been called already and so it is safe to
+** return immediately.
+*/
+static char *qrfStrFinish(Qrf *p, sqlite3_str *pStr){
+  char *z = sqlite3_str_finish(pStr);
+  if( z==0 ) z = sqlite3_mprintf("");
+  if( z==0 ) qrfOom(p);
+  return z;
+}
+
+/*
 ** Columnar modes require that the entire query be evaluated first, with
 ** results written into memory, so that we can compute appropriate column
 ** widths.
@@ -2071,7 +2086,8 @@ static void qrfColumnar(Qrf *p){
       qrfEncodeText(p, pStr, z ? z : "");
       n = sqlite3_str_length(pStr);
       qrfStrErr(p, pStr);
-      z = data.az[data.n] = sqlite3_str_finish(pStr);
+      z = data.az[data.n] = qrfStrFinish(p, pStr);
+      if( z==0 ) goto columnar_done;
       if( p->spec.nTitleLimit ){
         nNL = 0;
         data.aiWth[data.n] = w = qrfTitleLimit(data.az[data.n],
@@ -2100,7 +2116,8 @@ static void qrfColumnar(Qrf *p){
       qrfRenderValue(p, pStr, i);
       n = sqlite3_str_length(pStr);
       qrfStrErr(p, pStr);
-      z = data.az[data.n] = sqlite3_str_finish(pStr);
+      z = data.az[data.n] = qrfStrFinish(p,pStr);
+      if( z==0 ) goto columnar_done;
       data.abNum[data.n] = eType==SQLITE_INTEGER || eType==SQLITE_FLOAT;
       data.aiWth[data.n] = w = qrfDisplayWidth(z, n, &nNL);
       data.n++;
@@ -2388,6 +2405,7 @@ static void qrfColumnar(Qrf *p){
   }
   qrfWrite(p);
 
+columnar_done:
   qrfColDataFree(&data);
   return;
 }
@@ -2819,7 +2837,7 @@ static void qrfOneSimpleRow(Qrf *p){
         sqlite3_str_reset(pVal);
       }
       qrfStrErr(p, pVal);
-      sqlite3_free(sqlite3_str_finish(pVal));
+      sqlite3_str_free(pVal);
       qrfWrite(p);
       break;
     }
@@ -3102,12 +3120,12 @@ static void qrfFinalize(Qrf *p){
         p->spec.pzOutput[0] = zCombined;
         memcpy(zCombined+sz, sqlite3_str_value(p->pOut), n+1);
       }
-      sqlite3_free(sqlite3_str_finish(p->pOut));
+      sqlite3_str_free(p->pOut);
     }else{
-      p->spec.pzOutput[0] = sqlite3_str_finish(p->pOut);
+      p->spec.pzOutput[0] = qrfStrFinish(p, p->pOut);
     }
   }else if( p->pOut ){
-    sqlite3_free(sqlite3_str_finish(p->pOut));
+    sqlite3_str_free(p->pOut);
   }
   if( p->expMode>0 ){
     sqlite3_stmt_explain(p->pStmt, p->expMode-1);
