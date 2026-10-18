@@ -5900,13 +5900,14 @@ static int resolveFromTermToCte(
     }
 
 #if SQLITE_MAX_EXPR_DEPTH>0
-    if( pParse->nTab>=db->aLimit[SQLITE_LIMIT_EXPR_DEPTH] ){
-      /* Bug 2026-10-04T05:35:14Z: Prevent nested CTEs from generating
-      ** an exponential number of cursors.  The error message here will
-      ** be "Nested too deep", which isn't exactly correct, but it is
-      ** sufficient, and we don't want to use extra code space for more
-      ** detail on such an obscure error. */
-      pParse->nNestSel = pParse->nTab;
+    if( (pParse->nTab >= db->aLimit[SQLITE_LIMIT_EXPR_DEPTH])
+     && (db->flags & SQLITE_Defensive)!=0
+    ){
+      /* Bug 2026-10-04T05:35:14Z with follow-up Forum 2026-10-16T20:30:17Z:
+      ** Prevent nested CTEs from generating an exponential number of
+      ** cursors in defensive mode. */
+      sqlite3ErrorMsg(pParse, "too many CTEs");
+      return 2;
     }
     pParse->nNestSel++;
     if( checkSubqueryNestingDepth(pParse) ) return 2;

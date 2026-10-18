@@ -2479,15 +2479,18 @@ struct sqlite3_mem_methods {
 ** [[SQLITE_DBCONFIG_DEFENSIVE]] <dt>SQLITE_DBCONFIG_DEFENSIVE</dt>
 ** <dd>The SQLITE_DBCONFIG_DEFENSIVE option activates or deactivates the
 ** "defensive" flag for a database connection.  When the defensive
-** flag is enabled, language features that allow ordinary SQL to
-** deliberately corrupt the database file are disabled.  The disabled
-** features include but are not limited to the following:
+** flag is on, language features are disabled that would otherwise
+** allow ordinary SQL to deliberately corrupt the database file, or
+** to perform other unwholesome actions.  The disabled features include
+** but are not limited to the following:
 ** <ul>
 ** <li> The [PRAGMA writable_schema=ON] statement.
 ** <li> The [PRAGMA journal_mode=OFF] statement.
 ** <li> The [PRAGMA schema_version=N] statement.
 ** <li> Writes to the [sqlite_dbpage] virtual table.
 ** <li> Direct writes to [shadow tables].
+** <li> Limit the number of cursors used by [common table expressions]
+**      to [SQLITE_LIMIT_EXPR_DEPTH].
 ** </ul>
 ** </dd>
 **
@@ -4404,7 +4407,11 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** [[SQLITE_LIMIT_EXPR_DEPTH]] ^(<dt>SQLITE_LIMIT_EXPR_DEPTH</dt>
 ** <dd>The maximum depth of the parse tree on any expression and
-** the maximum nesting depth for subqueries and VIEWs</dd>)^
+** the maximum nesting depth for subqueries and VIEWs.
+** When [SQLITE_DBCONFIG_DEFENSIVE] is enabled, this also limits
+** the number of cursors used by [common table expressions] (CTEs),
+** in order to prevent maliciously nested CTEs from using a number
+** of cursors that is exponential in the CTE nesting depth.</dd>)^
 **
 ** [[SQLITE_LIMIT_PARSER_DEPTH]] ^(<dt>SQLITE_LIMIT_PARSER_DEPTH</dt>
 ** <dd>The maximum depth of the LALR(1) parser stack used to analyze
