@@ -256,4 +256,20 @@ do_execsql_test 8100 {
   SELECT count(*) FROM (SELECT x FROM t ORDER BY x COLLATE decimal);
 } {5000}
 
+# Bug 2026-10-18T14:25:03Z: decimal_add() and decimal_sub() with a 
+# NULL argument should return NULL, not raise an "out of memory" error.
+#
+do_execsql_test 8200 {
+  SELECT quote(decimal_add(NULL,1)), quote(decimal_add(1,NULL)),
+         quote(decimal_add(NULL,NULL)),
+         quote(decimal_sub(NULL,1)), quote(decimal_sub(1,NULL)),
+         quote(decimal_sub(NULL,NULL)),
+         quote(decimal_mul(NULL,2)), quote(decimal_mul(2,NULL));
+} {NULL NULL NULL NULL NULL NULL NULL NULL}
+do_execsql_test 8210 {
+  CREATE TABLE t2(x,y);
+  INSERT INTO t2 VALUES(1,2),(NULL,3),(4,NULL),('1.5','2.25');
+  SELECT quote(decimal_add(x,y)), quote(decimal_sub(x,y)) FROM t2;
+} {'3' '-1' NULL NULL NULL NULL '3.75' '-0.75'}
+
 finish_test
