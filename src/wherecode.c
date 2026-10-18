@@ -618,6 +618,9 @@ static Expr *removeUnindexableInClauseTerms(
           nRhs++;
         }
       }
+      if( nRhs<pOrigRhs->nExpr ){
+        ExprClearProperty(pNew, EP_Subrtn); /* See bug 2026-10-16T22:07:15Z */
+      }
       sqlite3ExprListDelete(db, pOrigRhs);
       if( pOrigLhs ){
         sqlite3ExprListDelete(db, pOrigLhs);
