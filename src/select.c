@@ -2303,7 +2303,7 @@ int sqlite3ColumnsFromExprList(
     nCol = pEList->nExpr;
     aCol = sqlite3DbMallocZero(db, sizeof(aCol[0])*nCol);
     testcase( aCol==0 );
-    if( NEVER(nCol>32767) ) nCol = 32767;
+    if( nCol>32767 ) nCol = 32767;
   }else{
     nCol = 0;
     aCol = 0;
@@ -5900,14 +5900,6 @@ static int resolveFromTermToCte(
     }
 
 #if SQLITE_MAX_EXPR_DEPTH>0
-    if( pParse->nTab>=db->aLimit[SQLITE_LIMIT_EXPR_DEPTH] ){
-      /* Bug 2026-10-04T05:35:14Z: Prevent nested CTEs from generating
-      ** an exponential number of cursors.  The error message here will
-      ** be "Nested too deep", which isn't exactly correct, but it is
-      ** sufficient, and we don't want to use extra code space for more
-      ** detail on such an obscure error. */
-      pParse->nNestSel = pParse->nTab;
-    }
     pParse->nNestSel++;
     if( checkSubqueryNestingDepth(pParse) ) return 2;
 #endif

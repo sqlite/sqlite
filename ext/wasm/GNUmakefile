@@ -1221,7 +1221,6 @@ $(eval $(call gen-worker1,-bundler-friendly.mjs,$(c-pp.D.bundler)))
 
 #
 # sqlite3-worker1-promiser*.*
-# TODO: 64-bit
 #
 define gen-promiser
 # $1 = X.ext part of sqlite3-worker1-promiserX.ext
@@ -1466,9 +1465,9 @@ all: tester1
 #
 # jquery.terminal support for fiddle:
 #
-# If a clone of https://github.com/jcubic/jquery.terminal
-# is found in $(JQTERM), defaulting to $(HOME)/src/jquery.terminal
-# then add jquery.terminal support to fiddle.
+# If a clone of https://github.com/jcubic/jquery.terminal is found in
+# dir $(JQTERM), defaulting to $(HOME)/src/jquery.terminal then add
+# jquery.terminal support to fiddle.
 #
 # To build that package, from its checkout dir:
 #
