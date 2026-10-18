@@ -1382,7 +1382,9 @@ int sqlite3Atoi(const char *z){
 **
 ** If iRound>0 round to min(iRound,mxRound) significant digits total.
 **
-** mxRound must be positive.
+** mxRound must be positive.  iRound must not be less than -100000000
+** (the SQLITE_FP_PRECISION_LIMIT maximum in printf.c) so that the
+** computation of the number of significant digits cannot overflow.
 **
 ** The significant digits of the decimal representation are
 ** stored in p->z[] which is a often (but not always) a pointer
@@ -1399,6 +1401,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
 
   p->isSpecial = 0;
   assert( mxRound>0 );
+  assert( iRound>=-100000000 );
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
   ** NaN. */

@@ -3311,6 +3311,7 @@ static void fpdecodeFunc(
   y = sqlite3_value_int(argv[1]);
   z = sqlite3_value_int(argv[2]);
   if( z<=0 ) z = 1;
+  if( y<-100000000 ) y = -100000000;  /* Same limit as printf() */
   sqlite3FpDecode(&s, x, y, z);
   if( s.isSpecial==2 ){
     sqlite3_snprintf(sizeof(zBuf), zBuf, "NaN");
