@@ -1,5 +1,5 @@
-C Check\sthe\sdatatype\sof\sthe\ssecond\s(optional)\sargument\sto\sthe\slog()\sSQL\nfunction\sand\sreturn\sNULL\sif\sit\sis\snon-numeric\sas\sthe\sdocumentation\ssays\nit\sshould.\n[bugs:/info/2026-10-18T05:05:18Z|Bug\s2026-10-18T05:05:18Z]
-D 2026-10-18T10:14:50.771
+C Minor\sdoc-only\supdates\sto\sext/wasm/README.md\sand\sGNUmakefile.
+D 2026-10-18T10:39:36.262
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -643,9 +643,9 @@ F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
 F ext/vec1/vec1.c ef90ba7178fbb02a33165f40f3a9ca0893bb397c992a844e34d2f655e60743ba
-F ext/wasm/GNUmakefile 36aa205fd33a1bbba2405c7538bdfd2dff802c0e11ddf1aedddd6aacd57a3fc8
+F ext/wasm/GNUmakefile d93df7101619ae363f431704bb77c0e683240e4d9e7edfb32a0e96e31c23f214
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
-F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
+F ext/wasm/README.md 6d820c98468ebcee1dbf547467a03f65d256a2be48a9dcbeb5637d3da569c6fe
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
 F ext/wasm/SQLTester/SQLTester.mjs ee3869d7b4073504c519eb1ac73cbf10da2e98234ca4e7da8a99d88bc5ed56dc
 F ext/wasm/SQLTester/SQLTester.run.mjs 57f2adb33f43f2784abbf8026c1bfd049d8013af1998e7dcb8b50c89ffc332e0
@@ -2287,8 +2287,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c5d67762df0507fe58e035b572623f36efb394d08d322bbdb313a2f0da49c734
-R 7227e2346bda99428702d1a8b098b920
-U drh
-Z 6f06ce634f5d3481d95d17a08a4bd787
+P a99e577b951fa38fcdff3693072c2f78e546be6a1c187b648f043b499a06768e
+R 9865e48d62a17d7d931530a8d8b9b084
+U stephan
+Z 0061b14ff18ec9852920cbfac1186320
 # Remove this line to create a well-formed Fossil manifest.
