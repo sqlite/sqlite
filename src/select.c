@@ -5899,6 +5899,12 @@ static int resolveFromTermToCte(
       pRecTerm = pRecTerm->pPrior;
     }
 
+    if( pParse->nTab >= db->aLimit[SQLITE_LIMIT_CTES]
+     && db->aLimit[SQLITE_LIMIT_CTES]>0
+    ){
+      sqlite3ErrorMsg(pParse, "too many CTEs");
+      return 2;
+    }
 #if SQLITE_MAX_EXPR_DEPTH>0
     pParse->nNestSel++;
     if( checkSubqueryNestingDepth(pParse) ) return 2;

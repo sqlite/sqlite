@@ -11193,6 +11193,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       { "worker_threads",        SQLITE_LIMIT_WORKER_THREADS            },
       { "schema",                SQLITE_LIMIT_SCHEMA                    },
       { "trigger_steps",         SQLITE_LIMIT_TRIGGER_STEPS             },
+      { "ctes",                  SQLITE_LIMIT_CTES                      },
     };
     int i, n2;
     open_db(p, 0);
@@ -11227,8 +11228,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
         goto meta_command_exit;
       }
       if( nArg==3 ){
-        sqlite3_limit(p->db, aLimit[iLimit].limitCode,
-                      (int)integerValue(azArg[2]));
+        int v = (int)integerValue(azArg[2]);
+        sqlite3_limit(p->db, aLimit[iLimit].limitCode, v);
       }else{
         cli_printf(stdout, "%20s %d\n", aLimit[iLimit].zLimitName,
               sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
