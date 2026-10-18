@@ -723,17 +723,17 @@ static int decimalSafeInt(
   sqlite3_value *pVal,
   int *pResult
 ){
-  sqlite3_int64 i64 = sqlite3_value_int64(pVal);
-  if( i64<-2147483648LL || i64>2147483647LL ){
+  sqlite3_int64 ii = sqlite3_value_int64(pVal);
+  if( ii<-2147483648LL || ii>2147483647LL ){
     char *zMsg = sqlite3_mprintf(
       "value %lld is too large: range limit -2147483648..+2147483647",
-      i64);
+      ii);
     sqlite3_result_error(context, zMsg, -1);
     sqlite3_free(zMsg);
     *pResult = 0;
     return 1;
   }else{
-    *pResult = (int)i64;
+    *pResult = (int)ii;
     return 0;
   }
 }

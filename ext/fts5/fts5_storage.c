@@ -83,9 +83,11 @@ static int fts5StorageGetStmt(
   Fts5Storage *p,                 /* Storage handle */
   int eStmt,                      /* FTS5_STMT_XXX constant */
   sqlite3_stmt **ppStmt,          /* OUT: Prepared statement handle */
-  char **pzErrMsg                 /* OUT: Error message (if any) */
+  char **pzErrMsg                 /* OUT: Error message (if any) (not used) */
 ){
   int rc = SQLITE_OK;
+
+  (void)pzErrMsg;
 
   /* If there is no %_docsize table, there should be no requests for 
   ** statements to operate on it.  */

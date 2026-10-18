@@ -1,5 +1,5 @@
-C Fix\sthe\sdecimal\sextension\sto\scorrectly\sdeal\swith\sNULL\sparameters.\n[bugs:/info/2026-10-18T14:25:03Z|Bug\s2026-10-18T14:25:03Z]
-D 2026-10-18T19:42:52.500
+C Fix\sharmless\scompiler\swarnings.
+D 2026-10-18T21:36:55.307
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -116,7 +116,7 @@ F ext/fts5/fts5_expr.c b906c59e9e842805cc3eea4e131b822e586bb01260e542f67920c6179
 F ext/fts5/fts5_hash.c 341a08ad0153b397b819ef3d7a7959c1dc3c84a6988a431d93dece8bd62ae10e
 F ext/fts5/fts5_index.c dc8c053573ec5086467b6538a28e5b760a4c0a38f1c9a005f8c4cdaf8c7d2c58
 F ext/fts5/fts5_main.c 7819fc80808a135c3ad7bec65071a053827d1e8fe7b77ddfd734ed451c2db7a9
-F ext/fts5/fts5_storage.c bf465ec00d6ad114ec536617b9208afeaf1fcfd2618b4d7af575d03aaaad547a
+F ext/fts5/fts5_storage.c 1154412a7991b662da90b65a3c04614177bc7942a20e2fb5ca41e4c3269c8052
 F ext/fts5/fts5_tcl.c aed8905b1a3c6ecc94da15e9cc54d889045b9eacecc7a17b6fcc1294225f7716
 F ext/fts5/fts5_test_mi.c 3074a25cb661b2301143022ef96a950618452a5b082abd9ba7b9daaf29d01537
 F ext/fts5/fts5_test_tok.c 6021033bd4f4feffe8579efb6e1f58156ed462256bf99a2acdbd629246529204
@@ -375,7 +375,7 @@ F ext/misc/completion.c 3f5db28e88c3313103b2dd86d910a2944fd500c46754e473493968ce
 F ext/misc/compress.c c4597f0e3c63a5f89af55486490f9d69896b0482898f2ddb8a46aa11e4d13016
 F ext/misc/csv.c 5ca451b9ce77322c4ce8476766e7ed18160e5c8b19e7cab76e13006d631b9e8f
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
-F ext/misc/decimal.c 06c0b74956881e4d69709eeb82e5f1fd750a92f5742388a9e6a5bf7b9df7f497
+F ext/misc/decimal.c ad9aca50c2bc582489c22c56edc331fae3dfccc2f9043c4f4311f97678ea65a1
 F ext/misc/diskused.c 444139c01398df6f73e8a021c91e24d97d7914f5c1b49f55dd503abbca347c6e
 F ext/misc/eval.c d4ea2d9898fbe4d30d38ff675ee51958d3bb0601a145bade56dee8b8f438cc5b
 F ext/misc/explain.c 04c9270fd8cf93a9bceb12d2f5f67e3f09a4e58b3e0efe14d24531444d2fffdf
@@ -2292,8 +2292,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b32709ea065da2eb41a6eb0ca20381d2bd82a356bb5f8bc76fee063d1da93004
-R d1007eff73f42bd70aa33a095afcfc02
+P 716b63c934156d8b19bda24c5bb544cc3d7d0ef66228150eea0a166d6e8c9caa
+R e198edc1938d0aca448ed22fd7c391a6
 U drh
-Z 332cb7aa03071bdf73fd20275116d2c3
+Z e5d5b406b985d813a3dd3ebd117a7572
 # Remove this line to create a well-formed Fossil manifest.
