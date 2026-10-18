@@ -1,5 +1,5 @@
-C Fix\suses\sof\sC99\sand\sother\sminor\sissues\sin\sext/vec1/vec1.c.\sReport\s[bugs:/info/2026-10-17T09:17:48Z\s|\s2026-10-17T09:17:48Z].
-D 2026-10-17T18:25:47.378
+C Ensure\sthat\svec1\snormalizes\svectors\sbefore,\snot\safter,\sapplying\sthe\sWHT\stransform.\sReport\s[bugs:/info/2026-10-18T10:46:11Z\s|\s2026-10-18T10:46:11Z].
+D 2026-10-18T13:54:43.569
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -596,6 +596,7 @@ F ext/vec1/test/vec1alter.test 6cb7ea2677d79a4ea040f27f5cd8902060bbd00fb2f9f94f3
 F ext/vec1/test/vec1binary.test dd618dbb9c4f522e1f85a5d58a05ddfc13402302c379cb35b8b9d33300db5886
 F ext/vec1/test/vec1binary2.test 2013dec736e39439672c1ea9113cdc0ab72a36b191b1afe3600c51f4b7ab4757
 F ext/vec1/test/vec1blocksize.test dd7d9460f5cac98bc5d2c18f1211a503fb0625afed8286a2becdfcfebf0afbdc
+F ext/vec1/test/vec1bqcos.test f52baa378cc4962c2081c95a2cd801f2a0960872ce5772985316108c78b94586
 F ext/vec1/test/vec1bucket.test 5af9afe8c4b8ec7e0a84ade0df7fb0163226145e3f47b72a16ea2e047178eec6
 F ext/vec1/test/vec1cat.test 8cea568d8823519044053d39f4eec8d77a806bf85e1e14817b448729038306de
 F ext/vec1/test/vec1cat2.test 9e0d9a9cfa33b6aade9150c73064be53e52de9d693f53b7600e7696ed8022e02
@@ -644,7 +645,7 @@ F ext/vec1/tool/vec1_algo_test.c 2777488a8b9ab9545732562c93988aa2424d7afd8b4895d
 F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b62631b480c2d2d
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c dd9182e19d46351021fe4467b3f9d09b413beb7f7e38a8c24e8ba56ab005804b
+F ext/vec1/vec1.c 2fb9e66a03d9c33e6233e58be75b75dd98ba9c982869c58ddf5160e82a0d9885
 F ext/wasm/GNUmakefile 36aa205fd33a1bbba2405c7538bdfd2dff802c0e11ddf1aedddd6aacd57a3fc8
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
@@ -2291,8 +2292,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 91515aa82e05f32db4b5d126d762d730cf424735edc4ef59a696ad581f4ca1ab
-R f27aa7770035374cf0113f1bd8947377
+P 8fd4b73592063f9192f3ea1bd363e0e0659844797b597152831e42e4459ab7ce
+R 4e757015211b9dbe0056fcfd404d8a22
 U dan
-Z e5129a6de63421981fd40625021d7e9a
+Z d24fc364e14cae1817323b673492cb91
 # Remove this line to create a well-formed Fossil manifest.

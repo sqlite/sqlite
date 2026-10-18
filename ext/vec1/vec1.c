@@ -6918,30 +6918,34 @@ static const float *vec1TransformInputVector(
   const float *aInput
 ){
   const float *aRet = aInput;
+  
   if( (pMod->hdr.flags & VEC1_MODEL_ROTATE) ){
     vec1RotateVector(pMod->hdr.nElem, pMod->aRotation, aInput, aTmp);
     if( pMod->hdr.eDistance==VEC1_DISTANCE_COS ){
       vec1NormalizeVector(aTmp, pMod->hdr.nElem);
     }
     aRet = aTmp;
-  }
-  else if( (pMod->hdr.flags & VEC1_MODEL_WHT) ){
-    memcpy(aTmp, aInput, pMod->hdr.nElem * sizeof_f32);
-    vec1ApplyWHT(aTmp, pMod->hdr.nElem);
-    aRet = aTmp;
-  }
-  else if( pMod->hdr.eDistance==VEC1_DISTANCE_COS ){
-    memcpy(aTmp, aInput, pMod->hdr.nElem * sizeof_f32);
-    vec1NormalizeVector(aTmp, pMod->hdr.nElem);
-    aRet = aTmp;
-  }
-
-  if( aRet!=aTmp
-   && pMod->hdr.nCodebook>0 
-   && (pMod->hdr.nCodebook*pMod->nCodeElem)!=pMod->hdr.nElem
-  ){
-    memcpy(aTmp, aRet, pMod->hdr.nElem * sizeof_f32);
-    aRet = aTmp;
+  }else{
+    const int nCodebook = pMod->hdr.nCodebook;
+    if(
+        (pMod->hdr.flags & VEC1_MODEL_WHT)
+     || (pMod->hdr.eDistance==VEC1_DISTANCE_COS)
+     || (nCodebook>0 && (nCodebook*pMod->nCodeElem)!=pMod->hdr.nElem)
+    ){
+      memcpy(aTmp, aRet, pMod->hdr.nElem * sizeof_f32);
+      /* If distance=cos, normalize the vector before applying the WHT
+      ** transform. This is because the WHT transform scales the vector
+      ** by sqrt(nElem). But so long as training, building and querying
+      ** all do the normalization first, and not after WHT, things work
+      ** out fine.  */
+      if( pMod->hdr.eDistance==VEC1_DISTANCE_COS ){
+        vec1NormalizeVector(aTmp, pMod->hdr.nElem);
+      }
+      if( (pMod->hdr.flags & VEC1_MODEL_WHT) ){
+        vec1ApplyWHT(aTmp, pMod->hdr.nElem);
+      }
+      aRet = aTmp;
+    }
   }
 
   return aRet;
@@ -10935,46 +10939,43 @@ static void vec1TransformInputVectorN(
     aOut[vv] = &aIn[vv*nElem];
   }
 
-  if( (pMod->hdr.flags & VEC1_MODEL_ROTATE) ){
+  if( (pMod->hdr.flags & (VEC1_MODEL_ROTATE|VEC1_MODEL_WHT))
+   || pMod->hdr.eDistance==VEC1_DISTANCE_COS
+   || nStride!=nElem
+  ){
+
     float *aRot[VEC1_MULTIMATCH_NVEC];
     for(vv=0; vv<VEC1_MULTIMATCH_NVEC; vv++){
       aRot[vv] = &aTmp[vv*nStride];
     }
 
+    if( pMod->hdr.flags & VEC1_MODEL_ROTATE ){
 #if defined(VEC1_USE_TRANSPOSITION)
-    vec1RotateVectorTransposeN(
-        aRot, aOut, nElem, pMod->aRotation, pMod->aRotationNT
-    );
+      vec1RotateVectorTransposeN(
+          aRot, aOut, nElem, pMod->aRotation, pMod->aRotationNT
+          );
 #else
-    vec1RotateVectorN(aRot, aOut, nElem, pMod->aRotation);
+      vec1RotateVectorN(aRot, aOut, nElem, pMod->aRotation);
 #endif
+    }else{
+      for(vv=0; vv<VEC1_MULTIMATCH_NVEC; vv++){
+        memcpy(aRot[vv], aOut[vv], nElem * sizeof_f32);
+      }
+    }
+
+    if( pMod->hdr.eDistance==VEC1_DISTANCE_COS ){
+      for(vv=0; vv<VEC1_MULTIMATCH_NVEC; vv++){
+        vec1NormalizeVector(aRot[vv], nElem);
+      }
+    }
+
+    if( pMod->hdr.flags & VEC1_MODEL_WHT ){
+      for(vv=0; vv<VEC1_MULTIMATCH_NVEC; vv++){
+        vec1ApplyWHT(aRot[vv], nElem);
+      }
+    }
 
     memcpy(aOut, aRot, sizeof(aRot));
-  }
-
-  else if( (pMod->hdr.flags & VEC1_MODEL_WHT) ){
-    for(vv=0; vv<VEC1_MULTIMATCH_NVEC; vv++){
-      float *tmp = &aTmp[vv*nStride];
-      memcpy(tmp, aOut[vv], nElem * sizeof_f32);
-      vec1ApplyWHT(tmp, nElem);
-      aOut[vv] = tmp;
-    }
-  }
-
-  else if( pMod->hdr.eDistance==VEC1_DISTANCE_COS || nStride!=nElem ){
-    for(vv=0; vv<VEC1_MULTIMATCH_NVEC; vv++){
-      float *tmp = &aTmp[vv*nStride];
-      memcpy(tmp, aOut[vv], nElem * sizeof_f32);
-      aOut[vv] = tmp;
-    }
-  }
-
-  /* If this model uses cosine distance, normalize the vectors. */
-  if( pMod->hdr.eDistance==VEC1_DISTANCE_COS ){
-    for(vv=0; vv<VEC1_MULTIMATCH_NVEC; vv++){
-      assert( aOut[vv]==&aTmp[vv*nStride] );
-      vec1NormalizeVector(&aTmp[vv*nStride], nElem);
-    }
   }
 }
 
