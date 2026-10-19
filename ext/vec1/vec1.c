@@ -11415,6 +11415,17 @@ static int vec1FixVectorSize(Vec1Tab *pTab, int nVec){
 }
 
 
+static int vec1FinishWriter(Vec1Tab *pTab, int bDiscard){
+  int rc = SQLITE_OK;
+  if( bDiscard ){
+    vec1WriterFinish(pTab->pWriter, SQLITE_ERROR);
+  }else{
+    rc = vec1WriterFinish(pTab->pWriter, SQLITE_OK);
+  }
+  pTab->pWriter = 0;
+  return rc;
+}
+
 /*
 ** Handle a "special" INSERT command on a vec1 table. A special INSERT takes
 ** the form:
@@ -11437,6 +11448,9 @@ static int vec1SpecialInsert(
   int iCmd = 0;
 
   rc = vec1InterpretCmdName(pTab, zCmd, &iCmd);
+  if( rc==SQLITE_OK ){
+    rc = vec1FinishWriter(pTab, 0);
+  }
 
   if( rc==SQLITE_OK ){
     switch( iCmd ){
@@ -11883,17 +11897,6 @@ static int vec1UpdateMethod(
     rc = vec1DeleteByRowid(pTab, sqlite3_value_int64(argv[0]));
   }
 
-  return rc;
-}
-
-static int vec1FinishWriter(Vec1Tab *pTab, int bDiscard){
-  int rc = SQLITE_OK;
-  if( bDiscard ){
-    vec1WriterFinish(pTab->pWriter, SQLITE_ERROR);
-  }else{
-    rc = vec1WriterFinish(pTab->pWriter, SQLITE_OK);
-  }
-  pTab->pWriter = 0;
   return rc;
 }
 
