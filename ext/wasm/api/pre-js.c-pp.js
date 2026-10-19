@@ -56,7 +56,8 @@
      Worker constructor or importScripts() to be able to resolve
      foo/bar/X.wasm (in the latter case, with some help):
 
-     1) If URL param named the same as `path` is set, it is returned.
+     1) If URL param named the same as `path` is set and it looks like
+     a local path reference, it is returned.
 
      2) If sqlite3InitModuleState.sqlite3Dir is set, then (thatName + path)
      is returned (it's assumed to end with '/').
@@ -84,21 +85,20 @@
     return new URL(path, import.meta.url).href;
 //#else
     'use strict';
-    let theFile;
-    const up = this.urlParams;
-    if(up?.has(path)){
-      theFile = up.get(path);
-    }else if(this.sqlite3Dir){
-      theFile = this.sqlite3Dir + path;
-    }else if(this.scriptDir){
-      theFile = this.scriptDir + path;
-    }else{
-      theFile = prefix + path;
+    let theFile = this.getPathArgument(path);
+    if( !theFile ){
+      if(this.sqlite3Dir){
+        theFile = this.sqlite3Dir + path;
+      }else if(this.scriptDir){
+        theFile = this.scriptDir + path;
+      }else{
+        theFile = prefix + path;
+      }
     }
     this.debugModule(
       "locateFile(",arguments[0], ',', arguments[1],")",
       'sqlite3InitModuleState.scriptDir =',this.scriptDir,
-      'up.entries() =',Array.from(up.entries()),
+      'urlParams.entries() =',Array.from(this.urlParams.entries()),
       "result =", theFile
     );
     return theFile;

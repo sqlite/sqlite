@@ -44,7 +44,12 @@ import sqlite3InitModule from './sqlite3.mjs';
         : new URLSearchParams();
   let theJs = 'sqlite3.js';
   if(urlParams.has('sqlite3.dir')){
-    theJs = urlParams.get('sqlite3.dir') + '/' + theJs;
+    const s = urlParams.get('sqlite3.dir');
+    if( s && s.indexOf(':')<0 && s.indexOf('//')<0 ){
+      theJs = s + '/' + theJs;
+    }else{
+      console.warn("Invalid sqlite3.dir value:",s);
+    }
   }
   //console.warn("worker1 theJs =",theJs);
   importScripts(theJs);

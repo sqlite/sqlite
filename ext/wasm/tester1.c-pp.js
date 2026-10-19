@@ -4642,8 +4642,9 @@ if(!globalThis.sqlite3InitModule && !isUIThread()){
                          support for locating the wasm, so remove
                          that dir part. */;
   const urlParams = new URL(globalThis.location.href).searchParams;
-  if(urlParams.has('sqlite3.dir')){
-    sqlite3Js = urlParams.get('sqlite3.dir') + '/' + sqlite3Js;
+  const s3d = urlParams.get('sqlite3.dir');
+  if( s3d ){
+    sqlite3Js = s3d + '/' + sqlite3Js;
   }
   importScripts(sqlite3Js);
 }
