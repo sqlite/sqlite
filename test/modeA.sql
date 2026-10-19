@@ -640,7 +640,7 @@ SELECT 1.25e+12, 0x1234;
 .testcase 1200
 .mode jobject --fpfmt auto
 SELECT 1 AS a, +9.0e+999 AS b, -9.0e+999 AS c, 0.0 AS d;
-.check {"a":1,"b":9e+999,"c":-9e+999,"d":0}
+.check {"a":1,"b":9.0e+999,"c":-9.0e+999,"d":0.0}
 .open :memory:
 .testcase 1210
 CREATE TABLE t1(a);
@@ -651,9 +651,9 @@ PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE t1(a);
 INSERT INTO t1 VALUES(123);
-INSERT INTO t1 VALUES(9e+999);
+INSERT INTO t1 VALUES(9.0e+999);
 INSERT INTO t1 VALUES('hello');
-INSERT INTO t1 VALUES(-9e+999);
+INSERT INTO t1 VALUES(-9.0e+999);
 INSERT INTO t1 VALUES(x'313233');
 COMMIT;
 END
@@ -711,3 +711,22 @@ END
 .testcase 1430
 .mode
 .check ".mode list --fpfmt %.2f --ifmt %,d --limits on --textjsonb on"
+
+# Bug 2026-10-18T20:37:23Z
+#
+# Preserve full double precision for .dump and .mode insert.
+#
+.open :memory:
+.testcase 1500
+CREATE TABLE t(x REAL);
+INSERT INTO t VALUES(1.7976931348623157e308),(0.1+0.2),(123456789.123456789);
+.dump
+.check <<END
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t(x REAL);
+INSERT INTO t VALUES(1.7976931348623157e+308);
+INSERT INTO t VALUES(0.30000000000000004);
+INSERT INTO t VALUES(123456789.12345679);
+COMMIT;
+END
