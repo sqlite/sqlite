@@ -1,5 +1,5 @@
-C Fix\sa\sregression\sin\sthe\sCLI's\shandling\sof\scontrol\scharacters\sin\sCSV\soutput,\ncaused\sby\s[d0fe92e0ce8662b9].\n[bugs:/info/2026-10-18T20:38:57Z|Bug\s2026-10-18T20:38:57Z].
-D 2026-10-19T19:15:13.385
+C Fix\sa\sproblem\sin\sALTER\sTABLE\sDROP\sCOLUMN\sthat\scould\sresult\sin\sa\sstale\nindex.\s\s[bugs:/info/2026-10-19T06:36:17Z|Bug\s2026-10-19T06:36:17Z]
+D 2026-10-19T19:40:21.749
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -735,7 +735,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 1b9c24374a85dfc7eb8fa7c4266ee0db4f9609cceecfc5481cd8307e5af04366
 F sqlite3.pc.in e6dee284fba59ef500092fdc1843df3be8433323a3733c91da96690a50a5b398
-F src/alter.c 1032f83df87e620e18662f085071bd33b8a4d5d1341575547ebb122c6b81a010
+F src/alter.c 4df4a8dbaea089dbfd1c3530171edaaa0e9b5c59d7f735262f80347f5effdc87
 F src/analyze.c 73162482c656187823217f4c00758c9ee13a420c8745bc542129e0279b792287
 F src/attach.c 40a83de1c720dfb3552458ebf6c9dac7ed6b2fcde4e073658fd9a38d90cb329e
 F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
@@ -2287,8 +2287,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c2d299124211d8780bc0beab8217fc53da8aadca0c3abce0fedbe84506ef412a
-R 9e36cb48548fa654f0291c64e6d54b8c
+P 2146eab561d153b70eb41c54bb122ea8d2dc0ad983f00639aa2f65fd3a64e603
+R 7ef71b489cefa80d5f17e41067bb9be2
 U drh
-Z 9a6dd3304b96cc3e18d03ae75113420c
+Z 74dba71aa47316613aab79fe34cdae4b
 # Remove this line to create a well-formed Fossil manifest.
