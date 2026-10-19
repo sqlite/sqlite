@@ -54,7 +54,9 @@ do_test 2.0 {
 } {1 SQLITE_ERROR}
 
 do_test 2.1 {
-  set I2 [R rebase $I]
+  list [catch { set I2 [R rebase $I] } msg] $msg
+} {1 SQLITE_CORRUPT}
+do_test 2.2 {
   R delete
 } {}
 

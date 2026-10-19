@@ -7223,6 +7223,7 @@ static int sessionRebase(
     }
   }
   sqlite3_free(sOut.aBuf);
+  if( rc==SQLITE_OK ) rc = pIter->rc;
   return rc;
 }
 
