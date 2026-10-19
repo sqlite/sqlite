@@ -1604,9 +1604,8 @@ T.g('sqlite3.oo1')
 
 ////////////////////////////////////////////////////////////////////
   .t('DB.Stmt', function(sqlite3){
-    let st = this.db.prepare(
-      new TextEncoder('utf-8').encode("select 3 as a")
-    );
+    this.textEncoder = new TextEncoder('utf-8');
+    let st = this.db.prepare( this.textEncoder.encode("select 3 as a") );
     let rc;
     try {
       T.assert(wasm.isPtr(st.pointer))
@@ -1700,6 +1699,71 @@ T.g('sqlite3.oo1')
         && 0 < err.message.indexOf("Do not call the Stmt constructor directly.")
     });
   })
+
+  ////////////////////////////////////////////////////////////////////////
+  .t('sqlite3_bind_text/blob() with JS values', function(){
+    /* Derived from [bugs:bbb715c3f2a0e989]. */
+    const q = this.db.prepare("select ?1, typeof(?1), octet_length(?1)");
+    const enc = this.textEncoder, denc = new TextDecoder('utf-8');
+    const BindText = capi.sqlite3_bind_text, BindBlob = capi.sqlite3_bind_blob;
+    /* Bind value v of length n to q using binding function f(), step
+       it, fetch it, reset it, and return the fetched row. */
+    const bindAndGet = (f, v, n)=>{
+      const rc = f(q, 1, v, n, capi.SQLITE_WASM_DEALLOC);
+      q.step();
+      const rv = q.get([]);
+      T.assert( 3===rv.length );
+      rv.unshift(rc);
+      q.reset(true);
+      return rv;
+    };
+    /* Pass (v,n) through sqlite3_bind_text() and affirm that
+       expect === column 0 of the result. */
+    const checkText = (v, n, expect)=>{
+      const [rc, val, type, len] = bindAndGet(BindText, v, n);
+      T.assert(0===rc)
+        .assert(expect===val)
+        .assert('text'===type)
+        .assert(enc.encode(expect).byteLength===len);
+    };
+    /* Pass (v,n) through sqlite3_bind_blob() and affirm that
+       the resulting value has a length of expectLen. Returns
+       the resulting Uint8Array.*/
+    const checkBlob = (v, n, expectLen)=>{
+      const [rc, val, type, len] = bindAndGet(BindBlob, v, n);
+      T.assert(0===rc, "bind_blob rc", rc)
+        .assert('blob'===type)
+        .assert(expectLen===len)
+        .assert(val instanceof Uint8Array && expectLen===val.byteLength);
+      return val;
+    };
+    const checkBlobText = (v, n, expectLen, expectText)=>{
+      const rv = checkBlob(v, n, expectLen);
+      T.assert(denc.decode(rv)===expectText, "checkBlobText()", expectText);
+    }
+    try{
+      checkText("SQLite", -1, "SQLite");
+      checkText(["Früh","stück"], -1, "Frühstück");
+      checkText("", -1, "");
+      checkText(enc.encode("SQLite"), -1, "SQLite");
+      const xenc = enc.encode("a string");
+      checkText(new Int8Array(xenc), -1, "a string");
+      checkText(xenc.buffer, -1, "a string");
+      checkBlobText("SQLite", -1, 6, "SQLite");
+      checkBlobText("SQLite", 2, 6, "SQLite");
+      checkBlob("", -1, 0);
+      checkBlobText(["SQL", "i", "te"], -1, 6, "SQLite");
+      T.assert("SQL"===denc.decode(checkBlob(enc.encode("SQLite"), 3, 3)));
+      T.assert(capi.SQLITE_MISUSE===bindAndGet(
+        BindBlob, {}, -1
+      )[0]);
+      T.assert(capi.SQLITE_MISUSE===bindAndGet(
+        BindText, {}, -1
+      )[0]);
+    }finally{
+      q.finalize();
+    }
+  })/*sqlite3_bind_text/blob()*/
 
 ////////////////////////////////////////////////////////////////////////
   .t('sqlite3_js_...()', function(){
