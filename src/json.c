@@ -3503,7 +3503,12 @@ static void jsonReturnFromBlob(
         if( c=='\\' ){
           u32 v;
           u32 szEscape = jsonUnescapeOneChar(&z[iIn], sz-iIn, &v);
-          if( v<=0x7f ){
+          if( v==0 && iIn+szEscape==sz
+           && (z[iIn+1]=='\n' || z[iIn+1]=='\r' || (u8)z[iIn+1]==0xe2)
+          ){
+            /* A JSON5 line continuation at the end of the string
+            ** contributes no characters */
+          }else if( v<=0x7f ){
             zOut[iOut++] = (char)v;
           }else if( v<=0x7ff ){
             assert( szEscape>=2 );
