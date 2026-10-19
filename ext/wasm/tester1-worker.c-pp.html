@@ -76,8 +76,15 @@
             "sqlite3 tester #1: ES6 Worker Module (@bitness@-bit WASM)";
         });
       }else{
-        workerArgs.push(baseName+'.js?sqlite3.dir=jswasm');
+        const l = globalThis.location;
+        workerArgs.push(baseName+'.js?sqlite3.dir='+(
+          0/*set to 1 only for testing*/
+            ? (l.protocol+'//'+l.host+'/jswasm')
+            /* ^^^ must be rejected/ignored by module init */
+            : 'jswasm'
+          ));
       }
+      console.warn("workerArgs =",workerArgs);
       const w = new Worker(...workerArgs);
       w.onmessage = function({data}){
         switch(data.type){

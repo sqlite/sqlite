@@ -272,7 +272,14 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
       //sqlite3.config.warn("promiser currentScript, theJs =",this.currentScript,theJs);
     }else if(globalThis.location){
       //sqlite3.config.warn("promiser globalThis.location =",globalThis.location);
-      const urlParams = new URL(globalThis.location.href).searchParams;
+      const s = urlParams.get('sqlite3.dir');
+      if( s ){
+        if( s.indexOf(':')<0 && s.indexOf('//')<0 ){
+          theJs = s + '/' + theJs;
+        }else{
+          console.warn("Invalid sqlite3.dir value:",s);
+        }
+      }
       if(urlParams.has('sqlite3.dir')){
         theJs = urlParams.get('sqlite3.dir') + '/' + theJs;
       }

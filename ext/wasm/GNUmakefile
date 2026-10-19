@@ -757,7 +757,9 @@ emcc.jsflags = -fPIC
 #emcc.jsflags += -Wno-gcc-install-dir-libstdcxx
 #emcc is not passing ^^^ this on to clang
 emcc.jsflags += --no-entry
-emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
+# emcc 6.0.12+ emits ugly warnings if we turn on BIGINT,
+# despite the value being the same one it will use by
+# default: emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 emcc.jsflags += -sMODULARIZE
 emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
@@ -1084,7 +1086,6 @@ $(EXPORTED_FUNCTIONS.fiddle): $(EXPORTED_FUNCTIONS.api.in) \
 
 emcc.flags.fiddle = \
   $(emcc.cflags) $(emcc_opt_full) \
-  $(emcc.MEMORY64) \
   --minify 0 \
   -sALLOW_TABLE_GROWTH \
   -sALLOW_MEMORY_GROWTH \

@@ -2932,7 +2932,7 @@ qrf_reinit:
     case QRF_STYLE_Json: {
       p->spec.eText = QRF_TEXT_Json;
       p->spec.zNull = "null";
-      if( p->spec.zFpFmt==0 ) p->spec.zFpFmt = "%0.16g";
+      if( p->spec.zFpFmt==0 ) p->spec.zFpFmt = "%!0.17g";
       break;
     }
     case QRF_STYLE_Html: {
@@ -2946,7 +2946,7 @@ qrf_reinit:
       if( p->spec.zTableName==0 || p->spec.zTableName[0]==0 ){
         p->spec.zTableName = "tab";
       }
-      if( p->spec.zFpFmt==0 ) p->spec.zFpFmt = "%0.16g";
+      if( p->spec.zFpFmt==0 ) p->spec.zFpFmt = "%!0.17g";
       p->u.nIns = 0;
       break;
     }
