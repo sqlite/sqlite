@@ -1,5 +1,5 @@
-C JS:\sresolve\sa\s[https://github.com/emscripten-core/emscripten/issues/28016|build\sregression]\striggered\sby\sEmscripten\s6.0.5+.\sRemove\sthe\s-sWASM_BIGINT\sflag\sfrom\sthe\sbuild\sbecause\s(A)\sit's\sbeen\sEmscripten's\sdefault\sfor\sa\slong\stime\sand\s(B)\sEmscripten\snow\swarns\sloudly\sif\sit's\sused.\sRemove\sa\sstray\sbuild\sflag\sfrom\sfiddle,\sinadvertently\sintroduced\sin\s[c32cf3e355],\swhich\scaused\sit\sto\sbuild\sin\s64-bit\smode.
-D 2026-10-19T18:05:25.048
+C Correct\sthe\shandling\sof\sSQLITE_IGNORE\sreturns\sfrom\sauthorizer\scalls\nfor\sUPDATE\son\sthe\srowid\sor\sINTEGER\sPRIMARY\sKEY.\s\sSee\sthe\stest\scases\nin\sTH3\sfor\sdetails.
+D 2026-10-19T18:20:03.443
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -864,7 +864,7 @@ F src/threads.c 85d8b9f05f78211c61e3739ab5db761d7118766d1916ae7f2764735106bc4e13
 F src/tokenize.c e9d52d9f7374d82dadcd11726bea8a597d43709d6672704f3f0375bf1d726912
 F src/treeview.c 3a9e59b0d2b9e54e403fa65056ba90716eb91b5cc6e3fe0cda0edea060ddd281
 F src/trigger.c d6d8991ca346eb6f56e50a3c5df486176b67a9179336798a75bb05e622c72cac
-F src/update.c 2c5ea3803c19e5726960df9416a50759322d750b820db7d2b623b4f122e25bf9
+F src/update.c a38e0fa71f66a0c1eec564f08c20ec0935db8e3e558f0b9e305549972b91e4f4
 F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c c5bec56770b71fe75e12f1f7b0a512032e1fd3d1f83c50c4ab4474ced20347a4
 F src/util.c 4437408e09cef6dbb63a8b8ba28be53bdc098ec890e5e64ad7ae1fc83448962e
@@ -2287,8 +2287,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5024b528dcf419393086d89eff50aa1b52116bb05b6e07849555f76891bc68a0
-R 9b1cbc7bb86e82acb85a4584107051f8
-U stephan
-Z a9642e82ab8463e2368070ac3f7b77aa
+P cc9457981e2a63d271525b1d891a63dd28b1c2da04777228e27132d7cc743cfa
+R f8517f17f1191dd75c69be8234708732
+U drh
+Z 6fa0fdd5ac854a6919241e6274a443bc
 # Remove this line to create a well-formed Fossil manifest.
