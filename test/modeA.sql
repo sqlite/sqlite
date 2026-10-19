@@ -281,7 +281,7 @@ SELECT * FROM t1;
 
 .testcase 601
 SELECT 'abc',char(0x05,0x18,0x33),'xyz';
-.check --glob abc,"*3",xyz
+.check --glob abc,"??3",xyz
 
 .testcase 610
 .mode csv -reset

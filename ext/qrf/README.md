@@ -241,7 +241,8 @@ inject ANSI cursor movement sequences to hide nefarious values.
 
 The QRF_ESC_Auto value for eEsc means that the query result formatter
 gets to pick whichever control-character encoding it thinks is best for
-the situation.  This will usually be QRF_ESC_Ascii.
+the situation.  This will usually be QRF_ESC_Ascii, but there can be
+exceptions.
 
 The TAB (U+0009), LF (U+000a) and CR-LF (U+000d,U+000a) character
 sequence are always output literally and are not mapped to alternative
