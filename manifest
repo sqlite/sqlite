@@ -1,5 +1,5 @@
-C Correct\sthe\shandling\sof\sSQLITE_IGNORE\sreturns\sfrom\sauthorizer\scalls\nfor\sUPDATE\son\sthe\srowid\sor\sINTEGER\sPRIMARY\sKEY.\s\sSee\sthe\stest\scases\nin\sTH3\sfor\sdetails.
-D 2026-10-19T18:20:03.443
+C Wasm\sbuild:\smove\swasm-strip\sto\safter\swasm-opt,\sat\srecommendation\sfrom\san\sEmscripten\sticket.\sRemove\sseveral\smore\suses\sof\s-sWASM_BIGINT=1,\sas\sdescribed\sfor\s[cc9457981e2a].
+D 2026-10-19T18:33:02.646
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -643,7 +643,7 @@ F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
 F ext/vec1/vec1.c ef90ba7178fbb02a33165f40f3a9ca0893bb397c992a844e34d2f655e60743ba
-F ext/wasm/GNUmakefile 390cf98771f3c99e9e6a4a34c506d911f49016d7ed0d4913f78a41a63cda69f1
+F ext/wasm/GNUmakefile b656d39f7792b6ff8d9129d38452804bccba29e1fe22976655cebb3e1e9f184b
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 6d820c98468ebcee1dbf547467a03f65d256a2be48a9dcbeb5637d3da569c6fe
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -699,7 +699,7 @@ F ext/wasm/jaccwabyt/jaccwabyt.js 99039632cd8fa6f82acdb01e213850d2efe220388441fa
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
 F ext/wasm/libcmpp.c a5bec47a754206aac2ffb45ba4adaec6af3b4fcc24c705c61a6f47893b72aef5
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
-F ext/wasm/mkwasmbuilds.c 0ec4b858fe04921d88de98216a65fd6d885eb98170e9c2d27a81cb2295eef811
+F ext/wasm/mkwasmbuilds.c a012ba85adc4dea9cc6a6ed6ffb1d127ceda6bcc8e18cd0a118bf4d6e9049caa
 F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2287,8 +2287,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P cc9457981e2a63d271525b1d891a63dd28b1c2da04777228e27132d7cc743cfa
-R f8517f17f1191dd75c69be8234708732
-U drh
-Z 6fa0fdd5ac854a6919241e6274a443bc
+P 606005419f60bd14eec71ee87a770051c8c551273c9a7567d830283eeb1058e8
+R 5a5375cb867a00e5e2d0f22e9d60e32e
+U stephan
+Z 59380b12fe83edb7f0e90e23bad63250
 # Remove this line to create a well-formed Fossil manifest.
