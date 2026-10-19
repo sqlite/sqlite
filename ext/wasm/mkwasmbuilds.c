@@ -498,6 +498,9 @@ static void mk_prologue(void){
       */
       "--enable-bulk-memory-opt " /* required */
       "--all-features "           /* required */
+      "--disable-compact-imports " /*
+         https://github.com/emscripten-core/emscripten/issues/28016
+      */
       "--post-emscripten "        /* Saves roughly 12kb */
       "--strip-debug "            /* We already wasm-strip, but in
                                   ** case this environment has no
