@@ -9332,21 +9332,25 @@ static int vec1FindByRowid(
   ** in main memory. */
   if( pTab->pWriter ){
     Vec1ListBuilder *pBld = &pTab->pWriter->aBld[iBucket];
-    int ii;
-    for(ii=0; ii<pBld->bufRowid.n; ii+=pBld->szRowid){
-      i64 iRead;
-      if( pBld->szRowid==4 ){
-        iRead = vec1GetU32(&pBld->bufRowid.a[ii]);
-      }else{
-        iRead = vec1GetU64(&pBld->bufRowid.a[ii]);
-      }
-      if( iRead==iRowid ){
-        pOut->iEntry = (ii / pBld->szRowid);
-        pOut->nEntry = (pBld->bufRowid.n / pBld->szRowid);
-        pOut->nTombstone = pBld->nTombstone;
-        pOut->szRowid = pBld->szRowid;
-        pOut->pList = pBld;
-        return SQLITE_OK;
+    if( (pBld->szRowid==4 && iRowid!=VEC1_TOMBSTONE_32) 
+     || (pBld->szRowid==8 && iRowid!=VEC1_TOMBSTONE_64)
+    ){
+      int ii;
+      for(ii=0; ii<pBld->bufRowid.n; ii+=pBld->szRowid){
+        i64 iRead;
+        if( pBld->szRowid==4 ){
+          iRead = vec1GetU32(&pBld->bufRowid.a[ii]);
+        }else{
+          iRead = vec1GetU64(&pBld->bufRowid.a[ii]);
+        }
+        if( iRead==iRowid ){
+          pOut->iEntry = (ii / pBld->szRowid);
+          pOut->nEntry = (pBld->bufRowid.n / pBld->szRowid);
+          pOut->nTombstone = pBld->nTombstone;
+          pOut->szRowid = pBld->szRowid;
+          pOut->pList = pBld;
+          return SQLITE_OK;
+        }
       }
     }
   }
