@@ -1,5 +1,5 @@
-C JS:\sreject\sURL\sarguments\swhich\smay\sinfluence\sthe\sload\spath\sfor\ssqlite3.js\sand\ssqlite3.wasm\sif\sthose\svalues\slook\slike\sthey\smight\sbe\sremote\sURLs.\ssqlite3.mjs\s(ESM)\sis\sunaffected\sby\sthis.\sThis\saddresses\s[bugs:74f052d3d2|bug\sreport\s2026-10-19T12:25:33Z]\sbut\sis\sa\spreliminary\smeasure,\swith\sfollow-ups\sexpected.
-D 2026-10-19T14:50:22.561
+C Apply\s[5080eb6d7a7a]\sto\sa\ssimilar\scase\sin\sthe\sJS\stest\ssuite.
+D 2026-10-19T15:06:38.626
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -712,9 +712,9 @@ F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f129
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
 F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555e685bce3da8c3f
-F ext/wasm/tester1-worker.c-pp.html 3295e3abc51599573bd363ee26948e64cc1693992e8e30ad0a3a1662786a5e3a
+F ext/wasm/tester1-worker.c-pp.html e81f5a74c045499262b47beaef39cd36963f67021c6575f920ee3f11d0501420
 F ext/wasm/tester1.c-pp.html 69403505b2c0b6cd76c8a210e3a09e80a8eb84a47c3eae591ab0e81c3934af61
-F ext/wasm/tester1.c-pp.js 77c741e438d62e23c94302a5fafa56259dea2857d5a0303b6267e3eca98608ad
+F ext/wasm/tester1.c-pp.js 84c86fbdd6b2867fae245e0c1fa87ab885f1feed018b48eeb1ba3a3ae18f755b
 F ext/wasm/tests/opfs/concurrency/index.html 706eab6308343c04ac2360aba6001af4ffaf46d8f33a0ccd02c64d93e3216a43
 F ext/wasm/tests/opfs/concurrency/test.js 6919778fceaac1b7cc78caf41d796f545d2c4433b31188aa9689f05b5ad28828
 F ext/wasm/tests/opfs/concurrency/worker.js 704d82c5e287e47f612349e027765943a58ad967dcf178fb5a1c3a8eaafb09af
@@ -2287,8 +2287,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c31221e954bcca2e6505338446635d0efb809f453008c4927441ebd6f0e1b873
-R 1b44b97ce0051b7a496005ba6b1c390f
+P 5080eb6d7a7a7a5c2cdfd08a766f0e096d0d5536488fcf0b325e7b06a6bdd092
+R 96b94d3dcc56eef7e43d0795b7d99215
 U stephan
-Z 3cdf726eb407d58fd9231dee11be8280
+Z ad98ab687863df3f0cc0f3af23b4d533
 # Remove this line to create a well-formed Fossil manifest.

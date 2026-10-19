@@ -79,10 +79,9 @@
         const l = globalThis.location;
         workerArgs.push(baseName+'.js?sqlite3.dir='+(
           0/*set to 1 only for testing*/
-          ? (l.protocol+'//'+l.host+'/jswasm')
-          /* ^^^ must be rejected by module loader without trying to
-             load that */
-          : 'jswasm'
+            ? (l.protocol+'//'+l.host+'/jswasm')
+            /* ^^^ must be rejected/ignored by module init */
+            : 'jswasm'
           ));
       }
       console.warn("workerArgs =",workerArgs);

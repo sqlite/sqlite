@@ -4644,7 +4644,11 @@ if(!globalThis.sqlite3InitModule && !isUIThread()){
   const urlParams = new URL(globalThis.location.href).searchParams;
   const s3d = urlParams.get('sqlite3.dir');
   if( s3d ){
-    sqlite3Js = s3d + '/' + sqlite3Js;
+    if( s3d.indexOf(':')<0 && s3d.indexOf('//')<0 ){
+      sqlite3Js = s3d + '/' + sqlite3Js;
+    }else{
+      throw new Error("Invalid sqlite3.dir value: "+s3d);
+    }
   }
   importScripts(sqlite3Js);
 }
