@@ -14439,7 +14439,7 @@ int SQLITE_CDECL main(int argc, char **argv){
     }else if( cli_strcmp(z,"-unsafe-testing")==0 ){
       ShellSetFlag(&data,SHFLG_TestingMode);
     }else if( cli_strcmp(z,"-safe")==0 ){
-      /* no-op - catch this on the second pass */
+      noInit = 1; /* --safe implies --noinit */
     }else if( cli_strcmp(z,"-escape")==0 && i+1<argc ){
       /* skip over the argument */
       i++;
