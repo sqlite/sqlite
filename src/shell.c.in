@@ -4292,6 +4292,9 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     p->mode.spec.eBlob = QRF_BLOB_Sql;
     p->mode.spec.bTitles = QRF_No;
     p->mode.spec.nCharLimit = 0;
+    p->mode.spec.bTextJsonb = QRF_No;
+    p->mode.spec.zIFmt = 0;
+    p->mode.spec.zFpFmt = 0;
     rc = shell_exec(p, sSelect.zTxt, 0);
     if( (rc&0xff)==SQLITE_CORRUPT ){
       cli_puts("/****** CORRUPTION ERROR *******/\n", p->out);
@@ -10614,6 +10617,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
     p->shellFlgs = savedShellFlags;
     modeFree(&p->mode);
     p->mode = saved_mode;
+    if( p->mode.spec.zFpFmt ) p->mode.spec.zFpFmt = p->mode.zFpFmt;
+    if( p->mode.spec.zIFmt ) p->mode.spec.zIFmt = p->mode.zIFmt;
     rc = p->nErr>0;
   }else
 

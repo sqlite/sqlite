@@ -670,3 +670,44 @@ SELECT '' AS '';
 │  │
 ╰──╯
 END
+
+# Bug 2026-10-18T20:39:22Z
+#
+# .dump should not be affected by the --fpfmt, --ifmt, and --textjsonb
+# settings of .mode
+#
+.open :memory:
+.testcase 1400
+CREATE TABLE t1(a,b,c);
+INSERT INTO t1 VALUES(1234.5678, 16, jsonb('{"a":1}'));
+INSERT INTO t1 VALUES(0.5, 1234567, x'0102');
+.mode list --fpfmt %.2f --ifmt %x --textjsonb on
+.dump
+.check <<END
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(a,b,c);
+INSERT INTO t1 VALUES(1234.5678,16,x'4c17611331');
+INSERT INTO t1 VALUES(0.5,1234567,x'0102');
+COMMIT;
+END
+.testcase 1410
+.mode list --ifmt %,d
+.dump
+.check <<END
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(a,b,c);
+INSERT INTO t1 VALUES(1234.5678,16,x'4c17611331');
+INSERT INTO t1 VALUES(0.5,1234567,x'0102');
+COMMIT;
+END
+.testcase 1420
+SELECT a, b FROM t1;
+.check <<END
+1234.57|16
+0.50|1,234,567
+END
+.testcase 1430
+.mode
+.check ".mode list --fpfmt %.2f --ifmt %,d --limits on --textjsonb on"
