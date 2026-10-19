@@ -9195,89 +9195,6 @@ static int vec1QueryToSql(Vec1Csr *pCsr){
   return rc;
 }
 
-/*
-** There are three basic query plans supported by xBestIndex:
-**
-**   0: Full table scan.
-**   1: Lookup by rowid.
-**   2: K-nearest-neighbours search.
-*/
-static int vec1FilterMethod(
-  sqlite3_vtab_cursor *cur,
-  int idxNum,
-  const char *idxStr,
-  int argc,
-  sqlite3_value **argv
-){
-  Vec1Csr *pCsr = (Vec1Csr *)cur;
-  Vec1Tab *pTab = (Vec1Tab*)(cur->pVtab);
-  int rc = SQLITE_OK;
-
-  UNUSED_PARAMETER(argc);
-  assert( ((idxNum==0 || idxNum==1) && argc==0) 
-       || ((idxNum==2 || idxNum==3) && argc==1)
-       || (idxNum==5 && argc>=1)
-  );
-  vec1ResetCsr(pCsr);
-
-  if( pCsr->bLoadConfig==0 && (idxNum & 0x01) ){
-    rc = vec1LoadConfig(pTab);
-    if( rc!=SQLITE_OK ) return rc;
-    pCsr->bLoadConfig = 1;
-  }
-
-  if( idxNum==0 || idxNum==1 ){
-    /* Full-table scan. */
-    rc = vec1PrepareSql(pTab, &pCsr->pStmt,
-        "SELECT * FROM %Q.'%q_base'", pTab->zDb, pTab->zName
-    );
-  }else if( idxNum==2 || idxNum==3 ){
-    /* Lookup by rowid */
-    rc = vec1PrepareSql(pTab, &pCsr->pStmt,
-        "SELECT * FROM %Q.'%q_base' WHERE rowid=?", 
-        pTab->zDb, pTab->zName
-    );
-    if( rc==SQLITE_OK ){
-      sqlite3_bind_value(pCsr->pStmt, 1, argv[0]);
-    }
-  }else{
-    /* ANN query */
-    Vec1Query *pQuery = 0;
-
-    assert( idxNum==5 );
-
-    VEC1_QINSTR_START(pTab, VEC1_QINSTR_TOTAL);
-
-    /* Parse the query parameters. */
-    rc = vec1SetupKANNQuery(pTab, idxStr, argv, &pQuery);
-    pCsr->pQuery = pQuery;
-
-    if( rc==SQLITE_OK ){
-      if( (pTab->mod.hdr.flags & VEC1_MODEL_INDEX)==0 ){
-        rc = vec1QueryToSql(pCsr);
-        assert( pCsr->pQuery==0 );
-        assert( pCsr->bSqlNNQuery );
-      }else{
-        rc = vec1PrepareSql(pTab, &pCsr->pStmt,
-            "SELECT * FROM %Q.'%q_base' WHERE id=?", 
-            pTab->zDb, pTab->zName
-        );
-        if( rc==SQLITE_OK ){
-          rc = vec1DoKANNQuery(pCsr);
-          pCsr->iCurrentRes = -1;
-        }
-      }
-    }
-
-    VEC1_QINSTR_STOP(pTab, VEC1_QINSTR_TOTAL);
-  }
-
-  if( rc==SQLITE_OK ){
-    rc = vec1NextMethod(cur);
-  }
-  return rc;
-}
-
 static int vec1EofMethod(sqlite3_vtab_cursor *cur){
   Vec1Csr *pCur = (Vec1Csr *)cur;
   return (pCur->pStmt==0);
@@ -11414,17 +11331,105 @@ static int vec1FixVectorSize(Vec1Tab *pTab, int nVec){
   return rc;
 }
 
-
 static int vec1FinishWriter(Vec1Tab *pTab, int bDiscard){
   int rc = SQLITE_OK;
-  if( bDiscard ){
-    vec1WriterFinish(pTab->pWriter, SQLITE_ERROR);
-  }else{
-    rc = vec1WriterFinish(pTab->pWriter, SQLITE_OK);
-  }
+  Vec1Writer *pWriter = pTab->pWriter;
   pTab->pWriter = 0;
+  if( bDiscard ){
+    vec1WriterFinish(pWriter, SQLITE_ERROR);
+  }else{
+    rc = vec1WriterFinish(pWriter, SQLITE_OK);
+  }
   return rc;
 }
+
+/*
+** There are three basic query plans supported by xBestIndex:
+**
+**   0: Full table scan.
+**   1: Lookup by rowid.
+**   2: K-nearest-neighbours search.
+*/
+static int vec1FilterMethod(
+  sqlite3_vtab_cursor *cur,
+  int idxNum,
+  const char *idxStr,
+  int argc,
+  sqlite3_value **argv
+){
+  Vec1Csr *pCsr = (Vec1Csr *)cur;
+  Vec1Tab *pTab = (Vec1Tab*)(cur->pVtab);
+  int rc = SQLITE_OK;
+
+  UNUSED_PARAMETER(argc);
+  assert( ((idxNum==0 || idxNum==1) && argc==0) 
+       || ((idxNum==2 || idxNum==3) && argc==1)
+       || (idxNum==5 && argc>=1)
+  );
+  vec1ResetCsr(pCsr);
+
+  if( pCsr->bLoadConfig==0 && (idxNum & 0x01) ){
+    rc = vec1LoadConfig(pTab);
+    if( rc!=SQLITE_OK ) return rc;
+    pCsr->bLoadConfig = 1;
+  }
+
+  if( idxNum==0 || idxNum==1 ){
+    /* Full-table scan. */
+    rc = vec1PrepareSql(pTab, &pCsr->pStmt,
+        "SELECT * FROM %Q.'%q_base'", pTab->zDb, pTab->zName
+    );
+  }else if( idxNum==2 || idxNum==3 ){
+    /* Lookup by rowid */
+    rc = vec1PrepareSql(pTab, &pCsr->pStmt,
+        "SELECT * FROM %Q.'%q_base' WHERE rowid=?", 
+        pTab->zDb, pTab->zName
+    );
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_value(pCsr->pStmt, 1, argv[0]);
+    }
+  }else{
+    /* ANN query */
+    Vec1Query *pQuery = 0;
+
+    assert( idxNum==5 );
+
+    rc = vec1FinishWriter(pTab, 0);
+
+    VEC1_QINSTR_START(pTab, VEC1_QINSTR_TOTAL);
+
+    /* Parse the query parameters. */
+    if( rc==SQLITE_OK ){
+      rc = vec1SetupKANNQuery(pTab, idxStr, argv, &pQuery);
+      pCsr->pQuery = pQuery;
+    }
+
+    if( rc==SQLITE_OK ){
+      if( (pTab->mod.hdr.flags & VEC1_MODEL_INDEX)==0 ){
+        rc = vec1QueryToSql(pCsr);
+        assert( pCsr->pQuery==0 );
+        assert( pCsr->bSqlNNQuery );
+      }else{
+        rc = vec1PrepareSql(pTab, &pCsr->pStmt,
+            "SELECT * FROM %Q.'%q_base' WHERE id=?", 
+            pTab->zDb, pTab->zName
+        );
+        if( rc==SQLITE_OK ){
+          rc = vec1DoKANNQuery(pCsr);
+          pCsr->iCurrentRes = -1;
+        }
+      }
+    }
+
+    VEC1_QINSTR_STOP(pTab, VEC1_QINSTR_TOTAL);
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = vec1NextMethod(cur);
+  }
+  return rc;
+}
+
 
 /*
 ** Handle a "special" INSERT command on a vec1 table. A special INSERT takes

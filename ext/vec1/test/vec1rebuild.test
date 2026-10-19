@@ -269,4 +269,62 @@ do_execsql_test 5.2 {
   SELECT rowid FROM v1($rnd, '{K:20}');
 } $expect
 
+#-------------------------------------------------------------------------
+# Check that KNN queries issued within a transaction see rows written by
+# earlier single-row INSERT and UPDATE statements in the same transaction,
+# the index entries for which are still held in memory.
+#
+set tn 0
+foreach zInit {flat trained ivf none} {
+  incr tn
+  setup_table $zInit
+  set v1001 [db one {SELECT random_vector(32)}]
+  set v7 [db one {SELECT random_vector(32)}]
+
+  do_execsql_test 6.$tn.$zInit.1 {
+    BEGIN;
+      INSERT INTO v1(rowid, v) VALUES(1001, $v1001);
+  }
+
+  do_execsql_test 6.$tn.$zInit.2 {
+      SELECT count(*) FROM v1($v1001, '{K:5}') WHERE rowid=1001;
+  } {1}
+
+  do_execsql_test 6.$tn.$zInit.3 {
+      SELECT count(*), sum(rowid=1001)
+      FROM v1($v1001, '{K:2000, nprobe:1000}');
+  } {1001 1}
+
+  do_execsql_test 6.$tn.$zInit.4 {
+      UPDATE v1 SET v = $v7 WHERE rowid=7;
+      SELECT count(*) FROM v1($v7, '{K:5}') WHERE rowid=7;
+  } {1}
+
+  do_execsql_test 6.$tn.$zInit.5 {
+      SELECT count(*), sum(rowid=7) FROM v1($v7, '{K:2000, nprobe:1000}');
+  } {1001 1}
+
+  do_execsql_test 6.$tn.$zInit.6 {
+      DELETE FROM v1 WHERE rowid=1001;
+      SELECT count(*), sum(rowid=1001)
+      FROM v1($v1001, '{K:2000, nprobe:1000}');
+  } {1000 0}
+
+  do_execsql_test 6.$tn.$zInit.7 {
+      INSERT INTO v1(rowid, v) VALUES(1002, $v1001);
+      SELECT count(*) FROM v1($v1001, '{K:5}') WHERE rowid=1002;
+  } {1}
+
+  do_execsql_test 6.$tn.$zInit.8 {
+    COMMIT;
+    PRAGMA integrity_check;
+  } {ok}
+
+  do_execsql_test 6.$tn.$zInit.9 {
+    SELECT count(*) FROM v1($v1001, '{K:5}') WHERE rowid=1002;
+    SELECT count(*) FROM v1($v7, '{K:5}') WHERE rowid=7;
+    SELECT count(*) FROM v1($v7, '{K:2000, nprobe:1000}');
+  } {1 1 1001}
+}
+
 finish_test

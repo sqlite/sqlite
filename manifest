@@ -1,5 +1,5 @@
-C Fix\sa\svec1\sproblem\swith\sissuing\sa\s'rebuild'\scommand\swithin\sa\stransaction\sthat\shas\salready\swritten\sto\sthe\stable.\sReport\s[bugs:/info/2026-10-18T20:40:18Z\s|\s2026-10-18T20:40:18Z].
-D 2026-10-19T08:05:27.584
+C Fix\sa\svec1\sproblem\swith\squerying\sa\stable\swithin\sthe\ssame\stransaction\sas\swriting\sit\sin\ssome\sconfigurations.
+D 2026-10-19T11:06:06.382
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -614,6 +614,7 @@ F ext/vec1/test/vec1fault6.test 4f86d9fbd31552a1461e2dcdf350b4d5413b5536382a669a
 F ext/vec1/test/vec1fault7.test 92ebab2b519e79c41be71ef3f9f438f4a3358b475164c41288d674be102a1d24
 F ext/vec1/test/vec1fault8.test a2da772d96539b25574cc4cf0cdcf291931da1a416a6883662e10f5c92275c69
 F ext/vec1/test/vec1fault9.test 150a88218168844e80f1f600c7cd3189f01e05b69f8c899c0ef42997f51846ee
+F ext/vec1/test/vec1faultA.test d75deb7e4f9cc96934a92d9f03ec57b54109dd8dec40c1af64fec9c041284202
 F ext/vec1/test/vec1fixed.test 9f1ecc7a67bfe1afb8a3c9e173c2f7990b14f0ad1bbb869d6fe30d247d3b2271
 F ext/vec1/test/vec1flat.test e6fbbe5dd6a46019d5913a427a9d80e25771694a7db0c51ecb60ecb96c8c49b1
 F ext/vec1/test/vec1func.test e27a3aed8abc7dcea38ec87ccd8f91d30eba551fe1cc1e9f9b0e39cee9ce574d
@@ -630,7 +631,7 @@ F ext/vec1/test/vec1nan.test 3ff3fe4b0f33a5c1f4129ba318443e7d927fd9dd6fc339349fe
 F ext/vec1/test/vec1overflow.test f007c6b149b434bc6593501c48214535151cb989620e18d48dbca51e7d9c98c7
 F ext/vec1/test/vec1pq.test 81d74f516971a3883782d2d443efe3f6a7501d4c9f980a758e1c2eb8b5f22885
 F ext/vec1/test/vec1query.test 7120a2824b9f6563f7986c436204870c9d6e4af2bff3a39d38ef277188ef9189
-F ext/vec1/test/vec1rebuild.test 3e3b3f2b08196110caafcc0af918d0f8c06dd691ad5783e07cc38bfa970c254a
+F ext/vec1/test/vec1rebuild.test 1f801376985dfd73b0d4b7a8f4c76fe682865b0d77e46df011093d035809be04
 F ext/vec1/test/vec1rollback.test 41565f526e153b24615ed38edda835fbb185f2f07f5e72f5c947add810b33d71
 F ext/vec1/test/vec1rotate.test a90773e8ef8259f81c793cb335e3c023295231416c37d89e387d524304dadfde
 F ext/vec1/test/vec1rotate2.test 7e4e06b3f970190c4ac28256db7aa924796b9a1fe1985941e35db4604c8717a0
@@ -646,7 +647,7 @@ F ext/vec1/tool/vec1_algo_test.c 2777488a8b9ab9545732562c93988aa2424d7afd8b4895d
 F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b62631b480c2d2d
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c 5cee88275a3299f137cca054e98f257459d993b64d22e25b76ba2ec019b09788
+F ext/vec1/vec1.c 7c930e6b5577622326dcf32569318f06d5f73fcc81912e43fb258f3ce396b00e
 F ext/wasm/GNUmakefile d93df7101619ae363f431704bb77c0e683240e4d9e7edfb32a0e96e31c23f214
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 6d820c98468ebcee1dbf547467a03f65d256a2be48a9dcbeb5637d3da569c6fe
@@ -2293,8 +2294,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b8fc7a1398c7aaf2359c311d46a55aeea213d60889826119d1ddef2364387ea0
-R 98deda056383e45f4308c93da036db6c
+P 2448fc46cae2149c5d1777b9fe574a48e21d5e16dd64997d2343bb6e160840e3
+R 09d3e97e7e8cbf0049f0f65dd688ee61
 U dan
-Z 37867d84d01c6567fb0f761f3db61851
+Z adafb80534c463cf81e26d72578b22d5
 # Remove this line to create a well-formed Fossil manifest.
