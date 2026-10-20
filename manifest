@@ -1,5 +1,5 @@
-C Be\ssure\sto\suse\sthe\scorrect\scollating\ssequence\swhen\sdoing\sa\sbalanced\smerge\nof\sa\sfour-way\sor\slarger\scompound\sselect.\s\sError\sgoes\sback\sto\sversion\n3.38.0\s(2021).\n[bugs:/info/2026-10-18T23:46:25Z|Bug\s2026-10-18T23:46:25Z]
-D 2026-10-20T18:25:01.465
+C Fix\sthe\sshellB.test\smodule\sso\sthat\sit\sdoes\snot\stry\sto\srun\sdump.sql\nwithout\svirtual\stables\savailable.
+D 2026-10-20T19:21:43.489
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1723,7 +1723,7 @@ F test/shell7.test 6b006d296b569a7ec78b8168af77578b3bde8f58b79c32d9f46cff1eaf763
 F test/shell8.test d2fc95f7467c3d93834cac3327bdac03554991afed6d9a07e6a2b204b037f9d7
 F test/shell9.test c0e8871061a92151450b3332279a893b516fa73a6c46d4f51a0998407cbf8c89
 F test/shellA.test 05cdaafa1f79913654487ce3aefa038d4106245d58f52e02faf506140a76d480
-F test/shellB.test 3c569c293d272afee798ed1768edd1bc6104406d543101122e0504956208d446
+F test/shellB.test d70566f24990fc128b520f7deb860077f4bea3edb76e732c72b26b80eec7867c
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2295,8 +2295,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8efb0acad85f6220f576c71530256d62f92dfba5673cdc5e0371f480753f1034
-R 69adea53249d835cc657dbb909866730
+P 7ee2a48bb3765bfe8cef4ae400eacf77c660f9d5dbaa289ab5f17474fca98cae
+R 9fd1483f6628090c18eb1ed219fdf80a
 U drh
-Z 9e87f932b65f2a7595ec34ec70dd1748
+Z a38aed9d67bb138830822f46db8da54c
 # Remove this line to create a well-formed Fossil manifest.
