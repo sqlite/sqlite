@@ -1,5 +1,5 @@
-C Do\snot\sallow\sa\ssimplified\sconstant\sexpression\s(example:\s"123\sISNULL"\s&rarr;\s"1")\nto\sbe\sused\sas\sthe\sordinal\scolumn\snumber\sin\san\sORDER\sBY\sor\sGROUP\sBY\sclause.\n[bugs:/info/2026-10-16T12:58:09Z|Bug\s2026-10-16T12:58:09Z]
-D 2026-10-20T12:07:04.228
+C Add\san\sextra\ssqlite3MemoryBarrier()\scall\sin\ssqlite3_initialize()\sto\savoid\na\srace\scondition\sthat\sonly\shappens\son\snon-X64\sCPUs.\n[bugs:/info/2026-10-20T07:33:27Z|Bug\s2026-10-20T07:33:27Z]
+D 2026-10-20T12:42:26.067
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -781,7 +781,7 @@ F src/mem5.c b7da5c10a726aacacc9ad7cdcb0667deec643e117591cc69cf9b4b9e7f3e96ff
 F src/memdb.c 290a67488b83fccb0ca9c637342043466e0b16c945ef7d68e0f91679661ff315
 F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 80b35f95d93bf996ccb3e498535255f2ef1118c78764719a7cd15ab4106ccac9
-F src/mutex.c 00b8cee206a67fd764d001f3a148494331d8d0b3b9c3974ecd69ff29bb444462
+F src/mutex.c 8b34ded0298d2e16060ad4b8cdc890f512d2582de7e420dc3b39f20bb6a3f97c
 F src/mutex.h e2159f6ce3201c90d63045701f0eaa669e9154e8b79d000982d2fa1467432a94
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c caec9862aeebad01f6c8997cf709a239abeb0715fcce1895720b87fe7e2ef42f
@@ -2294,8 +2294,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P be17b0b030c06169c92e49cbe56ed9228696fce741d4ecb0683b27e2113f0ce1
-R 778cc0bc7ac8ef6b1baf7c9e4817798e
+P c40e620b04aaa3c90501124db27711b1d4e8ae830f75828c7cccf84f7df42660
+R dc152ce0243878ee4f806d07bfca301b
 U drh
-Z ef1fd28c0001c884b534880086261e17
+Z 7ec4d6253cf29cf350614d5b4ae30564
 # Remove this line to create a well-formed Fossil manifest.
