@@ -194,7 +194,8 @@ proc oom_injectstart {nRepeat iFail} {
 }
 proc oom_injectstop {} {
   set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
-  return [expr $nFail - $nBenign]
+  # return [expr $nFail - $nBenign]
+  set nFail
 }
 
 # The following procs are used as [do_one_faultsim_test] callbacks when 

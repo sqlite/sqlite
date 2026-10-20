@@ -797,7 +797,7 @@ static int cli_vprintf(FILE *out, const char *zFormat, va_list ap){
 static void cli_exit(int rc){
   if( cli_output_capture ){
     char *z = sqlite3_str_finish(cli_output_capture);
-    sqlite3_fputs(z, stdout);
+    sqlite3_fputs(z ? z : "", stdout);
     fflush(stdout);
   }
   exit(rc);

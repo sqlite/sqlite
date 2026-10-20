@@ -3156,6 +3156,13 @@ static void fts5SegIterGotoPage(
           fts5SegIterLoadNPos(p, pIter);
         }
         break;
+      }else if( !fts5LeafIsTermless(pIter->pLeaf) ){
+        /* There are no rowids on this page, but there is another term.
+        ** Since there are no more rowids for the current term, set the
+        ** iterator to EOF.  */
+        fts5DataRelease(pIter->pLeaf);
+        pIter->pLeaf = 0;
+        break;
       }
     }
   }

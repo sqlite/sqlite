@@ -1460,6 +1460,10 @@ do_test 14.7 {
   db format -style list -columnsep { } -fpfmt {} {SELECT 100, 2.5}
 } {100 2.5}
 
+# Bug 2026-10-20T13:22:11Z
+do_test 15.0 {
+  db format -style list {SELECT 1 WHERE 0; SELECT 1 WHERE 0;}
+} {}
 
 db close
 

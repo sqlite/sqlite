@@ -3122,7 +3122,8 @@ static void qrfFinalize(Qrf *p){
         qrfOom(p);
       }else{
         p->spec.pzOutput[0] = zCombined;
-        memcpy(zCombined+sz, sqlite3_str_value(p->pOut), n+1);
+        if( n ) memcpy(zCombined+sz, sqlite3_str_value(p->pOut), n);
+        zCombined[sz+n] = 0;
       }
       sqlite3_str_free(p->pOut);
     }else{

@@ -451,4 +451,38 @@ do_execsql_test 12.2 {
   SELECT sku, qty FROM stock;
 } {A 105 B 7}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 12.1 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1(x) VALUES(1), (2);
+  ALTER TABLE t1 ADD COLUMN y TEXT DEFAULT 1e2;
+  INSERT INTO t1(x) VALUES(3), (4);
+}
+
+do_execsql_test 12.2 {
+  SELECT DISTINCT y FROM t1
+} {100.0}
+
+do_execsql_test 12.3 {
+  SELECT x, quote(y) FROM t1
+} {1 '100.0' 2 '100.0' 3 '100.0' 4 '100.0'}
+
+do_execsql_test 13.1 {
+  CREATE TABLE t2(x);
+  INSERT INTO t2(x) VALUES(1), (2);
+  ALTER TABLE t2 ADD COLUMN y TEXT DEFAULT 0x64;
+  INSERT INTO t2(x) VALUES(3), (4);
+}
+
+do_execsql_test 13.2 {
+  SELECT DISTINCT y FROM t2
+} {100}
+
+do_execsql_test 13.3 {
+  SELECT x, quote(y) FROM t2
+} {1 '100' 2 '100' 3 '100' 4 '100'}
+
 finish_test
+
