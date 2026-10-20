@@ -1894,7 +1894,7 @@ do_execsql_test 58.1 {
 } {347 678.0}
 
 # 2020-06-06 ticket e5504e987e419fb0
-do_catchsql_test 59.1 {
+do_catchsql_test 59.1.1 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(x INTEGER PRIMARY KEY);
   INSERT INTO t1 VALUES (123);
@@ -1902,7 +1902,16 @@ do_catchsql_test 59.1 {
      ntile( (SELECT sum(x)) ) OVER(ORDER BY x),
      min(x) OVER(ORDER BY x)
     FROM t1; 
-} {1 {misuse of aggregate: sum()}}
+} {0 {1 123}}
+do_catchsql_test 59.1.2 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY);
+  INSERT INTO t1 VALUES (123);
+  SELECT
+     ntile( sum(x) ) OVER(ORDER BY x),
+     min(x) OVER(ORDER BY x)
+    FROM t1; 
+} {0 {1 123}}
 
 # 2020-06-07 ticket f7d890858f361402
 do_execsql_test 60.1 {
@@ -2423,5 +2432,45 @@ do_execsql_test 79.3 {
   OVER ( ORDER BY c0 RANGE BETWEEN 0 FOLLOWING AND 10_000_000_000 FOLLOWING ) 
   FROM t0;
 } {6 1}
+
+#-------------------------------------------------------------------------
+# Test aggregates within scalar queries in window functions are handled 
+# correctly. Report 
+#
+reset_db
+do_execsql_test 80.0 {
+  DROP TABLE IF EXISTS pst_agg_scope;
+  CREATE TABLE pst_agg_scope(x);
+  INSERT INTO pst_agg_scope VALUES(456);
+}
+
+do_execsql_test 80.2 {
+  SELECT (SELECT MIN(t.x)) FROM pst_agg_scope AS t;
+} {456}
+
+do_execsql_test 80.3 {
+  SELECT COUNT(*) OVER (), MIN(t.x) FROM pst_agg_scope AS t;
+} {1 456}
+
+do_execsql_test 80.4 {
+  SELECT COUNT(*) OVER (), (SELECT MIN(t.x)) FROM pst_agg_scope AS t
+} {1 456}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 81.0 {
+  CREATE TABLE t1(a INT,b TEXT,c BLOB,d REAL);
+  CREATE INDEX t1a ON t1(a);
+  CREATE TABLE t2(x,y,z PRIMARY KEY) WITHOUT ROWID;
+}
+
+do_execsql_test 81.1 {
+  SELECT json_group_object(
+      (SELECT json_group_object( a NOTNULL , a ) FILTER(WHERE a) OVER FROM t2 GROUP BY 1 HAVING d+7<10)
+      , b IN(1,2 IN(SELECT 0),3)) 
+  OVER ( ORDER BY d RANGE BETWEEN CURRENT ROW AND CURRENT ROW ) AS d 
+  FROM t1 NATURAL FULL JOIN t1 a;
+} {"{}"}
+
 
 finish_test
