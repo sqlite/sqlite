@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\sbranch-3.54\sfixes\sinto\strunk
-D 2026-10-20T00:17:35.624
+C Remove\san\sALWAYS()\sthat\scan\ssometimes\sbe\strue\swhen\susing\nsqlite3_collation_needed()\sand\sdropping\scollations.\n[bugs:/info/2026-10-18T18:09:53Z|Bug\s2026-10-18T18:09:53Z]
+D 2026-10-20T09:00:48.294
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -892,7 +892,7 @@ F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 7cf517d30169bb4170adc2834a47b06881fb24f0c641e50b19a8652a99f5a301
 F src/whereInt.h 5d739acb94bf1fdf6edd502a919e3dcf2d340dda63cc1827304e119ea878f6f3
 F src/wherecode.c f255e418ccf877f6bb9892145288728f1aa1a0ab8c2f2a57f82132e538c15b65
-F src/whereexpr.c 76f72a95c5cf0e8a8edb679ca4fb7afa17ba45ff4effe73c414266510109e701
+F src/whereexpr.c 8b5c937bea8bca9673f3f57925b37e7dcb5343834aac5564349f706460aa2ecd
 F src/window.c 79a17de595e62aa45961ef1cbe3392e7ebae69fdde3fd0b0200254bc4647025e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
@@ -2294,8 +2294,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 15424da529e827f3eca7d70b1c54b57f2e9e05ed866a872ea45fa538e8b72825 d45943cbaf35f21f72b78aafa88f72830343bfeb3a0198a3af0da063dcf6a707
-R aecb776e642164957603f92bcf1cc00c
+P b3606f7019b2a2dc77d9e476055156631d07c33dfef2d8bc0fdd75b13fad54fd
+R 023c369eea4107d4bbcb11a04cd16e48
 U drh
-Z 42c9e74b37b241a3bd771a8cfc9167b1
+Z 295b711b6d3f89e0a1e957deedbd5688
 # Remove this line to create a well-formed Fossil manifest.
