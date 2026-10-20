@@ -4280,6 +4280,8 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     appendText(&sSelect, "SELECT ", 0);
     if( azCol[0] ){
       appendText(&sSelect, azCol[0], 0);
+      appendText(&sSelect, " AS ", 0);
+      appendText(&sSelect, azCol[0], 0);
       appendText(&sSelect, ",", 0);
     }
     for(i=1; azCol[i]; i++){
