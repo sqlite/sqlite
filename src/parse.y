@@ -1407,9 +1407,11 @@ expr(A) ::= expr(A) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
       case TK_INTEGER:
       case TK_STRING:
       case TK_FLOAT:
-      case TK_BLOB:
+      case TK_BLOB: 
         sqlite3ExprDeferredDelete(pParse, pLeft);
-        return sqlite3ExprInt32(pParse->db, op==TK_NOTNULL);
+        p = sqlite3ExprInt32(pParse->db, op==TK_NOTNULL);
+        if( p ) p->op2 = 1;
+        return p;
       default:
         break;
     }
