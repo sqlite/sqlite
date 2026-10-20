@@ -366,6 +366,9 @@ do_test shell1-3.5.4 {
 do_test shell1-3.6.1 {
   catchcmd "test.db" ".exit"
 } {0 {}}
+do_test shell1-3.6.2 {
+  catchcmd test.db ".output memory\n.exit 7"
+} {1 {child process exited abnormally}}
 
 # .explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.
 do_test shell1-3.7.1 {
