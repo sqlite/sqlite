@@ -4749,7 +4749,9 @@ static int SQLITE_TCLAPI test_carray_bind(
     }
     case 5: { /* nData==0 */
       aData = "";
-      xDel = SQLITE_STATIC;
+      /* Preserve SQLITE_TRANSIENT so that the copy path is exercised. Since
+      ** aData is not a malloc()ed pointer, clear isTransient below. */
+      if( xDel!=SQLITE_TRANSIENT ) xDel = SQLITE_STATIC;
       isTransient = 0;
       isStatic = 0;
       break;
