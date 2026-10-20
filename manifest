@@ -1,5 +1,5 @@
-C When\sa\sreal\svalue\sis\sspecified\sas\sa\sdefault\sfor\sa\stext\scolumn,\savoid\svarious\sinconsistencies\sby\sensuring\sthat\sit\sis\salways\sconverted\sto\san\sIEEE\sdouble\sand\sthen\sback\sto\stext\sbefore\suse,\sas\sis\salready\sdone\sfor\sinteger\svalues.\sReport\s[bugs:/info/2026-10-05T16:22:00Z\s|\s2026-10-05T16:22:00Z].
-D 2026-10-20T16:11:44.491
+C When\sa\sb-tree\scell\sis\sdeleted,\szero\sthe\scursor's\scell-info\scache\sas\sthe\scell\sit\sdescribes\sno\slonger\sexists,\seven\sif\sthe\scursor\sposition\sis\sbeing\spreserved.\sReport\s[bugs:/info/2026-10-18T16:11:58Z\s|\s2026-10-18T16:11:58Z].
+D 2026-10-20T17:27:17.523
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -742,7 +742,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c f6a1490f4ef86cca51f0f93158bbc140b5822406e0c50ec61731e3fcdc1242a2
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 0022d783b0dde6cd4e89c29ab134008e54798077233a4480e40d3620f533f6e2
+F src/btree.c e1c8600ff35025fd7866e8eb80caab122f2d6a51d570e6a830c5f0137597782c
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d82
 F src/build.c 1406d252bc5b2c3f2150edd4426e5981eabf1000944be8db8d470b96eb64ee07
@@ -1125,7 +1125,7 @@ F test/default.test a4c9e41318d25e3e6d6adfbb3fbbc198b9c6a3f42b1abd4e24a900dcc6e6
 F test/delete.test 2686e1c98d552ef37d79ad55b17b93fe96fad9737786917ce3839767f734c48f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
-F test/delete4.test 2bcf66fe9978206e8fad1bacb69c00fe05dd1a3f2036c421420f6360f7d18b53
+F test/delete4.test 6345f819cd0a841186c93c95ebf42957bca5b295c753a45d24bfbdf9b8b1f40e
 F test/delete_db.test 096d828493c7907f9ea11a7098ea6a0f73edba89406487d5d6cc2228dc4ab8b0
 F test/descidx1.test edc8adee58d491b06c7157c50364eaf1c3605c9c19f8093cb1ea2b6184f3ac13
 F test/descidx2.test a0ba347037ff3b811f4c6ceca5fd0f9d5d72e74e59f2d9de346a9d2f6ad78298
@@ -2287,8 +2287,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 480d6e1a39a2057685260cf8386a3dbef4f391c6d1766a6cded5f8cc4d1a0ec4
-R 8b48dd9331a57f37881ef866fc3ca01a
+P d140ada6488a27342c6baf0d8e44adf38f91b37a657c2bcc0efa9ecf437b414c
+R 2dd9ec1001750ac3d92d4b1541658965
 U dan
-Z cba637d31d681339c101f8a950537158
+Z e363b3a3bc64eb242bfbbd40a6d0950b
 # Remove this line to create a well-formed Fossil manifest.
