@@ -3548,9 +3548,12 @@ static int multiSelectByMerge(
 
   /* For operators other than UNION ALL we have to make sure that
   ** the ORDER BY clause covers every term of the result set.  Add
-  ** terms to the ORDER BY clause as necessary.
+  ** terms to the ORDER BY clause as necessary.  Do the same for UNION ALL
+  ** if any operator to the left is not UNION ALL, so that the ORDER BY
+  ** carries the collation of every column into that sub-compound.
   */
-  if( op!=TK_ALL ){
+  for(pPrior=p; pPrior && pPrior->op==TK_ALL; pPrior=pPrior->pPrior){}
+  if( pPrior && pPrior->pPrior ){
     for(i=1; db->mallocFailed==0 && i<=p->pEList->nExpr; i++){
       struct ExprList_item *pItem;
       for(j=0, pItem=pOrderBy->a; j<nOrderBy; j++, pItem++){
@@ -3607,9 +3610,11 @@ static int multiSelectByMerge(
     pKeyDup = sqlite3KeyInfoAlloc(db, nExpr, 1);
     if( pKeyDup ){
       assert( sqlite3KeyInfoIsWriteable(pKeyDup) );
-      for(i=0; i<nExpr; i++){
-        pKeyDup->aColl[i] = multiSelectCollSeq(pParse, p, i);
-        pKeyDup->aSortFlags[i] = 0;
+      /* Use the ORDER BY collations, not multiSelectCollSeq(p), because
+      ** p might be just one part of a larger compound, in which case
+      ** the ORDER BY carries the COLLATE of the larger compound. */
+      for(i=0; ALWAYS(pKeyMerge) && i<nOrderBy; i++){
+        pKeyDup->aColl[pOrderBy->a[i].u.x.iOrderByCol-1] = pKeyMerge->aColl[i];
       }
     }
   }
