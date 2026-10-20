@@ -18,7 +18,6 @@
 CREATE TABLE customer(RowID TEXT, name TEXT);
 INSERT INTO customer VALUES('C-1001','Ann');
 .dump --preserve-rowids
-.mode -v
 .check <<END
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;

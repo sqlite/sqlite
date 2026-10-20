@@ -1,5 +1,5 @@
-C Fix\sthe\s--preserve-rowids\soption\son\sthe\s".dump"\scommand\sof\sthe\sCLI\nso\sthat\sit\sworks\sfor\stables\sthat\shave\sa\snon-IPK\scolumn\snamed\s"rowid".\n[bugs:/info/2026-10-20T03:22:48Z|Bug\s2026-10-20T03:22:48Z]
-D 2026-10-20T17:24:29.979
+C Remove\sa\sdebugging\s".mode\s-v"\sin\sthe\sdump.sql\stest\sscript\sthat\swas\naccidentally\sleft\sin\sthe\sprevious\scheck-in.
+D 2026-10-20T17:42:52.465
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1140,7 +1140,7 @@ F test/distinct.test 691c9e850b0d0b56b66e7e235453198cb4cf0760e324b7403d3c5abbeab
 F test/distinct2.test 072f33e1348b5cae4156e7ca4c124d21053f77d96d5d960a1ba21806416074ab
 F test/distinctagg.test 40d7169ae5846caaf62c6e307d2ca3c333daf9b6f7cde888956a339a97afe85f
 F test/dotcmd01.sql dd5b0475df723fdb9f91031a7b9684abb279f6a686178f0d8e3b5f1da93c27c2
-F test/dump.sql 8493f65837b5969e3c7034145b5d2e530a740852996ce62be5ee8747effb063b
+F test/dump.sql 357b53884456bdb75d48e6f43ffb1ac432cd76c653ea38e48dfbb976582bfc1e
 F test/e_blobbytes.test 4c01dfe4f12087b92b20705a3fdfded45dc4ed16d5a211fed4e1d2786ba68a52
 F test/e_blobclose.test 692fc02a058476c2222a63d97e3f3b2b809c1842e5525ded7f854d540ac2e075
 F test/e_blobopen.test 29f6055ee453b8e679fe9570c4d3acfedbef821622c5dad16875148c5952ef50
@@ -2295,8 +2295,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 47228787b1459a35a12a499be90e249c555658bf4e393122041f474e8986b17d
-R f82b8edb8432712e3671e6bc55326188
+P ecd172bb44be40841336cf2ec42f2505c4f98a96eace3e4862e038a3c147770d
+R 15e9f2d7ecdc986aac547ffba1bf6e5b
 U drh
-Z 5b994cf0021535c76e61cdc4fc57a525
+Z 5f956cdbddb3debc5fab777fad1cc812
 # Remove this line to create a well-formed Fossil manifest.
