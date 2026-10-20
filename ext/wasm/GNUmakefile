@@ -1096,7 +1096,6 @@ emcc.flags.fiddle = \
   -sENVIRONMENT=web,worker \
   -sMODULARIZE \
   -sDYNAMIC_EXECUTION=0 \
-  -sWASM_BIGINT=$(emcc.WASM_BIGINT) \
   -sEXPORT_NAME=$(sqlite3.js.init-func) \
   -Wno-limited-postlink-optimizations \
   $(emcc.exportedRuntimeMethods),FS \
@@ -1312,7 +1311,6 @@ emcc.speedtest1.common += -sALLOW_TABLE_GROWTH
 emcc.speedtest1.common += -sDYNAMIC_EXECUTION=0
 emcc.speedtest1.common += --minify 0
 emcc.speedtest1.common += -sEXPORT_NAME=$(sqlite3.js.init-func)
-emcc.speedtest1.common += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 speedtest1.exit-runtime0 = -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get

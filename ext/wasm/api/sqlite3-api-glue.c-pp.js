@@ -1605,8 +1605,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return __bindText(pStmt, iCol, text, nText, xDestroy);
       }else if(text instanceof ArrayBuffer){
         text = new Uint8Array(text);
-      }else if(Array.isArray(pMem)){
-        text = pMem.join('');
+      }else if(Array.isArray(text)){
+        text = text.join('');
       }
       let p, n;
       try{
@@ -1614,7 +1614,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           p = wasm.allocFromTypedArray(text);
           n = text.byteLength;
         }else if('string'===typeof text){
-          [p, n] = wasm.allocCString(text);
+          [p, n] = wasm.allocCString(text, true);
         }else{
           return util.sqlite3__wasm_db_error(
             capi.sqlite3_db_handle(pStmt), capi.SQLITE_MISUSE,
@@ -1648,7 +1648,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           p = wasm.allocFromTypedArray(pMem);
           n = nMem>=0 ? nMem : pMem.byteLength;
         }else if('string'===typeof pMem){
-          [p, n] = wasm.allocCString(pMem);
+          [p, n] = wasm.allocCString(pMem, true);
         }else{
           return util.sqlite3__wasm_db_error(
             capi.sqlite3_db_handle(pStmt), capi.SQLITE_MISUSE,

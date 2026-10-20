@@ -6214,7 +6214,7 @@ static int sessionChangeMerge(
     }
   }else if( bRebase ){
     if( pExist->op==SQLITE_DELETE && pExist->bIndirect ){
-      *ppNew = pExist;
+      pNew = pExist;
     }else{
       sqlite3_int64 nByte = nRec + pExist->nRecord + sizeof(SessionChange);
       pNew = (SessionChange*)sqlite3_malloc64(nByte);
@@ -7223,6 +7223,7 @@ static int sessionRebase(
     }
   }
   sqlite3_free(sOut.aBuf);
+  if( rc==SQLITE_OK ) rc = pIter->rc;
   return rc;
 }
 
