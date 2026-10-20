@@ -221,8 +221,10 @@ static int fileio_mkdir(const char *zPath){
 */
 static void readFileContents(sqlite3_context *ctx, const char *zName){
   FILE *in;
-  sqlite3_int64 nIn;
-  void *pBuf;
+  sqlite3_int64 nIn;              /* Size of the file according to ftell() */
+  sqlite3_int64 nAlloc;           /* Bytes allocated for pBuf */
+  sqlite3_int64 nRead = 0;        /* Bytes read so far */
+  unsigned char *pBuf;
   sqlite3 *db;
   int mxBlob;
 
@@ -231,9 +233,12 @@ static void readFileContents(sqlite3_context *ctx, const char *zName){
     /* File does not exist or is unreadable. Leave the result set to NULL. */
     return;
   }
+  /* The size reported by ftell() is only a hint.  It is -1 for pipes and
+  ** FIFOs and 0 for many files under /proc.  Keep reading until EOF. */
   fseek(in, 0, SEEK_END);
   nIn = ftell(in);
   rewind(in);
+  if( nIn<0 ) nIn = 0;
   db = sqlite3_context_db_handle(ctx);
   mxBlob = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
   if( nIn>mxBlob ){
@@ -241,17 +246,41 @@ static void readFileContents(sqlite3_context *ctx, const char *zName){
     fclose(in);
     return;
   }
-  pBuf = sqlite3_malloc64( nIn ? nIn : 1 );
+  /* One extra byte so that EOF on a regular file is seen without a
+  ** reallocation. */
+  nAlloc = nIn+1;
+  pBuf = sqlite3_malloc64( nAlloc );
   if( pBuf==0 ){
     sqlite3_result_error_nomem(ctx);
     fclose(in);
     return;
   }
-  if( nIn==(sqlite3_int64)fread(pBuf, 1, (size_t)nIn, in) ){
-    sqlite3_result_blob64(ctx, pBuf, nIn, sqlite3_free);
-  }else{
+  while( 1 ){
+    unsigned char *pNew;
+    nRead += fread(pBuf+nRead, 1, (size_t)(nAlloc-nRead), in);
+    if( nRead>mxBlob ){
+      sqlite3_result_error_code(ctx, SQLITE_TOOBIG);
+      sqlite3_free(pBuf);
+      fclose(in);
+      return;
+    }
+    if( nRead<nAlloc ) break;      /* Short read means EOF or an error */
+    nAlloc *= 2;
+    if( nAlloc>(sqlite3_int64)mxBlob+1 ) nAlloc = (sqlite3_int64)mxBlob+1;
+    pNew = sqlite3_realloc64(pBuf, nAlloc);
+    if( pNew==0 ){
+      sqlite3_result_error_nomem(ctx);
+      sqlite3_free(pBuf);
+      fclose(in);
+      return;
+    }
+    pBuf = pNew;
+  }
+  if( ferror(in) ){
     sqlite3_result_error_code(ctx, SQLITE_IOERR);
     sqlite3_free(pBuf);
+  }else{
+    sqlite3_result_blob64(ctx, pBuf, nRead, sqlite3_free);
   }
   fclose(in);
 }

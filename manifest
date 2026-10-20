@@ -1,5 +1,5 @@
-C Remove\sa\sdebugging\s".mode\s-v"\sin\sthe\sdump.sql\stest\sscript\sthat\swas\naccidentally\sleft\sin\sthe\sprevious\scheck-in.
-D 2026-10-20T17:42:52.465
+C Enhance\sthe\sreadfile()\sfunction\sin\sthe\sfileio.c\sextension\sso\sthat\sit\nis\sable\sto\sread\sfrom\spipes.\n[bugs:/info/2026-10-20T14:02:37Z|Enhancement\srequest\s2026-10-20T14:02:37Z]
+D 2026-10-20T17:46:19.164
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -379,7 +379,7 @@ F ext/misc/decimal.c 68e987966e4772efdb8df03e2bf253d02bae3254af29fd4a99d34fc6e6f
 F ext/misc/diskused.c 444139c01398df6f73e8a021c91e24d97d7914f5c1b49f55dd503abbca347c6e
 F ext/misc/eval.c d4ea2d9898fbe4d30d38ff675ee51958d3bb0601a145bade56dee8b8f438cc5b
 F ext/misc/explain.c 04c9270fd8cf93a9bceb12d2f5f67e3f09a4e58b3e0efe14d24531444d2fffdf
-F ext/misc/fileio.c f32d7488e229cc52283b6f8d9370b004aa92e7a3054aef320cbdbdecb08c4ee5
+F ext/misc/fileio.c 6bf2543ae190401f5fda74661c20387a450071eb5d17bfc05d3b45416bbedcb7
 F ext/misc/fossildelta.c 0af6a5ef3db6bba299271c29b604489e4a5d9e75395c6b83460405a9ccf05c2a
 F ext/misc/fuzzer.c 32cef9a29864a1bc1329ccb6dfa613f197bb83491a7612c2ca2c83ee26cd8f14
 F ext/misc/ieee754.c 2901d08a586d00a1d3c0fd89e03c57ee9e2b5f013b0daab9e49c7a48a9d5946b
@@ -1189,7 +1189,7 @@ F test/exprfault.test 7475e363c7221847855722e9dd2459cf60088f6b172c0c808dba75f89e
 F test/exprfault2.test c49e84273898969af5dbc4fe6a3f4335f14639799f343590336c9ddf84425965
 F test/expridx1.test b464520126e1d781a7800f8540621c82e8bbc526f089ff8b0b57ffc51feea6b7
 F test/expridx2.test 13348ed208a5d18d9cef7d0a70f8e17948d3c0b5b46508c0573b7e983456165f
-F test/extension01.test 5de412c66276105901c370770175003381fdcb0c4da7054fa43cf4a31e0bfa3a
+F test/extension01.test abdb32528871c4daa445bc5a18e75873cd1257dae05af2703838b744b9913534
 F test/external_reader.test 6fdec43eeca23eb32faad1e95a4d1abc402bc8b3db70df12d6fc08a637f4a2b5
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 37a62e396a68eeede8f8d2ecf23573a80faceb630788d314d0a073d862616717
@@ -2295,8 +2295,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ecd172bb44be40841336cf2ec42f2505c4f98a96eace3e4862e038a3c147770d
-R 15e9f2d7ecdc986aac547ffba1bf6e5b
+P 632943da2d3e58696ec0a7548e18a99a57a3dd51f700f24144377a6d8fdb8c06
+R 975aef2d01879a69ec2ec2c8d7f2e5c6
 U drh
-Z 5f956cdbddb3debc5fab777fad1cc812
+Z c01cc06719b3a1f0fd241b4960900888
 # Remove this line to create a well-formed Fossil manifest.
