@@ -264,11 +264,15 @@ int sqlite3Fts5DropAll(Fts5Config *pConfig){
         pConfig->zDb, pConfig->zName
     );
   }
-  if( rc==SQLITE_OK && pConfig->eContent==FTS5_CONTENT_NORMAL ){
-    rc = fts5ExecPrintf(pConfig->db, 0, 
-        "DROP TABLE IF EXISTS %Q.'%q_content';",
-        pConfig->zDb, pConfig->zName
-    );
+  if( rc==SQLITE_OK ){
+    if( pConfig->eContent==FTS5_CONTENT_NORMAL 
+     || pConfig->bContentlessUnindexed 
+    ){
+      rc = fts5ExecPrintf(pConfig->db, 0, 
+          "DROP TABLE IF EXISTS %Q.'%q_content';",
+          pConfig->zDb, pConfig->zName
+      );
+    }
   }
   return rc;
 }
@@ -297,7 +301,9 @@ int sqlite3Fts5StorageRename(Fts5Storage *pStorage, const char *zName){
   if( pConfig->bColumnsize ){
     fts5StorageRenameOne(pConfig, &rc, "docsize", zName);
   }
-  if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+  if( pConfig->eContent==FTS5_CONTENT_NORMAL
+   || pConfig->bContentlessUnindexed 
+  ){
     fts5StorageRenameOne(pConfig, &rc, "content", zName);
   }
   return rc;
