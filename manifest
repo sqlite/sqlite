@@ -1,5 +1,5 @@
-C If\sa\svirtual\stable\sis\screated\swithin\sa\sSAVEPOINT,\sit\sneeds\sto\sbe\sundo\sby\nthe\scorresponding\sROLLBACK\sTO.\s\sThis\sresolves\san\sissue\sgoing\sback\sto\nbefore\sversion\s3.7.8\scirca\s2011.\n[bugs:/info/2026-10-20T20:37:14Z|Bug\s2026-10-20T20:37:14Z]
-D 2026-10-21T00:34:39.347
+C Test\scases\sadded
+D 2026-10-21T10:27:51.568
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -240,7 +240,7 @@ F ext/fts5/test/fts5rank.test 47c1e8e5d84754ff18e012fdd629776088b5a15de41bdd2495
 F ext/fts5/test/fts5rebuild.test dc09779fbbe151ab68206a0931c10a611912a7a12c7a85d71c5e48453f2375a5
 F ext/fts5/test/fts5restart.test 9af2084b8e065130037b95f05f3f220bb7973903a7701e2c5fb916dff7cf80c5
 F ext/fts5/test/fts5rowid.test 8632829fec04996832a4cfb4f0bd89721ba65b7e398c1731741bdb63f070e1a3
-F ext/fts5/test/fts5savepoint.test 1447758d7900afe903cef08b4524c5331fb60c1126ae6fba7f4d8704268013c5
+F ext/fts5/test/fts5savepoint.test aa78833311944b10e68d2f8781ba6776565b590ca8a347c51eb059283490b671
 F ext/fts5/test/fts5secure.test a02f771742fb2b1b9bdcb4bf523bcf2d0aa1ff597831d40fe3e72aaa6d0ec40f
 F ext/fts5/test/fts5secure2.test 2e961d7eef939f294c56b5d895cac7f1c3a60b934ee2cfd5e5e620bdf1ba6bbc
 F ext/fts5/test/fts5secure3.test 6d066828d225b0dbe5db818d4d6165df7bb70210e68a577e858e8762400d5a23
@@ -501,7 +501,7 @@ F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b
 F ext/rtree/geopoly.c 5d8bdbd239c806bd71de10b4aacd351309550719bb2776f80239ddb962b175d7
 F ext/rtree/rtree.c b8b0da37575926570672d163b8ce6f4556e51cdcd0ce072d0e70a0711b57258a
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
-F ext/rtree/rtree1.test c41b234b5267bdf6244b6d6ed9c3f083fe20a1f6f13ec089c124f585001a61e1
+F ext/rtree/rtree1.test fadfec5fdcbee27d36bc91880af05cf56cc5386bd801043557a2392f64526f79
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
 F ext/rtree/rtree3.test 272594f88c344e973864008bbe4c71fd3a41a264c097d568593ee7886d83d409
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
@@ -1219,7 +1219,7 @@ F test/fptest01.sql 3d84f10bb1cc220b59207354c887d720289903adeb9972a29d6bfcb3fec0
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts3.test 672a040ea57036fb4b6fdc09027c18d7d24ab654
 F test/fts3_common.tcl dffad248f9ce090800e272017d2898005c28ee6314fc1dd5550643a02666907a
-F test/fts3aa.test 814d60a1ba30b4a71d8f9306a6564bc7b636dd6efacd2ad80306f9b23ef3ebee
+F test/fts3aa.test fc13b8b81c439924d6d0b01b09af6897b9195cb0f3b97ae48293e1c1c0a877ef
 F test/fts3ab.test 7f6cf260ae80dda064023df8e8e503e9a412b91f
 F test/fts3ac.test 636ed7486043055d4f126a0e385f2d5a82ebbf63
 F test/fts3ad.test e40570cb6f74f059129ad48bcef3d7cbc20dda49
@@ -2295,8 +2295,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P aa36cfe5b0f944752ace7986b2bff5dcb597fc0d456da781ed5b55e47ecb3d3c
-R 686e585c1a8d34411263c476c23f8752
+P 33aeb419d594cd131124cd228dbbb4da246a531edea40009d95d6b2b376bd76b
+R 6bef2e92840e565434c6eeb23009ac59
 U drh
-Z 323d1b306391ad0ecb30d3bab159b301
+Z fb7079c33a9b39d3e21e0c35c54c9caa
 # Remove this line to create a well-formed Fossil manifest.
