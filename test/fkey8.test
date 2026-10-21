@@ -506,4 +506,36 @@ do_eqp_test 10.2 {
   `--SEARCH c1 USING COVERING INDEX c1k (k=?)
 }
 
+#-------------------------------------------------------------------------
+# The extra IN term used to drive an index lookup on the child key is
+# only generated if there is a suitable index on the child key. In
+# this test the IN term, if present, would use an ephemeral table. So
+# check for an OP_OpenEphemeral in the program that implements the
+# no-action foreign key checks.
+#
+proc has_ephemeral {sql} {
+  expr {[lsearch [db eval "EXPLAIN $sql" ] OpenEphemeral]>=0}
+}
+reset_db
+do_execsql_test 11.0 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE parent(id INTEGER PRIMARY KEY, code TEXT UNIQUE);
+  CREATE TABLE c1(id INTEGER PRIMARY KEY, k REFERENCES parent(code));
+}
+do_test 11.1 { has_ephemeral {DELETE FROM parent WHERE id=1} } 0
+
+# An index with the wrong collation sequence is not suitable.
+do_execsql_test 11.2 { CREATE INDEX c1k1 ON c1(k COLLATE nocase) }
+do_test 11.3 { has_ephemeral {DELETE FROM parent WHERE id=1} } 0
+
+# Nor is a partial index, or one on which k is not the left-most column.
+do_execsql_test 11.4 {
+  CREATE INDEX c1k2 ON c1(k) WHERE id>10;
+  CREATE INDEX c1k3 ON c1(id, k);
+}
+do_test 11.5 { has_ephemeral {DELETE FROM parent WHERE id=1} } 0
+
+do_execsql_test 11.6 { CREATE INDEX c1k4 ON c1(k) }
+do_test 11.7 { has_ephemeral {DELETE FROM parent WHERE id=1} } 1
+
 finish_test

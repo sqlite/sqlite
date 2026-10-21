@@ -543,6 +543,29 @@ static int fkUsesLhsAffinity(Table *p1, int iCol1, Table *p2, int iCol2){
   return (aff1==aff2 || aff1==SQLITE_AFF_BLOB);
 }
 
+#ifndef SQLITE_OMIT_CAST
+/*
+** Return non-zero if a lookup on column iCol of table pTab, using collation
+** sequence zColl, can be done using either the rowid or an index. That is,
+** if iCol is the INTEGER PRIMARY KEY of pTab, or if pTab has an index
+** whose left-most column is iCol and whose collation sequence for that
+** column is zColl. Return zero otherwise.
+*/
+static int fkChildKeyIsIndexed(Table *pTab, int iCol, const char *zColl){
+  Index *pIdx;
+  if( iCol==pTab->iPKey ) return 1;
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    if( pIdx->aiColumn[0]==iCol
+     && pIdx->pPartIdxWhere==0
+     && sqlite3StrICmp(pIdx->azColl[0], zColl)==0
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+#endif
+
 /*
 ** Return an expression equivalent to (pLeft = pRight), where pLeft is a
 ** parent key value and pRight is an unresolved reference to column
@@ -554,7 +577,7 @@ static int fkUsesLhsAffinity(Table *p1, int iCol1, Table *p2, int iCol2){
 ** If the simple (pLeft = pRight) does not naturally use the affinity of
 ** the parent column, the comparison is coded as (pLeft = +pRight). But
 ** the unary + prevents any index on the child column from being used.
-** So in that case an extra term is added:
+** So in that case, if the child column is indexed, an extra term is added:
 **
 **     (pLeft = +pRight) AND
 **     (pRight COLLATE <coll> IN (+pLeft, +CAST(pLeft AS NUMERIC)))
@@ -590,27 +613,34 @@ static Expr *fkParentChildEq(
 
 #ifndef SQLITE_OMIT_CAST
   {
-    static const Token tNumeric = { "NUMERIC", 7 };
     const char *zColl = sqlite3ColumnColl(&pTab->aCol[iCol]);
-    Expr *pCast;
-    ExprList *pList;
+    if( zColl==0 ) zColl = sqlite3StrBINARY;
 
-    pCast = sqlite3ExprAlloc(db, TK_CAST, &tNumeric, 0);
-    sqlite3ExprAttachSubtrees(db, pCast, sqlite3ExprDup(db, pLeft, 0), 0);
-    pList = sqlite3ExprListAppend(pParse, 0,
-        sqlite3PExpr(pParse, TK_UPLUS, sqlite3ExprDup(db, pLeft, 0), 0)
-    );
-    pList = sqlite3ExprListAppend(pParse, pList,
-        sqlite3PExpr(pParse, TK_UPLUS, pCast, 0)
-    );
-    pIn = sqlite3PExpr(pParse, TK_IN, sqlite3ExprAddCollateString(pParse,
-          sqlite3ExprDup(db, pRight, 0), zColl ? zColl : sqlite3StrBINARY
-    ), 0);
-    if( pIn ){
-      pIn->x.pList = pList;
-      sqlite3ExprSetHeightAndFlags(pParse, pIn);
-    }else{
-      sqlite3ExprListDelete(db, pList);
+    /* The IN term is only useful if it can drive a lookup on the child
+    ** table. Omit it otherwise, so that a full scan of the child table
+    ** does not have to evaluate it for every row.  */
+    if( fkChildKeyIsIndexed(pChild, iChildCol, zColl) ){
+      static const Token tNumeric = { "NUMERIC", 7 };
+      Expr *pCast;
+      ExprList *pList;
+
+      pCast = sqlite3ExprAlloc(db, TK_CAST, &tNumeric, 0);
+      sqlite3ExprAttachSubtrees(db, pCast, sqlite3ExprDup(db, pLeft, 0), 0);
+      pList = sqlite3ExprListAppend(pParse, 0,
+          sqlite3PExpr(pParse, TK_UPLUS, sqlite3ExprDup(db, pLeft, 0), 0)
+      );
+      pList = sqlite3ExprListAppend(pParse, pList,
+          sqlite3PExpr(pParse, TK_UPLUS, pCast, 0)
+      );
+      pIn = sqlite3PExpr(pParse, TK_IN, sqlite3ExprAddCollateString(pParse,
+            sqlite3ExprDup(db, pRight, 0), zColl
+      ), 0);
+      if( pIn ){
+        pIn->x.pList = pList;
+        sqlite3ExprSetHeightAndFlags(pParse, pIn);
+      }else{
+        sqlite3ExprListDelete(db, pList);
+      }
     }
   }
 #endif

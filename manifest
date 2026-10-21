@@ -1,5 +1,5 @@
-C An\sattempt\sto\sget\sthe\snew\sforeign\skey\scode\sto\suse\sindexes\son\stype\smismatch\nbetween\sparent\sand\schild.
-D 2026-10-21T12:24:59.237
+C The\sIN\spre-filter\sis\snow\sonly\sadded\swhen\sthe\schild\skey\scan\sactually\suse\san\nindex\slookup.
+D 2026-10-21T12:57:50.836
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -760,7 +760,7 @@ F src/dbstat.c 34d4e825fbf763640ce3dbc56910ab080495ef4a6efb48b2b1852a43d43763fc
 F src/delete.c f3f07c1fb6ac87fac2425d48fd40ecb2f24a4495a9966f5a939668d3576916c8
 F src/expr.c 7ff00869afa1d3f11ea5f232c78e7b73a1a33bc1cb29c0af063b768658495234
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c 9b8c8c3033b69fc78b6e94b339ff3b0190fa37f5615d8dfeaaf1fea53ea2471a
+F src/fkey.c 11b4d92eb90efa64bbca4d647178bb622db5c1d99e13177f7596f76f0ff05cde
 F src/func.c 8c500a079a52d789613b173ba1894b143f8e38009bab224179bc89d3493201a0
 F src/global.c 7eea537ac0c113ac55cb2dd4d8fc2a6a91ae478be34231b4efaffc46817fee85
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
@@ -1206,7 +1206,7 @@ F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 6727452e163a427147e84e739da18713da553d79f9783559b04fdcd36d5c7421
 F test/fkey6.test 668a7299e75899b0a3342c36df655be57f76a05aca3544bda939a6e676e2f000
 F test/fkey7.test 64fb28da03da5dfe3cdef5967aa7e832c2507bf7fb8f0780cacbca1f2338d031
-F test/fkey8.test e73c52882f0b655ce4e18b131b0117145322c8febfce053a79c3d53638312af8
+F test/fkey8.test ca92dd0485000165b16c5a3b544e5659e9782231de392fa9ae3795758d2ca61c
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
 F test/fork-test.c 9ac2e6423a1d38df3d6be0e8ac15608b545de21e2b19d9d876254c5931b63edb
@@ -2295,11 +2295,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P feb6d3a3016d890fb1a8ca2a1752949b8adc0c06debb6ca305cacafc6b6edd10
-R 6e24683d1e21918b10baf0ff41e12aa6
-T *branch * experimental-fk-opt
-T *sym-experimental-fk-opt *
-T -sym-trunk *
+P c0523245e2ba3339d8b21cf26e164d05ec252f3d882eadacd4c510a224ccbdba
+R ffff4b80a9f4062f1ed42e65c5e971bc
 U drh
-Z c7f84733c0d25278056acad5a8fa2792
+Z ad3bf957cb2feecef22d768f06c0920d
 # Remove this line to create a well-formed Fossil manifest.
