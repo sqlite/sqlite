@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\s(parent_key\s=\schild_key)\scomparisons\sperformed\sas\spart\sof\sforeign\skey\sprocessing\sare\sdone\susing\sthe\saffinity\sof\sthe\sparent\skey.\sReport\s[bugs:/info/2026-10-20T02:56:10Z\s|\s2026-10-20T02:56:10Z].
-D 2026-10-21T11:52:56.928
+C Fix\sthe\sfsdir()\stable-valued\sfunction\sto\sbetter\scope\swith\nunreasonable\sLEVEL\sconstraints.\n[bugs:/info/2026-10-21T10:49:41Z|Bug\s2026-10-21T10:49:41Z]
+D 2026-10-21T14:28:22.100
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -379,7 +379,7 @@ F ext/misc/decimal.c 68e987966e4772efdb8df03e2bf253d02bae3254af29fd4a99d34fc6e6f
 F ext/misc/diskused.c 444139c01398df6f73e8a021c91e24d97d7914f5c1b49f55dd503abbca347c6e
 F ext/misc/eval.c d4ea2d9898fbe4d30d38ff675ee51958d3bb0601a145bade56dee8b8f438cc5b
 F ext/misc/explain.c 04c9270fd8cf93a9bceb12d2f5f67e3f09a4e58b3e0efe14d24531444d2fffdf
-F ext/misc/fileio.c 6bf2543ae190401f5fda74661c20387a450071eb5d17bfc05d3b45416bbedcb7
+F ext/misc/fileio.c 04a2ba5c4a1dc985315c302d7123dda0209860a5bfe4a5541d0faeac137196e8
 F ext/misc/fossildelta.c 0af6a5ef3db6bba299271c29b604489e4a5d9e75395c6b83460405a9ccf05c2a
 F ext/misc/fuzzer.c 32cef9a29864a1bc1329ccb6dfa613f197bb83491a7612c2ca2c83ee26cd8f14
 F ext/misc/ieee754.c 2901d08a586d00a1d3c0fd89e03c57ee9e2b5f013b0daab9e49c7a48a9d5946b
@@ -2198,7 +2198,7 @@ F test/zeroblob.test 7b74cefc7b281dfa2b07cd237987fbe94b4a2037a7771e9e83f2d5f608b
 F test/zeroblobfault.test 861d8191a0d944dfebb3cb4d2c5b4e46a5a119eaec5a63dd996c2389f8063441
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
 F test/zipfile.test 88b8b8babbe24dd3c1e58e8f96685429029c283fbf54b6df07b145b66032de9a
-F test/zipfile2.test b43ff7de2ae9453b3d441ad62e357c67927dad9a5cdbea014596f46ff14c066a
+F test/zipfile2.test e4aaa5d3eea4d48f54f168d8739f2b8dc222a935b73eb8882efc4f861ffe354e
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
 F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e04534bbf
@@ -2295,8 +2295,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P decd49e6565bd5105e3b5cbe1067c8992582076a7c4e12cb6f3d089f38aba524
-R a84e136060b7946f27e7ae696367e34b
-U dan
-Z 340908e2de6a8df53446363a056624d5
+P feb6d3a3016d890fb1a8ca2a1752949b8adc0c06debb6ca305cacafc6b6edd10
+R 854fb1ab222ea4ef60886c214072ce9e
+U drh
+Z 937fcd40605458ba83a093198ece3d68
 # Remove this line to create a well-formed Fossil manifest.

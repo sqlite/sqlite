@@ -373,4 +373,81 @@ if {[catch { load_static_extension db fileio }]==0} {
   } {65535}
 }
 
+#-------------------------------------------------------------------------
+# Bug 7faad02e21dced4d. The LEVEL constraint on fsdir() must give the
+# same results as if it were not passed to xBestIndex, even for values
+# that are out of range, negative, NULL or non-integer.
+#
+if {[catch { load_static_extension db fileio }]==0} {
+  forcedelete test_fsdir
+  file mkdir test_fsdir/a/b/c
+  foreach f {test_fsdir/x test_fsdir/a/y test_fsdir/a/b/z test_fsdir/a/b/c/w} {
+    close [open $f w]
+  }
+
+  set i 0
+  foreach {w res} {
+    {level<=2147483647}  8
+    {level<=4294967296}  8
+    {level<=4294967297}  8
+    {level<0}            0
+    {level<=-1}          0
+    {level<=0}           0
+    {level<1}            0
+    {level<=1}           1
+    {level<2}            1
+    {level<=2}           3
+    {level<2.5}          3
+    {level<=2.5}         3
+    {level<=NULL}        0
+    {level<NULL}         0
+    {level=NULL}         0
+    {level<'x'}          8
+    {level<x'00'}        8
+    {level=3}            2
+    {level=3.0}          2
+    {level=3.5}          0
+    {level=4294967299}   0
+  } {
+    incr i
+    do_execsql_test 10.$i.1 "
+      SELECT count(*) FROM fsdir('test_fsdir') WHERE $w
+    " $res
+    do_execsql_test 10.$i.2 "
+      SELECT count(*) FROM fsdir('test_fsdir') WHERE +$w
+    " $res
+  }
+
+  # Check that the LEVEL constraint still limits the depth of the
+  # search. Make directory test_fsdir/a/b/c (itself at level 4) unreadable.
+  # Then queries that need the entries within it (level 5) fail, and
+  # those that do not succeed.
+  #
+  if {$::tcl_platform(platform)=="unix"} {
+    file attributes test_fsdir/a/b/c -permissions 0000
+    if {[catch {glob -nocomplain test_fsdir/a/b/c/*}]} {
+      do_execsql_test 10.100 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<=4
+      } {7}
+      do_execsql_test 10.101 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<5
+      } {7}
+      do_execsql_test 10.102 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<4.5
+      } {7}
+      do_execsql_test 10.103 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level=4
+      } {2}
+      do_catchsql_test 10.104 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<5.5
+      } {1 {cannot read directory: test_fsdir/a/b/c}}
+      do_catchsql_test 10.105 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<=5
+      } {1 {cannot read directory: test_fsdir/a/b/c}}
+    }
+    file attributes test_fsdir/a/b/c -permissions 0755
+  }
+  forcedelete test_fsdir
+}
+
 finish_test

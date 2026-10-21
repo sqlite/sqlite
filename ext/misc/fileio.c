@@ -962,13 +962,38 @@ static int fsdirFilter(
     assert( argc>i );
     pCur->zBase = (const char*)sqlite3_value_text(argv[i++]);
   }
+  pCur->mxLvl = 1000000000;
   if( (idxNum & 0x0c)!=0 ){
+    /* The LEVEL constraint is only used to limit the depth of the
+    ** search. SQLite still checks the constraint against every row, so
+    ** mxLvl may admit rows that do not match, but must never exclude
+    ** a row that does. Only entries with level<mxLvl are visited. */
+    sqlite3_value *pMx;
     assert( argc>i );
-    pCur->mxLvl = sqlite3_value_int(argv[i++]);
-    if( idxNum & 0x08 ) pCur->mxLvl++;
-    if( pCur->mxLvl<=0 ) pCur->mxLvl = 1000000000;
-  }else{
-    pCur->mxLvl = 1000000000;
+    pMx = argv[i++];
+    switch( sqlite3_value_type(pMx) ){
+      case SQLITE_NULL: {
+        /* No row can match a NULL constraint */
+        pCur->mxLvl = 1;
+        break;
+      }
+      case SQLITE_INTEGER:
+      case SQLITE_FLOAT: {
+        double r = sqlite3_value_double(pMx);
+        if( r<1.0 ){
+          pCur->mxLvl = 1;
+        }else if( r<1.0e9 ){
+          int iMx = (int)r;
+          if( (idxNum & 0x08)!=0 || (double)iMx<r ) iMx++;
+          pCur->mxLvl = iMx;
+        }
+        break;
+      }
+      default: {
+        /* TEXT or BLOB. Do not limit the search. */
+        break;
+      }
+    }
   }
   if( pCur->zBase ){
     pCur->nBase = (int)strlen(pCur->zBase)+1;
@@ -1001,7 +1026,11 @@ static int fsdirFilter(
 **
 **  0x01  The path value is supplied by argv[0]
 **  0x02  dir is in argv[1]
-**  0x04  maxdepth is in argv[1] or [2]
+**  0x04  LEVEL< bound is in argv[1] or [2]
+**  0x08  LEVEL<= or LEVEL= bound is in argv[1] or [2]
+**
+** The LEVEL constraint is never omitted. It is used only to limit the
+** depth of the directory search, and SQLite rechecks it for each row.
 */
 static int fsdirBestIndex(
   sqlite3_vtab *tab,
@@ -1012,7 +1041,6 @@ static int fsdirBestIndex(
   int idxDir = -1;       /* Index in pIdxInfo->aConstraint of DIR= */
   int idxLevel = -1;     /* Index in pIdxInfo->aConstraint of LEVEL< or <= */
   int idxLevelEQ = 0;    /* 0x08 for LEVEL<= or LEVEL=.  0x04 for LEVEL< */
-  int omitLevel = 0;     /* omit the LEVEL constraint */
   int seenPath = 0;      /* True if an unusable PATH= constraint is seen */
   int seenDir = 0;       /* True if an unusable DIR= constraint is seen */
   const struct sqlite3_index_constraint *pConstraint;
@@ -1044,7 +1072,6 @@ static int fsdirBestIndex(
           if( pConstraint->usable && idxLevel<0 ){
             idxLevel = i;
             idxLevelEQ = 0x08;
-            omitLevel = 0;
           }
           break;
         }
@@ -1057,11 +1084,9 @@ static int fsdirBestIndex(
       if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_LE ){
         idxLevel = i;
         idxLevelEQ = 0x08;
-        omitLevel = 1;
       }else if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT ){
         idxLevel = i;
         idxLevelEQ = 0x04;
-        omitLevel = 1;
       }
     } 
   }
@@ -1088,7 +1113,6 @@ static int fsdirBestIndex(
       pIdxInfo->estimatedCost /= 1.0e4;
     }
     if( idxLevel>=0 ){
-      pIdxInfo->aConstraintUsage[idxLevel].omit = omitLevel;
       pIdxInfo->aConstraintUsage[idxLevel].argvIndex = i++;
       pIdxInfo->idxNum |= idxLevelEQ;
       pIdxInfo->estimatedCost /= 1.0e4;
