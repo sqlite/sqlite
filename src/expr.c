@@ -1171,9 +1171,12 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
     if( (f&(EP_OuterON|EP_InnerON|EP_IsFalse|EP_HasFunc))==EP_IsFalse
      && !IN_RENAME_OBJECT
     ){
+      Expr *p;
       sqlite3ExprDeferredDelete(pParse, pLeft);
       sqlite3ExprDeferredDelete(pParse, pRight);
-      return sqlite3ExprInt32(db, 0);
+      p = sqlite3ExprInt32(db, 0);
+      if( p ) p->op2 = 1;
+      return p;
     }else{
       return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
     }
