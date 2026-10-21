@@ -1806,6 +1806,10 @@ static int rtreeColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
   if( NEVER(p==0) ) return SQLITE_OK;
   if( p->iCell>=NCELL(pNode) ) return SQLITE_ABORT;
   if( i==0 ){
+    /* If this is an UPDATE that does not assign a value to the first
+    ** column, leave it as a "no-change" value. This allows rtreeUpdate()
+    ** to take the new rowid from aData[1] instead. */
+    if( sqlite3_vtab_nochange(ctx) ) return SQLITE_OK;
     sqlite3_result_int64(ctx, nodeGetRowid(pRtree, pNode, p->iCell));
   }else if( i<=pRtree->nDim2 ){
     nodeGetCoord(pRtree, pNode, p->iCell, i-1, &c);
@@ -3192,6 +3196,7 @@ static int rtreeUpdate(
   if( nData>1 ){
     int ii;
     int nn = nData - 4;
+    sqlite3_value *pNewRowid;     /* Value of the new rowid, or NULL */
 
     if( nn > pRtree->nDim2 ) nn = pRtree->nDim2;
     /* Populate the cell.aCoord[] array. The first coordinate is aData[3].
@@ -3226,10 +3231,24 @@ static int rtreeUpdate(
       }
     }
 
+    /* The new rowid is normally the value of the first column, aData[2].
+    ** But SQLite does not treat that column as an alias for the rowid,
+    ** so a new rowid assigned using the name "rowid", "oid" or "_rowid_"
+    ** is passed in aData[1]. Use aData[1] if aData[2] is a "no-change"
+    ** value (an UPDATE that does not assign the first column - see
+    ** rtreeColumn()), or if aData[2] is NULL in an INSERT. */
+    pNewRowid = aData[2];
+    if( sqlite3_value_nochange(pNewRowid)
+     || (sqlite3_value_type(aData[0])==SQLITE_NULL
+         && sqlite3_value_type(pNewRowid)==SQLITE_NULL)
+    ){
+      pNewRowid = aData[1];
+    }
+
     /* If a rowid value was supplied, check if it is already present in 
     ** the table. If so, the constraint has failed. */
-    if( sqlite3_value_type(aData[2])!=SQLITE_NULL ){
-      cell.iRowid = sqlite3_value_int64(aData[2]);
+    if( sqlite3_value_type(pNewRowid)!=SQLITE_NULL ){
+      cell.iRowid = sqlite3_value_int64(pNewRowid);
       if( sqlite3_value_type(aData[0])==SQLITE_NULL
        || sqlite3_value_int64(aData[0])!=cell.iRowid
       ){

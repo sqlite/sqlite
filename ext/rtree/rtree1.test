@@ -886,5 +886,92 @@ do_execsql_test 27.0 {
   SELECT count(*) FROM t1;
 } 1
 
+#-------------------------------------------------------------------------
+# Bug 2026-10-21T05:31:28Z. A new rowid assigned using the names "rowid",
+# "oid" or "_rowid_", instead of the name of the first column, was
+# ignored by UPDATE and INSERT statements.
+#
+foreach {tn mod} {1 rtree 2 rtree_i32} {
+  reset_db
+  do_execsql_test 28.$tn.0 "
+    CREATE VIRTUAL TABLE r USING $mod (id, x1, x2, +aux);
+    INSERT INTO r VALUES (1, 0, 1, 'a'), (2, 2, 3, 'b');
+  "
+
+  do_execsql_test 28.$tn.1 {
+    UPDATE r SET rowid = 9 WHERE id = 2;
+    SELECT changes();
+    SELECT id, CAST(x1 AS INT), CAST(x2 AS INT), aux FROM r ORDER BY id;
+  } {1 1 0 1 a 9 2 3 b}
+
+  do_execsql_test 28.$tn.2 {
+    UPDATE r SET oid = 8, x2 = 7 WHERE id = 1;
+    SELECT id, CAST(x1 AS INT), CAST(x2 AS INT), aux FROM r ORDER BY id;
+  } {8 0 7 a 9 2 3 b}
+
+  do_execsql_test 28.$tn.3 {
+    UPDATE r SET _rowid_ = 6, aux = 'c' WHERE id = 9;
+    SELECT id, CAST(x1 AS INT), CAST(x2 AS INT), aux FROM r ORDER BY id;
+  } {6 2 3 c 8 0 7 a}
+
+  do_execsql_test 28.$tn.4 {
+    INSERT INTO r(rowid, x1, x2, aux) VALUES (5, 4, 5, 'd');
+    SELECT last_insert_rowid();
+    SELECT id, CAST(x1 AS INT), CAST(x2 AS INT), aux FROM r ORDER BY id;
+  } {5 5 4 5 d 6 2 3 c 8 0 7 a}
+
+  # Updates that do not assign the rowid do not move the row.
+  do_execsql_test 28.$tn.5 {
+    UPDATE r SET x2 = 6 WHERE id = 5;
+    UPDATE r SET aux = 'e' WHERE id = 5;
+    SELECT id, CAST(x1 AS INT), CAST(x2 AS INT), aux FROM r ORDER BY id;
+  } {5 4 6 e 6 2 3 c 8 0 7 a}
+
+  # A multi-row UPDATE. This uses the two-pass strategy, so the
+  # "no-change" values are stored in an ephemeral table.
+  do_execsql_test 28.$tn.6 {
+    UPDATE r SET rowid = id + 100;
+    SELECT rowid, id, CAST(x1 AS INT), CAST(x2 AS INT), aux FROM r ORDER BY id;
+  } {105 105 4 6 e 106 106 2 3 c 108 108 0 7 a}
+
+  # A new rowid that is already in use.
+  do_catchsql_test 28.$tn.7 {
+    UPDATE r SET rowid = 106 WHERE id = 105;
+  } {1 {UNIQUE constraint failed: r.id}}
+  do_catchsql_test 28.$tn.8 {
+    INSERT INTO r(rowid, x1, x2) VALUES (106, 0, 0);
+  } {1 {UNIQUE constraint failed: r.id}}
+  do_execsql_test 28.$tn.9 {
+    UPDATE OR REPLACE r SET rowid = 106 WHERE id = 105;
+    SELECT id, CAST(x1 AS INT), CAST(x2 AS INT), aux FROM r ORDER BY id;
+  } {106 4 6 e 108 0 7 a}
+  do_execsql_test 28.$tn.10 {
+    INSERT OR REPLACE INTO r(rowid, x1, x2, aux) VALUES (108, 1, 2, 'f');
+    SELECT id, CAST(x1 AS INT), CAST(x2 AS INT), aux FROM r ORDER BY id;
+  } {106 4 6 e 108 1 2 f}
+
+  # UPDATE ... FROM
+  do_execsql_test 28.$tn.11 {
+    CREATE TABLE m(o, n);
+    INSERT INTO m VALUES(106, 16), (108, 18);
+    UPDATE r SET rowid = m.n FROM m WHERE m.o = r.id;
+    SELECT id, CAST(x1 AS INT), CAST(x2 AS INT), aux FROM r ORDER BY id;
+  } {16 4 6 e 18 1 2 f}
+
+  # Assigning the first column still works. If both the first column
+  # and the rowid are assigned, the value of the first column is used.
+  do_execsql_test 28.$tn.12 {
+    UPDATE r SET id = 26 WHERE id = 16;
+    UPDATE r SET id = 28, rowid = 38 WHERE id = 18;
+    INSERT INTO r(id, x1, x2) VALUES(30, 0, 0);
+    INSERT INTO r(rowid, id, x1, x2) VALUES(41, 31, 0, 0);
+    SELECT id FROM r ORDER BY id;
+  } {26 28 30 31}
+
+  do_execsql_test 28.$tn.13 {
+    SELECT rtreecheck('r');
+  } {ok}
+}
+
 
 finish_test
