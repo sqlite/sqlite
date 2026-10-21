@@ -2756,7 +2756,7 @@ static void fts5SegIterSeekInit(
       if( flags & FTS5INDEX_QUERY_DESC ){
         pIter->flags |= FTS5_SEGITER_REVERSE;
       }
-      if( bDlidx ){
+      if( bDlidx && iPg==pIter->iTermLeafPgno ){
         fts5SegIterLoadDlidx(p, pIter);
       }
       if( flags & FTS5INDEX_QUERY_DESC ){

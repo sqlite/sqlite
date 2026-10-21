@@ -99,6 +99,22 @@ foreach_detail_mode $testprefix {
     3 {0.0.0 0.0.1 0.0.2}
     4 {0.0.0 0.0.1 0.0.2 0.1.0}
   }
+
+  reset_db
+  do_execsql_test 2.0 {
+    CREATE VIRTUAL TABLE f USING fts5(a, tokendata=1);
+    INSERT INTO f(f, rank) VALUES('pgsz', 64);
+    WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100)
+      INSERT INTO f(rowid, a) SELECT i, iif(i<100, 'u0', 'v') FROM s;
+  }
+
+  do_execsql_test 2.1 {
+    SELECT count(*) FROM f('u1');
+  } {0}
+
+  do_execsql_test 2.2 {
+    PRAGMA integrity_check
+  } {ok}
 }
 
 finish_test
