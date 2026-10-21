@@ -488,4 +488,28 @@ foreach {tn iCol} {
   } {1 {column index out of range}}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 16.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b UNINDEXED, detail=none);
+  INSERT INTO t1 VALUES ('one two zeta three four', 'x y zeta');
+}
+
+do_execsql_test 16.1 {
+  SELECT snippet(t1, -1, '[', ']', '..', 3) FROM t1('zeta');
+} {{one two [zeta]..}}
+
+do_execsql_test 16.2 {
+  SELECT highlight(t1, 1, '[', ']') FROM t1('zeta');
+} {{x y zeta}}
+
+do_execsql_test 16.3 {
+  SELECT highlight(t1, 0, '[', ']') FROM t1('zeta');
+} {{one two [zeta] three four}}
+
+do_execsql_test 16.4 {
+  SELECT highlight(t1, -1, '[', ']') FROM t1('zeta');
+} {{}}
+
 finish_test

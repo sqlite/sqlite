@@ -2338,15 +2338,17 @@ static int fts5CsrPoslist(
         rc = fts5SeekCursor(pCsr, 0);
       }
       for(i=0; i<pConfig->nCol && rc==SQLITE_OK; i++){
-        const char *z = 0;
-        int n = 0; 
-        rc = fts5TextFromStmt(pConfig, pCsr->pStmt, i, &z, &n);
-        if( rc==SQLITE_OK ){
-          rc = sqlite3Fts5ExprPopulatePoslists(
-              pConfig, pCsr->pExpr, aPopulator, i, z, n
-          );
+        if( pConfig->abUnindexed[i]==0 ){
+          const char *z = 0;
+          int n = 0; 
+          rc = fts5TextFromStmt(pConfig, pCsr->pStmt, i, &z, &n);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3Fts5ExprPopulatePoslists(
+                pConfig, pCsr->pExpr, aPopulator, i, z, n
+            );
+          }
+          sqlite3Fts5ClearLocale(pConfig);
         }
-        sqlite3Fts5ClearLocale(pConfig);
       }
       sqlite3_free(aPopulator);
 
