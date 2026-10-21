@@ -530,7 +530,7 @@ static int fkUsesLhsAffinity(Table *p1, int iCol1, Table *p2, int iCol2){
 
   /* If either side has a numeric affinity, then the comparison uses numeric
   ** affinity. So the affinity matches if aff1 is numeric, but not if aff1
-  ** is not numeric but aff 2 is.  */
+  ** is not numeric but aff2 is.  */
   if( sqlite3IsNumericAffinity(aff1) ) return 1;
   if( sqlite3IsNumericAffinity(aff2) ) return 0;
 
@@ -541,6 +541,86 @@ static int fkUsesLhsAffinity(Table *p1, int iCol1, Table *p2, int iCol2){
   ** the other BLOB. In the second case the comparison will be done with
   ** BLOB affinity, which does not match if aff1 is TEXT.  */
   return (aff1==aff2 || aff1==SQLITE_AFF_BLOB);
+}
+
+/*
+** Return an expression equivalent to (pLeft = pRight), where pLeft is a
+** parent key value and pRight is an unresolved reference to column
+** iChildCol of child table pChild. The comparison uses the affinity and
+** collation sequence of column iCol of parent table pTab. pLeft must
+** already carry that affinity and collation sequence. Ownership of
+** both pLeft and pRight passes to this routine.
+**
+** If the simple (pLeft = pRight) does not naturally use the affinity of
+** the parent column, the comparison is coded as (pLeft = +pRight). But
+** the unary + prevents any index on the child column from being used.
+** So in that case an extra term is added:
+**
+**     (pLeft = +pRight) AND
+**     (pRight COLLATE <coll> IN (+pLeft, +CAST(pLeft AS NUMERIC)))
+**
+** Each child value that matches pLeft under the affinity of the parent
+** column is either equal to pLeft itself or numerically equal to
+** CAST(pLeft AS NUMERIC). So the IN term matches a superset of the
+** child rows that the exact (pLeft = +pRight) term does, and since it
+** compares using the affinity of the child column, it may be used with
+** an index on the child column. The unary + operators on the RHS of the
+** IN ensure that no affinity other than that of the child column is
+** applied.
+*/
+static Expr *fkParentChildEq(
+  Parse *pParse,            /* Parsing context */
+  Expr *pLeft,              /* Parent key value */
+  Expr *pRight,             /* Unresolved reference to child key column */
+  Table *pTab,              /* Parent table */
+  int iCol,                 /* Parent key column, or <0 for rowid */
+  Table *pChild,            /* Child table */
+  int iChildCol             /* Child key column */
+){
+  sqlite3 *db = pParse->db;
+  Expr *pEq;
+#ifndef SQLITE_OMIT_CAST
+  Expr *pIn = 0;
+#endif
+
+  if( fkUsesLhsAffinity(pTab, iCol, pChild, iChildCol) ){
+    return sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
+  }
+  assert( iCol>=0 );
+
+#ifndef SQLITE_OMIT_CAST
+  {
+    static const Token tNumeric = { "NUMERIC", 7 };
+    const char *zColl = sqlite3ColumnColl(&pTab->aCol[iCol]);
+    Expr *pCast;
+    ExprList *pList;
+
+    pCast = sqlite3ExprAlloc(db, TK_CAST, &tNumeric, 0);
+    sqlite3ExprAttachSubtrees(db, pCast, sqlite3ExprDup(db, pLeft, 0), 0);
+    pList = sqlite3ExprListAppend(pParse, 0,
+        sqlite3PExpr(pParse, TK_UPLUS, sqlite3ExprDup(db, pLeft, 0), 0)
+    );
+    pList = sqlite3ExprListAppend(pParse, pList,
+        sqlite3PExpr(pParse, TK_UPLUS, pCast, 0)
+    );
+    pIn = sqlite3PExpr(pParse, TK_IN, sqlite3ExprAddCollateString(pParse,
+          sqlite3ExprDup(db, pRight, 0), zColl ? zColl : sqlite3StrBINARY
+    ), 0);
+    if( pIn ){
+      pIn->x.pList = pList;
+      sqlite3ExprSetHeightAndFlags(pParse, pIn);
+    }else{
+      sqlite3ExprListDelete(db, pList);
+    }
+  }
+#endif
+
+  pRight = sqlite3PExpr(pParse, TK_UPLUS, pRight, 0);
+  pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
+#ifndef SQLITE_OMIT_CAST
+  pEq = sqlite3ExprAnd(pParse, pEq, pIn);
+#endif
+  return pEq;
 }
 
 /*
@@ -612,7 +692,7 @@ static void fkScanChildren(
     Expr *pRight;                 /* Column ref to child table */
     Expr *pEq;                    /* Expression (pLeft = pRight) */
     i16 iCol;                     /* Index of column in parent table */
-    i16 iCol2;                    /* Index of column in child table */ 
+    i16 iCol2;                    /* Index of column in child table */
     const char *zCol;             /* Name of column in child table */
 
     iCol = pIdx ? pIdx->aiColumn[i] : -1;
@@ -621,12 +701,8 @@ static void fkScanChildren(
     assert( iCol2>=0 );
     zCol = pFKey->pFrom->aCol[iCol2].zCnName;
     pRight = sqlite3Expr(db, TK_ID, zCol);
-    if( 0==fkUsesLhsAffinity(pTab, iCol, pFKey->pFrom, iCol2) ){
-      /* In cases where the expression does not naturally use the affinity
-      ** of the parent column, add a unary + to the child column. */
-      pRight = sqlite3PExpr(pParse, TK_UPLUS, pRight, 0);
-    }
-    pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
+    pEq = fkParentChildEq(pParse, pLeft, pRight, pTab, iCol,
+                          pFKey->pFrom, iCol2);
     pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
   }
 
@@ -1286,9 +1362,9 @@ static Trigger *fkActionTrigger(
       Token tToCol;               /* Name of column in parent table */
       int iFromCol;               /* Idx of column in child table */
       int iToCol;                 /* Idx of column in parent table */
-      Expr *pEq;                  /* OLD.tToCol = zFromCol */
+      Expr *pEq;                  /* OLD.tToCol = tFromCol */
       Expr *pLeft;                /* OLD.tToCol */
-      Expr *pRight;               /* zFromCol */
+      Expr *pRight;               /* tFromCol */
 
       iFromCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
       assert( iFromCol>=0 );
@@ -1304,20 +1380,16 @@ static Trigger *fkActionTrigger(
       );
       pRight = sqlite3ExprAlloc(db, TK_ID, &tFromCol, 0);
 
-      /* OLD.* columns do not normally have an affinity. So set the affinity 
-      ** of OLD.zToCol (the parent key) explicitly here. Also, in cases where
-      ** (parent_key = child_key) does not naturally use the affinity of the
-      ** parent column, add a unary + to the child column. */
+      /* OLD.* columns do not normally have an affinity. So set the affinity
+      ** of OLD.tToCol (the parent key) explicitly here. */
       if( pLeft ) pLeft->affExpr = pTab->aCol[iToCol].affinity;
-      if( 0==fkUsesLhsAffinity(pTab, iToCol, pFKey->pFrom, iFromCol) ){
-        pRight = sqlite3PExpr(pParse, TK_UPLUS, pRight, 0);
-      }
 
-      /* Create the expression "OLD.zToCol = zFromCol". It is important
-      ** that the "OLD.zToCol" term is on the LHS of the = operator, so
+      /* Create the expression "OLD.tToCol = tFromCol". It is important
+      ** that the "OLD.tToCol" term is on the LHS of the = operator, so
       ** that the collation sequence associated with the parent table is
       ** used for the comparison. */
-      pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
+      pEq = fkParentChildEq(pParse, pLeft, pRight, pTab, iToCol,
+                            pFKey->pFrom, iFromCol);
       pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
 
       /* For ON UPDATE, construct the next term of the WHEN clause.
