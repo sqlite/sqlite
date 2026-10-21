@@ -598,7 +598,8 @@ static Expr *fkParentChildEq(
   Table *pTab,              /* Parent table */
   int iCol,                 /* Parent key column, or <0 for rowid */
   Table *pChild,            /* Child table */
-  int iChildCol             /* Child key column */
+  int iChildCol,            /* Child key column */
+  int bComposite            /* This is part of a composite FK */
 ){
   sqlite3 *db = pParse->db;
   Expr *pEq;
@@ -619,7 +620,7 @@ static Expr *fkParentChildEq(
     /* The IN term is only useful if it can drive a lookup on the child
     ** table. Omit it otherwise, so that a full scan of the child table
     ** does not have to evaluate it for every row.  */
-    if( fkChildKeyIsIndexed(pChild, iChildCol, zColl) ){
+    if( bComposite || fkChildKeyIsIndexed(pChild, iChildCol, zColl) ){
       static const Token tNumeric = { "NUMERIC", 7 };
       Expr *pCast;
       ExprList *pList;
@@ -732,7 +733,7 @@ static void fkScanChildren(
     zCol = pFKey->pFrom->aCol[iCol2].zCnName;
     pRight = sqlite3Expr(db, TK_ID, zCol);
     pEq = fkParentChildEq(pParse, pLeft, pRight, pTab, iCol,
-                          pFKey->pFrom, iCol2);
+                          pFKey->pFrom, iCol2, pFKey->nCol>0);
     pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
   }
 
@@ -1419,7 +1420,7 @@ static Trigger *fkActionTrigger(
       ** that the collation sequence associated with the parent table is
       ** used for the comparison. */
       pEq = fkParentChildEq(pParse, pLeft, pRight, pTab, iToCol,
-                            pFKey->pFrom, iFromCol);
+                            pFKey->pFrom, iFromCol, pFKey->nCol>1);
       pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
 
       /* For ON UPDATE, construct the next term of the WHEN clause.
