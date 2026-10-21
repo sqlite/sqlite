@@ -317,4 +317,60 @@ if {[catch { load_static_extension db fileio }]==0} {
   } {1 {failed to read LFH at offset 0}}
 }
 
+# The EOCD record stores the number of entries as a 16-bit value, and
+# zipfile does not support zip64. Check that attempts to create an
+# archive with more than 65535 entries fail with an error, instead of
+# writing a wrapped entry count that causes later writes to discard
+# entries.
+#
+if {[catch { load_static_extension db fileio }]==0} {
+  do_catchsql_test 9.0 {
+    WITH c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<65536)
+    SELECT length(zipfile('f'||i, 'x')) FROM c;
+  } {1 {too many entries for zipfile(); max: 65535}}
+
+  forcedelete test.zip
+  do_execsql_test 9.1 {
+    WITH c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<65535)
+    SELECT writefile('test.zip', zipfile('f'||i, 'x'))>0 FROM c;
+    SELECT count(*) FROM zipfile('test.zip');
+  } {1 65535}
+
+  do_execsql_test 9.2 {
+    CREATE VIRTUAL TABLE temp.zz USING zipfile('test.zip');
+    SELECT count(*) FROM zz;
+  } {65535}
+
+  do_catchsql_test 9.3 {
+    INSERT INTO zz(name, data) VALUES('g', 'y');
+  } {1 {too many entries; max: 65535}}
+  do_execsql_test 9.3.1 {
+    SELECT count(*) FROM zipfile(readfile('test.zip'));
+  } {65535}
+
+  # Operations that do not increase the number of entries still work.
+  do_execsql_test 9.4 {
+    INSERT OR REPLACE INTO zz(name, data) VALUES('f1', 'y');
+    INSERT OR IGNORE INTO zz(name, data) VALUES('f2', 'z');
+    UPDATE zz SET name='renamed' WHERE name='f3';
+    SELECT count(*) FROM zipfile(readfile('test.zip'));
+    SELECT name, data FROM zz WHERE name IN ('f1', 'f2', 'renamed');
+  } {65535 f2 x renamed x f1 y}
+
+  # After a DELETE, there is room for exactly one more entry.
+  do_execsql_test 9.5 {
+    DELETE FROM zz WHERE name='f4';
+    INSERT INTO zz(name, data) VALUES('g', 'y');
+    SELECT count(*) FROM zipfile(readfile('test.zip'));
+  } {65535}
+  do_catchsql_test 9.6 {
+    INSERT INTO zz(name, data) VALUES('h', 'y');
+  } {1 {too many entries; max: 65535}}
+
+  do_execsql_test 9.7 {
+    DROP TABLE temp.zz;
+    SELECT count(*) FROM zipfile('test.zip');
+  } {65535}
+}
+
 finish_test
