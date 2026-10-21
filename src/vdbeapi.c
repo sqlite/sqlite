@@ -2170,9 +2170,14 @@ int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode){
     v->explain = eMode;
     rc = SQLITE_OK;
   }else{
+    int savedMode = v->explain;
     v->explain = eMode;
     rc = sqlite3Reprepare(v);
-    v->haveEqpOps = eMode==2;
+    if( rc ){
+      v->explain = savedMode;
+    }else{
+      v->haveEqpOps = eMode==2;
+    }
   }
   if( v->explain ){
     v->nResColumn = 12 - 4*v->explain;
