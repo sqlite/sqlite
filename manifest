@@ -1,5 +1,5 @@
-C When\squerying\san\sfts5\stable\sin\stokendata\smode,\savoid\susing\sthe\s"has-doclist"\sflag\sfrom\sthe\sprevious\sleaf\spage\swhen\squerying\sfor\sa\snon-existent\sterm\slarger\sthan\sall\sterms\son\sthat\spage.\sReport\s[bugs:/info/2026-10-21T02:52:01Z\s|\s2026-10-21T02:52:01Z].
-D 2026-10-21T16:05:34.657
+C New\sCLI-based\stest\scases\sfor\sforeign\skeys.
+D 2026-10-21T16:29:13.511
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1199,6 +1199,8 @@ F test/filter1.test 590f8ba9a0cd0823b80d89ac75c5ce72276189cef9225d2436adaf1ee87f
 F test/filter2.tcl 44e525497ce07382915f01bd29ffd0fa49dab3adb87253b5e5103ba8f93393e8
 F test/filter2.test 3cc20eaea2ea1ab245197cc4a62468deb460b78f5aa9bd7d5d3353c2fe569bae
 F test/filterfault.test c08fb491d698e8df6c122c98f7db1c65ffcfcad2c1ab0e07fa8a5be1b34eaa8b
+F test/fkey08.sql 7e73c20a8e8ac4b06b8b98c2e27d8deb9e20009dd9b813a42c30dc8e1ab9307a
+F test/fkey09.sql 9bbcadc982e598e26bae01375531cb429b55194688e71dbb02813f1e8758880a
 F test/fkey1.test e563bcb4cb108ce3f40363cda4f84009dc89a39e2973076e5057ba99fca35378
 F test/fkey2.test 1063d65e5923c054cfb8f0555a92a3ae0fa8c067275a33ee1715bd856cdb304c
 F test/fkey3.test 76d475c80b84ee7a5d062e56ccb6ea68882e2b49
@@ -1723,7 +1725,7 @@ F test/shell7.test 6b006d296b569a7ec78b8168af77578b3bde8f58b79c32d9f46cff1eaf763
 F test/shell8.test d2fc95f7467c3d93834cac3327bdac03554991afed6d9a07e6a2b204b037f9d7
 F test/shell9.test c0e8871061a92151450b3332279a893b516fa73a6c46d4f51a0998407cbf8c89
 F test/shellA.test 05cdaafa1f79913654487ce3aefa038d4106245d58f52e02faf506140a76d480
-F test/shellB.test d70566f24990fc128b520f7deb860077f4bea3edb76e732c72b26b80eec7867c
+F test/shellB.test 4acfb94e80ea38ab5609e0cc53f96d05e550843251644bba4b2deb5bb7a4d3d2
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2295,8 +2297,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8d5a59d56e2ed1355033966c99455d4e4cad5aec13db536a938b4b2fccfba058
-R 5f6d1f045f0004d2791f867792f0121c
-U dan
-Z b010439183dfc1b15ffb16f0ba722e94
+P 3769f60be38ba67efce022d4cb72a1db89b36641b2f132698d4d85b0f6b30775
+R 6bff979ec0db0c18118f9f4cb765bc54
+U drh
+Z c36c3f2ed2232fa7f6e735a2de08203e
 # Remove this line to create a well-formed Fossil manifest.
