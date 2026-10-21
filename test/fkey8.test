@@ -288,6 +288,75 @@ do_execsql_test 7.4 {
   SELECT * FROM aux.c1;
 } {11 100 12 100 21 200 22 200}
 
+#-------------------------------------------------------------------------
+# Bug report: https://sqlite.org/bugs/forumpost/89bb27c659
+#
+reset_db
+
+do_execsql_test 8.0 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE parent(id INTEGER PRIMARY KEY, code TEXT UNIQUE);
+
+  CREATE TABLE child(
+      id INTEGER PRIMARY KEY, 
+      k REFERENCES parent(code) ON DELETE CASCADE
+  );
+  INSERT INTO parent VALUES(1, '1001'), (2, '1002');
+
+  INSERT INTO child VALUES(10, 1001), (11, 1002);
+}
+
+do_catchsql_test 8.1 {
+  INSERT INTO child VALUES(12, 1003);
+} {1 {FOREIGN KEY constraint failed}}
+
+do_execsql_test 8.2 {
+  DELETE FROM parent WHERE code = '1001';
+  SELECT id, quote(k) FROM child;
+} {
+  11 1002
+}
+
+do_execsql_test 8.3 { PRAGMA foreign_key_check }
+
+# Parent columns with numeric affinity, child columns with BLOB affinity.
+# The child keys are text values that only match the parent keys once
+# the parent column affinity has been applied.
+#
+do_execsql_test 8.4 {
+  CREATE TABLE p2(id INTEGER PRIMARY KEY, n INTEGER UNIQUE, r REAL UNIQUE);
+  CREATE TABLE c1(k REFERENCES p2(n) ON DELETE CASCADE);
+  CREATE TABLE c2(k REFERENCES p2(n) ON UPDATE CASCADE);
+  CREATE TABLE c3(k REFERENCES p2(r) ON DELETE SET NULL);
+  CREATE TABLE c4(k REFERENCES p2(id) ON DELETE CASCADE);
+  INSERT INTO p2 VALUES(1, 5, 1.5), (2, 6, 2.5), (3, 7, 3.5), (4, 8, 4.5);
+  INSERT INTO c1 VALUES('5');
+  INSERT INTO c2 VALUES('6');
+  INSERT INTO c3 VALUES('3.5');
+  INSERT INTO c4 VALUES('4');
+}
+
+do_execsql_test 8.5 {
+  DELETE FROM p2 WHERE n=5;
+  SELECT count(*) FROM c1;
+} {0}
+
+do_execsql_test 8.6 {
+  UPDATE p2 SET n=60 WHERE n=6;
+  SELECT quote(k) FROM c2;
+} {60}
+
+do_execsql_test 8.7 {
+  DELETE FROM p2 WHERE n=7;
+  SELECT quote(k) FROM c3;
+} {NULL}
+
+do_execsql_test 8.8 {
+  DELETE FROM p2 WHERE n=8;
+  SELECT count(*) FROM c4;
+} {0}
+
+do_execsql_test 8.9 { PRAGMA foreign_key_check }
 
 
 finish_test

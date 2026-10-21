@@ -517,6 +517,33 @@ static Expr *exprTableColumn(
 }
 
 /*
+** Column iCol1 of table p1 is to be compared to column iCol2 of table p2.
+** Return non-zero if the comparison will use an affinity compatible
+** with the affinity of column iCol1 of table p1. Or zero if it will not.
+**
+** This is used in cases where (p1.iCol1 = p2.iCol2) must be evaluated
+** using the affinity of p1.iCol1 as part of foreign key processing.
+*/
+static int fkUsesLhsAffinity(Table *p1, int iCol1, Table *p2, int iCol2){
+  u8 aff1 = iCol1>=0 ? p1->aCol[iCol1].affinity : SQLITE_AFF_NUMERIC;
+  u8 aff2 = p2->aCol[iCol2].affinity;
+
+  /* If either side has a numeric affinity, then the comparison uses numeric
+  ** affinity. So the affinity matches if aff1 is numeric, but not if aff1
+  ** is not numeric but aff 2 is.  */
+  if( sqlite3IsNumericAffinity(aff1) ) return 1;
+  if( sqlite3IsNumericAffinity(aff2) ) return 0;
+
+  assert( aff1==SQLITE_AFF_TEXT || aff1==SQLITE_AFF_BLOB );
+  assert( aff2==SQLITE_AFF_TEXT || aff2==SQLITE_AFF_BLOB );
+
+  /* At this point, either the affinities are the same or one is TEXT and
+  ** the other BLOB. In the second case the comparison will be done with
+  ** BLOB affinity, which does not match if aff1 is TEXT.  */
+  return (aff1==aff2 || aff1==SQLITE_AFF_BLOB);
+}
+
+/*
 ** This function is called to generate code executed when a row is deleted
 ** from the parent table of foreign key constraint pFKey and, if pFKey is 
 ** deferred, when a row is inserted into the same table. When generating
@@ -584,15 +611,21 @@ static void fkScanChildren(
     Expr *pLeft;                  /* Value from parent table row */
     Expr *pRight;                 /* Column ref to child table */
     Expr *pEq;                    /* Expression (pLeft = pRight) */
-    i16 iCol;                     /* Index of column in child table */ 
+    i16 iCol;                     /* Index of column in parent table */
+    i16 iCol2;                    /* Index of column in child table */ 
     const char *zCol;             /* Name of column in child table */
 
     iCol = pIdx ? pIdx->aiColumn[i] : -1;
     pLeft = exprTableRegister(pParse, pTab, regData, iCol);
-    iCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
-    assert( iCol>=0 );
-    zCol = pFKey->pFrom->aCol[iCol].zCnName;
+    iCol2 = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
+    assert( iCol2>=0 );
+    zCol = pFKey->pFrom->aCol[iCol2].zCnName;
     pRight = sqlite3Expr(db, TK_ID, zCol);
+    if( 0==fkUsesLhsAffinity(pTab, iCol, pFKey->pFrom, iCol2) ){
+      /* In cases where the expression does not naturally use the affinity
+      ** of the parent column, add a unary + to the child column. */
+      pRight = sqlite3PExpr(pParse, TK_UPLUS, pRight, 0);
+    }
     pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
     pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
   }
@@ -1252,26 +1285,39 @@ static Trigger *fkActionTrigger(
       Token tFromCol;             /* Name of column in child table */
       Token tToCol;               /* Name of column in parent table */
       int iFromCol;               /* Idx of column in child table */
-      Expr *pEq;                  /* tFromCol = OLD.tToCol */
+      int iToCol;                 /* Idx of column in parent table */
+      Expr *pEq;                  /* OLD.tToCol = zFromCol */
+      Expr *pLeft;                /* OLD.tToCol */
+      Expr *pRight;               /* zFromCol */
 
       iFromCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
       assert( iFromCol>=0 );
       assert( pIdx!=0 || (pTab->iPKey>=0 && pTab->iPKey<pTab->nCol) );
       assert( pIdx==0 || pIdx->aiColumn[i]>=0 );
-      sqlite3TokenInit(&tToCol,
-                   pTab->aCol[pIdx ? pIdx->aiColumn[i] : pTab->iPKey].zCnName);
+      iToCol = pIdx ? pIdx->aiColumn[i] : pTab->iPKey;
+      sqlite3TokenInit(&tToCol, pTab->aCol[iToCol].zCnName);
       sqlite3TokenInit(&tFromCol, pFKey->pFrom->aCol[iFromCol].zCnName);
+
+      pLeft = sqlite3PExpr(pParse, TK_DOT,
+          sqlite3ExprAlloc(db, TK_ID, &tOld, 0),
+          sqlite3ExprAlloc(db, TK_ID, &tToCol, 0)
+      );
+      pRight = sqlite3ExprAlloc(db, TK_ID, &tFromCol, 0);
+
+      /* OLD.* columns do not normally have an affinity. So set the affinity 
+      ** of OLD.zToCol (the parent key) explicitly here. Also, in cases where
+      ** (parent_key = child_key) does not naturally use the affinity of the
+      ** parent column, add a unary + to the child column. */
+      if( pLeft ) pLeft->affExpr = pTab->aCol[iToCol].affinity;
+      if( 0==fkUsesLhsAffinity(pTab, iToCol, pFKey->pFrom, iFromCol) ){
+        pRight = sqlite3PExpr(pParse, TK_UPLUS, pRight, 0);
+      }
 
       /* Create the expression "OLD.zToCol = zFromCol". It is important
       ** that the "OLD.zToCol" term is on the LHS of the = operator, so
-      ** that the affinity and collation sequence associated with the
-      ** parent table are used for the comparison. */
-      pEq = sqlite3PExpr(pParse, TK_EQ,
-          sqlite3PExpr(pParse, TK_DOT, 
-            sqlite3ExprAlloc(db, TK_ID, &tOld, 0),
-            sqlite3ExprAlloc(db, TK_ID, &tToCol, 0)),
-          sqlite3ExprAlloc(db, TK_ID, &tFromCol, 0)
-      );
+      ** that the collation sequence associated with the parent table is
+      ** used for the comparison. */
+      pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight);
       pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
 
       /* For ON UPDATE, construct the next term of the WHEN clause.
