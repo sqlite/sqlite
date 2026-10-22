@@ -415,7 +415,7 @@ static void recoverBitmapFree(RecoverBitmap *pMap){
 ** Set the bit associated with page iPg in bitvec pMap.
 */
 static void recoverBitmapSet(RecoverBitmap *pMap, i64 iPg){
-  if( iPg<=pMap->nPg ){
+  if( iPg<=pMap->nPg && iPg>0 ){
     int iElem = (iPg / 32);
     int iBit = (iPg % 32);
     pMap->aElem[iElem] |= (((u32)1) << iBit);

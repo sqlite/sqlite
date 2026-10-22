@@ -1,5 +1,5 @@
-C Increased\ssafety\smargin\sin\ssqlite3_preupdate_old().\s\sTest\scase\sin\sTH3.
-D 2026-10-22T11:03:08.559
+C Add\sa\srootpage\snumber\slower\sbounds\scheck\sin\sthe\s"recover"\sextension.\nTest\scase\sin\sTH3.
+D 2026-10-22T11:19:52.755
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -492,7 +492,7 @@ F ext/recover/recoverpgsz.test 88766fcb810e52ee05335c456d4e5fb06d02b73d3ccb48c52
 F ext/recover/recoverrowid.test f948bf4024a5f41b0e21b8af80c60564c5b5d78c05a8d64fc00787715ff9f45f
 F ext/recover/recoverslowidx.test c90d59c46bb8924a973ac6fbc38f3163cee38cc240256addcab1cf1a322c37dc
 F ext/recover/recoversql.test e66d01f95302a223bcd3fd42b5ee58dc2b53d70afa90b0d00e41e4b8eab20486
-F ext/recover/sqlite3recover.c dfbfca5a8e4909333e5aa3749bcffb5dd7e396de9541c338f8cc843b2e20217e
+F ext/recover/sqlite3recover.c 7a049049c9844837a82a28bed0885ea4515cb44b60c227ebaebb858f628a6847
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
@@ -2287,8 +2287,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 952ae2c63e0a2007d8213132636e2e99bae113a9c7582b68b2e5a686b0777a99
-R 2e58059cc2e2ad20694fc165b1e6587f
+P 31b84157965fcd3309a1420db71e0beee4ccdd88a2f44e5f9029a05cb04ae9cf
+R e2bd098c8ee5f2c50c5f11b820d6ac16
 U drh
-Z 2e1dafc0966357908bee1572b12999b4
+Z c0b706dbfba9384e68a092d531551c29
 # Remove this line to create a well-formed Fossil manifest.
