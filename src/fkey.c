@@ -577,19 +577,45 @@ static int fkChildKeyIsIndexed(Table *pTab, int iCol, const char *zColl){
 ** If the simple (pLeft = pRight) does not naturally use the affinity of
 ** the parent column, the comparison is coded as (pLeft = +pRight). But
 ** the unary + prevents any index on the child column from being used.
-** So in that case, if the child column is indexed, an extra term is added:
+** So, when doing so is sound, an extra term is added:
 **
 **     (pLeft = +pRight) AND
 **     (pRight COLLATE <coll> IN (+pLeft, +CAST(pLeft AS NUMERIC)))
 **
 ** Each child value that matches pLeft under the affinity of the parent
-** column is either equal to pLeft itself or numerically equal to
-** CAST(pLeft AS NUMERIC). So the IN term matches a superset of the
-** child rows that the exact (pLeft = +pRight) term does, and since it
-** compares using the affinity of the child column, it may be used with
-** an index on the child column. The unary + operators on the RHS of the
-** IN ensure that no affinity other than that of the child column is
-** applied.
+** column must also match at least one member of the IN list, or else the
+** scan could miss child rows that reference the parent row, breaking
+** referential integrity. This superset property holds in exactly two
+** cases:
+**
+**   * The parent column has BLOB affinity. In this case the
+**     (pLeft = +pRight) comparison applies no affinity to either
+**     operand - it is a raw comparison of the two values. That is
+**     exactly what the first IN member (+pLeft) tests, so the IN term
+**     matches a superset of the (pLeft = +pRight) rows.
+**
+**   * The child key column is the rowid alias (INTEGER PRIMARY KEY) of
+**     a rowid table. Such a column can only store integer values, and
+**     a child integer value matches pLeft under the parent's affinity
+**     only if pLeft is the canonical text rendering of that integer,
+**     which CAST(pLeft AS NUMERIC) parses back to exactly. So the
+**     second IN member covers every (pLeft = +pRight) match.
+**
+** In both cases the IN compares using the affinity of the child column,
+** so it may be used with an index on the child column (or with the
+** child rowid). The unary + operators on the RHS of the IN ensure that
+** no affinity other than that of the child column is applied.
+**
+** For any other parent affinity (in practice TEXT) the IN term is
+** unsound and is omitted: the (pLeft = +pRight) comparison applies the
+** parent's TEXT affinity to the child value, and there is no index
+** probe on the child column that can reproduce that transformation.
+** For example, a REAL child value of 9e999 (positive infinity)
+** renders as 'Inf' under TEXT affinity and so matches a parent value
+** of 'Inf', but it is equal to neither +pLeft ('Inf' as text) nor
+** CAST(pLeft AS NUMERIC) (0.0). Were the IN term used in that case, a
+** DELETE or UPDATE of the parent row would silently miss the
+** referencing child row.
 */
 static Expr *fkParentChildEq(
   Parse *pParse,            /* Parsing context */
@@ -613,7 +639,19 @@ static Expr *fkParentChildEq(
   assert( iCol>=0 );
 
 #ifndef SQLITE_OMIT_CAST
-  {
+  /* The IN pre-filter described above may only be generated when the
+  ** superset property actually holds - otherwise the scan may miss
+  ** child rows that reference the parent row, allowing a parent row to
+  ** be deleted or updated while child rows still reference it.  This
+  ** is the case if the affinity of the parent key column is BLOB, or
+  ** if the child key column is the rowid alias of a rowid table.
+  ** In particular it does NOT hold for a TEXT parent key column, as
+  ** the (pLeft = +pRight) comparison converts the child value to text
+  ** and no probe of an index on the child column can reproduce that
+  ** transformation (see the comment above).  */
+  if( pTab->aCol[iCol].affinity==SQLITE_AFF_BLOB
+   || (iChildCol==pChild->iPKey && HasRowid(pChild))
+  ){
     const char *zColl = sqlite3ColumnColl(&pTab->aCol[iCol]);
     if( zColl==0 ) zColl = sqlite3StrBINARY;
 
