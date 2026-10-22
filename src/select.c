@@ -8253,10 +8253,20 @@ int sqlite3Select(
       ** then make the pItem->iCursor be a copy of the ephemeral table that
       ** holds the result of the materialization. tag-select-0484 */
       CteUse *pCteUse = pItem->u2.pCteUse;
+      /* The materialization is computed once per run of the statement or
+      ** trigger program and does not change after that.  So the subroutine
+      ** call and the OP_OpenDup are needed on the first pass only.  The
+      ** OP_NullRow runs on every pass and leaves the duplicate cursor not
+      ** positioned on a row, as OP_OpenDup does. */
+      int addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
       sqlite3VdbeAddOp2(v, OP_Gosub, pCteUse->regRtn, pCteUse->addrM9e);
       if( pItem->iCursor!=pCteUse->iCur ){
         sqlite3VdbeAddOp2(v, OP_OpenDup, pItem->iCursor, pCteUse->iCur);
         VdbeComment((v, "%!S", pItem));
+      }
+      sqlite3VdbeJumpHere(v, addrOnce);
+      if( pItem->iCursor!=pCteUse->iCur ){
+        sqlite3VdbeAddOp1(v, OP_NullRow, pItem->iCursor);
       }
       pSub->nSelectRow = pCteUse->nRowEst;
     }else if( (pPrior = isSelfJoinView(pTabList, pItem, 0, i))!=0 ){
