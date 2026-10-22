@@ -72,6 +72,15 @@ foreach {tn before after} {
 
   5 "CREATE TABLE c1(b, generated CONSTRAINT fk REFERENCES x1)"
     "CREATE TABLE c1(b, generated)"
+
+  6 "CREATE TABLE c1(x CONSTRAINT fk REFERENCES p(a) ON DELETE SET DEFAULT\
+                     ON UPDATE CASCADE, y)"
+    "CREATE TABLE c1(x, y)"
+
+  7 "CREATE TABLE c1(w REFERENCES p DEFERRABLE INITIALLY DEFERRED,\
+                     x CONSTRAINT fk REFERENCES p NOT DEFERRABLE)"
+    "CREATE TABLE c1(w REFERENCES p DEFERRABLE INITIALLY DEFERRED, x)"
+
 } {
   do_execsql_test 4.$tn.1 { DROP TABLE IF EXISTS c1 }
   do_execsql_test 4.$tn.2 $before
@@ -98,4 +107,3 @@ do_execsql_test 5.2 {
 } {{CREATE TABLE x1(a, b }}
 
 finish_test
-

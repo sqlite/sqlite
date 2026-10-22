@@ -2444,15 +2444,19 @@ static int getWhitespace(const u8 *z){
 ** keyword.
 **
 ** Argument eTok may be the token value of the first token of the constraint
-** (e.g. TK_CHECK or TK_REFERENCES) or zero. If it is either TK_REFERENCES
-** or TK_FOREIGN, special parsing is enabled to find the end of the foreign-key
-** constraint definition.
+** (e.g. TK_CHECK or TK_REFERENCES or TK_NOT) or zero. If it is either
+** TK_REFERENCES or TK_FOREIGN, special parsing is enabled to find the
+** end of the foreign-key constraint definition.  If eTok is TK_NOT then
+** special processing is enabled to find the end of a NOT NULL constraint
+** including its optional ON CONFLICT clause.
 **
 ** Return the number of bytes until the end of the constraint. 
 */
 static int getConstraint(const u8 *z, int eTok){
   int iOff = 0;
   int t = 0;
+  int t2 = 0;
+  int prev = 0;
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   if( eTok==TK_FOREIGN ){
@@ -2468,6 +2472,14 @@ static int getConstraint(const u8 *z, int eTok){
     /* REFERENCES is followed by a table name. Gobble this up here in
     ** case the table name is a fallback token like TK_GENERATED. */
     iOff += getConstraintToken(&z[iOff], &t);
+
+    /* If the table names is followed by a parenthesized list of columns,
+    ** also skip that, lest the close ")" end the constraint in the
+    ** while loop below. */
+    iOff += getWhitespace(&z[iOff]);
+    if( z[iOff]=='(' ){
+      iOff += getConstraintToken(&z[iOff], &t);
+    }
   }
 #endif
 
@@ -2478,17 +2490,34 @@ static int getConstraint(const u8 *z, int eTok){
   **   COLLATE, REFERENCES, FOREIGN, GENERATED, AS, RP, or COMMA
   **
   ** Also exit the loop if ILLEGAL turns up.
+  **
+  ** Exceptions:
+  **
+  **   *  For NOT NULL constraints, also terminate at DEFERRABLE
+  **
+  **   *  Do not terminate at DEFAULT if the previous token was SET
   */
   while( 1 ){
     int n = getConstraintToken(&z[iOff], &t);
-    if( t==TK_CONSTRAINT || t==TK_PRIMARY || t==TK_NOT || t==TK_UNIQUE
-     || t==TK_CHECK || t==TK_DEFAULT || t==TK_COLLATE || t==TK_REFERENCES
+    if( t==TK_CONSTRAINT || t==TK_PRIMARY || t==TK_UNIQUE
+     || t==TK_CHECK || t==TK_COLLATE || t==TK_REFERENCES
+     || (t==TK_DEFAULT && prev!=TK_SET)
      || t==TK_FOREIGN || t==TK_RP || t==TK_COMMA || t==TK_ILLEGAL
      || t==TK_AS || t==TK_GENERATED
+     || (eTok==TK_NOT && t==TK_DEFERRABLE)
     ){
       break;
     }
+    if( t==TK_NOT
+     && (eTok!=TK_REFERENCES
+         || (getConstraintToken(&z[iOff+n],&t2), t2!=TK_DEFERRABLE))
+    ){
+      /* NOT ends the constraint unless eTok is TK_REFERENCES and the next
+      ** token is DEFERRABLE */
+      break;
+    }
     iOff += n;
+    prev = t;
   }
   
   return iOff;
@@ -2655,8 +2684,12 @@ static void dropConstraintFunc(
         }
 
       }else if( t==TK_NOT && iNotNull==ii ){
-        iEnd = iOff + getConstraint(&zSql[iOff], 0);
-        break;
+        int t2;
+        (void)getConstraintToken(zSql+iOff, &t2);
+        if( t2==TK_NULL ){
+          iEnd = iOff + getConstraint(zSql+iOff, TK_NOT);
+          break;
+        }
       }else if( t==TK_RP || t==TK_ILLEGAL ){
         iEnd = -1;
         break;

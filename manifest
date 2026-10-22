@@ -1,5 +1,5 @@
-C Merge\sbranch-3.54\sfixes\sinto\strunk
-D 2026-10-22T11:41:16.140
+C Improve\sALTER\sTABLE\sDROP\sCONSTRAINT\sso\sthat\sit\sis\sbetter\sable\sto\sdeal\nwith\ssome\scorner\scase\sin\sthe\sconstraint\ssyntax.\nBugs\s[bugs:/info/2026-10-22T16:25:18Z|2026-10-22T16:25:18Z]\sand\n[bugs:/info/2026-10-22T16:30:48Z|2026-10-22T16:30:48Z].
+D 2026-10-22T19:55:10.157
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -740,7 +740,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 1b9c24374a85dfc7eb8fa7c4266ee0db4f9609cceecfc5481cd8307e5af04366
 F sqlite3.pc.in e6dee284fba59ef500092fdc1843df3be8433323a3733c91da96690a50a5b398
-F src/alter.c 2dd9daa84c9395da33e92944af6bbc596dd46c01037f8fd613724ebf384e52dc
+F src/alter.c d4d05d515b945309c1cc541bf343c37465329d5ed7a6f93231ca84622d747986
 F src/analyze.c 73162482c656187823217f4c00758c9ee13a420c8745bc542129e0279b792287
 F src/attach.c 40a83de1c720dfb3552458ebf6c9dac7ed6b2fcde4e073658fd9a38d90cb329e
 F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
@@ -910,9 +910,9 @@ F test/alter4.test f1b495928c12d818e96ef323162fc3a346b48b62f341764be61ad25fa017e
 F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
 F test/alterauth2.test 4b74fa8f184f4736497317feb587b65759eb87d87acfe3a8ef433d4d18bb002b
 F test/altercol.test 3661c432aacb42bc2198dd4611bbb9c3b09fc73251b59edda046109103b8ac00
-F test/altercons.test 575693a87b96e49eac2b8085cef71a95c7a94aab742d2334c66ca954d00aa9ce
+F test/altercons.test 9a03043274fbe350db68a3a35c9236ce1eefc8be929ace2b210267580a3e6567
 F test/altercons2.test 264c1cc31c16b319de423af9565eb7129d7e9f55b21bb4eda6fdae02841265ae
-F test/altercons3.test d0bd7dde66a4a4f0b432b3ae3520e989b52b9bdfadddb9bd80be94554fecf803
+F test/altercons3.test e95c18aba7050a48db97842e805edc267366b9bf9dc0db49c0e2b5c9a84bfe48
 F test/altercorrupt.test 2e1d705342cf9d7de884518ddbb053fd52d7e60d2b8869b7b63b2fda68435c12
 F test/alterdropcol.test a653a3945f964d26845ec0cd0a8e74189f46de3119a984c5bc45457da392612e
 F test/alterdropcol2.test 527fce683b200d620f560f666c44ae33e22728e990a10a48a543280dfd4b4d41
@@ -2297,8 +2297,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 03f699544e6b2040eda17e2f4b48813b10513fc05891a3dd4000867316413103 12285a3f4efdf41210fa3020127670b0d1fd8d740a5ac43db0c6641fec3e5142
-R 7e43ea42358511ef205f08b515ae9978
+P fdf339d965aba5e35feaf3ef613e2e2ce0795338591f261998141a6d080bb0da
+R 4cf4f7463265cefb4651b6bc760f0580
 U drh
-Z 58fd7612be0ec62affd861745171369a
+Z 29402b27137f74b18959508a58afc75f
 # Remove this line to create a well-formed Fossil manifest.
