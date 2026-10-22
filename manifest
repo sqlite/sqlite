@@ -1,5 +1,5 @@
-C Extra\ssafety\smargin\sadded\sto\ssqlite3VdbeMemFromBtree().\s\sChange\nsuggested\sby\sMartin\sMirchev.\s\sTest\scases\sin\sTH3.
-D 2026-10-22T10:40:42.232
+C Increased\ssafety\smargin\sin\ssqlite3_preupdate_old().\s\sTest\scase\sin\sTH3.
+D 2026-10-22T11:03:08.559
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -872,7 +872,7 @@ F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c e8f89a20f1f4511cbe4bfd73e20017ae872cd2444b3c10e05b7d9676c120231a
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 68e5ab63f184f2871780c83ce78b425d0360869611baea4c65575f91f76ac1d3
-F src/vdbeapi.c aac3e0c3d7fc1da567c2b7040e14e9a30a1315c5c912d4d3c2d571d9a44523cb
+F src/vdbeapi.c 7faa8eda3d9278ee27c8f2f14dd8d5fda6a0e90a5b91d740812a37455652b498
 F src/vdbeaux.c 7e3975222531284ff14cb1be93b5751f6a3392a56d86d6329fcaa120471f56f3
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 272c5b317fe0a166f28f9bdc46dbd00a9df7e3e8e5e2430e42b8b58815a4d008
@@ -2287,8 +2287,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5a09fc807377b4cfa37b06d69101530611df143bd64f3384db480797d8795fea
-R ed817cc16af242fe4c94b76aad9d2d42
+P 952ae2c63e0a2007d8213132636e2e99bae113a9c7582b68b2e5a686b0777a99
+R 2e58059cc2e2ad20694fc165b1e6587f
 U drh
-Z 04a38d4844429f3559ac01e0bbee2a28
+Z 2e1dafc0966357908bee1572b12999b4
 # Remove this line to create a well-formed Fossil manifest.
