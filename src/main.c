@@ -4201,9 +4201,14 @@ int sqlite3_sleep(int ms){
   if( pVfs==0 ) return 0;
 
   /* This function works in milliseconds, but the underlying OsSleep()
-  ** API uses microseconds. Hence the 1000's.
+  ** API uses microseconds. Hence the range limitation and the "*1000".
   */
-  rc = (sqlite3OsSleep(pVfs, ms<0 ? 0 : 1000*ms)/1000);
+  if( ms<0 ){
+    ms = 0;
+  }else if( ms>2147483 ){
+    ms = 2147483;  /* Maximum sleep time of 35 minutes and 47.484 seconds */
+  }
+  rc = sqlite3OsSleep(pVfs, ms*1000)/1000;
   return rc;
 }
 
