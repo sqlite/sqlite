@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_bind_value()\sinterface\sso\sthat\sit\sdoes\snot\sremove\sa\nbyte-order\smark\son\sthe\svalue\sbeing\sbound.
-D 2026-10-23T15:30:27.214
+C The\s.recover\scommand\sshould\snot\sremove\sBOMs\sthat\sare\salready\sinside\sthe\ndatabase.\n[bugs:/info/2026-10-18T20:41:57Z|Bug\s2026-10-18T20:41:57Z]
+D 2026-10-23T15:52:17.165
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -478,8 +478,8 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c 29be4d2e7a7fbc8124545d2833570bdefef8724239c6cdd81a8d1e6dd07889f2
 F ext/rbu/sqlite3rbu.h e3a5bf21e09ca93ce4e8740e00d6a853e90a697968ec0ea98f40826938bdb68e
 F ext/rbu/test_rbu.c 8b6e64e486c28c41ef29f6f4ea6be7b3091958987812784904f5e903f6b56418
-F ext/recover/dbdata.c 10d3c56968a9af6853722a47280805ad1564714d79ea45ac6f7da14bb57fd137
-F ext/recover/recover1.test e16d78e94183562abff569967b18b7c77451d7044365516cd0fe14713a284851
+F ext/recover/dbdata.c d49c08a6aad98a0da9b31d80826878cd77350b7ef380755adf8b8565c67755f0
+F ext/recover/recover1.test 876a31d02568c62c27186d560f5ffb23beaf9c268455fbe035627e23892aee4f
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test c74170e0f7b02456af41838afeb5353fdb985a48cc2331d661bbabbca7c6b8e3
 F ext/recover/recoverclobber.test 3ba6c0c373c5c63d17e82eced64c05c57ccaf26c1abe1ca7141334022a79f32e
@@ -999,7 +999,7 @@ F test/bigmmap.test 6021e205487347c6d7e5a541aa472a4b8efc4e9f4a3799a823b61a8e6616
 F test/bigrow.test 3e6b189dea465a78306eac67fc6754c1cf90eb1694a25c88c338900c216c1e6b
 F test/bigsort.test 997e172009905873c06426145e4b3794c7dfe2d563724cb2fd39d45f319cf3d2
 F test/bind.test 1e136709b306f7ed3192d349c2930d89df6ab621654ad6f1a72381d3fe76f483
-F test/bind2.test 918bc35135f4141809ead7585909cde57d44db90a7a62aef540127148f91aab7
+F test/bind2.test e7914a9c670ff230d4fe6700d08becf4aff203ab2a3b48e4df6481e6c3526b77
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
 F test/bitvec.test 75894a880520164d73b1305c1c3f96882615e142
 F test/blob.test e7ac6c7d3a985cc4678c64f325292529a69ae252
@@ -2297,11 +2297,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8a0296aa4db20cdcbbfaa0e4c61b5fe339b0514cf73832253ff0abd1ce59d31c
-R 1dd3a5c88fdf1dc284f23dd932cd9767
-T *branch * bom-handling
-T *sym-bom-handling *
-T -sym-trunk *
+P 56e268312d038608b5fb2a8ed24002f478ad5a22eb0214b1a064f2926aada66c
+R 2e2481a1862ff08eb99bf69c8be110d9
 U drh
-Z e0a3b639a8ffa1ff10e4b189ad45981e
+Z cc48029ffcfda22369666c438d0c5d3d
 # Remove this line to create a well-formed Fossil manifest.
