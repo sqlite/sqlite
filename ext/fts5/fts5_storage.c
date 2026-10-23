@@ -383,7 +383,7 @@ int sqlite3Fts5StorageOpen(
           sqlite3_str_appendf(pDefn, ", c%d", i);
         }
       }
-      if( pConfig->bLocale ){
+      if( pConfig->bLocale && pConfig->eContent==FTS5_CONTENT_NORMAL ){
         for(i=0; i<pConfig->nCol; i++){
           if( pConfig->abUnindexed[i]==0 ){
             sqlite3_str_appendf(pDefn, ", l%d", i);
