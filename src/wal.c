@@ -2788,8 +2788,12 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   if( badHdr ){
     if( pWal->bShmUnreliable==0 && (pWal->readOnly & WAL_SHM_RDONLY) ){
       if( SQLITE_OK==(rc = walLockShared(pWal, WAL_WRITE_LOCK)) ){
+        /* Retry the header now that the WRITE_LOCK is held. If it still 
+        ** fails, the header really is corrupt and recovery is required.
+        ** Otherwise, continue with the now valid header.  */
+        if( page0 ) badHdr = walIndexTryHdr(pWal, pChanged);
         walUnlockShared(pWal, WAL_WRITE_LOCK);
-        rc = SQLITE_READONLY_RECOVERY;
+        if( badHdr ) rc = SQLITE_READONLY_RECOVERY;
       }
     }else{
       int bWriteLock = pWal->writeLock;
