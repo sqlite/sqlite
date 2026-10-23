@@ -479,5 +479,39 @@ do_execsql_test 5.3 {
   SELECT i, t FROM t1
 } {1 one  2 two   3 three  8 eight 9 nine}
 
+#-------------------------------------------------------------------------
+# If the WAL file has a valid header but not even one complete frame,
+# recovery must not copy uninitialized memory into the wal-index.
+#
+catch { db close }
+catch { db2 close }
+forcedelete test.db test.db-wal test.db-shm
+sqlite3 db test.db
+do_execsql_test 6.1 {
+  PRAGMA journal_mode = WAL;
+  PRAGMA wal_autocheckpoint = 0;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES('abc');
+} {wal 0}
+do_test 6.2 {
+  set walhdr [hexio_read test.db-wal 0 32]
+  db close
+  forcedelete test.db-wal test.db-shm
+  close [open test.db-wal w]
+  hexio_write test.db-wal 0 "$walhdr[string repeat 00 100]"
+  file size test.db-wal
+} {132}
+do_test 6.3 {
+  # Leave non-zero data in recently freed heap memory.
+  set L [list]
+  for {set i 0} {$i<20} {incr i} { lappend L [string repeat "abcdef" 7000] }
+  unset L
+  sqlite3 db test.db
+  execsql { SELECT * FROM t1 }
+} {abc}
+do_test 6.4 {
+  regexp {^0*$} [hexio_read test.db-shm 136 [expr 32768-136]]
+} {1}
+db close
   
 finish_test
