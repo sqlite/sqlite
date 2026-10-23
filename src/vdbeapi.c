@@ -691,6 +691,7 @@ int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
   }
 #ifndef SQLITE_OMIT_INCRBLOB
   sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
+  pOut->enc = pCtx->enc;
   return SQLITE_OK;
 #else
   return sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
@@ -2017,6 +2018,7 @@ int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
 #else
     rc = sqlite3VdbeMemSetZeroBlob(&p->aVar[i-1], n);
 #endif
+    p->aVar[i-1].enc = ENC(p->db);
     sqlite3_mutex_leave(p->db->mutex);
   }
   return rc;
