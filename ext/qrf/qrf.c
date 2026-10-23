@@ -2810,6 +2810,12 @@ static void qrfOneSimpleRow(Qrf *p){
       pVal = sqlite3_str_new(p->db);
       nSep = (int)strlen(p->spec.zColumnSep);
       mxW = p->mxWidth - (nSep + p->u.sLine.mxColWth);
+      if( mxW<2 ){
+        /* The column names leave little or no room for the value. Use a
+        ** width of at least 2, enough for any one character, so that
+        ** qrfWrapLine() always makes progress. */
+        mxW = 2;
+      }
       bWW = p->spec.bWordWrap==QRF_Yes;
       for(i=0; i<p->nCol; i++){
         const char *zVal;

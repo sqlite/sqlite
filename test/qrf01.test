@@ -1465,6 +1465,30 @@ do_test 15.0 {
   db format -style list {SELECT 1 WHERE 0; SELECT 1 WHERE 0;}
 } {}
 
+# Line mode with column names wider than the screen width.
+#
+do_test 16.1 {
+  set result "\n[db format -style line -screenwidth 10 -linelimit 4 \
+                 {SELECT 'abc' AS averyveryverylongcolumnname}]"
+} {
+averyveryverylongcolumnname: ab
+                             c
+}
+do_test 16.2 {
+  set result "\n[db format -style line -screenwidth 10 \
+                 {SELECT 'abc' AS averyveryverylongcolumnname}]"
+} {
+averyveryverylongcolumnname: ab
+                             c
+}
+do_test 16.3 {
+  set result "\n[db format -style line -screenwidth 4 \
+                 {SELECT unistr('中文') AS a}]"
+} [subst -nocommands -novariables {
+a: 中
+   文
+}]
+
 db close
 
 finish_test

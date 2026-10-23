@@ -265,6 +265,33 @@ abc:-hi-:The quick fox jumps over the la
 END
 # 23456789 123456789 123456789 123456789
 
+# line mode when a column name is wider than the screen width.  The value
+# must still be shown, two characters per line, rather than looping.
+# https://sqlite.org/bugs/info/f8dda85c2edf5565
+#
+.testcase 560
+.mode line --sw 10 --titlelimit 0
+SELECT 'abc' AS averyveryverylongcolumnname;
+.check <<END
+averyveryverylongcolumnname: ab
+                             c
+END
+.testcase 561
+.mode line --sw 10 --linelimit 4 --titlelimit 0
+SELECT 'abc' AS averyveryverylongcolumnname;
+.check <<END
+averyveryverylongcolumnname: ab
+                             c
+END
+# A double-width character with a screen width too narrow to hold it.
+.testcase 562
+.mode line --sw 4
+SELECT unistr('中文') AS a;
+.check <<END
+a: 中
+   文
+END
+
 # https://sqlite.org/forum/forumpost/2025-12-31T19:14:24z
 #
 # For legacy compatibility, ".header" settings are not changed
