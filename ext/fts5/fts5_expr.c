@@ -401,7 +401,7 @@ int sqlite3Fts5ExprPattern(
           zExpr[iOut++] = '"';
           zExpr[iOut++] = ' ';
         }
-        if( zText[i]==aSpec[2] ){
+        if( i<nText && zText[i]==aSpec[2] ){
           i += 2;
           if( zText[i-1]=='^' ) i++;
           while( i<nText && zText[i]!=']' ) i++;
