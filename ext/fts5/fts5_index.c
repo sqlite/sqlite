@@ -7455,6 +7455,15 @@ int sqlite3Fts5IndexQuery(
       bTokendata = 0;
     }
 
+    /* fts5SetupTokendataIter() flushes the in-memory hash table to disk.
+    ** The flush frees the cached Fts5Structure object, which iterators
+    ** opened earlier by this function point into without holding a
+    ** reference (for example one opened for a prefix index query in the
+    ** same MATCH expression). So, on a tokendata=1 table, flush first.  */
+    if( pConfig->bTokendata ){
+      fts5IndexFlush(p);
+    }
+
     /* Figure out which index to search and set iIdx accordingly. If this
     ** is a prefix query for which there is no prefix index, set iIdx to
     ** greater than pConfig->nPrefix to indicate that the query will be
