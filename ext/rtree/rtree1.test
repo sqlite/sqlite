@@ -1131,4 +1131,65 @@ do_execsql_test 30.103 {
   SELECT t1.x, r.id FROM t1 LEFT JOIN r ON r.id = t1.x;
 } {6 6 6.5 {} 7abc {} 1e1 10}
 
+#-------------------------------------------------------------------------
+# Bug 06c54816a3b5b776. Some malformed polygons were accepted as a valid
+# (0,0) bounding box: a BLOB of 28 or more bytes whose header does not
+# match its length, and TEXT that does not begin with '['. These must be
+# rejected, the same as a short blob or text that starts with '['.
+#
+ifcapable geopoly {
+  reset_db
+  set box {[[10.0,10.0],[11.0,10.0],[11.0,11.0],[10.0,11.0],[10.0,10.0]]}
+
+  # geopoly_bbox() already returns NULL for each malformed value.
+  foreach {tn val} {
+    1 zeroblob(28)
+    2 zeroblob(52)
+    3 'junk'
+    4 x'00'
+    5 '[junk'
+  } {
+    do_execsql_test 31.1.$tn "SELECT quote(geopoly_bbox($val))" {NULL}
+  }
+
+  # geopoly_group_bbox() must ignore the malformed values, not fold them
+  # in as the point (0,0), and must return NULL when every value is bad.
+  do_execsql_test 31.2 {
+    CREATE TABLE t(x);
+    INSERT INTO t VALUES('[[10,10],[11,10],[11,11],[10,11],[10,10]]');
+    INSERT INTO t VALUES(zeroblob(28));
+    SELECT geopoly_json(geopoly_group_bbox(x)) FROM t;
+  } $box
+  do_execsql_test 31.3 {
+    UPDATE t SET x='junk' WHERE typeof(x)='blob';
+    SELECT geopoly_json(geopoly_group_bbox(x)) FROM t;
+  } $box
+  do_execsql_test 31.4 {
+    SELECT quote(geopoly_bbox(zeroblob(52))),
+           quote(geopoly_json(geopoly_group_bbox(zeroblob(52))));
+  } {NULL NULL}
+
+  # A geopoly virtual table must reject the same malformed values.
+  do_execsql_test 31.5 {
+    CREATE VIRTUAL TABLE g USING geopoly();
+  }
+  foreach {tn val} {
+    1 x'00'
+    2 '[junk'
+    3 'junk'
+    4 zeroblob(28)
+    5 zeroblob(52)
+  } {
+    do_catchsql_test 31.6.$tn "INSERT INTO g(_shape) VALUES($val)" \
+      {1 {_shape does not contain a valid polygon}}
+  }
+
+  # A valid polygon is still accepted and found by geopoly_overlap().
+  do_execsql_test 31.7 {
+    INSERT INTO g(_shape) VALUES('[[10,10],[11,10],[11,11],[10,11],[10,10]]');
+    SELECT rowid FROM g
+     WHERE geopoly_overlap(_shape, '[[10,10],[12,10],[12,12],[10,12],[10,10]]');
+  } {1}
+}
+
 finish_test
