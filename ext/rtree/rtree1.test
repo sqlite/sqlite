@@ -973,5 +973,162 @@ foreach {tn mod} {1 rtree 2 rtree_i32} {
   } {ok}
 }
 
+#-------------------------------------------------------------------------
+# Bug 2026-10-21T05:30:42Z. In a geopoly table, an UPDATE that changed
+# the rowid without assigning _shape failed with "_shape does not
+# contain a valid polygon".
+#
+ifcapable geopoly {
+  reset_db
+  do_execsql_test 29.0 {
+    CREATE VIRTUAL TABLE g USING geopoly(a);
+    INSERT INTO g(rowid, _shape, a) VALUES
+      (1, '[[0,0],[1,0],[0,1],[0,0]]', 'x'),
+      (2, '[[5,5],[6,5],[5,6],[5,5]]', 'y');
+  }
+
+  do_execsql_test 29.1 {
+    UPDATE g SET rowid = 7 WHERE rowid = 1;
+    UPDATE g SET rowid = 8, _shape = _shape WHERE rowid = 2;
+    SELECT rowid, a, geopoly_json(_shape) FROM g ORDER BY rowid;
+  } {7 x {[[0.0,0.0],[1.0,0.0],[0.0,1.0],[0.0,0.0]]}
+     8 y {[[5.0,5.0],[6.0,5.0],[5.0,6.0],[5.0,5.0]]}}
+
+  # The moved row is found by the r-tree using its new rowid.
+  do_execsql_test 29.2 {
+    SELECT rowid FROM g
+     WHERE geopoly_overlap(_shape, '[[0,0],[2,0],[0,2],[0,0]]');
+    SELECT rowid FROM g
+     WHERE geopoly_within(_shape, '[[-1,-1],[3,-1],[-1,3],[-1,-1]]');
+  } {7 7}
+
+  # Rowid and an auxiliary column.
+  do_execsql_test 29.3 {
+    UPDATE g SET rowid = 9, a = 'z' WHERE rowid = 7;
+    SELECT rowid, a, geopoly_area(_shape) FROM g ORDER BY rowid;
+  } {8 y 0.5 9 z 0.5}
+
+  # Auxiliary column only, and the rowid set to its current value.
+  do_execsql_test 29.4 {
+    UPDATE g SET a = 'w' WHERE rowid = 9;
+    UPDATE g SET rowid = 8 WHERE rowid = 8;
+    SELECT rowid, a, geopoly_area(_shape) FROM g ORDER BY rowid;
+  } {8 y 0.5 9 w 0.5}
+
+  # A multi-row UPDATE, which uses the two-pass strategy.
+  do_execsql_test 29.5 {
+    UPDATE g SET rowid = rowid + 100;
+    SELECT rowid, a, geopoly_area(_shape) FROM g ORDER BY rowid;
+    SELECT rowid FROM g
+     WHERE geopoly_overlap(_shape, '[[4,4],[7,4],[4,7],[4,4]]');
+  } {108 y 0.5 109 w 0.5 108}
+
+  # A new rowid that is already in use. The error names the first
+  # column, as it does for an UPDATE that also assigns _shape.
+  do_catchsql_test 29.6 {
+    UPDATE g SET rowid = 108 WHERE rowid = 109;
+  } {1 {UNIQUE constraint failed: g._shape}}
+  do_execsql_test 29.7 {
+    UPDATE OR IGNORE g SET rowid = 108 WHERE rowid = 109;
+    SELECT rowid, a FROM g ORDER BY rowid;
+  } {108 y 109 w}
+  do_execsql_test 29.8 {
+    UPDATE OR REPLACE g SET rowid = 108 WHERE rowid = 109;
+    SELECT rowid, a, geopoly_area(_shape) FROM g ORDER BY rowid;
+  } {108 w 0.5}
+
+  # UPDATE ... FROM, and an UPDATE inside a trigger.
+  do_execsql_test 29.9 {
+    INSERT INTO g(rowid, _shape, a) VALUES
+      (3, '[[5,5],[7,5],[5,7],[5,5]]', 'v');
+    CREATE TABLE m(o, n);
+    INSERT INTO m VALUES(108, 18), (3, 13);
+    UPDATE g SET rowid = m.n FROM m WHERE m.o = g.rowid;
+    SELECT rowid, a, geopoly_area(_shape) FROM g ORDER BY rowid;
+  } {13 v 2.0 18 w 0.5}
+  do_execsql_test 29.10 {
+    CREATE TABLE t(x);
+    CREATE TRIGGER tr AFTER INSERT ON t BEGIN
+      UPDATE g SET rowid = new.x WHERE rowid = 13;
+    END;
+    INSERT INTO t VALUES(23);
+    SELECT rowid, a, geopoly_area(_shape) FROM g ORDER BY rowid;
+  } {18 w 0.5 23 v 2.0}
+
+  do_execsql_test 29.11 {
+    PRAGMA integrity_check;
+  } {ok}
+}
+
+#-------------------------------------------------------------------------
+# Bug 2026-10-21T02:53:43Z. On a geopoly table, "rowid = ?" with a value
+# that is not equal to any integer found the row whose rowid was the
+# integer part of the value. R-Tree tables got this right, except that
+# a text value in exponent form, like '1e1', was converted to an
+# integer using only the digits before the "e".
+#
+# Each lookup is compared with the same lookup on an ordinary table.
+#
+reset_db
+do_execsql_test 30.0 {
+  CREATE TABLE o(a);
+  CREATE VIRTUAL TABLE r USING rtree(id, x1, x2);
+  INSERT INTO o(rowid) VALUES
+    (0), (1), (6), (7), (10),
+    (9223372036854775807), (-9223372036854775808);
+  INSERT INTO r SELECT rowid, 0, 1 FROM o;
+}
+ifcapable geopoly {
+  do_execsql_test 30.0.1 {
+    CREATE VIRTUAL TABLE g USING geopoly();
+    INSERT INTO g(rowid, _shape)
+      SELECT rowid, '[[0,0],[1,0],[0,1],[0,0]]' FROM o;
+  }
+}
+
+set tn 0
+foreach v {
+  6 6.0 -0.0 '6' {' 6 '} '6.0' '6e0' '0.6e1' '1e1' '10.0e0'
+  6.5 6.000000000000001 '6.5' '6abc' 'x' '0x6' x'36' NULL
+  1e19 -1e19 9223372036854775807.0 '9223372036854775808'
+  9223372036854775807 '9223372036854775807' -9223372036854775808
+} {
+  incr tn
+  set expect [db eval "SELECT rowid FROM o WHERE rowid = $v"]
+  do_execsql_test 30.$tn.1 "
+    SELECT id FROM r WHERE id = $v
+  " $expect
+  do_execsql_test 30.$tn.2 "
+    SELECT id FROM r WHERE rowid IN ($v, 7)
+  " [lsort -integer [concat $expect 7]]
+  ifcapable geopoly {
+    do_execsql_test 30.$tn.3 "
+      SELECT rowid FROM g WHERE rowid = $v
+    " $expect
+    do_execsql_test 30.$tn.4 "
+      SELECT rowid FROM g WHERE rowid IN ($v, 7)
+    " [lsort -integer [concat $expect 7]]
+  }
+}
+
+ifcapable geopoly {
+  do_execsql_test 30.100 {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES (6), (6.5), ('7abc'), ('1e1');
+    SELECT t1.x, g.rowid FROM t1 LEFT JOIN g ON g.rowid = t1.x;
+  } {6 6 6.5 {} 7abc {} 1e1 10}
+  do_execsql_test 30.101 {
+    DELETE FROM g WHERE rowid = 7.5;
+    UPDATE g SET rowid = 70 WHERE rowid = '7abc';
+    SELECT rowid FROM g WHERE rowid BETWEEN 0 AND 100;
+  } {0 1 6 7 10}
+  do_execsql_test 30.102 {
+    DELETE FROM g WHERE rowid = 7.0;
+    SELECT rowid FROM g WHERE rowid BETWEEN 0 AND 100;
+  } {0 1 6 10}
+}
+do_execsql_test 30.103 {
+  SELECT t1.x, r.id FROM t1 LEFT JOIN r ON r.id = t1.x;
+} {6 6 6.5 {} 7abc {} 1e1 10}
 
 finish_test

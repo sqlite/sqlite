@@ -1389,9 +1389,13 @@ static int geopolyFilter(
     /* Special case - lookup by rowid. */
     RtreeNode *pLeaf;        /* Leaf on which the required cell resides */
     RtreeSearchPoint *p;     /* Search point for the leaf */
-    i64 iRowid = sqlite3_value_int64(argv[0]);
+    i64 iRowid;
     i64 iNode = 0;
-    rc = findLeafNode(pRtree, iRowid, &pLeaf, &iNode);
+    if( rtreeRowidEqValue(argv[0], &iRowid) ){
+      rc = findLeafNode(pRtree, iRowid, &pLeaf, &iNode);
+    }else{
+      pLeaf = 0;
+    }
     if( rc==SQLITE_OK && pLeaf!=0 ){
       p = rtreeSearchPointNew(pCsr, RTREE_ZERO, 0);
       assert( p!=0 );  /* Always returns pCsr->sPoint */
@@ -1621,6 +1625,8 @@ static int geopolyUpdate(
   i64 newRowid;                   /* The new rowid */
   int newRowidValid;              /* True if newRowid is valid */
   int coordChange = 0;            /* Change in coordinates */
+  sqlite3_value *pShape = 0;      /* New _shape value */
+  sqlite3_value *pOldShape = 0;   /* Copy of the unchanged _shape */
 
   if( pRtree->nNodeRef ){
     /* Unable to write to the btree while another cursor is reading from it,
@@ -1637,13 +1643,38 @@ static int geopolyUpdate(
   newRowid = newRowidValid ? sqlite3_value_int64(aData[1]) : 0;
   cell.iRowid = newRowid;
 
+  if( nData>1 ){
+    pShape = aData[2];
+    if( oldRowidValid && oldRowid!=newRowid && sqlite3_value_nochange(pShape) ){
+      /* The rowid changes but _shape does not. aData[2] holds no value in
+      ** this case, so read the current _shape from the %_rowid table. It
+      ** is needed for the bounding box of the new r-tree entry and for the
+      ** %_rowid record of the new rowid. */
+      sqlite3_stmt *pRead = 0;
+      rc = sqlite3_prepare_v3(pRtree->db, pRtree->zReadAuxSql, -1, 0,
+                              &pRead, 0);
+      if( rc==SQLITE_OK ){
+        int rc2;
+        sqlite3_bind_int64(pRead, 1, oldRowid);
+        if( sqlite3_step(pRead)==SQLITE_ROW ){
+          pOldShape = sqlite3_value_dup(sqlite3_column_value(pRead, 2));
+          if( pOldShape==0 ) rc = SQLITE_NOMEM;
+          pShape = pOldShape;
+        }
+        rc2 = sqlite3_finalize(pRead);
+        if( rc==SQLITE_OK ) rc = rc2;
+      }
+      if( rc ) goto geopoly_update_end;
+    }
+  }
+
   if( nData>1                                 /* not a DELETE */
    && (!oldRowidValid                         /* INSERT */
-        || !sqlite3_value_nochange(aData[2])  /* UPDATE _shape */
+        || !sqlite3_value_nochange(pShape)    /* UPDATE _shape */
         || oldRowid!=newRowid)                /* Rowid change */
   ){
-    assert( aData[2]!=0 );
-    geopolyBBox(0, aData[2], cell.aCoord, &rc);
+    assert( pShape!=0 );
+    geopolyBBox(0, pShape, cell.aCoord, &rc);
     if( rc ){
       if( rc==SQLITE_ERROR ){
         pVtab->zErrMsg =
@@ -1709,17 +1740,17 @@ static int geopolyUpdate(
     int nChange = 0;
     sqlite3_bind_int64(pUp, 1, cell.iRowid);
     assert( pRtree->nAux>=1 );
-    if( sqlite3_value_nochange(aData[2]) ){
+    if( sqlite3_value_nochange(pShape) ){
       sqlite3_bind_null(pUp, 2);
     }else{
       GeoPoly *p = 0;
-      if( sqlite3_value_type(aData[2])==SQLITE_TEXT
-       && (p = geopolyFuncParam(0, aData[2], &rc))!=0
+      if( sqlite3_value_type(pShape)==SQLITE_TEXT
+       && (p = geopolyFuncParam(0, pShape, &rc))!=0
        && rc==SQLITE_OK
       ){
         sqlite3_bind_blob(pUp, 2, p->hdr, 4+8*p->nVertex, SQLITE_TRANSIENT);
       }else{
-        sqlite3_bind_value(pUp, 2, aData[2]);
+        sqlite3_bind_value(pUp, 2, pShape);
       }
       sqlite3_free(p);
       nChange = 1;
@@ -1735,6 +1766,7 @@ static int geopolyUpdate(
   }
 
 geopoly_update_end:
+  sqlite3_value_free(pOldShape);
   rtreeRelease(pRtree);
   return rc;
 }

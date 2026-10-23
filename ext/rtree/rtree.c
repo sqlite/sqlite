@@ -1908,6 +1908,20 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
 
 int sqlite3IntFloatCompare(i64,double);
 
+/*
+** Argument pVal is the right-hand side of a "rowid = ?" constraint. If
+** there is an integer that compares equal to pVal, set *piRowid to it and
+** return 1. Otherwise - pVal is NULL, a blob, a non-numeric text value or
+** a real value that is not an integer - return 0.
+*/
+static int rtreeRowidEqValue(sqlite3_value *pVal, i64 *piRowid){
+  int eType = sqlite3_value_numeric_type(pVal);
+  *piRowid = sqlite3_value_int64(pVal);
+  return eType==SQLITE_INTEGER
+      || (eType==SQLITE_FLOAT
+          && 0==sqlite3IntFloatCompare(*piRowid, sqlite3_value_double(pVal)));
+}
+
 /* 
 ** Rtree virtual table module xFilter method.
 */
@@ -1933,13 +1947,9 @@ static int rtreeFilter(
     /* Special case - lookup by rowid. */
     RtreeNode *pLeaf;        /* Leaf on which the required cell resides */
     RtreeSearchPoint *p;     /* Search point for the leaf */
-    i64 iRowid = sqlite3_value_int64(argv[0]);
+    i64 iRowid;
     i64 iNode = 0;
-    int eType = sqlite3_value_numeric_type(argv[0]);
-    if( eType==SQLITE_INTEGER
-     || (eType==SQLITE_FLOAT 
-         && 0==sqlite3IntFloatCompare(iRowid,sqlite3_value_double(argv[0])))
-    ){
+    if( rtreeRowidEqValue(argv[0], &iRowid) ){
       rc = findLeafNode(pRtree, iRowid, &pLeaf, &iNode);
     }else{
       rc = SQLITE_OK;

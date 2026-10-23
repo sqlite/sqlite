@@ -1,5 +1,5 @@
-C Performance\simprovements\sin\sPRAGMA\sintegrity_check\sand\sin\smaterialized\sCTEs.
-D 2026-10-22T20:03:37.533
+C Fix\stwo\sminor\sissues\swith\sthe\sgeopoly\sextension.\nBugs\s[bugs:/info/2026-10-21T02:53:43Z]\nand\s[bugs:/info/2026-10-21T05:30:42Z].
+D 2026-10-23T00:49:30.472
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -498,10 +498,10 @@ F ext/recover/sqlite3recover.c 7a049049c9844837a82a28bed0885ea4515cb44b60c227eba
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
-F ext/rtree/geopoly.c 5d8bdbd239c806bd71de10b4aacd351309550719bb2776f80239ddb962b175d7
-F ext/rtree/rtree.c c3f17641d455e1cf4b2e104696ebe3b4b5476b67fb9ed5ee036aba19c84bfc7d
+F ext/rtree/geopoly.c b15c2be7449c4f37c0bc0e6150f2c810dbc50b670af75691430c9bc7e9b52166
+F ext/rtree/rtree.c 116771ac0a5eaef23bea8fbbbeee99ad8e8b677ed758c9084cad0344fd2b5f28
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
-F ext/rtree/rtree1.test 1b8861ed86b5856dc2a94f0e72d6fe011667e8066e923a02e6b351b706d14d05
+F ext/rtree/rtree1.test ae7af664671b73187d4a947601a551de7b6095a6a92d410104cecdc5b77beff1
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
 F ext/rtree/rtree3.test 272594f88c344e973864008bbe4c71fd3a41a264c097d568593ee7886d83d409
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
@@ -2297,9 +2297,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 14d924c33ff11babef13e68f178c715bb8744a0134ee580715486b601d5738d8 d0b5bc53a9d828c425ea29bc418688aa7df20e8cc4b69b81acb0ac1a7c169b6a
-R 9c27d1388fc21c7d73384c44f57158ba
-T +closed d0b5bc53a9d828c425ea29bc418688aa7df20e8cc4b69b81acb0ac1a7c169b6a
+P 52d0c0b3d18b032e2d2c006a5d60df4c65da3b95200eaaffddb0ede9ed63f29f
+R d78d70775b4d143ef12b7c5ee188934a
 U drh
-Z 8abe2cfbcb64db54b4e6f596a898f36f
+Z 7b38a1ec45246b3ad601d2365201294e
 # Remove this line to create a well-formed Fossil manifest.
