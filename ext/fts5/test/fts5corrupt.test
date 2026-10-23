@@ -116,7 +116,6 @@ do_execsql_test 4.1 {
 do_execsql_test 4.2 {
   UPDATE t2_data SET block = X'0402' WHERE id=1
 }
-breakpoint
 do_catchsql_test 4.3 {
   DELETE FROM t2 WHERE rowid=3
 } {1 {database disk image is malformed}}
@@ -162,5 +161,27 @@ do_execsql_test 5.2 {
 do_catchsql_test 5.3 {
   SELECT rowid FROM t1 WHERE t1 MATCH 'a AND x';
 } {0 {1 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200}}
+
+reset_db
+sqlite3_fts5_may_be_corrupt 1
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x);
+  INSERT INTO t(t,rank) VALUES('pgsz',32);
+  WITH r(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i<3000) 
+    INSERT INTO t(rowid,x) SELECT i, 'a b c d' FROM r;
+  INSERT INTO t(t) VALUES('optimize');
+  PRAGMA writable_schema=ON;
+  UPDATE t_data SET block=x'' WHERE id=206158430209;
+  PRAGMA writable_schema=RESET;
+}
+do_execsql_test 6.1 {
+  SELECT count(*) FROM t WHERE t MATCH 'a' AND rowid>2500;
+} {500}
+do_catchsql_test 6.2 {
+  SELECT rowid FROM t WHERE t MATCH 'a' ORDER BY rowid DESC LIMIT 1;
+} {1 {fts5: corruption found reading blob 137438953472 from table "t"}}
+do_catchsql_test 6.3 {
+  INSERT INTO t(t) VALUES('integrity-check');
+} {1 {fts5: corruption found reading blob 137438953472 from table "t"}}
 
 finish_test

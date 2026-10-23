@@ -901,8 +901,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
         sqlite3_free(pRet);
         pRet = 0;
       }else{
-        pRet->p[nByte] = 0x00;
-        pRet->p[nByte+1] = 0x00;
+        memset(&pRet->p[nByte], 0, FTS5_DATA_PADDING);
       }
     }
     p->rc = rc;
