@@ -362,5 +362,56 @@ do_test 12.2 {
   sqlite3_fts5_tokenize db trigram ""
 } {}
 
+#-------------------------------------------------------------------------
+# LIKE and GLOB constraints on UNINDEXED columns must not be passed to
+# the trigram index, as UNINDEXED columns have no entries in the index.
+# Bug be50ab5692c334fd.
+#
+reset_db
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b UNINDEXED, tokenize=trigram);
+  INSERT INTO t1 VALUES('xyz', 'abcdef');
+  INSERT INTO t1 VALUES('abcdef', 'xyz');
+  CREATE VIRTUAL TABLE t2 USING fts5(
+    a, b UNINDEXED, tokenize="trigram case_sensitive 1"
+  );
+  INSERT INTO t2 SELECT a, b FROM t1;
+}
+
+do_execsql_test 13.1 {
+  SELECT rowid FROM t1 WHERE b LIKE '%bcd%';
+} {1}
+do_execsql_test 13.2 {
+  SELECT rowid FROM t1 WHERE b GLOB '*bcd*';
+} {1}
+do_execsql_test 13.3 {
+  SELECT rowid FROM t1 WHERE +b LIKE '%bcd%';
+} {1}
+do_execsql_test 13.4 {
+  SELECT rowid FROM t1 WHERE a LIKE '%bcd%';
+} {2}
+do_execsql_test 13.5 {
+  SELECT rowid FROM t1 WHERE a LIKE '%bcd%' AND b LIKE '%yz%';
+} {2}
+do_execsql_test 13.6 {
+  SELECT rowid FROM t2 WHERE b GLOB '*bcd*';
+} {1}
+do_execsql_test 13.7 {
+  SELECT rowid FROM t2 WHERE b LIKE '%BCD%';
+} {1}
+
+do_eqp_test 13.8 {
+  SELECT * FROM t1 WHERE b LIKE ?
+} {{SCAN t1 VIRTUAL TABLE INDEX 0:}}
+do_eqp_test 13.9 {
+  SELECT * FROM t1 WHERE b GLOB ?
+} {{SCAN t1 VIRTUAL TABLE INDEX 0:}}
+do_eqp_test 13.10 {
+  SELECT * FROM t2 WHERE b GLOB ?
+} {{SCAN t2 VIRTUAL TABLE INDEX 0:}}
+do_eqp_test 13.11 {
+  SELECT * FROM t1 WHERE a LIKE ? AND b LIKE ?
+} {VIRTUAL TABLE INDEX 0:L0}
+
 finish_test
 
