@@ -18,12 +18,16 @@
 **
 ** A Page cache line looks like this:
 **
-**  -------------------------------------------------------------
-**  |  database page content   |  PgHdr1  |  MemPage  |  PgHdr  |
-**  -------------------------------------------------------------
+**  -----------------------------------------------------------------------
+**  |  database page content   |  pad  |  PgHdr1  |  MemPage  |  PgHdr  |
+**  -----------------------------------------------------------------------
 **
 ** The database page content is up front (so that buffer overreads tend to
-** flow harmlessly into the PgHdr1, MemPage, and PgHdr extensions).   MemPage
+** flow harmlessly into the PgHdr1, MemPage, and PgHdr extensions).  The
+** "pad" is PCACHE1_PAD_SIZE bytes of zeroes. It ensures that a small
+** overread of the page buffer, which the b-tree layer may do when reading
+** a varint from a corrupt database, sees only zero bytes and never reads
+** the pointer values at the start of PgHdr1.  MemPage
 ** is the extension added by the btree.c module containing information such
 ** as the database page number and how that database page is used.  PgHdr
 ** is added by the pcache.c layer and contains information used to keep track
@@ -33,7 +37,7 @@
 ** The superclass sqlite3_pcache_page.pBuf points to the start of the
 ** database page content and sqlite3_pcache_page.pExtra points to PgHdr.
 **
-** The size of the extension (MemPage+PgHdr+PgHdr1) can be determined at
+** The size of the extension (pad+MemPage+PgHdr+PgHdr1) can be determined at
 ** runtime using sqlite3_config(SQLITE_CONFIG_PCACHE_HDRSZ, &size).  The
 ** sizes of the extensions sum to 272 bytes on x64 for 3.8.10, but this
 ** size can vary according to architecture, compile-time options, and
@@ -90,14 +94,15 @@ typedef struct PGroup PGroup;
 
 /*
 ** Each cache entry is represented by an instance of the following
-** structure. A buffer of PgHdr1.pCache->szPage bytes is allocated
-** directly before this structure and is used to cache the page content.
+** structure. A buffer of PgHdr1.pCache->szPage bytes, followed by
+** PCACHE1_PAD_SIZE bytes of zeroes, is allocated directly before this
+** structure. The buffer is used to cache the page content.
 **
 ** When reading a corrupt database file, it is possible that SQLite might
 ** read a few bytes (no more than 16 bytes) past the end of the page buffer.
-** It will only read past the end of the page buffer, never write.  This
-** object is positioned immediately after the page buffer to serve as an
-** overrun area, so that overreads are harmless.
+** It will only read past the end of the page buffer, never write.  The
+** zeroed padding and this object are positioned immediately after the page
+** buffer to serve as an overrun area, so that overreads are harmless.
 **
 ** Variables isBulkLocal and isAnchor were once type "u8". That works,
 ** but causes a 2-byte gap in the structure for most architectures (since
@@ -125,6 +130,12 @@ struct PgHdr1 {
   PgHdr1 *pLruPrev;         /* Previous in LRU list of unpinned pages */
                             /* NB: pLruPrev is only valid if pLruNext!=0 */
 };
+
+/*
+** Size in bytes of the zeroed padding between the end of each page buffer
+** and its PgHdr1 object. Must be a multiple of 8 to preserve alignment.
+*/
+#define PCACHE1_PAD_SIZE 8
 
 /*
 ** A page is pinned if it is not on the LRU list.  To be "pinned" means
@@ -315,7 +326,8 @@ static int pcache1InitBulk(PCache1 *pCache){
     if( zBulk ){
       int nBulk = sqlite3MallocSize(zBulk)/pCache->szAlloc;
       do{
-        PgHdr1 *pX = (PgHdr1*)&zBulk[pCache->szPage];
+        PgHdr1 *pX = (PgHdr1*)&zBulk[pCache->szPage+PCACHE1_PAD_SIZE];
+        memset(&zBulk[pCache->szPage], 0, PCACHE1_PAD_SIZE);
         pX->page.pBuf = zBulk;
         pX->page.pExtra = (u8*)pX + ROUND8(sizeof(*pX));
         assert( EIGHT_BYTE_ALIGNMENT( pX->page.pExtra ) );
@@ -454,7 +466,8 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache, int benignMalloc){
     pcache1EnterMutex(pCache->pGroup);
 #endif
     if( pPg==0 ) return 0;
-    p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage];
+    p = (PgHdr1 *)&((u8 *)pPg)[pCache->szPage+PCACHE1_PAD_SIZE];
+    memset(&((u8 *)pPg)[pCache->szPage], 0, PCACHE1_PAD_SIZE);
     p->page.pBuf = pPg;
     p->page.pExtra = (u8*)p + ROUND8(sizeof(*p));
     assert( EIGHT_BYTE_ALIGNMENT( p->page.pExtra ) );
@@ -788,7 +801,8 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
     pCache->pGroup = pGroup;
     pCache->szPage = szPage;
     pCache->szExtra = szExtra;
-    pCache->szAlloc = szPage + szExtra + ROUND8(sizeof(PgHdr1));
+    pCache->szAlloc = szPage + PCACHE1_PAD_SIZE + szExtra
+                    + ROUND8(sizeof(PgHdr1));
     pCache->bPurgeable = (bPurgeable ? 1 : 0);
     pcache1ResizeHash(pCache);
     if( bPurgeable ){
@@ -1220,7 +1234,9 @@ void sqlite3PCacheSetDefault(void){
 /*
 ** Return the size of the header on each page of this PCACHE implementation.
 */
-int sqlite3HeaderSizePcache1(void){ return ROUND8(sizeof(PgHdr1)); }
+int sqlite3HeaderSizePcache1(void){
+  return PCACHE1_PAD_SIZE + ROUND8(sizeof(PgHdr1));
+}
 
 /*
 ** Return the global mutex used by this PCACHE implementation.  The
