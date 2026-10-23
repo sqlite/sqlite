@@ -371,6 +371,60 @@ do_execsql_test 19.0 {
 
 do_recover_test 19.1
 
+#-------------------------------------------------------------------------
+# Bug 2026-10-18T20:41:57Z
+#
+# In a UTF-16 database, TEXT values that begin with U+FEFF or U+FFFE
+# must be recovered unchanged.  The leading character is part of the
+# value, not a byte-order mark.  Values 4 and 5 are large enough to
+# spill onto overflow pages.
+#
+foreach enc {utf16le utf16be} {
+  reset_db
+  do_execsql_test 20.$enc.0 "
+    PRAGMA encoding = '$enc';
+    CREATE TABLE t1(id INTEGER PRIMARY KEY, a TEXT);
+    INSERT INTO t1 VALUES
+       (1, char(0xfeff)||'abc'),
+       (2, char(0xfffe)||'xyz'),
+       (3, 'plain'),
+       (4, char(0xfeff)||printf('%.*c', 5000, 'a')),
+       (5, char(0xfffe)||printf('%.*c', 5000, 'b'));
+  "
+
+  set sql {
+    SELECT id, length(a), unicode(a), hex(substr(a,1,3)), hex(substr(a,-2))
+      FROM t1 ORDER BY id
+  }
+  set expect [db eval $sql]
+
+  # Recover directly into a new database.
+  do_test 20.$enc.1 {
+    forcedelete test.db2
+    set R [sqlite3_recover_init db main test.db2]
+    $R run
+    $R finish
+    sqlite3 db2 test.db2
+    set res [db2 eval $sql]
+    db2 close
+    set res
+  } $expect
+
+  # Recover as SQL text (the path used by the CLI ".recover" command).
+  do_test 20.$enc.2 {
+    forcedelete test.db2
+    set ::sqlhook [list]
+    set R [sqlite3_recover_init_sql db main my_sql_hook]
+    $R run
+    $R finish
+    sqlite3 db2 test.db2
+    db2 eval [join $::sqlhook ";"]
+    set res [db2 eval $sql]
+    db2 close
+    set res
+  } $expect
+}
+
 
 
 finish_test
