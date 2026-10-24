@@ -448,6 +448,8 @@ struct ShellState {
   unsigned nTestRun;     /* Number of test cases run */
   unsigned nTestErr;     /* Number of test cases that failed */
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
+  char *zInput;          /* Simulated inputs */
+  i64 nInputUsed;        /* Simulated input read so far */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
   char *zErrPrefix;      /* Alternative error message prefix */
@@ -492,6 +494,7 @@ struct ShellState {
   } dot;
   u32 mIf;               /* Mask of false if conditions */
   u32 mElse;             /* An else seen at this level */
+  u32 mIfHasBeenTrue;    /* True branch seen in if-elseif-elseif-else chain */
   int nIfLevel;          /* Current number of if levels */
   int nIfAtStart;        /* If level at start of current script */
   i64 lnIf[MX_IF];       /* Line number starting an if */
@@ -940,6 +943,25 @@ static FILE * openChrSource(const char *zFile){
 }
 
 /*
+** Works like fgets except that if "in" really points to p->zInput
+** then text is read out of the p->zInput buffer.
+*/
+static char *shell_fgets(ShellState *p, char *zOut, int nOut, FILE *in){
+  int i, j;
+  char *zIn;
+  if( p==0 || in!=(FILE*)&p->zInput ){
+    return sqlite3_fgets(zOut, nOut, in);
+  }
+  zIn = p->zInput;
+  for(i=0, j=p->nInputUsed; i<nOut-1 && zIn[j] && zIn[j]!='\n'; i++, j++){}
+  if( zIn[j] ){ i++; }
+  memcpy(zOut, &zIn[p->nInputUsed], i);
+  zOut[i] = 0;
+  p->nInputUsed += i;
+  return i>0 ? zOut : 0;
+}
+
+/*
 ** This routine reads a line of text from FILE in, stores
 ** the text in memory obtained from malloc() and returns a pointer
 ** to the text.  NULL is returned at end of file, or if malloc()
@@ -948,7 +970,7 @@ static FILE * openChrSource(const char *zFile){
 ** If zLine is not NULL then it is a malloced buffer returned from
 ** a previous call to this routine that may be reused.
 */
-static char *local_getline(char *zLine, FILE *in){
+static char *local_getline(ShellState *p, char *zLine, FILE *in){
   int nLine = zLine==0 ? 0 : 100;
   int n = 0;
 
@@ -962,7 +984,7 @@ static char *local_getline(char *zLine, FILE *in){
       zLine = realloc(zLine, nLine);
       shell_check_oom(zLine);
     }
-    if( sqlite3_fgets(&zLine[n], nLine - n, in)==0 ){
+    if( shell_fgets(p, &zLine[n], nLine - n, in)==0 ){
       if( n==0 ){
         free(zLine);
         return 0;
@@ -1576,9 +1598,8 @@ static char *one_input_line(
   int bContinue         /* True for a continuation prompt */
 ){
   char *zResult;
-  FILE *in = p->in;
-  if( in!=0 ){
-    zResult = local_getline(zPrior, in);
+  if( p->in!=0 ){
+    zResult = local_getline(p, zPrior, p->in);
   }else{
     const char *zBase = prompt_string(p, bContinue!=0);
     char *zPrompt = expand_prompt(p, zAll, zBase);
@@ -1600,7 +1621,7 @@ static char *one_input_line(
       sputz(stdout, zPrompt);
       fflush(stdout);
       do{
-        zResult = local_getline(zPrior, stdin);
+        zResult = local_getline(p, zPrior, stdin);
         zPrior = 0;
         /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
         if( zResult==0 ) sqlite3_sleep(50);
@@ -5120,7 +5141,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   }
   *pnData = 0;
   nLine++;
-  if( sqlite3_fgets(zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
+  if( shell_fgets(p, zLine, sizeof(zLine), in)==0 ) goto readHexDb_error;
   rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
   if( rc!=2 ) goto readHexDb_error;
   if( n<0 ) goto readHexDb_error;
@@ -5132,7 +5153,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   a = sqlite3_malloc64( sz ? sz : 1 );
   shell_check_oom(a);
   memset(a, 0, sz);
-  for(nLine++; sqlite3_fgets(zLine, sizeof(zLine), in)!=0; nLine++){
+  for(nLine++; shell_fgets(p, zLine, sizeof(zLine), in)!=0; nLine++){
     int j = 0;                    /* Page number from "| page" line */
     int k = 0;                    /* Offset from "| page" line */
     if( nLine>=2000000000 ){
@@ -5170,7 +5191,7 @@ readHexDb_error:
   if( in!=p->in ){
     fclose(in);
   }else{
-    while( sqlite3_fgets(zLine, sizeof(zLine), p->in)!=0 ){
+    while( shell_fgets(p, zLine, sizeof(zLine), p->in)!=0 ){
       nLine++;
       if(cli_strncmp(zLine, "| end ", 6)==0 ) break;
     }
@@ -8436,7 +8457,7 @@ static int dotCmdImport(ShellState *p){
     sCtx.zFile = p->zInFile;
     sCtx.nLine = p->lineno+1;
     iLineOffset = p->lineno;
-    while( sqlite3_fgets(zLine,sizeof(zLine),p->in) ){
+    while( shell_fgets(p, zLine,sizeof(zLine),p->in) ){
       if( ckEnd && cli_strncmp(zLine,zEndMark,nEndMark)==0 ){
         ckEnd = 2;
         if( strchr(zLine,'\n') ) p->lineno++;
@@ -9510,7 +9531,7 @@ static int dotCmdOutput(ShellState *p){
         }
         eMode = z[1];
       }else if( cli_strcmp(z,"-show")==0 ){
-        if( cli_output_capture ){
+        if( sqlite3_str_length(cli_output_capture)>0 ){
           sqlite3_fprintf(stdout, "%s", sqlite3_str_value(cli_output_capture));
         }
       }else if( cli_strcmp(z,"-keep")==0 ){
@@ -9647,6 +9668,30 @@ dotCmdOutput_error:
 }
 
 /*
+** Return true if the argument is <<MARK for some arbitrary mark
+*/
+static int isHereDoc(const char *z){
+  return z[0]=='<' && z[1]=='<' && z[2]!=0;
+}
+
+/*
+** Capture lines of input text up until a line that matches zTerminator.
+** Return a memory buffer (allocated using sqlite3_malloc64()) that
+** contains the complete text, without the terminator.
+*/
+static char *captureHereDoc(ShellState *p, const char *zTerminator){
+  int nTerminator = strlen30(zTerminator);
+  sqlite3_str *pHeredoc = sqlite3_str_new(p->db);
+  char zLine[2000];
+  while( shell_fgets(p, zLine,sizeof(zLine),p->in) ){
+    if( strchr(zLine,'\n') ) p->lineno++;
+    if( cli_strncmp(zTerminator,zLine,nTerminator)==0 ) break;
+    sqlite3_str_appendall(pHeredoc, zLine);
+  }
+  return sqlite3_str_finish(pHeredoc);
+}
+
+/*
 ** DOT-COMMAND: .check
 ** USAGE: .check [OPTIONS] PATTERN
 **
@@ -9679,6 +9724,15 @@ static int dotCmdCheck(ShellState *p){
   int isOk;                          /* True if results are OK */
   sqlite3_int64 iStart = p->lineno;  /* Line number of .check statement */
 
+  if( p->mIf!=0 ){
+    /* Unlike most other dot-commands, the .check command runs even if
+    ** inside the false branch of a .if.  It needs to do this so that it
+    ** can capture any "<<MARKER" heredoc text specified. */
+    if( nArg>0 && isHereDoc(azArg[nArg-1]) ){
+      sqlite3_free(captureHereDoc(p, azArg[nArg-1]+2));
+    }
+    return 0;
+  }
   if( p->zTestcase[0]==0 ){
     dotCmdError(p, 0, "no .testcase is active", 0);
     return 1;
@@ -9689,7 +9743,7 @@ static int dotCmdCheck(ShellState *p){
     if( cli_strcmp(z,"-keep")==0 ){
       bKeep = 1;
     }else if( cli_strcmp(z,"-show")==0 ){
-      if( cli_output_capture ){
+      if( sqlite3_str_length(cli_output_capture)>0 ){
         sqlite3_fprintf(stdout, "%s", sqlite3_str_value(cli_output_capture));
       }
       bKeep = 1;
@@ -9712,23 +9766,15 @@ static int dotCmdCheck(ShellState *p){
     dotCmdError(p, 0, "no PATTERN specified", 0);
     return 1;
   }
-  if( cli_output_capture && sqlite3_str_length(cli_output_capture) ){
+  if( sqlite3_str_length(cli_output_capture) ){
     zTest = sqlite3_str_value(cli_output_capture);
     shell_check_oom(zTest);
   }else{
     zTest = "";
   }
   p->nTestRun++;
-  if( zCheck[0]=='<' && zCheck[1]=='<' && zCheck[2]!=0 ){
-    int nCheck = strlen30(zCheck);
-    sqlite3_str *pPattern = sqlite3_str_new(p->db);
-    char zLine[2000];
-    while( sqlite3_fgets(zLine,sizeof(zLine),p->in) ){
-      if( strchr(zLine,'\n') ) p->lineno++;
-      if( cli_strncmp(&zCheck[2],zLine,nCheck-2)==0 ) break;
-      sqlite3_str_appendall(pPattern, zLine);
-    }
-    zPattern = sqlite3_str_finish(pPattern);
+  if( isHereDoc(zCheck) ){
+    zPattern = captureHereDoc(p, zCheck+2);
     if( zPattern==0 ){
       zPattern = sqlite3_mprintf("");
     }
@@ -9929,7 +9975,8 @@ static int dotCmdTestcase(ShellState *p){
 /*
 ** Evaluate the text of zExpr as an SQL expression.  Return true if the
 ** expression is true.  Return false if the expression evaluates to
-** false or NULL.
+** false or NULL.  Return false if there is any kind of error, either
+** a run-time or a compile-time error.
 */
 static int sqlExprIsTrue(ShellState *p, const char *zExpr){
   char *zSql = sqlite3_mprintf("SELECT %s", zExpr);
@@ -9939,7 +9986,7 @@ static int sqlExprIsTrue(ShellState *p, const char *zExpr){
   rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
   sqlite3_free(zSql);
   if( rc ){
-    dotCmdError(p, 0, 0, "Expression error: %s", sqlite3_errmsg(p->db));
+    rc = 0;
   }else{
     bind_prepared_stmt(p, pStmt);
     rc = sqlite3_step(pStmt);
@@ -9959,9 +10006,10 @@ static int sqlExprIsTrue(ShellState *p, const char *zExpr){
 **
 ** The argument can be any SQL expression, including a subquery in
 ** parentheses.  If the expression evalutes to true (if it is non-zero
-** when converted into an integer) then subsequent statements are
-** evaluated.  If false or NULL, subsequent statements
-** are skipped, up until the first matching .else or .endif.
+** when converted into an number) then subsequent statements are
+** evaluated.  If SQL-EXPRESSION evalutes to false or NULL or raises
+** an error, then subsequent statements are skipped, up until the first
+** matching .elseif, .else, or .endif.
 **
 ** Maximum nested depth is limited.  An error is raised if .if statements
 ** are nested to deep.
@@ -9976,7 +10024,10 @@ static int dotCmdIf(ShellState *p){
     return 2;
   }
   jj = p->nIfLevel++;
-  if( !sqlExprIsTrue(p, p->dot.zOrig+3) ){
+  open_db(p, 0);
+  if( sqlExprIsTrue(p, p->dot.zOrig+3) ){
+    p->mIfHasBeenTrue |= 1<<jj;
+  }else{
     p->mIf |= 1<<jj;
   }
   p->lnIf[jj] = p->lineno;
@@ -9993,13 +10044,16 @@ static int dotCmdElseif(ShellState *p){
   int jj = p->nIfLevel-1;
   if( jj<0 ){
     dotCmdError(p, 0, 0, ".elseif with no .if");
-    return 2;
+    return 1;
   }
   if( (p->mElse & (1<<jj))!=0 ){
     dotCmdError(p, 0, 0, ".elseif follows a .else on line %lld", p->lnElse[jj]);
   }
-  if( sqlExprIsTrue(p, p->dot.zOrig+7) ){
+  if( p->mIfHasBeenTrue & (1<<jj) ){
+    p->mIf |= 1<<jj;
+  }else if( sqlExprIsTrue(p, p->dot.zOrig+7) ){
     p->mIf &= ~(1<<jj);
+    p->mIfHasBeenTrue |= (1<<jj);
   }else{
     p->mIf |= 1<<jj;
   }
@@ -10024,7 +10078,11 @@ static int dotCmdElse(ShellState *p){
     dotCmdError(p, 0, 0, "already saw a .else at line %lld", p->lnElse[ii]);
     return 1;
   }
-  p->mIf ^= (1<<ii);
+  if( p->mIfHasBeenTrue & (1<<ii) ){
+    p->mIf |= (1<<ii);
+  }else{
+    p->mIf &= ~(1<<ii);
+  }
   p->mElse |= (1<<ii);
   p->lnElse[ii] = p->lineno;
   return 0;
@@ -10044,6 +10102,7 @@ static int dotCmdEndif(ShellState *p){
   p->nIfLevel--;
   p->mIf &= ~(1<<p->nIfLevel);
   p->mElse &= ~(1<<p->nIfLevel);
+  p->mIfHasBeenTrue &= ~(1<<p->nIfLevel);
   return 0;
 }
 
@@ -11748,14 +11807,22 @@ static int do_meta_command(const char *zLine, ShellState *p){
 #endif
 
 #ifndef SQLITE_SHELL_FIDDLE
-  if( c=='r' && n>=3 && cli_strncmp(azArg[0], "read", n)==0 ){
+  if( c=='r' && n==4 && cli_strcmp(azArg[0], "read")==0 ){
     FILE *inSaved = p->in;
     i64 savedLineno = p->lineno;
-    failIfSafeMode(p, "cannot run .read in safe mode");
+    if( p->mIf ){
+      if( nArg==2 && isHereDoc(azArg[1]) ){
+        sqlite3_free(captureHereDoc(p, azArg[1]));
+      }
+      return 0;
+    }
     if( nArg!=2 ){
       eputz("Usage: .read FILE\n");
       rc = 1;
       goto meta_command_exit;
+    }
+    if( !isHereDoc(azArg[1]) ){
+      failIfSafeMode(p, "cannot run .read in safe mode");
     }
     if( azArg[1][0]=='|' ){
 #ifdef SQLITE_OMIT_POPEN
@@ -11771,6 +11838,19 @@ static int do_meta_command(const char *zLine, ShellState *p){
         pclose(p->in);
       }
 #endif
+    }else if( isHereDoc(azArg[1]) ){
+      char *saved_zInput;
+      i64 saved_nInputUsed;
+      char *zScript = captureHereDoc(p, azArg[1]+2);
+      saved_zInput = p->zInput;
+      saved_nInputUsed = p->nInputUsed;
+      p->zInput = zScript;
+      p->nInputUsed = 0;
+      p->in = (FILE*)&p->zInput;
+      rc = process_input(p, "<heredoc>");
+      sqlite3_free(p->zInput);
+      p->zInput = saved_zInput;
+      p->nInputUsed = saved_nInputUsed;
     }else if( (p->in = openChrSource(azArg[1]))==0 ){
       cli_printf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
       rc = 1;
@@ -13700,6 +13780,30 @@ static int line_is_complete(char *zSql, int nSql){
 }
 
 /*
+** Return true if zLine is a dot-command that should always be run
+** even if inside of the false leg of an ".if"
+*/
+static int alwaysRun(const char *zLine){
+  const char *az[] = {
+     "3.if",
+     "7.elseif",
+     "5.else",
+     "6.endif",
+     "6.check",    /* For its heredoc */
+     "5.read",     /* For its heredoc */
+     "0"
+  };
+  int jj, n;
+  for(jj=0; (n = az[jj][0] - '0')>0; jj++){
+    if( strncmp(zLine,az[jj]+1,n)==0 && (IsSpace(zLine[n]) || zLine[n]==0) ){
+      return 1;
+    }
+  }
+  return 0;
+}
+  
+
+/*
 ** Read input from *in and process it.  If *in==0 then input
 ** is interactive - the user is typing it it.  Otherwise, input
 ** is coming from a file or device.  A prompt is issued and history
@@ -13756,12 +13860,7 @@ static int process_input(ShellState *p, const char *zSrc){
     if( zLine && (zLine[0]=='.' || zLine[0]=='#') && nSql==0 ){
       echo_group_input(p, zLine);
       if( zLine[0]=='.' ){
-        if( p->mIf==0
-         || strncmp(zLine,".if",3)==0
-         || strncmp(zLine,".elseif",7)==0
-         || strncmp(zLine,".else",5)==0
-         || strncmp(zLine,".endif",6)==0
-        ){
+        if( p->mIf==0 || alwaysRun(zLine) ){
           rc = do_meta_command(zLine, p);
           if( rc==2 ){ /* exit requested */
             p->nIfLevel = p->nIfAtStart;
@@ -13842,6 +13941,7 @@ static int process_input(ShellState *p, const char *zSrc){
   while( p->nIfLevel > p->nIfAtStart ){
     int ii = --p->nIfLevel;
     cli_printf(stderr,"%s:%lld: unterminated .if\n", zSrc, p->lnIf[ii]);
+    errCnt++;
   }
   p->zInFile = saved_zInFile;
   p->lineno = saved_lineno;
