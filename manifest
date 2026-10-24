@@ -1,5 +1,5 @@
-C Change\sthe\sorder\sof\sfields\sin\san\sinternal\sstructure\sto\savoid\sthe\spossibility\sof\sleaking\sheap\saddress\sinformation\swhen\sa\scorrupt\sdatabase\sis\squeried.
-D 2026-10-24T14:29:45.397
+C Use\s64-bit\smath\sto\savoid\sinteger\soverflow\sin\sunixSleep()\son\sthe\srare\nsystems\sthat\slack\sboth\susleep()\sand\snanosleep().\n[bugs:/info/2026-10-24T09:43:25Z|Bug\s2026-10-24T09:43:25Z]
+D 2026-10-24T14:54:49.869
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -792,7 +792,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 713336d0c646720a9ccbd5bc6fe217bb4924dd28adea25d83a2af5346cb030e6
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c fb0aafe175ba95233e0dc80eae297caa597e2d6679246752eb58f6c918cc2b23
+F src/os_unix.c fd75e72b15cceba05fe10ac4670d09f8fa7e5fc7ab393ea2e243702b9b230368
 F src/os_win.c 74473c76517956865581f12e4afc06c09a499ea70002cf9cedb3316301138be8
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fd9ca8fe01b09c490e66a440e2f56648d489ccb9e0e3b5508424079b046fc824
@@ -2300,8 +2300,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7ba9c1f65fd2ed16570110decfc4ee28a0deeff20ec09c749acd188d27892e69
-R 85b02f60ea8e13cb3d020a2b7e6cd39c
-U dan
-Z 561268e51ea46281690ae41c989c9a45
+P a5261fd58070d4cb10c627e54491ed7588d96f47073b19612aa669f684e8e5b5
+R b0ab9e87deeb2a167c99641f1b3ff24b
+U drh
+Z a9a1e1ce16596a6b93e048312922a956
 # Remove this line to create a well-formed Fossil manifest.
