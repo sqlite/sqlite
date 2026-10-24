@@ -1,5 +1,5 @@
-C New\sCLI\scommands:\s.if,\s.elseif,\s.else,\sand\s.endif.\s\sNew\sCLI\sfunction:\ncapable(X).
-D 2026-10-24T14:05:21.835
+C Change\sthe\sorder\sof\sfields\sin\san\sinternal\sstructure\sto\savoid\sthe\spossibility\sof\sleaking\sheap\saddress\sinformation\swhen\sa\scorrupt\sdatabase\sis\squeried.
+D 2026-10-24T14:29:45.397
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -800,7 +800,7 @@ F src/pager.h 53cabc1fd881a9c078eab7db6c233bc0ed29d8938fc05585f0e75e80d905d308
 F src/parse.y 21f92beded2b0e1f1826b7f140b679c159ca0922be94b0b675fc9dabdf2fa892
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 00c5797ddf546ee0fe2828d7f75d1afbf1b40ba054f362905326c5ccca15e60c
-F src/pcache1.c 6bc38b44961f767985ae5022fb7887eda206040f57475812473929c702f6799d
+F src/pcache1.c e5e548a11c4c417c781351413905141139cc1d8d8449a0e618d0a438a64da477
 F src/pragma.c 593571dfd86c24e63a4d2fc1927dcf2901be454f318bb0abb64dedddefb53bdd
 F src/prepare.c 8c4f4571668700664d0da6b6d2fe3e8d9d8808e3d1c643f14024e25d966df418
 F src/printf.c 4bd228ed9e9346d558362be562757ee5eef6f9bf483b7f02751ca42cf95174d3
@@ -1595,6 +1595,7 @@ F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/parser1.test 1901cf7157fbf7842eaee4a7dea65e096c606f01d42740a7991fa85eba421d45
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test 8a801d2b8e4b0ebb99701f026a67a9e84634c8aa24799a842c44003b93250da1
+F test/pcacheleak.test ccd1bf439cd472e2a756564d205451fd10d5961c1b7ca0a54d87d1a4c909c618
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
 F test/percentile.test fd78896fa882fa4fbf693640097859721f3629926c2ccf804af5bcb7001fd35b
 F test/permutations.test c919e9d9b9d17faccd543128ac714efbba0606c7051bcb54f264006eecdb4627
@@ -2299,8 +2300,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0172c575ef99bc2b50bf4ff5588e180915f9fb7f8f6ad5d1582725652f72fba5 1209b11fda9649891b28add70a6503eeb7b9645c01a76e750703cec0297fb5dd
-R 2cd26cf3d5da89f7b64ad132be72324f
-U drh
-Z a32ba9874784290a6191540b07a8ce3e
+P 7ba9c1f65fd2ed16570110decfc4ee28a0deeff20ec09c749acd188d27892e69
+R 85b02f60ea8e13cb3d020a2b7e6cd39c
+U dan
+Z 561268e51ea46281690ae41c989c9a45
 # Remove this line to create a well-formed Fossil manifest.
