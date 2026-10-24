@@ -84,9 +84,10 @@ struct Fts5VocabCursor {
 #define FTS5_VOCAB_ROW      1
 #define FTS5_VOCAB_INSTANCE 2
 
-#define FTS5_VOCAB_COL_SCHEMA  "term, col, doc, cnt"
-#define FTS5_VOCAB_ROW_SCHEMA  "term, doc, cnt"
-#define FTS5_VOCAB_INST_SCHEMA "term, doc, col, offset"
+#define FTS5_VOCAB_COL_SCHEMA  "term, col, doc, cnt, PRIMARY KEY(term, col)"
+#define FTS5_VOCAB_ROW_SCHEMA  "term, doc, cnt, PRIMARY KEY(term)"
+#define FTS5_VOCAB_INST_SCHEMA \
+    "term, doc, col, offset, PRIMARY KEY(term, doc, col, offset)"
 
 /*
 ** Bits for the mask used as the idxNum value by xBestIndex/xFilter.
@@ -178,9 +179,9 @@ static int fts5VocabInitVtab(
   char **pzErr                    /* Write any error message here */
 ){
   const char *azSchema[] = { 
-    "CREATE TABlE vocab(" FTS5_VOCAB_COL_SCHEMA  ")", 
-    "CREATE TABlE vocab(" FTS5_VOCAB_ROW_SCHEMA  ")",
-    "CREATE TABlE vocab(" FTS5_VOCAB_INST_SCHEMA ")"
+    "CREATE TABlE vocab(" FTS5_VOCAB_COL_SCHEMA  ") WITHOUT ROWID", 
+    "CREATE TABlE vocab(" FTS5_VOCAB_ROW_SCHEMA  ") WITHOUT ROWID",
+    "CREATE TABlE vocab(" FTS5_VOCAB_INST_SCHEMA ") WITHOUT ROWID"
   };
 
   Fts5VocabTable *pRet = 0;
