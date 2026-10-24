@@ -1818,6 +1818,95 @@ static char *shellFakeSchema(
 }
 
 /*
+** SQL function:  capable(X)
+**
+** Return true if the current build has capability X.
+** This function is intended to be used with the ".if" command
+** to bypass test cases that use features that are not part of
+** the build.  Examples:
+**
+**     .if capable('fts5')
+**     # do tests that require the FTS5 extension
+**     .endif
+**
+**     .if capable('generate_series')
+**     # do tests that require the generate_series() table-valued functions
+**     .endif
+*/
+static void shellCapable(
+  sqlite3_context *pCtx,
+  int nVal,
+  sqlite3_value **apVal
+){
+  ShellState *p = (ShellState*)sqlite3_user_data(pCtx);
+  const char *z = (const char*)sqlite3_value_text(apVal[0]);
+  char *zLike;
+  sqlite3_stmt *pStmt;
+  int res = -1;
+  UNUSED_PARAMETER(nVal);
+  if( z==0 ) return;
+
+  zLike = sqlite3_mprintf("%%%s",z);
+  shell_check_oom(zLike);
+  pStmt = 0;
+  sqlite3_prepare_v2(p->db, "PRAGMA compile_options", -1, &pStmt, 0);
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    const char *zRow = (const char*)sqlite3_column_text(pStmt, 0);
+    if( zRow==0 ) continue;
+    if( sqlite3_strglob("OMIT_*",zRow)==0 
+     || sqlite3_strglob("DISABLE_*",zRow)==0
+    ){
+      if( sqlite3_strlike(zLike,zRow,0)==0 ){
+        res = 0;
+        break;
+      }
+    }
+    if( sqlite3_strglob("HAVE_*",zRow)==0 
+     || sqlite3_strglob("ENABLE_*",zRow)==0
+    ){
+      if( sqlite3_strlike(zLike,zRow,0)==0 ){
+        res = 1;
+        break;
+      }
+    }
+    if( sqlite3_stricmp(zRow, z)==0 ){
+      res = 1;
+      break;
+    }
+  }
+  sqlite3_finalize(pStmt);
+  sqlite3_free(zLike);
+  if( res<0 ){
+    pStmt = 0;
+    sqlite3_prepare_v2(p->db, "PRAGMA module_list", -1, &pStmt, 0);
+    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+      const char *zRow = (const char*)sqlite3_column_text(pStmt, 0);
+      if( zRow==0 ) continue;
+      if( sqlite3_stricmp(zRow,z)==0 ){
+        res = 1;
+        break;
+      }
+    }
+    sqlite3_finalize(pStmt);
+  }
+  if( res<0 ){
+    pStmt = 0;
+    sqlite3_prepare_v2(p->db, "PRAGMA function_list", -1, &pStmt, 0);
+    while( sqlite3_step(pStmt)==SQLITE_ROW ){
+      const char *zRow = (const char*)sqlite3_column_text(pStmt, 0);
+      if( zRow==0 ) continue;
+      if( sqlite3_stricmp(zRow,z)==0 ){
+        res = 1;
+        break;
+      }
+    }
+    sqlite3_finalize(pStmt);
+  }
+  sqlite3_result_int(pCtx, res>0);
+}
+
+
+/*
 ** SQL function:  strtod(X)
 **
 ** For use internally and for debugging and testing only.  This function
@@ -5307,6 +5396,8 @@ static void open_db(ShellState *p, int openFlags){
     }
 #endif
 
+    sqlite3_create_function(p->db, "capable", 1, SQLITE_UTF8, p,
+                            shellCapable, 0, 0);
     sqlite3_create_function(p->db, "strtod", 1, SQLITE_UTF8, 0,
                             shellStrtod, 0, 0);
     sqlite3_create_function(p->db, "dtostr", 1, SQLITE_UTF8, 0,
