@@ -1841,7 +1841,9 @@ static char *shellFakeSchema(
 /*
 ** SQL function:  capable(X)
 **
-** Return true if the current build has capability X.
+** Return true if the current build has capability X.  Return 0
+** if X is not a capability or NULL if X is NULL.
+**
 ** This function is intended to be used with the ".if" command
 ** to bypass test cases that use features that are not part of
 ** the build.  Examples:
@@ -10018,10 +10020,9 @@ static int sqlExprIsTrue(ShellState *p, const char *zExpr){
 */
 static int dotCmdIf(ShellState *p){
   int jj;
-  if( p->nIfLevel==MX_IF-1 ){
-    dotCmdError(p, 0, 0, ".if nested too deep.  Max %d levels. Terminating",
-                MX_IF);
-    return 2;
+  if( p->nIfLevel==MX_IF ){
+    dotCmdError(p, 0, 0, ".if nested too deep");
+    return 1;
   }
   jj = p->nIfLevel++;
   open_db(p, 0);
@@ -10042,12 +10043,14 @@ static int dotCmdIf(ShellState *p){
 */
 static int dotCmdElseif(ShellState *p){
   int jj = p->nIfLevel-1;
-  if( jj<0 ){
+  if( jj<p->nIfAtStart ){
     dotCmdError(p, 0, 0, ".elseif with no .if");
     return 1;
   }
   if( (p->mElse & (1<<jj))!=0 ){
     dotCmdError(p, 0, 0, ".elseif follows a .else on line %lld", p->lnElse[jj]);
+    p->mIf |= 1<<jj;
+    return 1;
   }
   if( p->mIfHasBeenTrue & (1<<jj) ){
     p->mIf |= 1<<jj;
@@ -11812,7 +11815,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     i64 savedLineno = p->lineno;
     if( p->mIf ){
       if( nArg==2 && isHereDoc(azArg[1]) ){
-        sqlite3_free(captureHereDoc(p, azArg[1]));
+        sqlite3_free(captureHereDoc(p, azArg[1]+2));
       }
       return 0;
     }
@@ -11842,6 +11845,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       char *saved_zInput;
       i64 saved_nInputUsed;
       char *zScript = captureHereDoc(p, azArg[1]+2);
+      savedLineno = p->lineno;
       saved_zInput = p->zInput;
       saved_nInputUsed = p->nInputUsed;
       p->zInput = zScript;
@@ -13941,6 +13945,9 @@ static int process_input(ShellState *p, const char *zSrc){
   while( p->nIfLevel > p->nIfAtStart ){
     int ii = --p->nIfLevel;
     cli_printf(stderr,"%s:%lld: unterminated .if\n", zSrc, p->lnIf[ii]);
+    p->mIf &= ~(1<<ii);
+    p->mElse &= ~(1<<ii);
+    p->mIfHasBeenTrue &= ~(1<<ii);
     errCnt++;
   }
   p->zInFile = saved_zInFile;

@@ -60,6 +60,7 @@ proc build_loadable {ext srcfile} {
   }
 }
 
+do_clitest if.sql
 do_clitest modeA.sql
 do_clitest dblwidth-a.sql
 do_clitest vt100-a.sql
