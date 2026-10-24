@@ -757,3 +757,73 @@ INSERT INTO t VALUES(0.30000000000000004);
 INSERT INTO t VALUES(123456789.12345679);
 COMMIT;
 END
+
+# Bug 2026-10-24T04:41:27Z
+#
+# Relaxed quoting must quote text values that look like real literals
+# with no digits before the "." and text values that look like
+# hexadecimal integer literals.
+#
+.open :memory:
+.mode tty
+.testcase 1600
+SELECT '.5' AS a, '0.5' AS b, 0.5 AS c, '-.5' AS d, '0x10' AS e, 0x10 AS f;
+.check <<END
+╭──────┬───────┬─────┬───────┬────────┬────╮
+│  a   │   b   │  c  │   d   │   e    │ f  │
+╞══════╪═══════╪═════╪═══════╪════════╪════╡
+│ '.5' │ '0.5' │ 0.5 │ '-.5' │ '0x10' │ 16 │
+╰──────┴───────┴─────┴───────┴────────┴────╯
+END
+.testcase 1610
+CREATE TABLE t2(a,b);
+INSERT INTO t2(a,b) VALUES
+  (1,'.5'),
+  (1,'-.5'),
+  (1,'+.5'),
+  (1,'.5e3'),
+  (1,'.5E-3'),
+  (1,'5.'),
+  (0,'.'),
+  (0,'-.'),
+  (0,'.e5'),
+  (0,'.5.5'),
+  (0,'.5x'),
+  (0,'.5e'),
+  (1,'0x1F'),
+  (1,'0X1f'),
+  (1,'-0x10'),
+  (1,'+0xabcdef'),
+  (0,'0x'),
+  (0,'0x1G'),
+  (0,'0x1.5'),
+  (0,'x10'),
+  (0,'1x10');
+SELECT if(a,'yes','') AS 'quoted?', b AS string FROM t2 ORDER BY rowid;
+.check <<END
+╭─────────┬─────────────╮
+│ quoted? │   string    │
+╞═════════╪═════════════╡
+│ yes     │ '.5'        │
+│ yes     │ '-.5'       │
+│ yes     │ '+.5'       │
+│ yes     │ '.5e3'      │
+│ yes     │ '.5E-3'     │
+│ yes     │ '5.'        │
+│         │ .           │
+│         │ -.          │
+│         │ .e5         │
+│         │ .5.5        │
+│         │ .5x         │
+│         │ .5e         │
+│ yes     │ '0x1F'      │
+│ yes     │ '0X1f'      │
+│ yes     │ '-0x10'     │
+│ yes     │ '+0xabcdef' │
+│         │ 0x          │
+│         │ 0x1G        │
+│         │ 0x1.5       │
+│         │ x10         │
+│         │ 1x10        │
+╰─────────┴─────────────╯
+END

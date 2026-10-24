@@ -861,15 +861,23 @@ static int qrfRelaxable(Qrf *p, const char *z){
   if( p->spec.zNull && strcmp(p->spec.zNull,z)==0 ) return 0;
   i = (z[0]=='-' || z[0]=='+');
   if( strcmp(z+i,"Inf")==0 ) return 0;
-  if( !qrfDigit(z[i]) ) return 1;
-  i++;
+  if( z[i]=='0' && (z[i+1]=='x' || z[i+1]=='X') ){
+    /* Hexadecimal integer literal: 0x1f */
+    i += 2;
+    n = strspn(&z[i], "0123456789abcdefABCDEF");
+    return n==0 || z[i+n]!=0;
+  }
+  if( z[i]=='.' && qrfDigit(z[i+1]) ){
+    /* Real literal with no digits before the ".", such as ".5" */
+    i++;
+  }else if( !qrfDigit(z[i]) ){
+    return 1;
+  }else{
+    while( qrfDigit(z[i]) ){ i++; }
+    if( z[i]=='.' ) i++;
+  }
   while( qrfDigit(z[i]) ){ i++; }
   if( z[i]==0 ) return 0;
-  if( z[i]=='.' ){
-    i++;
-    while( qrfDigit(z[i]) ){ i++; }
-    if( z[i]==0 ) return 0;
-  }
   if( z[i]=='e' || z[i]=='E' ){
     i++;
     if( z[i]=='+' || z[i]=='-' ){ i++; }
