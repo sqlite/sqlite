@@ -223,14 +223,16 @@ static int whereOrInsert(
   }
   if( pSet->n<N_OR_COST ){
     p = &pSet->a[pSet->n++];
-    p->nOut = nOut;
   }else{
+    /* The set is full.  Replace the most expensive entry, but only if the
+    ** new entry is less expensive than it. */
     p = pSet->a;
     for(i=1; i<pSet->n; i++){
-      if( p->rRun>pSet->a[i].rRun ) p = pSet->a + i;
+      if( p->rRun<pSet->a[i].rRun ) p = pSet->a + i;
     }
     if( p->rRun<=rRun ) return 0;
   }
+  p->nOut = nOut;
 whereOrInsert_done:
   p->prereq = prereq;
   p->rRun = rRun;
@@ -6158,7 +6160,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         if( nTo>=mxChoice ){
           mxI = 0;
           mxCost = aTo[0].rCost;
-          mxUnsort = aTo[0].nRow;
+          mxUnsort = aTo[0].rUnsort;
           for(jj=1, pTo=&aTo[1]; jj<mxChoice; jj++, pTo++){
             if( pTo->rCost>mxCost
              || (pTo->rCost==mxCost && pTo->rUnsort>mxUnsort)
