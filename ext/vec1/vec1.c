@@ -2210,7 +2210,6 @@ static int vec1KMeansInitOne(
   int *aBest = 0;
   int ii;                         /* Loop counter for per-job loop */
   int rr;                         /* Loop counter for per-round loop */
-  int iNext;
   int nCentroid = 0;
   int nNewCentroid = 0;
   float *vec = 0;
@@ -2230,7 +2229,7 @@ static int vec1KMeansInitOne(
     aBest = (int*)&aMin[pVec->nVec];
   }
 
-  for(ii=0, iNext=0; ii<nJob; ii++){
+  for(ii=0; ii<nJob; ii++){
     KMeansInitJob *pJob = &aJob[ii];
     ASSIGN_VECTORS_TO_JOB(pVec, pJob, ii, nJob);
     pJob->aMin = aMin;
@@ -2311,6 +2310,7 @@ static int vec1KMeansInitOne(
 /*
 ** Implementation of KMeans || initialization.
 */
+#if 0
 static int vec1KMeansParallel(
   Vec1TrainVectors *pVec,
   Vec1JobQueue *pQueue,           /* Job queue to use (NULL -> 1 thread) */
@@ -2343,6 +2343,7 @@ static int vec1KMeansParallel(
 
   return rc;
 }
+#endif
 
 static int vec1KMeansPlusPlus(
   Vec1TrainVectors *pVec,
@@ -6150,8 +6151,8 @@ static int vec1CheckColumnName(const char *zName, char **pzErr){
     return SQLITE_ERROR;
   }
 
-  if( nName==5 && 0==sqlite3_strnicmp(aName, "rowid", 5) 
-   || nName==8 && 0==sqlite3_strnicmp(aName, "distance", 8) 
+  if( (nName==5 && 0==sqlite3_strnicmp(aName, "rowid", 5))
+   || (nName==8 && 0==sqlite3_strnicmp(aName, "distance", 8))
   ){
     *pzErr = sqlite3_mprintf("vec1: reserved column name: %s", zName);
     return SQLITE_ERROR;
@@ -8126,6 +8127,7 @@ static void vec1EncodeVectorPQ(
   }
 }
 
+#if 0
 static void vec1EncodeVectorPQSimple(
   const Vec1Model *pMod,          /* Model to encode with */
   const float *aVec,              /* Vector to encode */
@@ -8144,7 +8146,7 @@ static void vec1EncodeVectorPQSimple(
     );
   }
 }
-
+#endif
 
 static void vec1EncodeVector(
   const Vec1Model *pMod,
@@ -8611,7 +8613,13 @@ static int vec1LoadConfig(Vec1Tab *pTab){
         }
 
         case VEC1_CONFIG_NELEM: {
-          pTab->cfg.nElem = sqlite3_column_int(pStmt, 1);
+          i64 nElem = sqlite3_column_int(pStmt, 1);
+          if( nElem<VEC1_VECSIZE_MIN || nElem>VEC1_VECSIZE_MAX ){
+            vec1VtabError(pTab, "invalid vector size in config");
+            rc = VEC1_CORRUPT;
+          }else{
+            pTab->cfg.nElem = (int)nElem;
+          }
           break;
         }
 
@@ -12317,7 +12325,6 @@ static int vec1IntegrityMethod(
 
     int *aiOffMeta = 0;
     i64 nTotalEntry = 0;
-    u8 *aIdxPQ = 0;
 
     if( nCodebook>0 && pMod->hdr.nBucket>0 ){
       aResidual = vec1MallocZero(pTab->nTmpVec * sizeof_f32);
@@ -12333,7 +12340,6 @@ static int vec1IntegrityMethod(
         rc = SQLITE_NOMEM;
         goto integrity_failed;
       }
-      aIdxPQ = &aPQ[nCodebook + sizeof_f32];
     }
 
     rc = vec1GetSql(pTab, VEC1_SQL_SCAN_IDX, &pScan);

@@ -107,7 +107,19 @@ do_catchsql_test 2.2.8 {
   SELECT * FROM x1(random_vector(8), '{K:4.5}')
 } {1 {vec1: K must be an integer value between 0 and 33554432}}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+vec1_load db
 
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE v USING vec1(v);
+  INSERT INTO v_config(id, val) VALUES(2, 1073741825);
+}
+
+do_catchsql_test 3.1 {
+  INSERT INTO v(v) VALUES(zeroblob(4));
+} {1 {invalid vector size in config}}
 
 finish_test
 
