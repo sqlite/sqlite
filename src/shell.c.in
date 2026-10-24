@@ -1863,69 +1863,44 @@ static void shellCapable(
 ){
   ShellState *p = (ShellState*)sqlite3_user_data(pCtx);
   const char *z = (const char*)sqlite3_value_text(apVal[0]);
-  char *zLike;
-  sqlite3_stmt *pStmt;
-  int res = -1;
+  static const char *azSql[] = {
+    "PRAGMA compile_options",
+    "PRAGMA module_list",
+    "PRAGMA function_list"
+  };
+  static const char *azInversions[] = {
+    "vtab",     "OMIT_VIRTUALTABLE",
+    "fkey",     "OMIT_FOREIGN_KEY",
+    "load_ext", "OMIT_LOAD_EXTENSION",
+  };
+  int i;
+  int invert = 0;
+  int res = 0;
+
   UNUSED_PARAMETER(nVal);
   if( z==0 ) return;
-
-  zLike = sqlite3_mprintf("%%%s",z);
-  shell_check_oom(zLike);
-  pStmt = 0;
-  sqlite3_prepare_v2(p->db, "PRAGMA compile_options", -1, &pStmt, 0);
-  while( sqlite3_step(pStmt)==SQLITE_ROW ){
-    const char *zRow = (const char*)sqlite3_column_text(pStmt, 0);
-    if( zRow==0 ) continue;
-    if( sqlite3_strglob("OMIT_*",zRow)==0 
-     || sqlite3_strglob("DISABLE_*",zRow)==0
-    ){
-      if( sqlite3_strlike(zLike,zRow,0)==0 ){
-        res = 0;
-        break;
-      }
-    }
-    if( sqlite3_strglob("HAVE_*",zRow)==0 
-     || sqlite3_strglob("ENABLE_*",zRow)==0
-    ){
-      if( sqlite3_strlike(zLike,zRow,0)==0 ){
-        res = 1;
-        break;
-      }
-    }
-    if( sqlite3_stricmp(zRow, z)==0 ){
-      res = 1;
+  for(i=0; i<sizeof(azInversions)/sizeof(azInversions[0])-1; i+=2){
+    if( sqlite3_stricmp(z, azInversions[i])==0 ){
+      z = azInversions[i+1];
+      invert = 1;
       break;
     }
-  }
-  sqlite3_finalize(pStmt);
-  sqlite3_free(zLike);
-  if( res<0 ){
-    pStmt = 0;
-    sqlite3_prepare_v2(p->db, "PRAGMA module_list", -1, &pStmt, 0);
+  } 
+  for(i=0; i<sizeof(azSql)/sizeof(azSql[0]); i++){
+    sqlite3_stmt *pStmt = 0;
+    sqlite3_prepare_v2(p->db, azSql[i], -1, &pStmt, 0);
     while( sqlite3_step(pStmt)==SQLITE_ROW ){
       const char *zRow = (const char*)sqlite3_column_text(pStmt, 0);
-      if( zRow==0 ) continue;
-      if( sqlite3_stricmp(zRow,z)==0 ){
+      if( sqlite3_stricmp(zRow, z)==0 ){
         res = 1;
         break;
       }
     }
     sqlite3_finalize(pStmt);
+    if( res ) break;
   }
-  if( res<0 ){
-    pStmt = 0;
-    sqlite3_prepare_v2(p->db, "PRAGMA function_list", -1, &pStmt, 0);
-    while( sqlite3_step(pStmt)==SQLITE_ROW ){
-      const char *zRow = (const char*)sqlite3_column_text(pStmt, 0);
-      if( zRow==0 ) continue;
-      if( sqlite3_stricmp(zRow,z)==0 ){
-        res = 1;
-        break;
-      }
-    }
-    sqlite3_finalize(pStmt);
-  }
-  sqlite3_result_int(pCtx, res>0);
+  if( invert ) res = !res;
+  sqlite3_result_int(pCtx, res);
 }
 
 

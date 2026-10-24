@@ -811,6 +811,7 @@ SELECT capable('abs'), capable('ABS'), capable('capable'),
        capable('no_such_capability');
 .check 1|1|1|0
 
+.if capable('vtab')
 .testcase 810
 SELECT capable('generate_series')
      = EXISTS(SELECT 1 FROM pragma_module_list WHERE name='generate_series');
@@ -834,6 +835,7 @@ SELECT capable('fts5')=capable('ENABLE_FTS5'),
        capable('fts5')=EXISTS(SELECT 1 FROM pragma_compile_options
                                WHERE compile_options='ENABLE_FTS5');
 .check 1|1|1
+.endif /* capable(virtualtable) */
 
 .testcase 850
 .null NULL

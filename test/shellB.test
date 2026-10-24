@@ -70,6 +70,12 @@ do_clitest sha1.sql
 do_clitest complete_sql.sql
 do_clitest clierrors.sql
 do_clitest overflow1.sql
+do_clitest fkey08.sql
+do_clitest fkey09.sql
+do_clitest dump.sql
+do_clitest dotcmd01.sql
+do_clitest import01.sql
+do_clitest intck01.sql --unsafe-testing
 set probe $testdir/probe.txt
 forcedelete $probe
 set f [open $probe wb]
@@ -77,14 +83,6 @@ puts -nonewline $f xyzzy
 close $f
 do_clitest safemode.sql --safe
 do_clitest cliparse.sql --test-parse
-ifcapable vtab {
-  do_clitest fkey08.sql
-  do_clitest fkey09.sql
-  do_clitest dump.sql
-  do_clitest dotcmd01.sql
-  do_clitest import01.sql
-  do_clitest intck01.sql --unsafe-testing
-}
 do_clitest fptest01.sql
 unset -nocomplain ::env(SQLITE_PS1)
 unset -nocomplain ::env(SQLITE_PS2)
