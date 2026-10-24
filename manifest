@@ -1,5 +1,5 @@
-C Make\sthe\sfts5_vocab\svirtual\stable\sWITHOUT\sROWID,\sso\sthat\sRIGHT\sJOIN\sand\sOR\squeries\swork\sproperly\swith\sit.\sReport\s[bugs:/info/2026-10-23T03:07:25Z\s|\s2026-10-23T03:07:25Z].
-D 2026-10-24T18:26:57.846
+C The\srecover\sextension\sno\slonger\sdrops\sthe\slast\scolumn\sof\sa\stable\swith\sa\ngenerated\scolumn,\sand\sother\sfixes.\n[bugs:/info/2026-10-20T02:56:33Z|Bug\s2026-10-20T02:56:33Z]
+D 2026-10-24T18:56:00.991
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -480,7 +480,7 @@ F ext/rbu/sqlite3rbu.c 29be4d2e7a7fbc8124545d2833570bdefef8724239c6cdd81a8d1e6dd
 F ext/rbu/sqlite3rbu.h e3a5bf21e09ca93ce4e8740e00d6a853e90a697968ec0ea98f40826938bdb68e
 F ext/rbu/test_rbu.c 8b6e64e486c28c41ef29f6f4ea6be7b3091958987812784904f5e903f6b56418
 F ext/recover/dbdata.c d49c08a6aad98a0da9b31d80826878cd77350b7ef380755adf8b8565c67755f0
-F ext/recover/recover1.test 876a31d02568c62c27186d560f5ffb23beaf9c268455fbe035627e23892aee4f
+F ext/recover/recover1.test f3586db8786fbe0cd34bcc64c1fd5a8be0c9ca6b49804a354b026b20fe2136bb
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test c74170e0f7b02456af41838afeb5353fdb985a48cc2331d661bbabbca7c6b8e3
 F ext/recover/recoverclobber.test 3ba6c0c373c5c63d17e82eced64c05c57ccaf26c1abe1ca7141334022a79f32e
@@ -495,7 +495,7 @@ F ext/recover/recoverpgsz.test 88766fcb810e52ee05335c456d4e5fb06d02b73d3ccb48c52
 F ext/recover/recoverrowid.test f948bf4024a5f41b0e21b8af80c60564c5b5d78c05a8d64fc00787715ff9f45f
 F ext/recover/recoverslowidx.test c90d59c46bb8924a973ac6fbc38f3163cee38cc240256addcab1cf1a322c37dc
 F ext/recover/recoversql.test e66d01f95302a223bcd3fd42b5ee58dc2b53d70afa90b0d00e41e4b8eab20486
-F ext/recover/sqlite3recover.c 7a049049c9844837a82a28bed0885ea4515cb44b60c227ebaebb858f628a6847
+F ext/recover/sqlite3recover.c 77812b00e9f6bd94fa2bccf58050b138b13cd33a1751f53f2e02d4c048cd8777
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
@@ -2301,8 +2301,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0f540888bc7c62a44078bd0f1c1f98ed22624608384562e4b8b619382fe15631
-R df9ada0bd1221029994a408e306cdb96
-U dan
-Z 556703ddebb2585ca33a73d5852378db
+P 25d3a17413eed51c9fcb534374c9aca1bef5a3e72ab0680e5b46c8d9f4429b1e
+R e123696886301ab6b25de297a7815ee8
+U drh
+Z 38cb496788e63a3cc42ab78ea6e96d24
 # Remove this line to create a well-formed Fossil manifest.
