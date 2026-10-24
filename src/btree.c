@@ -2202,7 +2202,8 @@ static int btreeComputeFreeSpace(MemPage *pPage){
 
 /*
 ** Do additional sanity check after btreeInitPage() if
-** PRAGMA cell_size_check=ON
+** PRAGMA cell_size_check=ON.  Raise a corruption error and
+** leave the page uninitialized if any problems are found.
 */
 static SQLITE_NOINLINE int btreeCellSizeCheck(MemPage *pPage){
   int iCellFirst;    /* First allowable cell or freeblock offset */
@@ -2225,11 +2226,13 @@ static SQLITE_NOINLINE int btreeCellSizeCheck(MemPage *pPage){
     testcase( pc==iCellFirst );
     testcase( pc==iCellLast );
     if( pc<iCellFirst || pc>iCellLast ){
+      pPage->isInit = 0;
       return SQLITE_CORRUPT_PAGE(pPage);
     }
     sz = pPage->xCellSize(pPage, &data[pc]);
     testcase( pc+sz==usableSize );
     if( pc+sz>usableSize ){
+      pPage->isInit = 0;
       return SQLITE_CORRUPT_PAGE(pPage);
     }
   }

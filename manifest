@@ -1,5 +1,5 @@
-C Always\sreport\sback\sthe\soutput\sflags\sfrom\sthe\sxOpen\smethod\sof\sthe\sunix\sVFS.\n[bugs:/info/2026-10-24T04:49:19Z|Bug\s2026-10-24T04:49:19Z]
-D 2026-10-24T17:08:39.929
+C Pages\sthat\sfail\sthe\scell-size-check\sshould\sbe\smarked\sas\suninitialized\sso\nthey\sare\snot\sreused\swithout\sbeing\schecked\sagain.\n[bugs:/info/2026-10-24T05:20:01Z|Bug\s2026-10-24T05:20:01Z]
+D 2026-10-24T18:13:36.125
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -747,7 +747,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c f6a1490f4ef86cca51f0f93158bbc140b5822406e0c50ec61731e3fcdc1242a2
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 8a6878fcbb95b37021e4ec20d72efeb197d1b114915af73239f1b1f638b3b844
-F src/btree.c e976041e40b7a3f5979f6367cc5de61d1a59a67ac1871364adc2aa910db92d63
+F src/btree.c ba8c97c9bc308a07455bc095c0f52066ac20d93c0c2060bf9abee89909cfa8ad
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d82
 F src/build.c 1406d252bc5b2c3f2150edd4426e5981eabf1000944be8db8d470b96eb64ee07
@@ -1085,7 +1085,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test 9d8cbf6214e492abe9e822e759b9751ae336cec0a6fe3ff3b37bfbd8ff9c22ca
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test ac13504593d89d69690d45479547616ed12644d42b5cb7eeb2e759a76fc23dcb
-F test/corruptL.test f15de2b4729c0851ea89916a26766b094d74bac79f9f9f2b0191935aa3b344c9
+F test/corruptL.test bd90d9601a57299050b54d4331f5b6cf480c43aa254f5b6a36700d0cadf228ed
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/corruptN.test a034bb217bebd8d007625dfb078e76ec3d53515052dbceb68bd47b2c27674d5c
 F test/cost.test 3786cd1cc6d1ab416004a1e39387fb0db0c8e259f46b0bce62cbdc328f2c55a0
@@ -2300,8 +2300,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a7fd475c0d34d84232e721c724ccbc07729f594ab20aba9eb0631cf76a09ce23
-R 45ff486c46900050ce0c58f595775bea
+P 7bd441063bd8d9681aac38f0951108f9d6b814a3e192a9f7f5ffe4c95103317a
+R 91b82cd3c8f550bd4fada7863cf6a3a5
 U drh
-Z 2de1e99b4953befae18962b2585dd8fc
+Z 816a30e6c8678f443faae175ed27dcf9
 # Remove this line to create a well-formed Fossil manifest.
