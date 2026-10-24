@@ -38,6 +38,10 @@
 #
 #
 .mode list
+.if NOT capable('fkey')
+.exit
+.endif
+
 #-------------------------------------------------------------------------
 # No indexes on the child tables at all.
 #
@@ -62,6 +66,10 @@ QUERY PLAN
 |--SCAN n
 `--SCAN c
 END
+
+.if NOT capable('bytecode')
+.exit
+.endif
 
 .testcase 100.2
 SELECT count(*)>0 FROM bytecode('DELETE FROM p WHERE id=1')

@@ -19,6 +19,9 @@
 #
 #
 .mode list
+.if NOT capable('fkey')
+.exit
+.endif
 
 #-------------------------------------------------------------------------
 # Bug report: https://sqlite.org/bugs/forumpost/89bb27c659
@@ -331,6 +334,7 @@ QUERY PLAN
 `--SEARCH c1 USING COVERING INDEX c1k (k=?)
 END
 
+.if capable('bytecode')
 #-------------------------------------------------------------------------
 # The extra IN term used to drive an index lookup on the child key is
 # only generated if there is a suitable index on the child key. In
@@ -369,6 +373,7 @@ CREATE INDEX c1k4 ON c1(k);
 SELECT count(*)>0 FROM bytecode('DELETE FROM parent WHERE id=1')
  WHERE opcode='OpenEphemeral';
 .check 1
+.endif /* capable('bytecode') */
 
 #-------------------------------------------------------------------------
 # Check that an index on a composite child key can be used for all

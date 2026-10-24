@@ -13,6 +13,14 @@
 #
 # Test cases for the .dump CLI command
 #
+
+
+.if NOT capable('fkey') OR NOT capable('vtab')
+.testcase setup
+.check ''
+.exit
+.endif
+
 .open :memory:
 .testcase 100
 CREATE TABLE customer(RowID TEXT, name TEXT);
