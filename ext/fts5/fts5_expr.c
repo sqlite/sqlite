@@ -940,6 +940,13 @@ static int fts5ExprNearTest(
     if( i==pNear->nPhrase && (i==1 || fts5ExprNearIsMatch(pRc, pNear)) ){
       return 1;
     }
+
+    /* Not a match. Clear the position lists of all phrases, as some may
+    ** have been populated before the loop above exited early, and others
+    ** may still contain data left over from a previous row.  */
+    for(i=0; i<pNear->nPhrase; i++){
+      pNear->apPhrase[i]->poslist.n = 0;
+    }
     return 0;
   }
 }
