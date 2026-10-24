@@ -404,6 +404,11 @@ typedef struct Unlink {
 } Unlink;
 
 /*
+** Maximum nested depth for .if statements.
+*/
+#define MX_IF 10
+
+/*
 ** State information about the database connection is contained in an
 ** instance of the following structure.
 */
@@ -485,6 +490,12 @@ struct ShellState {
     int *aiOfst;            /* Offset into zOrig[] for start of each arg */
     char *abQuot;           /* True if the argment was originally quoted */
   } dot;
+  u32 mIf;               /* Mask of false if conditions */
+  u32 mElse;             /* An else seen at this level */
+  int nIfLevel;          /* Current number of if levels */
+  int nIfAtStart;        /* If level at start of current script */
+  i64 lnIf[MX_IF];       /* Line number starting an if */
+  i64 lnElse[MX_IF];     /* Line number of the else */
 #ifdef SQLITE_SHELL_FIDDLE
   struct {
     const char * zInput; /* Input string from wasm/JS proxy */
@@ -9825,6 +9836,129 @@ static int dotCmdTestcase(ShellState *p){
 }
 
 /*
+** Evaluate the text of zExpr as an SQL expression.  Return true if the
+** expression is true.  Return false if the expression evaluates to
+** false or NULL.
+*/
+static int sqlExprIsTrue(ShellState *p, const char *zExpr){
+  char *zSql = sqlite3_mprintf("SELECT %s", zExpr);
+  sqlite3_stmt *pStmt;
+  int rc;
+
+  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  if( rc ){
+    dotCmdError(p, 0, 0, "Expression error: %s", sqlite3_errmsg(p->db));
+  }else{
+    bind_prepared_stmt(p, pStmt);
+    rc = sqlite3_step(pStmt);
+    if( rc==SQLITE_ROW ){
+      rc = sqlite3_column_double(pStmt,0)!=0.0;
+    }else{
+      rc = 0;
+    }
+  }
+  sqlite3_finalize(pStmt);
+  return rc;
+}
+
+/*
+** DOT-COMMAND: .if
+** USAGE: .if SQL-EXPRESSION
+**
+** The argument can be any SQL expression, including a subquery in
+** parentheses.  If the expression evalutes to true (if it is non-zero
+** when converted into an integer) then subsequent statements are
+** evaluated.  If false or NULL, subsequent statements
+** are skipped, up until the first matching .else or .endif.
+**
+** Maximum nested depth is limited.  An error is raised if .if statements
+** are nested to deep.
+**
+** Every .if must be followed by a matching .endif, or an error is raised.
+*/
+static int dotCmdIf(ShellState *p){
+  int jj;
+  if( p->nIfLevel==MX_IF-1 ){
+    dotCmdError(p, 0, 0, ".if nested too deep.  Max %d levels. Terminating",
+                MX_IF);
+    return 2;
+  }
+  jj = p->nIfLevel++;
+  if( !sqlExprIsTrue(p, p->dot.zOrig+3) ){
+    p->mIf |= 1<<jj;
+  }
+  p->lnIf[jj] = p->lineno;
+  return 0;
+}
+
+/*
+** DOT-COMMAND: .elseif
+** USAGE: .elseif SQL-EXPRESSION
+**
+** An "else-if".  The prior .if is finished and a new condition is applied.
+*/
+static int dotCmdElseif(ShellState *p){
+  int jj = p->nIfLevel-1;
+  if( jj<0 ){
+    dotCmdError(p, 0, 0, ".elseif with no .if");
+    return 2;
+  }
+  if( (p->mElse & (1<<jj))!=0 ){
+    dotCmdError(p, 0, 0, ".elseif follows a .else on line %lld", p->lnElse[jj]);
+  }
+  if( sqlExprIsTrue(p, p->dot.zOrig+7) ){
+    p->mIf &= ~(1<<jj);
+  }else{
+    p->mIf |= 1<<jj;
+  }
+  return 0;
+}
+
+/*
+** DOT-COMMAND: .else
+** USAGE: .else
+**
+** Invert the sense of the inner-most .if.  Start processing if the prior
+** .if was false.  Stop processing if the prior .if was true.
+*/
+static int dotCmdElse(ShellState *p){
+  int ii;
+  if( p->nIfLevel<=p->nIfAtStart ){
+    dotCmdError(p, 0, 0, ".else without a .if");
+    return 1;
+  }
+  ii = p->nIfLevel-1;
+  if( (p->mElse & (1<<ii))!=0 ){
+    dotCmdError(p, 0, 0, "already saw a .else at line %lld", p->lnElse[ii]);
+    return 1;
+  }
+  p->mIf ^= (1<<ii);
+  p->mElse |= (1<<ii);
+  p->lnElse[ii] = p->lineno;
+  return 0;
+}
+
+/*
+** DOT-COMMAND: .endif
+** USAGE: .endif
+**
+** Terminate an .if statement.
+*/
+static int dotCmdEndif(ShellState *p){
+  if( p->nIfLevel<=p->nIfAtStart ){
+    dotCmdError(p, 0, 0, ".endif without a .if");
+    return 1;
+  }
+  p->nIfLevel--;
+  p->mIf &= ~(1<<p->nIfLevel);
+  p->mElse &= ~(1<<p->nIfLevel);
+  return 0;
+}
+
+
+
+/*
 ** Enlarge the space allocated in p->dot so that it can hold more
 ** than nArg parsed command-line arguments.
 */
@@ -10460,6 +10594,18 @@ static int do_meta_command(const char *zLine, ShellState *p){
     }
   }else
 
+  if( c=='e' && n==6 && cli_strcmp(azArg[0],"elseif")==0 ){
+    rc = dotCmdElseif(p);
+  }else
+
+  if( c=='e' && n==4 && cli_strcmp(azArg[0],"else")==0 ){
+    rc = dotCmdElse(p);
+  }else
+
+  if( c=='e' && n==5 && cli_strcmp(azArg[0],"endif")==0 ){
+    rc = dotCmdEndif(p);
+  }else
+
   if( c=='e' && cli_strncmp(azArg[0], "eqp", n)==0 ){
     if( nArg==2 ){
       if( p->mode.autoEQPtrace ){
@@ -10757,6 +10903,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
     }else{
       showHelp(p->out, 0);
     }
+  }else
+
+  if( c=='i' && n==2 && cli_strcmp(azArg[0],"if")==0 ){
+    rc = dotCmdIf(p);
   }else
 
 #ifndef SQLITE_SHELL_FIDDLE
@@ -13479,6 +13629,7 @@ static int process_input(ShellState *p, const char *zSrc){
   i64 startline = 0;        /* Line number for start of current input */
   const char *saved_zInFile;      /* Prior value of p->zInFile */
   i64 saved_lineno;               /* Prior value of p->lineno */
+  int saved_nIfAtStart;           /* Prior value of p->nIfAtStart */
 
   if( p->inputNesting==MAX_INPUT_NESTING ){
     /* This will be more informative in a later version. */
@@ -13491,6 +13642,8 @@ static int process_input(ShellState *p, const char *zSrc){
   p->zInFile = zSrc;
   saved_lineno = p->lineno;
   p->lineno = 0;
+  saved_nIfAtStart = p->nIfAtStart;
+  p->nIfAtStart = p->nIfLevel;
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
     fflush(p->out);
     zLine = one_input_line(p, zLine, zSql, nSql>0);
@@ -13512,11 +13665,19 @@ static int process_input(ShellState *p, const char *zSrc){
     if( zLine && (zLine[0]=='.' || zLine[0]=='#') && nSql==0 ){
       echo_group_input(p, zLine);
       if( zLine[0]=='.' ){
-        rc = do_meta_command(zLine, p);
-        if( rc==2 ){ /* exit requested */
-          break;
-        }else if( rc ){
-          errCnt++;
+        if( p->mIf==0
+         || strncmp(zLine,".if",3)==0
+         || strncmp(zLine,".elseif",7)==0
+         || strncmp(zLine,".else",5)==0
+         || strncmp(zLine,".endif",6)==0
+        ){
+          rc = do_meta_command(zLine, p);
+          if( rc==2 ){ /* exit requested */
+            p->nIfLevel = p->nIfAtStart;
+            break;
+          }else if( rc ){
+            errCnt++;
+          }
         }
       }
       continue;
@@ -13557,7 +13718,9 @@ static int process_input(ShellState *p, const char *zSrc){
     }
     if( nSql && hasSemi && line_is_complete(zSql, nSql) ){
       echo_group_input(p, zSql);
-      errCnt += runOneSqlLine(p, zSql, p->zInFile, startline);
+      if( p->mIf==0 ){
+        errCnt += runOneSqlLine(p, zSql, p->zInFile, startline);
+      }
       nSql = 0;
       if( p->nPopOutput ){
         output_reset(p);
@@ -13578,13 +13741,20 @@ static int process_input(ShellState *p, const char *zSrc){
   if( nSql ){
     /* This may be incomplete. Let the SQL parser deal with that. */
     echo_group_input(p, zSql);
-    errCnt += runOneSqlLine(p, zSql, p->zInFile, startline);
+    if( p->mIf==0 ){
+      errCnt += runOneSqlLine(p, zSql, p->zInFile, startline);
+    }
   }
   free(zSql);
   free(zLine);
   --p->inputNesting;
+  while( p->nIfLevel > p->nIfAtStart ){
+    int ii = --p->nIfLevel;
+    cli_printf(stderr,"%s:%lld: unterminated .if\n", zSrc, p->lnIf[ii]);
+  }
   p->zInFile = saved_zInFile;
   p->lineno = saved_lineno;
+  p->nIfAtStart = saved_nIfAtStart;
   return errCnt>0;
 }
 
