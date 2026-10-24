@@ -6706,6 +6706,52 @@ static int SQLITE_TCLAPI working_64bit_int(
 
 
 /*
+** tclcmd:   vfs_open_tempfile ?VFS?
+**
+** Invoke the xOpen() method of VFS (or of the default VFS if no VFS is
+** named) with a NULL filename, as the core does when it needs a temporary
+** file.  The file is closed again immediately.  Return a two-element list
+** consisting of the integer return code from xOpen() and the value that
+** xOpen() wrote into *pOutFlags.  *pOutFlags is initialized to zero before
+** the call, so a result of zero means that xOpen() did not set it.
+*/
+static int SQLITE_TCLAPI vfs_open_tempfile(
+  ClientData clientData, /* Not used */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_vfs *pVfs;
+  sqlite3_file *pFd;
+  int flags = SQLITE_OPEN_TEMP_DB | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+            | SQLITE_OPEN_EXCLUSIVE | SQLITE_OPEN_DELETEONCLOSE;
+  int outFlags = 0;
+  int rc;
+  Tcl_Obj *pRet;
+
+  if( objc!=1 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?VFS?");
+    return TCL_ERROR;
+  }
+  pVfs = sqlite3_vfs_find(objc==2 ? Tcl_GetString(objv[1]) : 0);
+  if( pVfs==0 ){
+    Tcl_AppendResult(interp, "no such vfs", (char*)0);
+    return TCL_ERROR;
+  }
+  pFd = (sqlite3_file*)ckalloc(pVfs->szOsFile);
+  memset(pFd, 0, pVfs->szOsFile);
+  rc = pVfs->xOpen(pVfs, 0, pFd, flags, &outFlags);
+  if( pFd->pMethods ) pFd->pMethods->xClose(pFd);
+  ckfree((char*)pFd);
+
+  pRet = Tcl_NewObj();
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(rc));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(outFlags));
+  Tcl_SetObjResult(interp, pRet);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:   vfs_unlink_test
 **
 ** This TCL command unregisters the primary VFS and then registers
@@ -9481,6 +9527,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_create_collation_v2", test_create_collation_v2, 0 },
      { "sqlite3_global_recover",     test_global_recover, 0   },
      { "working_64bit_int",          working_64bit_int,   0   },
+     { "vfs_open_tempfile",          vfs_open_tempfile,   0   },
      { "vfs_unlink_test",            vfs_unlink_test,     0   },
      { "vfs_initfail_test",          vfs_initfail_test,   0   },
      { "vfs_unregister_all",         vfs_unregister_all,  0   },

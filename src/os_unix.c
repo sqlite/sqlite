@@ -6646,6 +6646,9 @@ static int unixOpen(
     if( zName
      && (fd = robust_open(zName, O_RDWR|O_EXCL|O_TMPFILE, 0600))>=0
     ){
+      if( pOutFlags ){
+        *pOutFlags = flags;
+      }
       rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags|UNIXFILE_NOLOCK);
       goto open_finished;
     }
