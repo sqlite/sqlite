@@ -1456,4 +1456,15 @@ SELECT jsonb(1234) AS x;}
 │ 1234 │
 ╰──────╯}}
 
+#----------------------------------------------------------------------------
+# https://sqlite.org/bugs/info/23d77b5d47908a41
+# The -deserialize option should accept a zero-length database file.
+#
+do_test shell1-13.1 {
+  forcedelete empty.db
+  close [open empty.db w]
+  catchcmd {-deserialize empty.db} {SELECT 'ok';}
+} {0 ok}
+forcedelete empty.db
+
 finish_test

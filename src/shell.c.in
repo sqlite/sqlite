@@ -4892,6 +4892,11 @@ static char *readFile(const char *zName, int *pnByte){
     return 0;
   }
   nIn = ftell(in);
+  if( nIn<0 ){
+    cli_printf(stderr,"Error: cannot read '%s'\n", zName);
+    fclose(in);
+    return 0;
+  }
   rewind(in);
   pBuf = sqlite3_malloc64( nIn+1 );
   if( pBuf==0 ){
@@ -4899,9 +4904,9 @@ static char *readFile(const char *zName, int *pnByte){
     fclose(in);
     return 0;
   }
-  nRead = fread(pBuf, nIn, 1, in);
+  nRead = fread(pBuf, 1, nIn, in);
   fclose(in);
-  if( nRead!=1 ){
+  if( nRead!=(size_t)nIn ){
     sqlite3_free(pBuf);
     cli_printf(stderr,"Error: cannot read '%s'\n", zName);
     return 0;
@@ -7374,7 +7379,7 @@ static int arListCommand(ArCommand *pAr){
   shellPreparePrintf(pAr->db, &rc, &pSql, zSql, azCols[pAr->bVerbose],
                      pAr->zSrcTable, zWhere);
   if( pAr->bDryRun ){
-    cli_printf(pAr->out, "%s\n", sqlite3_sql(pSql));
+    if( pSql ) cli_printf(pAr->out, "%s\n", sqlite3_sql(pSql));
   }else{
     while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
       if( pAr->bVerbose ){
@@ -13596,10 +13601,10 @@ static void runTestParse(
     }
   }
   zPre[nPre] = 0;
-  j = n - 20;
-  if( j<i ){
+  if( n<=i+20 ){
     j = i;
   }else{
+    j = n - 20;
     memcpy(zSuf," ... ", 5);
     nSuf = 5;
   }

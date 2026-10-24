@@ -194,6 +194,17 @@ do_test 2.1.1 {
   regsub -all {ar4} [dir_content ar4] ar2
 } {ar2/file1 ar2/file2 ar2/junk1}
 
+# https://sqlite.org/bugs/info/23d77b5d47908a41
+# A dry-run list of a name that is not in the archive should report the
+# error but should not print "(null)".
+#
+do_test 2.2.1 {
+  catchcmd shell8.db {.ar -tn nosuch}
+} {1 {not found in archive: nosuch}}
+do_test 2.2.2 {
+  catchcmd shell8.db {.ar -tvn nosuch}
+} {1 {not found in archive: nosuch}}
+
 # Test symbolic links.
 #
 if {$tcl_platform(os) ne "Windows NT"} {
