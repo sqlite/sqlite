@@ -1,5 +1,5 @@
-C Change\sthe\sorder\sof\sfields\sin\san\sinternal\sstructure\sto\savoid\sthe\spossibility\sof\sleaking\sheap\saddress\sinformation\swhen\sa\scorrupt\sdatabase\sis\squeried.
-D 2026-10-24T14:37:18.034
+C Enforce\sthe\supper\slimit\son\svector\ssize\sin\svec1_train()\sas\swell\sas\sin\sthe\svec1\svirtual\stable.\sThis\sfixes\sinteger\soverflow\sreport\s[bugs:/info/2026-10-23T11:24:33Z\s|\s2026-10-23T11:24:33Z].
+D 2026-10-24T16:18:44.673
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -611,7 +611,7 @@ F ext/vec1/test/vec1fault6.test 4f86d9fbd31552a1461e2dcdf350b4d5413b5536382a669a
 F ext/vec1/test/vec1fault7.test 92ebab2b519e79c41be71ef3f9f438f4a3358b475164c41288d674be102a1d24
 F ext/vec1/test/vec1fault8.test a2da772d96539b25574cc4cf0cdcf291931da1a416a6883662e10f5c92275c69
 F ext/vec1/test/vec1fault9.test 150a88218168844e80f1f600c7cd3189f01e05b69f8c899c0ef42997f51846ee
-F ext/vec1/test/vec1fixed.test 9f1ecc7a67bfe1afb8a3c9e173c2f7990b14f0ad1bbb869d6fe30d247d3b2271
+F ext/vec1/test/vec1fixed.test 627cf42db0f4c15e9f3dff586827d4192c0baed5210295507d036df1ee7e77a1
 F ext/vec1/test/vec1flat.test e6fbbe5dd6a46019d5913a427a9d80e25771694a7db0c51ecb60ecb96c8c49b1
 F ext/vec1/test/vec1func.test e27a3aed8abc7dcea38ec87ccd8f91d30eba551fe1cc1e9f9b0e39cee9ce574d
 F ext/vec1/test/vec1growth.test 9dc2abf5a79bd8d23e5718717dce4001ae89d807688b3b1a9f6b1f0d666ece42
@@ -634,7 +634,7 @@ F ext/vec1/test/vec1round.test b38735c7e5b0af833505cc639d60816cfca2143b7461a1b44
 F ext/vec1/test/vec1scalar.test bf2acbf26a2e9b2494de5e55f049045ae7da4a0352ddeafa6d6bdfd7e6d5a909
 F ext/vec1/test/vec1stream.test 54f325ef75508f2b1ff82d883ac1c12bb4494f652468ef195b736c97640c34a7
 F ext/vec1/test/vec1stream2.test ad0aa9dc70fdccd46b31d6c19352387a04394bb631437a1bc9e169292cc797de
-F ext/vec1/test/vec1train.test e65abfb7c92a651b07b209ea3e9a0da43acc371c4497884930fa78468940ffe8
+F ext/vec1/test/vec1train.test c921ea34720284130fcac636e6209a70c77d2289585c4273b9a441cd35943d76
 F ext/vec1/test/vec1update.test 77d5b85b859393f0d8fbc2f556a75c06bee7b23a19b5af7c3c40dc443f811e65
 F ext/vec1/test/vec1update2.test 4fb868f051df89a35f7e58725699259150292fe972253088f3feb10ee7c50945
 F ext/vec1/test/vec1version.test 7d17cc84c0a3c8706080abb3484bad8a6eb118c8d4946c7846cde5c4e6cfc89e
@@ -642,7 +642,7 @@ F ext/vec1/tool/vec1_algo_test.c 2777488a8b9ab9545732562c93988aa2424d7afd8b4895d
 F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b62631b480c2d2d
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c ef90ba7178fbb02a33165f40f3a9ca0893bb397c992a844e34d2f655e60743ba
+F ext/vec1/vec1.c 7d2ef058492f7ec7fadbc9505550bb8177ba63e8aa26ed1c785edb2a91cd9452
 F ext/wasm/GNUmakefile b656d39f7792b6ff8d9129d38452804bccba29e1fe22976655cebb3e1e9f184b
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 6d820c98468ebcee1dbf547467a03f65d256a2be48a9dcbeb5637d3da569c6fe
@@ -2289,9 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e2e7c8eb02daea0876fb25abccd96c769f55fba3e995f0e7cf29aa992d7c61a6
-Q +a5261fd58070d4cb10c627e54491ed7588d96f47073b19612aa669f684e8e5b5
-R 719fb20b4cd51374e296c164f09790ba
+P 3f9a0ba4f4dffac7a4b9de30e66d94498a1433d96e327cfff43134b8856f4ba1
+R 082c5e50c223bb4039a1427e67b0a03c
 U dan
-Z 8fa7fd42bd607213f874d496008e0e67
+Z 8cc9d4c227712147119e03b03a59e419
 # Remove this line to create a well-formed Fossil manifest.
