@@ -1,5 +1,5 @@
-C Merge\sWAL\srace\scondition\sfixes\sfrom\sbranch-3.54
-D 2026-10-24T00:40:15.393
+C Fix\sa\stest\scase\sfor\sgeopoly\sthat\sshould\shave\sbeen\sinside\sof\n"ifcapable\sgeopoly".
+D 2026-10-24T01:23:56.598
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -501,7 +501,7 @@ F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b
 F ext/rtree/geopoly.c e72a1b4673c70316850c2f6f8b525da084fc3e5720f85fea9ede8995ab0e24fe
 F ext/rtree/rtree.c 116771ac0a5eaef23bea8fbbbeee99ad8e8b677ed758c9084cad0344fd2b5f28
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
-F ext/rtree/rtree1.test 9a9cb67d00c2454ef8cd363c891a870a86b577dce8ab72fa500abac445a729d9
+F ext/rtree/rtree1.test b127b954b8eb68ad40df3264bb69a4543af621bd55ff08075db0005aaca82af3
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
 F ext/rtree/rtree3.test 272594f88c344e973864008bbe4c71fd3a41a264c097d568593ee7886d83d409
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
@@ -2298,8 +2298,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 055f90829c4094f9c78d95ce05662b9443c325cb16af50beabf56e7f8b72b9bf e2e7c8eb02daea0876fb25abccd96c769f55fba3e995f0e7cf29aa992d7c61a6
-R cc850e2efccee827842471a6f4226c3a
+P 6322b44f1389028fb64cdc1a644b45884b111fcc638ced02a981070af2860426
+R a2272d703104938e832d4d2ed9e09a5b
 U drh
-Z 63ecc011a0eff9cbe9f611c6e4b6831f
+Z c81fc2a4c8a89ad33ae99b7103942a09
 # Remove this line to create a well-formed Fossil manifest.

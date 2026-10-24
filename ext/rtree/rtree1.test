@@ -1126,10 +1126,10 @@ ifcapable geopoly {
     DELETE FROM g WHERE rowid = 7.0;
     SELECT rowid FROM g WHERE rowid BETWEEN 0 AND 100;
   } {0 1 6 10}
+  do_execsql_test 30.103 {
+    SELECT t1.x, r.id FROM t1 LEFT JOIN r ON r.id = t1.x;
+  } {6 6 6.5 {} 7abc {} 1e1 10}
 }
-do_execsql_test 30.103 {
-  SELECT t1.x, r.id FROM t1 LEFT JOIN r ON r.id = t1.x;
-} {6 6 6.5 {} 7abc {} 1e1 10}
 
 #-------------------------------------------------------------------------
 # Bug 06c54816a3b5b776. Some malformed polygons were accepted as a valid
