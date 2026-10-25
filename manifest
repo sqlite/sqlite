@@ -1,5 +1,5 @@
-C Fix\sanother\sproblem\swith\sOS_VXWORKS
-D 2026-10-25T20:15:12.693
+C Increase\sthe\ssize\sof\sthe\sFts3Table.nPendingData\sfield\sto\s64\sbits\sto\navoid\sany\schance\sof\sridiculous\sinputs\scausing\sa\ssigned\sinteger\soverflow.
+D 2026-10-25T20:29:47.909
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -82,7 +82,7 @@ F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c f04765cdc086bcfe36d6a603ae36590f32fc24ab94c0b3ce27e1bc1966303fc3
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 277f32f304e82f4397fc2a74793c0a95318b7abb9670b519e4805a00946cbd9b
+F ext/fts3/fts3Int.h d87c085644d1690026bcab14ff427ec7e7e75017d1354f5ac28aec10a096b3ed
 F ext/fts3/fts3_aux.c c5d0a3726cf938070317f2e7620b69cd9dd81dc0e1d920d8ff52128a396ba3d6
 F ext/fts3/fts3_expr.c c101b4e37458c35d452653de601a683b75f81b09ac681bb38031fa5a77e4a270
 F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641814672a
@@ -98,7 +98,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c 386adac2dfcda727cd169f195db7f77e450295e100825f9038b11e7368a50031
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c 424a54187c6a60203c00abd92c575d4b4f3d01163897b3b7355b1a0e49086508
+F ext/fts3/fts3_write.c 18fe0ff93953279a8875d5a4bcf0778637ce73736eee77c272478446657e770a
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 4fea96ea2c2d434acb50f30554c30de23eeed5847fe4656470e2ebe5113e4d58
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f0a3729e3835cf27f8ffc0b40239ec722eb0f97543ae3a6026ec2e64baf6cb54
-R 4a15ef2be027ad4d654b302caaff1fdd
+P 5eb1662fbb3af945017821094522cf05dd30df3e7b5e780a96e627c5549a5ce0
+R 70c8bfbf60b8b2c06514dafba5be29f4
 U drh
-Z b95564942d71e39b87750ec3061eaa7d
+Z 1163acd06404bcb8266f73bb0b5b94f8
 # Remove this line to create a well-formed Fossil manifest.
