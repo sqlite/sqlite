@@ -1141,7 +1141,7 @@ static void recoverAddTable(
       int iField = sqlite3_column_int(pStmt, 0);
       int iCol = sqlite3_column_int(pStmt, 1);
 
-      assert( iCol<pNew->nCol );
+      if( iCol>=pNew->nCol ) break;
       pNew->aCol[iCol].iField = iField;
 
       pNew->bIntkey = 0;
