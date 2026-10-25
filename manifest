@@ -1,5 +1,5 @@
-C Use\sthe\snew\ssqlite3_result_str()\sfunction\sto\simplement\sSQL\sfunctions\ngeopoly_json()\sand\sgeopoly_svg()\sas\spart\sof\sthe\sgeopoly\sextension.
-D 2026-10-25T20:42:16.798
+C Avoid\san\sinteger\soverflow\sin\sthe\sspellfix\sextension\swhen\ssetting\na\sridiculous\svalues\sfor\sthe\stop=\sparameter.
+D 2026-10-25T21:51:58.167
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -400,7 +400,7 @@ F ext/misc/series.c 3296d04bc84a64848c3abea7b9a152cb8dd198f23f71b6ee28c3fa22ca5f
 F ext/misc/sha1.c c279eaae2d203be3443f9e3052401d15dc98bd43aa389d4e234ab0e295b4a04b
 F ext/misc/shathree.c e40d4239d522946f6c9821a2244907ae8288ae45a8c8ed979b62e83979666a6d
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c 9099bd2d8701d820904663242e470537e919826060042288e6bfafd3e406c9b4
+F ext/misc/spellfix.c f36c358a6d155b229c99d805400dab95b1d85efd835413c808edb13a7a6760bb
 F ext/misc/sqlar.c 97c100b010159c08a7a9acd8eb1ea510a5522e64741aaafcd7b6c629de682edc
 F ext/misc/sqlite3_stdio.c a32a0cf53d82ece9d68c9b9fdaad5f0d2bf696529aece1dbf5c01eee67e5d703
 F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bfa08ab1ce99f
@@ -1754,7 +1754,7 @@ F test/speedtest.md ea0c85ebe0ecff8b45ba6cdb26e694871f469009a5a29dcfe634b055f05a
 F test/speedtest.tcl f3d6c71b28969e02f60dd1de597da0551a2b335e4b49f3b753f0d57a1871e31f x
 F test/speedtest1.c 2e024925c6b5f56c6875b5332ad3b3a70bc0c9ec48d6c7f28a931bb7a5630891
 F test/spellfix.test 09c4b3aecb6754dd9fd4a01ae3a712935c3a8456bc70d81480926f55d1e5af2f
-F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
+F test/spellfix2.test e1581e4f9b2bbccaaa5a0b2fb79bf19461c945cd57abef923cfd7dcf428cf2e6
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 7c56a09de68b95051ef0627fe235e514efbba2aa816dc2a9c5c670d98877e632
 F test/sqldiff1.test b2486da15013e4a54be82067893e49052082be9c72a1410d1ebce66c17967a43
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 56f261a67626a26d509e9c5221cfae18320e2b8654ae700adedb204191673406
-R 416cf4f3c8914e3288d50aea4091cf84
+P 4fbce3be94ccdd4dea79db277b3097d2f2c0e995a05d6345c24988ad949e2f9f
+R 2173846bcc909ae99464441d766043a7
 U drh
-Z 73b76a09ea6394495930e3d8f9dd6e87
+Z 68c20b5127222639cec844eb99fe1842
 # Remove this line to create a well-formed Fossil manifest.
