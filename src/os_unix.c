@@ -4559,19 +4559,19 @@ struct unixShmNode {
   char *zFilename;           /* Name of the mmapped file */
   int hShm;                  /* Open file descriptor */
   int szRegion;              /* Size of shared-memory regions */
-  u16 nRegion;               /* Size of array apRegion */
+  int nRegion;               /* Size of array apRegion */
+  int nRef;                  /* Number of unixShm objects pointing to this */
   u8 isReadonly;             /* True if read-only */
   u8 isUnlocked;             /* True if no DMS lock held */
+#ifdef SQLITE_DEBUG
+  u8 nextShmId;              /* Next available unixShm.id value */
+#endif
   char **apRegion;           /* Array of mapped shared-memory regions */
-  int nRef;                  /* Number of unixShm objects pointing to this */
   unixShm *pFirst;           /* All unixShm objects pointing to this */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   sqlite3_mutex *aMutex[SQLITE_SHM_NLOCK];
 #endif
   int aLock[SQLITE_SHM_NLOCK];  /* # shared locks on slot, -1==excl lock */
-#ifdef SQLITE_DEBUG
-  u8 nextShmId;              /* Next available unixShm.id value */
-#endif
 };
 
 /*
