@@ -1,5 +1,5 @@
-C Rework\sthe\sclassic\sseconds-only\ssleep\scomputations\sin\s[458351f9725a423b]\nto\savoid\sany\schance\sof\sinteger\soverflow.
-D 2026-10-24T22:25:07.764
+C Fix\sa\sbug\sin\sthe\swhereOrInsert()\sroutine\sof\sthe\squery\splanner\sthat\scaused\na\ssub-optimal\squery\splan\sto\sbe\sselected.\n[bugs:/info/2026-10-24T05:24:02Z|Bug\s2026-10-24T05:24:02Z]\nThe\sspeedtest1.c\sprogram\sis\supdated\sto\sinclude\sthe\stest\scase.
+D 2026-10-25T12:39:29.539
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -890,7 +890,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 3c45f8c74eed948471246a2a838c7267b37f732ae6f0c44821c76f254abf4e2f
 F src/wal.h c6251cfc1950643a976625ca452e46dc9b466b4f5dd2e85f244f29f79bf68ace
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 801d94357804abe447b87c64d33ef186c6dc79b38beb3d128cac3e5a1f3c3f44
+F src/where.c e124fc3912ade7c0ba30b0ba02744a0a31d7fb3b3719802b40d9b188195059d9
 F src/whereInt.h 5d739acb94bf1fdf6edd502a919e3dcf2d340dda63cc1827304e119ea878f6f3
 F src/wherecode.c 41abe8c4ab3fc851496d64896b0d2b20d637e10933af5600716f0049c1892b0c
 F src/whereexpr.c 8b5c937bea8bca9673f3f57925b37e7dcb5343834aac5564349f706460aa2ecd
@@ -1764,7 +1764,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
 F test/speedtest.md ea0c85ebe0ecff8b45ba6cdb26e694871f469009a5a29dcfe634b055f05ab241
 F test/speedtest.tcl f3d6c71b28969e02f60dd1de597da0551a2b335e4b49f3b753f0d57a1871e31f x
-F test/speedtest1.c 2e024925c6b5f56c6875b5332ad3b3a70bc0c9ec48d6c7f28a931bb7a5630891
+F test/speedtest1.c 9397561fd7879e327d705763872ad6bca378238ff9c9ca7a72514452652c1d30
 F test/spellfix.test 09c4b3aecb6754dd9fd4a01ae3a712935c3a8456bc70d81480926f55d1e5af2f
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2135,7 +2135,7 @@ F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 15041c7a5838f3bac98f3fb933709674a0b59367664e88fafaf105ff7416eb07
 F test/where8.test 461ca40265ed996a6305da99bb024b0e41602bb586acf544c08f95922358e49f
-F test/where9.test 2db942671a002621eff4f713e347bb25243295f79d8990297cd160bebcfde3f7
+F test/where9.test 8d0d0a98b5a4e96a5c94f2f3c086c290d9673b98265ab336cea5b4607bcfe507
 F test/whereA.test 9d1077b117f1b68d5f739d94f36956c36cf995eb87bb19b77b2e81af020edd20
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test cae295158703cb3fc23bf1a108a9ab730efff0f6
@@ -2301,8 +2301,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P fcddc5ab9ab46852de1500430e16e04739341266651703a868138d666ca45cd6
-R c6c05ca488c393f0313fbe8c9d47dcc4
+P d08cabd778f7844d04f3852d93197e80c0d0f4f30a589f7fd0d28577fa3fa68b eff049863816827f66b63e9e160acff3ca26be600a97aae01ceaadab519072bd
+R 91d20859e1a7d1befa3c545d81e004d7
+T +closed eff049863816827f66b63e9e160acff3ca26be600a97aae01ceaadab519072bd
 U drh
-Z cf6d06a7dc44e4715df1d0f606d48d73
+Z c61d29974aa33d30915573faa181d842
 # Remove this line to create a well-formed Fossil manifest.
