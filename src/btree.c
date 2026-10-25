@@ -7031,10 +7031,8 @@ static SQLITE_NOINLINE int clearCellOverflow(
   pBt = pPage->pBt;
   assert( pBt->usableSize > 4 );
   ovflPageSize = pBt->usableSize - 4;
-  nOvfl = (pInfo->nPayload - pInfo->nLocal + ovflPageSize - 1)/ovflPageSize;
-  assert( nOvfl>0 ||
-    (CORRUPT_DB && (pInfo->nPayload + ovflPageSize)<ovflPageSize)
-  );
+  nOvfl = (pInfo->nPayload - pInfo->nLocal + (u64)ovflPageSize-1)/ovflPageSize;
+  assert( nOvfl>0 );
   while( nOvfl-- ){
     Pgno iNext = 0;
     MemPage *pOvfl = 0;

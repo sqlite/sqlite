@@ -1,5 +1,5 @@
-C Fix\stwo\sinstances\sin\stest\scases\swhere\sthere\sis\san\sattempt\sto\sdelete\na\sfile\sthat\sis\sstill\sopen,\swhich\sdoes\snot\swork\son\swindows.
-D 2026-10-25T18:13:16.958
+C Better\sdetection\sof\sdatabase\scorruption\sin\sthe\sclearCellOverflow()\sroutine.
+D 2026-10-25T18:43:18.700
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -742,7 +742,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c f6a1490f4ef86cca51f0f93158bbc140b5822406e0c50ec61731e3fcdc1242a2
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c e1c8600ff35025fd7866e8eb80caab122f2d6a51d570e6a830c5f0137597782c
+F src/btree.c 643e17973c1344b3db1a8d9ffa376e3d6cb483043813199b987dc64f82acdc66
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d82
 F src/build.c 1406d252bc5b2c3f2150edd4426e5981eabf1000944be8db8d470b96eb64ee07
@@ -1077,7 +1077,7 @@ F test/corruptE.test 4143791f2dfb443aec5b7fabfa5821e6063eccc3b49b06f212c2f014715
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test adf79b669cbfd19e28c8191a610d083ae53a6d51
 F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
-F test/corruptI.test 9d8cbf6214e492abe9e822e759b9751ae336cec0a6fe3ff3b37bfbd8ff9c22ca
+F test/corruptI.test bcb3aea07d16a18c627514799b780bacb475bbae5caf24d9e774a67b2519cd1a
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test ac13504593d89d69690d45479547616ed12644d42b5cb7eeb2e759a76fc23dcb
 F test/corruptL.test f15de2b4729c0851ea89916a26766b094d74bac79f9f9f2b0191935aa3b344c9
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ed78f5d2bf2042332637edf541c1295f5f5ca7b1cbb4f647492d3f2221afc781
-R df9e2d810571ad2c1e37b06e0a0e48f6
+P c6e22bceae0e2ba57c739d6349f07da2bb27e115131e4d867163e5a8958a78c9
+R 8ec2bd580ddf422bb67eaddfb495b92a
 U drh
-Z 80c469cbe59f86e270fed3cafb3ed9de
+Z bbf8f8707301168645c361f3de229dbc
 # Remove this line to create a well-formed Fossil manifest.
