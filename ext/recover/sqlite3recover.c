@@ -1082,7 +1082,7 @@ static void recoverAddTable(
   i64 iRoot                       /* Root page of same table in INPUT db */
 ){
   sqlite3_stmt *pStmt = recoverPreparePrintf(p, p->dbOut, 
-      "PRAGMA table_xinfo(%Q)", zName
+      "PRAGMA %Q.table_xinfo(%Q)", p->zDb, zName
   );
 
   if( pStmt ){
@@ -1149,12 +1149,13 @@ static void recoverAddTable(
     ** appear more than once if it is listed more than once in the PRIMARY
     ** KEY (with different collation sequences). In that case use the first
     ** field - the others are redundant copies.  */
-    pStmt = recoverPreparePrintf(p, p->dbOut, "PRAGMA index_xinfo(%Q)", zName);
+    pStmt = recoverPreparePrintf(p, p->dbOut,
+                   "PRAGMA %Q.index_xinfo(%Q)", p->zDb, zName);
     while( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
       int iField = sqlite3_column_int(pStmt, 0);
       int iCol = sqlite3_column_int(pStmt, 1);
 
-      if( iCol<0 || iCol>=pNew->nCol ) continue;
+      assert( iCol>=0 && iCol<pNew->nCol );
       if( pNew->bIntkey ){
         int ii;
         for(ii=0; ii<pNew->nCol; ii++) pNew->aCol[ii].iField = -1;

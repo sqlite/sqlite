@@ -1,5 +1,5 @@
-C Merge\srecent\sbranch-3.54\sfixes\sinto\strunk.
-D 2026-10-25T13:29:09.396
+C Merge\sthe\simproved\s.recover\sOOB\swrite\sfix\sfrom\sbranch-3.54
+D 2026-10-25T13:52:08.761
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -495,7 +495,7 @@ F ext/recover/recoverpgsz.test 88766fcb810e52ee05335c456d4e5fb06d02b73d3ccb48c52
 F ext/recover/recoverrowid.test f948bf4024a5f41b0e21b8af80c60564c5b5d78c05a8d64fc00787715ff9f45f
 F ext/recover/recoverslowidx.test c90d59c46bb8924a973ac6fbc38f3163cee38cc240256addcab1cf1a322c37dc
 F ext/recover/recoversql.test e66d01f95302a223bcd3fd42b5ee58dc2b53d70afa90b0d00e41e4b8eab20486
-F ext/recover/sqlite3recover.c 894a0b47440ff6b0e3ec5c65c1f2a10e4baf81d753086ec2ce262f1071d2f794
+F ext/recover/sqlite3recover.c a343dd84c28f6f01c353f91d2e37d151cd6e5936eb2825a08a713388692046e9
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
@@ -2301,8 +2301,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P acda734dc86a46636b9ea274b887f1587b762263cc7d1767cb43124bae4eaa00 37963c3869640f9857dd4edf5e26fdca336ec71d8b1cf188507cab5fad91f681
-R ac953306761db3097fd11dbf590505a9
+P 00a52a3da142ae3104dc3241c377276ccae3a04df57c629c2ad47b626a3c4fa0 8f694d2a7de472eff8b3f6018085e03f8a1b68e6307e386e069c72b8af1b1f45
+R c3fea6d875f4e258a60dfaafc839c6df
 U drh
-Z 9be6f0021ca7f55ac220c58d31db8c8f
+Z e9553f38f0286dff41d0e287e0bab564
 # Remove this line to create a well-formed Fossil manifest.
