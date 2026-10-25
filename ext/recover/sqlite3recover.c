@@ -1075,7 +1075,7 @@ static void recoverAddTable(
   i64 iRoot                       /* Root page of same table in INPUT db */
 ){
   sqlite3_stmt *pStmt = recoverPreparePrintf(p, p->dbOut, 
-      "PRAGMA table_xinfo(%Q)", zName
+      "PRAGMA %Q.table_xinfo(%Q)", p->zDb, zName
   );
 
   if( pStmt ){
@@ -1137,7 +1137,7 @@ static void recoverAddTable(
     recoverFinalize(p, pStmt);
 
     pStmt = recoverPreparePrintf(p, p->dbOut,
-                   "PRAGMA main.index_xinfo(%Q)", zName);
+                   "PRAGMA %Q.index_xinfo(%Q)", p->zDb, zName);
     while( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
       int iField = sqlite3_column_int(pStmt, 0);
       int iCol = sqlite3_column_int(pStmt, 1);
