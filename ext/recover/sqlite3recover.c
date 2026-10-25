@@ -1136,12 +1136,13 @@ static void recoverAddTable(
 
     recoverFinalize(p, pStmt);
 
-    pStmt = recoverPreparePrintf(p, p->dbOut, "PRAGMA index_xinfo(%Q)", zName);
+    pStmt = recoverPreparePrintf(p, p->dbOut,
+                   "PRAGMA main.index_xinfo(%Q)", zName);
     while( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
       int iField = sqlite3_column_int(pStmt, 0);
       int iCol = sqlite3_column_int(pStmt, 1);
 
-      if( iCol>=pNew->nCol ) break;
+      assert( iCol<pNew->nCol );
       pNew->aCol[iCol].iField = iField;
 
       pNew->bIntkey = 0;
