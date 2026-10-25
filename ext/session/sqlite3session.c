@@ -642,7 +642,8 @@ static int sessionSerialLen(const u8 *a){
   e = *a;
   if( e==SQLITE_INTEGER || e==SQLITE_FLOAT ) return 9;
   if( e==SQLITE_TEXT || e==SQLITE_BLOB ){
-    return sessionVarintGet(&a[1], &n) + 1 + n;
+    const int v = sessionVarintGet(&a[1], &n);
+    return v + 1 + n;
   }
   return 1;
 }
