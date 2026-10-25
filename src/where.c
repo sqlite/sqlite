@@ -6160,7 +6160,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         if( nTo>=mxChoice ){
           mxI = 0;
           mxCost = aTo[0].rCost;
-          mxUnsort = aTo[0].rUnsort;
+          mxUnsort = aTo[0].nRow;
           for(jj=1, pTo=&aTo[1]; jj<mxChoice; jj++, pTo++){
             if( pTo->rCost>mxCost
              || (pTo->rCost==mxCost && pTo->rUnsort>mxUnsort)
