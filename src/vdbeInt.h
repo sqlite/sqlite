@@ -245,7 +245,7 @@ struct sqlite3_value {
   /* ShallowCopy only needs to copy the information above */
   sqlite3 *db;        /* The associated database connection */
   int szMalloc;       /* Size of the zMalloc allocation */
-  u32 uTemp;          /* Transient storage for serial_type in OP_MakeRecord */
+  tSerial uTemp;      /* Transient storage for serial_type in OP_MakeRecord */
   char *zMalloc;      /* Space to hold MEM_Str or MEM_Blob if szMalloc>0 */
   void (*xDel)(void*);/* Destructor for Mem.z - only valid if MEM_Dyn */
 #ifdef SQLITE_DEBUG
@@ -610,7 +610,7 @@ void sqliteVdbePopStack(Vdbe*,int);
 int SQLITE_NOINLINE sqlite3VdbeHandleMovedCursor(VdbeCursor *p);
 int SQLITE_NOINLINE sqlite3VdbeFinishMoveto(VdbeCursor*);
 int sqlite3VdbeCursorRestore(VdbeCursor*);
-u32 sqlite3VdbeSerialTypeLen(u32);
+u32 sqlite3VdbeSerialTypeLen(tSerial);
 u8 sqlite3VdbeOneByteSerialTypeLen(u8);
 #ifdef SQLITE_MIXED_ENDIAN_64BIT_FLOAT
   u64 sqlite3FloatSwap(u64 in);
@@ -618,7 +618,7 @@ u8 sqlite3VdbeOneByteSerialTypeLen(u8);
 #else
 # define swapMixedEndianFloat(X)
 #endif
-void sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
+void sqlite3VdbeSerialGet(const unsigned char*, tSerial, Mem*);
 void sqlite3VdbeDeleteAuxData(sqlite3*, AuxData**, int, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
