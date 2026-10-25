@@ -59,6 +59,8 @@ if {[permutation]!="inmemory_journal"} {
     }
   } {1 1 2 2 4 4 8 8}
 }
+catch {close $fd}
+db close
 
 # Bug 2026-10-25T12:08:19Z
 #

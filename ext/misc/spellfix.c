@@ -913,10 +913,11 @@ static EditDist3FromString *editDist3FromStringNew(
 
   if( z==0 ) return 0;
   if( n<0 ) n = (int)strlen(z);
-  pStr = sqlite3_malloc64( sizeof(*pStr) + sizeof(pStr->a[0])*n + (i64)n + 1 );
+  pStr = sqlite3_malloc64( sizeof(*pStr) + sizeof(pStr->a[0])*(i64)n
+                           + (i64)n + 1 );
   if( pStr==0 ) return 0;
   pStr->a = (EditDist3From*)&pStr[1];
-  memset(pStr->a, 0, sizeof(pStr->a[0])*n);
+  memset(pStr->a, 0, sizeof(pStr->a[0])*(i64)n);
   pStr->n = n;
   pStr->z = (char*)&pStr->a[n];
   memcpy(pStr->z, z, n+1);
@@ -2187,7 +2188,7 @@ static void spellfix1ResetCursor(spellfix1_cursor *pCur){
 /*
 ** Resize the cursor to hold up to N rows of content
 */
-static void spellfix1ResizeCursor(spellfix1_cursor *pCur, int N){
+static void spellfix1ResizeCursor(spellfix1_cursor *pCur, i64 N){
   struct spellfix1_row *aNew;
   assert( N>=pCur->nRow );
   aNew = sqlite3_realloc64(pCur->a, sizeof(pCur->a[0])*N);
@@ -2494,7 +2495,7 @@ static void spellfix1RunQuery(MatchQuery *p, const char *zQuery, int nQuery){
     if( p->iMaxDist>=0 ){
       if( iDist>p->iMaxDist ) continue;
       if( pCur->nRow>=pCur->nAlloc && (pCur->idxNum & SPELLFIX_IDXNUM_TOP)==0 ){
-        spellfix1ResizeCursor(pCur, pCur->nAlloc*2 + 10);
+        spellfix1ResizeCursor(pCur, (i64)pCur->nAlloc*2 + 10);
         if( pCur->a==0 ) break;
       }
     }
@@ -2580,6 +2581,7 @@ static int spellfix1FilterForMatch(
   if( idxNum&4 ){
     iLimit = sqlite3_value_int(argv[idx++]);
     if( iLimit<1 ) iLimit = 1;
+    if( iLimit>100000 ) iLimit = 100000;
   }
   if( idxNum&8 ){
     x.iScope = sqlite3_value_int(argv[idx++]);
