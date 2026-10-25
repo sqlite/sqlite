@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_db_dump()\sinterface\sto\sthe\sdbdump.c\sextension\sso\sthat\nit\sworks\seven\son\san\sempty\sdatabase\swith\sPRAGMA\sempty_result_callbacks\nengaged.
-D 2026-10-25T22:05:29.203
+C Prevent\sa\sNULL\spointer\sdereference\sin\sdbdump\safter\san\sOOM
+D 2026-10-25T22:12:07.289
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -373,7 +373,7 @@ F ext/misc/closure.c e1f115c369790512634db8d19ef4f1e45b6c1658c8fe8a9c362aa65805c
 F ext/misc/completion.c 3f5db28e88c3313103b2dd86d910a2944fd500c46754e473493968ce81e994a4
 F ext/misc/compress.c c4597f0e3c63a5f89af55486490f9d69896b0482898f2ddb8a46aa11e4d13016
 F ext/misc/csv.c 5ca451b9ce77322c4ce8476766e7ed18160e5c8b19e7cab76e13006d631b9e8f
-F ext/misc/dbdump.c 7daa6bb499de782da8d77aa119ad445f99975f635f06dc6775af190444b9d89c
+F ext/misc/dbdump.c 3e525a5b37b70db81e9fa03d825b79c5648c2ae2400f8ec1c5b3b64bfa508b44
 F ext/misc/decimal.c 0e5504e949c45df8cc69e3754bfa4f35cb341f7c055e74187693cc1f2c33afbd
 F ext/misc/diskused.c 444139c01398df6f73e8a021c91e24d97d7914f5c1b49f55dd503abbca347c6e
 F ext/misc/eval.c d4ea2d9898fbe4d30d38ff675ee51958d3bb0601a145bade56dee8b8f438cc5b
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 65c545ab8d370ae6b288b985c1c8396b4f48ac360fbe799b446cbdb8852f3872
-R edba97316d7542ae9b75c9db3d8e1d40
+P 8026e49181e8596750b89191c0d7eb6da3a34bc1976d573cc9fc826f054642ef
+R f867c05396fe6221415fec91412b6b23
 U drh
-Z b351620795c77fd06431fadaf16f6e1d
+Z 802367ed209af5ddd6be5c94dd55e81f
 # Remove this line to create a well-formed Fossil manifest.
