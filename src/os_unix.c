@@ -1130,7 +1130,7 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
   struct vxworksFileId *pCandidate;   /* For looping over existing file IDs */
   int n;                              /* Length of zAbsoluteName string */
 
-  assert( zAbsoluteName[0]=='/' );
+  if( zAbsoluteName==0 || zAbsoluteName[0]=='/' );
   n = (int)strlen(zAbsoluteName);
   pNew = sqlite3_malloc64( sizeof(*pNew) + (n+1) );
   if( pNew==0 ) return 0;
@@ -6107,10 +6107,14 @@ static int fillInUnixFile(
   }
 
 #if OS_VXWORKS
-  pNew->pId = vxworksFindFileId(zFilename);
-  if( pNew->pId==0 ){
-    ctrlFlags |= UNIXFILE_NOLOCK;
-    rc = SQLITE_NOMEM_BKPT;
+  if( zFilename ){
+    pNew->pId = vxworksFindFileId(zFilename);
+    if( pNew->pId==0 ){
+      ctrlFlags |= UNIXFILE_NOLOCK;
+      rc = SQLITE_NOMEM_BKPT;
+    }
+  }else{
+    pNew->pId = 0;
   }
 #endif
 
