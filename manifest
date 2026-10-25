@@ -1,5 +1,5 @@
-C Use\sa\snew\stypedef\s"tSerial"\sto\sdetermine\sthe\sdatatype\sfor\sserial-type\nvalue.\s\sIt\sis\s32\sbits\sfor\sreasonable\sSQLITE_MAX_LENGTH\sbut\scan\sbe\n64\sbits\sif\snecessary.
-D 2026-10-25T17:38:36.844
+C Use\sa\s64-bit\sinteger\sto\smeasure\sexpression\schain\ssize\sin\ndupedExprSize(),\sin\scase\sof\scrazy\sexpressions.
+D 2026-10-25T17:45:41.717
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -753,7 +753,7 @@ F src/date.c 7719f64947e718a38897af459259eeac1aeda7daf7b87860c4d37fc687101004
 F src/dbpage.c ec8590c5e7a564cef28ca3c6156521316a4d26cb572a34841b0bcb26b67b3f97
 F src/dbstat.c 34d4e825fbf763640ce3dbc56910ab080495ef4a6efb48b2b1852a43d43763fc
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
-F src/expr.c c404d1908874e6f8542a81b38a5ef7985581394c34e418f7ed3798e09f4e42d1
+F src/expr.c 6d2687ffe2334c7a0a030aa5e23b2bcba2374719f640bfd8f191a90de9c2cd8c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 26788ae6c785d70f9829c4176e9764447014fc73e6ba31e9f1881720a64ae7f1
 F src/func.c e3099dc33a2fbf2e1e563d49810988dfad3e030d1cd151360d5ecb865c8652a1
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 78ad029d8fdcc1f52bb7c761ee7b7b5c02d3dd616b441a76421aed3fa7a91e01
-R 281b113f9ae2fd0a09a516e526864638
+P 8435c6f0b1ac3025f5af5da2a0f03898142c506e5981d55a2b633e611dcecb8f
+R 08af447abaf72e16b4a4087047318d4c
 U drh
-Z ec45080b4dbb1c9896dd9d0a1d928d52
+Z 05453654ec82562f24997c11447c1a99
 # Remove this line to create a well-formed Fossil manifest.
