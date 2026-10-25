@@ -388,6 +388,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 
   (void)azCol;
   if( nArg!=3 ) return 1;
+  if( azArg==0 ) return 1;
   zTable = azArg[0];
   zType = azArg[1];
   zSql = azArg[2];
