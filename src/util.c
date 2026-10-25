@@ -843,11 +843,13 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 **                    there is no prefix of the input that can be seen as
 **                    a valid floating point number.
 **   bit 1       =>   Set if the input contains a decimal point or eNNN
-**                    clause.  Zero if the input is an integer.
+**                    clause or other text that disqualifies it as an
+**                    integer value.  Zero if the input is an integer.
 **   bit 2       =>   The input is exactly 0.0, not an underflow from
 **                    some value near zero.
 **   bit 3       =>   Set if there are more than about 19 significant
 **                    digits in the input.
+**   bit 4       =>   The input is a special value like "Inf" or "NaN"
 **
 ** If the input contains a syntax error but begins with text that might
 ** be a valid number of some kind, then the result is negative.  The
@@ -932,8 +934,13 @@ int sqlite3AtoF(const char *zIn, double *pResult){
     }
     mState |= 2;
   }else if( mState==0 ){
-    *pResult = 0.0;
-    return 0;
+    if( sqlite3StrICmp((const char*)z,"Inf")==0 ){
+      *pResult = neg ? -INFINITY : INFINITY;
+      return 0x13;
+    }else{
+      *pResult = 0.0;
+      return 0;
+    }
   }
 
   /* if exponent is present */

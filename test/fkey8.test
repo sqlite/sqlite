@@ -562,4 +562,25 @@ do_eqp_test 12.1 {
   `--SEARCH c1 USING COVERING INDEX c1ab (a=? AND b=?)
 }
 
+# Bug 2026-10-22T05:11:21Z
+# FK delete/update scan misses child rows again when parent key
+# is TEXT and child stores ±Inf.
+#
+# Fixed by teaching sqlite3AtoF() to understand ±Inf.
+#
+reset_db
+do_execsql_test 13.1 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE p(x TEXT PRIMARY KEY);
+  CREATE TABLE c(y BLOB REFERENCES p(x));
+  INSERT INTO p VALUES('Inf');
+  INSERT INTO c VALUES(9e999);      -- insert-side check passes
+  PRAGMA foreign_key_check;
+} {}
+do_catchsql_test 13.2 {
+  DELETE FROM p WHERE x='Inf';      -- SUCCEEDS, but must fail
+} {1 {FOREIGN KEY constraint failed}}
+
+
+
 finish_test
