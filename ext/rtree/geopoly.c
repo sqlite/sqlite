@@ -392,7 +392,7 @@ static void geopolyJsonFunc(
       sqlite3_str_appendf(x, "[%!g,%!g],", GeoX(p,i), GeoY(p,i));
     }
     sqlite3_str_appendf(x, "[%!g,%!g]]", GeoX(p,0), GeoY(p,0));
-    sqlite3_result_text(context, sqlite3_str_finish(x), -1, sqlite3_free);
+    sqlite3_result_str(context, x, SQLITE_FINISH);
     sqlite3_free(p);
   }
 }
@@ -429,7 +429,7 @@ static void geopolySvgFunc(
       }
     }
     sqlite3_str_appendf(x, "></polyline>");
-    sqlite3_result_text(context, sqlite3_str_finish(x), -1, sqlite3_free);
+    sqlite3_result_str(context, x, SQLITE_FINISH);
     sqlite3_free(p);
   }
 }

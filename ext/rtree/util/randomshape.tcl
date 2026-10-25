@@ -60,6 +60,7 @@ proc randomcolor {} {
   return [lindex {red orange green blue purple} $n]
 }
 
+puts {.mode list --limits off}
 puts {.print '<html>'}
 puts {.print '<svg width="1000" height="800" style="border:1px solid black">'}
 puts {CREATE TABLE t1(poly,clr);}
