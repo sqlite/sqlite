@@ -56,6 +56,7 @@ proc build_leak_db {filename} {
 # instead of two.
 #
 do_test 1.0 {
+  db close
   build_leak_db test.db
   sqlite3 db test.db
   db eval {SELECT count(*) FROM users}

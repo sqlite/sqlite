@@ -1,5 +1,5 @@
-C Use\sa\s64-bit\sinteger\sto\smeasure\sexpression\schain\ssize\sin\ndupedExprSize(),\sin\scase\sof\scrazy\sexpressions.
-D 2026-10-25T17:45:41.717
+C Fix\stwo\sinstances\sin\stest\scases\swhere\sthere\sis\san\sattempt\sto\sdelete\na\sfile\sthat\sis\sstill\sopen,\swhich\sdoes\snot\swork\son\swindows.
+D 2026-10-25T18:13:16.958
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -484,7 +484,7 @@ F ext/recover/recoverclobber.test 3ba6c0c373c5c63d17e82eced64c05c57ccaf26c1abe1c
 F ext/recover/recovercorrupt.test 64c081ad1200ae77b447da99eb724785d6bf71715f394543dc7689642e92bf49
 F ext/recover/recovercorrupt2.test 7347ccc9c36a925d99b56689c791423b45294834198f17575183fd500f52d85d
 F ext/recover/recovercorrupt3.test 2e7b9a1b528ca23ed382cec6f64e3fcbbd0f8e852add7562397fd8df83f335d5
-F ext/recover/recovercorrupt4.test ce5c5359f633cd8457fb9a2fb786fe92c86042ef885de90119a4f81f1b275fe6
+F ext/recover/recovercorrupt4.test 32bfc1257ce9dae559314e5d087a7f6b915c8f40c303f88e805f3a2e2fb53ca5
 F ext/recover/recoverfault.test 9d9f88eeb222615a25e7514f234c950d46bee20d24cd8db49d8fff8d650dcfe1
 F ext/recover/recoverfault2.test 730e7371bcda769554d15460cb23126abba1be8eca9539ccabf63623e7bb7e09
 F ext/recover/recoverold.test 68db3d6f85dd2b98e785b6c4da4f5eea4bbe52ccf6674d9a94c7506dc92596aa
@@ -1584,7 +1584,7 @@ F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/parser1.test 1901cf7157fbf7842eaee4a7dea65e096c606f01d42740a7991fa85eba421d45
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test 8a801d2b8e4b0ebb99701f026a67a9e84634c8aa24799a842c44003b93250da1
-F test/pcacheleak.test ccd1bf439cd472e2a756564d205451fd10d5961c1b7ca0a54d87d1a4c909c618
+F test/pcacheleak.test d43df22205a9376dcd8811adcdc79d4fb2b4f88962f48b3def6e1f3c982e4aee
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
 F test/percentile.test fd78896fa882fa4fbf693640097859721f3629926c2ccf804af5bcb7001fd35b
 F test/permutations.test c919e9d9b9d17faccd543128ac714efbba0606c7051bcb54f264006eecdb4627
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8435c6f0b1ac3025f5af5da2a0f03898142c506e5981d55a2b633e611dcecb8f
-R 08af447abaf72e16b4a4087047318d4c
+P ed78f5d2bf2042332637edf541c1295f5f5ca7b1cbb4f647492d3f2221afc781
+R df9e2d810571ad2c1e37b06e0a0e48f6
 U drh
-Z 05453654ec82562f24997c11447c1a99
+Z 80c469cbe59f86e270fed3cafb3ed9de
 # Remove this line to create a well-formed Fossil manifest.
