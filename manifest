@@ -1,5 +1,5 @@
-C Avoid\san\sinteger\soverflow\sin\sthe\sspellfix\sextension\swhen\ssetting\na\sridiculous\svalues\sfor\sthe\stop=\sparameter.
-D 2026-10-25T21:51:58.167
+C Make\ssure\smemory\sallocations\sdo\snot\soverflow\sin\sspellfix\son\si386\sand\ssimilar\n32-bit\splatforms.
+D 2026-10-25T22:00:07.376
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -400,7 +400,7 @@ F ext/misc/series.c 3296d04bc84a64848c3abea7b9a152cb8dd198f23f71b6ee28c3fa22ca5f
 F ext/misc/sha1.c c279eaae2d203be3443f9e3052401d15dc98bd43aa389d4e234ab0e295b4a04b
 F ext/misc/shathree.c e40d4239d522946f6c9821a2244907ae8288ae45a8c8ed979b62e83979666a6d
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c f36c358a6d155b229c99d805400dab95b1d85efd835413c808edb13a7a6760bb
+F ext/misc/spellfix.c 68e0fa6ca53ff5073e3962e79bf7ecec020a20e331ecbaa3be4721ef686a9626
 F ext/misc/sqlar.c 97c100b010159c08a7a9acd8eb1ea510a5522e64741aaafcd7b6c629de682edc
 F ext/misc/sqlite3_stdio.c a32a0cf53d82ece9d68c9b9fdaad5f0d2bf696529aece1dbf5c01eee67e5d703
 F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bfa08ab1ce99f
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4fbce3be94ccdd4dea79db277b3097d2f2c0e995a05d6345c24988ad949e2f9f
-R 2173846bcc909ae99464441d766043a7
+P 3dfc7fa4c29741f530511ec9e5da4fd1b446cb2310ec00fb5c1b49124cd846d0
+R 7fbb58b8d293d01f6fb1cf8b32f1c31f
 U drh
-Z 68c20b5127222639cec844eb99fe1842
+Z 7f31ebeef3eb7cd48789b00c1c305d1a
 # Remove this line to create a well-formed Fossil manifest.

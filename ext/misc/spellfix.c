@@ -913,10 +913,11 @@ static EditDist3FromString *editDist3FromStringNew(
 
   if( z==0 ) return 0;
   if( n<0 ) n = (int)strlen(z);
-  pStr = sqlite3_malloc64( sizeof(*pStr) + sizeof(pStr->a[0])*n + (i64)n + 1 );
+  pStr = sqlite3_malloc64( sizeof(*pStr) + sizeof(pStr->a[0])*(i64)n
+                           + (i64)n + 1 );
   if( pStr==0 ) return 0;
   pStr->a = (EditDist3From*)&pStr[1];
-  memset(pStr->a, 0, sizeof(pStr->a[0])*n);
+  memset(pStr->a, 0, sizeof(pStr->a[0])*(i64)n);
   pStr->n = n;
   pStr->z = (char*)&pStr->a[n];
   memcpy(pStr->z, z, n+1);
