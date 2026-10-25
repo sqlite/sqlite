@@ -3331,6 +3331,27 @@ static int vec1VectorIsNonFinite(const float *aVec, int nElem){
   return SQLITE_ERROR;
 }
 
+
+/*
+** Check that nByte is a suitable length in bytes for a blob containing a
+** vector between VEC1_VECSIZE_MIN and VEC1_VECSIZE_MAX elements in size.
+** If it is, return SQLITE_OK. Otherwise, return SQLITE_ERROR and leave
+** (*pzErrmsg) pointing to a buffer containing an English language error
+** message. It is the responsibility of the caller to free the buffer
+** using sqlite3_free() in this case.
+*/
+static int vec1CheckVectorSize(i64 nByte, char **pzErrmsg){
+  if( (nByte % sizeof_f32)!=0
+   || (nByte<(VEC1_VECSIZE_MIN*sizeof_f32))
+   || (nByte>(VEC1_VECSIZE_MAX*sizeof_f32))
+  ){
+    *pzErrmsg = sqlite3_mprintf("invalid vector size: %lld bytes", nByte);
+    return SQLITE_ERROR;
+  }
+  return SQLITE_OK;
+}
+
+
 #define VEC1_REALLOC_NVEC 10000
 
 /*
@@ -3351,6 +3372,7 @@ static void vec1TrainStep(
   int n = 0;
   const u8 *a = 0;
   int iChunk = 0;
+  char *zErr = 0;
 
   assert( nArg==1 || nArg==2 );
   p = (Vec1TrainCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
@@ -3358,17 +3380,25 @@ static void vec1TrainStep(
 
   n = sqlite3_value_bytes(aArg[0]);
   a = (const u8*)sqlite3_value_blob(aArg[0]);
-  if( (n==0)
-   || (n%sizeof_f32)!=0 
-   || (p->tv.nElem!=0 && p->tv.nElem!=(int)(n/sizeof_f32))
-  ){
-    sqlite3_result_error(pCtx, "vec1_train: bad argument", -1);
+
+  /* Check the vector is a valid size. */
+  if( vec1CheckVectorSize(n, &zErr) ){
+    vec1ResultErrorF(pCtx, "vec1_train: %z", zErr);
     return;
   }
+
+  /* Check there are no Inf or Nan values in the vector. */
   if( vec1VectorIsNonFinite((const float*)a, (n/sizeof_f32)) ){
     sqlite3_result_error(pCtx, 
         "vec1_train: non-finite value not allowed in vector", -1
     );
+    return;
+  }
+
+  /* Unless this is the first training vector, check that it is the same
+  ** size as all the other vectors in the training set.  */
+  if( p->tv.nElem!=0 && p->tv.nElem!=(int)(n/sizeof_f32) ){
+    sqlite3_result_error(pCtx, "vec1_train: bad argument", -1);
     return;
   }
 
@@ -5057,21 +5087,22 @@ static void vec1TrainFinal(sqlite3_context *pCtx){
   float *aCentroid = 0;           /* Centroids */
   float *aRotation = 0;           /* Rotation */
 
-  int nByte = 0;
+  i64 nByte = 0;
   u8 *aByte = 0;
 
   float *pCsr = 0;
   Vec1JobQueue *pQueue = 0;
   u32 flags = 0;
   int ii;
-
   int bPQ = 0;
+  i64 nElem = 0;                  /* 64-bit copy of p->tv.nElem */
 
   /* Check that sufficient training vectors were provided. */
   p = (Vec1TrainCtx*)sqlite3_aggregate_context(pCtx, sizeof(*p));
   if( p==0 ) return;
   p->pCtx = pCtx;
   bPQ = (p->eQuant==VEC1_QUANTIZE_PQ || p->eQuant==VEC1_QUANTIZE_OPQ);
+  nElem = p->tv.nElem;
 
   if( p->tv.nVec==0 ){
     vec1ResultErrorF(pCtx,
@@ -5104,15 +5135,15 @@ static void vec1TrainFinal(sqlite3_context *pCtx){
     vec1TrainNormalizeAll(p);
   }
 
-  /* Allocate space for the model. Space is required for (A) the header and
-  ** coarse centroids, (B) the PQ codebooks and (C) the OPQ rotation
+  /* Allocate space for the model. Space is required for (a) the header and
+  ** coarse centroids, (b) the PQ codebooks and (c) the OPQ rotation
   ** matrix.  */
-  nByte = VEC1_HEADER_SIZE + (sizeof_f32 * p->nBucket * p->tv.nElem);  /* A */
+  nByte = VEC1_HEADER_SIZE + sizeof_f32 * p->nBucket * nElem;
   if( bPQ ){
-    nByte += sizeof_f32*p->nCodesize*p->nCodeElem*VEC1_PQ_CODEBOOK_SZ; /* B */
+    nByte += sizeof_f32 * p->nCodesize * p->nCodeElem * VEC1_PQ_CODEBOOK_SZ;
   }
   if( p->eQuant==VEC1_QUANTIZE_OPQ ){
-    nByte += sizeof_f32 * p->tv.nElem * p->tv.nElem;                   /* C */
+    nByte += sizeof_f32 * nElem * nElem;
   }
 
   aByte = (u8*)vec1ContextMalloc(pCtx, nByte);
@@ -5120,15 +5151,15 @@ static void vec1TrainFinal(sqlite3_context *pCtx){
   pCsr = (float*)&aByte[VEC1_HEADER_SIZE];
   if( bPQ ){
     aBook = pCsr;
-    pCsr += (p->nCodesize * p->nCodeElem * VEC1_PQ_CODEBOOK_SZ);
+    pCsr += (i64)p->nCodesize * p->nCodeElem * VEC1_PQ_CODEBOOK_SZ;
   }
   if( p->nBucket>0 ){
     aCentroid = pCsr;
-    pCsr += (p->nBucket * p->tv.nElem);
+    pCsr += p->nBucket * nElem;
   }
   if( p->eQuant==VEC1_QUANTIZE_OPQ ){
     aRotation = pCsr;
-    pCsr += (p->tv.nElem * p->tv.nElem);
+    pCsr += nElem * nElem;
   }
   assert( (u8*)pCsr==&aByte[nByte] );
 
@@ -5188,7 +5219,7 @@ static void vec1TrainFinal(sqlite3_context *pCtx){
 
   /* Return the result blob. */
   if( p->rc==SQLITE_OK ){
-    sqlite3_result_blob(pCtx, (void*)aByte, nByte, vec1SqliteFree);
+    sqlite3_result_blob(pCtx, (void*)aByte, (int)nByte, vec1SqliteFree);
     aByte = 0;
   }
 
@@ -8590,7 +8621,13 @@ static int vec1LoadConfig(Vec1Tab *pTab){
         }
 
         case VEC1_CONFIG_NELEM: {
-          pTab->cfg.nElem = sqlite3_column_int(pStmt, 1);
+          i64 nElem = sqlite3_column_int(pStmt, 1);
+          if( nElem<VEC1_VECSIZE_MIN || nElem>VEC1_VECSIZE_MAX ){
+            vec1VtabError(pTab, "invalid vector size in config");
+            rc = VEC1_CORRUPT;
+          }else{
+            pTab->cfg.nElem = (int)nElem;
+          }
           break;
         }
 
@@ -11315,13 +11352,12 @@ static int vec1WriteConfigI64(Vec1Tab *pTab, int iField, i64 iVal){
 */
 static int vec1FixVectorSize(Vec1Tab *pTab, int nVec){
   int rc = SQLITE_OK;
+  char *zErr = 0;
 
-  if( (nVec % sizeof_f32) 
-   || (nVec<(VEC1_VECSIZE_MIN*sizeof_f32))
-   || (nVec>(VEC1_VECSIZE_MAX*sizeof_f32))
-  ){
-    vec1VtabError(pTab, "invalid vector size: %d bytes", nVec);
-    rc = SQLITE_ERROR;
+  rc = vec1CheckVectorSize(nVec, &zErr);
+  if( rc!=SQLITE_OK ){
+    vec1VtabError(pTab, "vec1: %s", zErr);
+    sqlite3_free(zErr);
   }else{
     int nElem = nVec/sizeof_f32;
     rc = vec1WriteConfigI64(pTab, VEC1_CONFIG_NELEM, nElem);
@@ -13126,4 +13162,3 @@ int sqlite3_vec1_extra_init(const char *z){
 #endif
 
 #endif /* !defined(VEC1SIMD) || VEC1SIMD==SCALAR */
-
