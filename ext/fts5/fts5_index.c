@@ -1590,6 +1590,17 @@ static void fts5StructurePromote(
   }
 }
 
+/*
+** Return the page number iPgno+nDelta. If this is larger than FTS5_MAX_PGNO,
+** which can only happen if the doclist-index record is corrupt, return
+** FTS5_MAX_PGNO+1 instead. No leaf page with that number may exist, so
+** this causes the corruption to be detected when the caller attempts to
+** use the page number.
+*/
+static int fts5AddPgno(int iPgno, int nDelta){
+  i64 iRet = (i64)iPgno + nDelta;
+  return (int)(iRet>FTS5_MAX_PGNO ? FTS5_MAX_PGNO+1 : iRet);
+}
 
 /*
 ** Advance the iterator passed as the only argument. If the end of the 
@@ -1612,7 +1623,7 @@ static int fts5DlidxLvlNext(Fts5DlidxLvl *pLvl){
 
     if( iOff<pData->nn ){
       u64 iVal;
-      pLvl->iLeafPgno += (iOff - pLvl->iOff) + 1;
+      pLvl->iLeafPgno = fts5AddPgno(pLvl->iLeafPgno, iOff-pLvl->iOff+1);
       iOff += fts5GetVarint(&pData->p[iOff], &iVal);
       pLvl->iRowid += iVal;
       pLvl->iOff = iOff;
@@ -1722,7 +1733,7 @@ static int fts5DlidxLvlPrev(Fts5DlidxLvl *pLvl){
       ii += sqlite3Fts5GetVarint(&a[ii], &delta);
 
       if( ii>=iOff ) break;
-      pLvl->iLeafPgno += nZero+1;
+      pLvl->iLeafPgno = fts5AddPgno(pLvl->iLeafPgno, nZero+1);
       pLvl->iRowid += delta;
       pLvl->iOff = ii;
     }
@@ -8615,7 +8626,9 @@ static void fts5IndexIntegrityCheckSegment(
       ){
 
         /* Check any rowid-less pages that occur before the current leaf. */
-        for(iPg=iPrevLeaf+1; iPg<fts5DlidxIterPgno(pDlidx); iPg++){
+        for(iPg=iPrevLeaf+1; p->rc==SQLITE_OK && iPg<fts5DlidxIterPgno(pDlidx);
+            iPg++
+        ){
           iKey = FTS5_SEGMENT_ROWID(iSegid, iPg);
           pLeaf = fts5LeafRead(p, iKey);
           if( pLeaf ){
