@@ -1599,6 +1599,7 @@ do_catchsql_test 18.1 {
 #
 reset_db
 do_execsql_test 20.0 {
+  PRAGMA auto_vacuum=off;
   PRAGMA page_size = 4096;
   CREATE TABLE t1(x);
   INSERT INTO t1 VALUES('aaaaaaaaaaaaaaaaaaaa'),('bbbbbbbbbbbbbbbbbbbb'),

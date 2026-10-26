@@ -66,6 +66,7 @@ do_test 1.1 {
 } {}
 
 do_test 1.2 {
+  execsql { PRAGMA cell_size_check=OFF; }
   execsql { PRAGMA integrity_check; }
   execsql { PRAGMA quick_check; }
   set {} {}

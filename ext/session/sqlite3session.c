@@ -3945,9 +3945,15 @@ static int sessionChangesetNextOne(
     **
     ** Such records are technically corrupt, but the rebaser was at one
     ** point generating them. Under most circumstances this is benign, but
-    ** can cause spurious SQLITE_RANGE errors when applying the changeset. */
+    ** can cause spurious SQLITE_RANGE errors when applying the changeset.
+    **
+    ** Also check that all PK fields are present in the old.* record. If
+    ** they are not, the changeset is corrupt.  */
     if( p->bPatchset==0 && p->op==SQLITE_UPDATE){
       for(i=0; i<p->nCol; i++){
+        if( p->abPK[i] && p->apValue[i]==0 ){
+          return (p->rc = SQLITE_CORRUPT_BKPT);
+        }
         if( p->abPK[i]==0 && p->apValue[i+p->nCol]==0 ){
           sqlite3ValueFree(p->apValue[i]);
           p->apValue[i] = 0;

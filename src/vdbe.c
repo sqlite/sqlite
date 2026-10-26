@@ -3593,7 +3593,7 @@ case OP_MakeRecord: {
   i64 nByte;             /* Data space required for this record */
   i64 nZero;             /* Number of zero bytes at the end of the record */
   int nVarint;           /* Number of bytes in a varint */
-  tSerial serial_type;   /* Type field */
+  u32 serial_type;       /* Type field */
   Mem *pData0;           /* First field to be combined into the record */
   Mem *pLast;            /* Last field of the record */
   int nField;            /* Number of fields in the record */
@@ -3775,7 +3775,7 @@ case OP_MakeRecord: {
         }else{
           nZero += pRec->u.nZero;
         }
-        serial_type += (u32)pRec->u.nZero*2;
+        serial_type += 2*(u32)pRec->u.nZero;
       }
       nData += len;
       nHdr += sqlite3VarintLen(serial_type);

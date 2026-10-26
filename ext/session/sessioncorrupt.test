@@ -52,5 +52,30 @@ do_test 1.2 {
   sqlite3changeset_apply db $C xConflict
 } {}
 
+#-------------------------------------------------------------------------
+# An UPDATE change with an undefined old.* PK value is corrupt. Even if
+# it follows an UPDATE that uses the same cached UPDATE statement.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE x(a INTEGER PRIMARY KEY, b TEXT, c TEXT);
+  INSERT INTO x VALUES(1, 'same', 'one'), (2, 'same', 'two');
+}
+
+set C [db one {SELECT unhex(
+    '5403010000' || hex('x') || '00' ||
+    '1700' || '010000000000000002' || '0304' || hex('same') || '00' ||
+              '00' || '0304' || hex('same') || '00' ||
+    '1700' || '00' || '0304' || hex('same') || '00' ||
+              '00' || '0309' || hex('second-ok') || '00'
+)}]
+
+do_test 2.1 {
+  list [catch { sqlite3changeset_apply db $C xConflict } msg] $msg
+} {1 SQLITE_CORRUPT}
+
+do_execsql_test 2.2 {
+  SELECT * FROM x
+} {1 same one 2 same two}
 
 finish_test
