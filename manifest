@@ -1,5 +1,5 @@
-C Experimental\sfix\sto\s[bugs:/info/2026-10-25T19:26:00Z|Bug\s2026-10-25T19:26:00Z]
-D 2026-10-26T01:20:04.940
+C Improvements\sto\shandling\sof\sfailed\sDDL\sstatements\sfrom\swithin\san\napplication-defined\sfunction.
+D 2026-10-26T11:46:18.509
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -413,6 +413,7 @@ F ext/misc/strdup.c eaa6592f5d29543eef591e2919d7410363e2b75d720ee7144a8b31590713
 F ext/misc/templatevtab.c e76d4cdb73f986c8165c0fe7831f1a94da55d4f1eafcb7d377e1b0b79ee8679a
 F ext/misc/tmstmpvfs.c 8fe8b10e0ac7c46faf491811e21dcb67ccde5cff8f133701121f793d2a7d41e4
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
+F ext/misc/tryeval.c 04c9ad67e71cccfd41448879aa6a88b43dc367680257c29d95ff30dc01d898d6
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c fe1011f185408b0afd1631fdce8090c4e69ff4eae10a760101e08b624f53bcb1
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
@@ -748,7 +749,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c f6a1490f4ef86cca51f0f93158bbc140b5822406e0c50ec61731e3fcdc1242a2
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 8a6878fcbb95b37021e4ec20d72efeb197d1b114915af73239f1b1f638b3b844
-F src/btree.c a418bd8ad6f334124fb14845aab2df0bdc8d53773fba5c597be87133afa24632
+F src/btree.c 1215dba3b7ac4e9f87086f0661f1f14186207a9958fe56a25e01ed9fbd46f2f6
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d82
 F src/build.c c30e1f3491edaac19febd957b54bbdaa0c5c192d068dc45314d7c3dccc3ebc2c
@@ -878,7 +879,7 @@ F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c c5d51315f307e6a39b7f81e5d2dd680eb6d6c7435926f32f236bbcc641343268
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 1a2c40e1d56b074aacff260591aa30b1e3dede6cb7652b2db63e28d69ca85f29
-F src/vdbeapi.c b1501e7184c5286cf2507e80bd437e8ea749997376bacaf199160c8563ef1d16
+F src/vdbeapi.c 20dd81d9643d265f582b437b0654a90269612b2252a28d18abae781af3707658
 F src/vdbeaux.c c52805902c5ca4a95ceb69118c88d3ca092c6b764c19b6293a5b07a9553f1651
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 29f9bf1f900c85415182e7f97cfcee296742297b3f93113927f3767eeedd8df2
@@ -2301,11 +2302,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4fee54f1d687c2e2b4a760c59d1d29fceb81623494cf65b72c309f4922dc0a7e
-R e2e9cfccfc53e616d7107a449efdcd23
-T *branch * schema-reset-appfunc
-T *sym-schema-reset-appfunc *
-T -sym-trunk *
+P efdff276d2c19f77be5b5b600084996126ec2ae3e2a7ed91f2e7d7e1916043ba
+R e4065015d8d39185eb6c86f3113f1050
 U drh
-Z 99b2f18defbfa7fb533fb631b2c331eb
+Z 95dd7f5e6dd521e35e56610130b05433
 # Remove this line to create a well-formed Fossil manifest.

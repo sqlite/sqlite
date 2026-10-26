@@ -998,6 +998,11 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
          && cnt++ < SQLITE_MAX_SCHEMA_RETRY ){
     int savedPc = v->pc;
+    if( db->bPendingSchemaReset && cnt>2 ){
+      /* If there are pending schema resets, there is no point it trying
+      ** to reprepare more than a couple of times. */
+      break;
+    }
     rc = sqlite3Reprepare(v);
     if( rc!=SQLITE_OK ){
       /* This case occurs after failing to recompile an sql statement.
