@@ -1,5 +1,5 @@
-C Back\sout\sthe\stSerial\stype\sdefinition\schange.\s\sIt\swas\sa\smistake.
-D 2026-10-26T12:37:49.757
+C Reorganize\sOP_MakeRecord\sslightly\sto\savoid\ssigned\s32-bit\sinteger\soverflow\nprior\sto\sdiscovering\san\soversize\serror.
+D 2026-10-26T12:46:03.791
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -869,7 +869,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c c5bec56770b71fe75e12f1f7b0a512032e1fd3d1f83c50c4ab4474ced20347a4
 F src/util.c 4437408e09cef6dbb63a8b8ba28be53bdc098ec890e5e64ad7ae1fc83448962e
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c e8f89a20f1f4511cbe4bfd73e20017ae872cd2444b3c10e05b7d9676c120231a
+F src/vdbe.c cce24ca088a709da709b8416407bf507134c723d0950f3e010e21c661a60d584
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 68e5ab63f184f2871780c83ce78b425d0360869611baea4c65575f91f76ac1d3
 F src/vdbeapi.c 7faa8eda3d9278ee27c8f2f14dd8d5fda6a0e90a5b91d740812a37455652b498
@@ -2289,9 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 53da8bd2c32db0b8d744d9660737eec1a18adec67329e4bcfcfbe1827cc4381d
-Q -8435c6f0b1ac3025f5af5da2a0f03898142c506e5981d55a2b633e611dcecb8f
-R 784d32fc6ea67b528bf8e6339b416a88
+P fc56735f1c34ee0d8605d4f79ed2e13e5f54017898178c8d20a79d34fea6597c
+R f196cca21fe3ddc129da566794447386
 U drh
-Z d18f58c934199e4c2fd69733aa9de7bf
+Z b321620f8b59960ad4bc1840b61e4eaa
 # Remove this line to create a well-formed Fossil manifest.

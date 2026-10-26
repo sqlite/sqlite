@@ -3769,13 +3769,13 @@ case OP_MakeRecord: {
       len = (u32)pRec->n;
       serial_type = (len*2) + 12 + ((pRec->flags & MEM_Str)!=0);
       if( pRec->flags & MEM_Zero ){
-        serial_type += (u32)pRec->u.nZero*2;
         if( nData ){
           if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;
           len += pRec->u.nZero;
         }else{
           nZero += pRec->u.nZero;
         }
+        serial_type += 2*(u32)pRec->u.nZero;
       }
       nData += len;
       nHdr += sqlite3VarintLen(serial_type);
