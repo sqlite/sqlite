@@ -1,5 +1,5 @@
-C Do\snot\sbe\sas\saggressive\sat\sblocking\sautomatic\sreprepares\sdue\sto\na\spending\sschema\sreset.
-D 2026-10-26T15:44:25.024
+C Where\spossible\sdelete\sthe\stable\sroot\spage\sprior\sto\supdating\sthe\sschema\ncookie,\sand\sthat\savoids\sthe\sneed\sto\searly-out\sthe\sreprepare\sloop.
+D 2026-10-26T17:21:24.726
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -752,7 +752,7 @@ F src/btmutex.c 8a6878fcbb95b37021e4ec20d72efeb197d1b114915af73239f1b1f638b3b844
 F src/btree.c 1215dba3b7ac4e9f87086f0661f1f14186207a9958fe56a25e01ed9fbd46f2f6
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d82
-F src/build.c c30e1f3491edaac19febd957b54bbdaa0c5c192d068dc45314d7c3dccc3ebc2c
+F src/build.c 1c098e062e3a15489f3afbda8aada5f626383d5b15039c6fdede9b4855a13794
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 9f4c9d514b4ef4e7c5efb15dbc52e9f0e5812f948977a845674ec17bf23d50f4
 F src/complete.c f68f545b9c6c19e2e848672dc0e4da230072fedc335d8980b55242cc4cfa60da
@@ -879,7 +879,7 @@ F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c a8cef3b8ec9bc20210fba653fc57b2fec70474cee9b1d483d5714f7ce331f557
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 581b112c6a763a5871ae1d2b948c5288e749d03c7e3829ebce2738402fe21074
-F src/vdbeapi.c 422e7285f89c7f41375ffcce793c98722ebfea1d570e007bf382a7a83b1d6474
+F src/vdbeapi.c b1501e7184c5286cf2507e80bd437e8ea749997376bacaf199160c8563ef1d16
 F src/vdbeaux.c 7af03afdcee3b1d22a599c04fc99a1be4e8c71ee81782cf9e30ea22a381cffeb
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 29f9bf1f900c85415182e7f97cfcee296742297b3f93113927f3767eeedd8df2
@@ -2302,8 +2302,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 95da88756c843bedc858c6e973170770459032340c109bdacb1efc81fc27af8a
-R 5a197195e0c42042015ca5e71d7e901a
+P c1a6ef0daa09fdad2ef807dd9defde3e5c7ceb11646f5129b3db19559398fe64
+R 28f6868d16cdc9b8426a7a71ecb954b1
 U drh
-Z d210155426056f8c4f19a8faee879f23
+Z ce448bad488eb544a98c63a6ecf14dd2
 # Remove this line to create a well-formed Fossil manifest.
