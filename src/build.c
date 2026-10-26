@@ -626,7 +626,7 @@ void sqlite3CollapseDatabaseArray(sqlite3 *db){
 **
 ** Deferred schema resets may be retried by calling with iDb<0.
 */
-void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
+void sqlite3ResetOneSchema(sqlite3 *db, int iDb, int mxActive){
   int i;
   assert( iDb<db->nDb );
 
@@ -638,7 +638,7 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
     db->bPendingSchemaReset = 1;
   }
 
-  if( db->nSchemaLock==0 && db->nVdbeActive<=1 ){
+  if( db->nSchemaLock==0 && db->nVdbeActive<=mxActive ){
     for(i=0; i<db->nDb; i++){
       if( DbHasProperty(db, i, DB_ResetWanted) ){
         sqlite3SchemaClear(db->aDb[i].pSchema);

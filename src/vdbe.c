@@ -4341,7 +4341,7 @@ case OP_Transaction: {
     ** a v-table method.
     */
     if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
-      sqlite3ResetOneSchema(db, pOp->p1);
+      sqlite3ResetOneSchema(db, pOp->p1, 1);
     }
     p->expired = 1;
     rc = SQLITE_SCHEMA;
@@ -9536,7 +9536,7 @@ abort_due_to_error:
   }
   rc = SQLITE_ERROR;
   if( resetSchemaOnFault>0 ){
-    sqlite3ResetOneSchema(db, resetSchemaOnFault-1);
+    sqlite3ResetOneSchema(db, resetSchemaOnFault-1, 1);
   }
 
   /* This is the only way out of this procedure.  We have to

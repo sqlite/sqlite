@@ -3531,7 +3531,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** VDBEs where active at the same time.
   */
   if( db->bPendingSchemaReset && db->nVdbeActive==0 ){
-    sqlite3ResetOneSchema(db, -1);
+    sqlite3ResetOneSchema(db, -1, 0);
   }
 
   assert( db->nVdbeActive>0 || db->autoCommit==0 || db->nStatement==0 );
