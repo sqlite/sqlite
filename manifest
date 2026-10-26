@@ -1,5 +1,5 @@
-C Fix\sthe\sext/recover/recovercorrupt4.test\sscript\sso\sthat\sworks\seven\nif\scell_size_check\sis\sturned\son\sby\sdefault.
-D 2026-10-26T13:55:24.952
+C Disable\s(at\sleast\stemporarily)\sa\stest\scase\sassociated\swith\s.recover\sthat\nshows\sdifferent\scorruption\srecoveries\sbased\son\scompile-time\soptions.
+D 2026-10-26T14:13:00.431
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -484,7 +484,7 @@ F ext/recover/recoverclobber.test 3ba6c0c373c5c63d17e82eced64c05c57ccaf26c1abe1c
 F ext/recover/recovercorrupt.test 64c081ad1200ae77b447da99eb724785d6bf71715f394543dc7689642e92bf49
 F ext/recover/recovercorrupt2.test 7347ccc9c36a925d99b56689c791423b45294834198f17575183fd500f52d85d
 F ext/recover/recovercorrupt3.test 2e7b9a1b528ca23ed382cec6f64e3fcbbd0f8e852add7562397fd8df83f335d5
-F ext/recover/recovercorrupt4.test 32bfc1257ce9dae559314e5d087a7f6b915c8f40c303f88e805f3a2e2fb53ca5
+F ext/recover/recovercorrupt4.test 55b08a4357af057ec2647b3d76b5feb13507824f9419f978dd44fa32f4a1fc3d
 F ext/recover/recoverfault.test 9d9f88eeb222615a25e7514f234c950d46bee20d24cd8db49d8fff8d650dcfe1
 F ext/recover/recoverfault2.test 730e7371bcda769554d15460cb23126abba1be8eca9539ccabf63623e7bb7e09
 F ext/recover/recoverold.test 68db3d6f85dd2b98e785b6c4da4f5eea4bbe52ccf6674d9a94c7506dc92596aa
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8575e97c30c076d886ca8ce901a8e413d11a41308ca3494b2e196f49160c36fb
-R feb51fba6d9c800a315841fba30f70d4
+P a2b7dcba6bbca6fea1cc6aecb88ef6941c5ea00f0e3e6861d52619632b2b3ee1
+R 4c3bde0ac313072f6c2ae15869e98105
 U drh
-Z 9b5ac9e0ba41d7306f8f9e3caea6fc78
+Z 5c1baf8916c4d8e2669b6f164673f8d5
 # Remove this line to create a well-formed Fossil manifest.
