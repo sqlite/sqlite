@@ -1,5 +1,5 @@
-C Have\svec1\sdiscard\sits\sin-memory\smodel\scache\swhen\sa\ssavepoint\sis\srolled\sback.\sReport\s[bugs:/info/2026-10-26T11:36:53Z\s|\s2026-10-26T11:36:53Z].
-D 2026-10-26T17:49:10.856
+C Fix\stest\sscript\serror\scausing\sfailures\sin\ssessionfault2.test\sfor\sSQLITE_DEBUG\sbuilds.
+D 2026-10-26T20:05:07.779
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1494,7 +1494,7 @@ F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test 25897506da0098cea09b302ff432b0fb6d8002773c1e0fc9732aa8b444bfd455
 F test/mallocL.test fb311ff80afddf3b1a75e52289081f4754d901dc
 F test/mallocM.test 78bbe9d3da84a5c679123cdb40d7b2010b18fc46e13897e4f253c6ba6fbff134
-F test/malloc_common.tcl c50b5453001af2b54b5d74b9ce4b8e044a44f3c5241ff218fb48c54778b72d8b
+F test/malloc_common.tcl eac970bee5e4d38be38818d25b2796336620b0eff823e84db302cea33365ab9d
 F test/malloctraceviewer.tcl 3e3ddf11e30d2b20f53aa16aa6615082fb24a100bea61cca7214c927b742eba6
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0b486e53a472908b625b74b16439b6a6cb1c57706f3e506a1994526bbd56ce2d
-R f3d4f143c53e9a24acc3702a2e159bd9
+P 46fb620071288fbc0d0d069e7bd29cc8cf5703b3fb6319f2bb0356bab75311fa
+R 9ed139bb078e43367cac37ee62dddec7
 U dan
-Z a5db9a20f3b464642a44dd81f903a6e4
+Z a44e5d6a56d0e5edd0081295392e5bf4
 # Remove this line to create a well-formed Fossil manifest.

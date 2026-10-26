@@ -193,8 +193,7 @@ proc oom_injectstart {nRepeat iFail} {
   sqlite3_memdebug_fail [expr $iFail-1] -repeat $nRepeat
 }
 proc oom_injectstop {} {
-  set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
-  # return [expr $nFail - $nBenign]
+  set nFail [sqlite3_memdebug_fail -1 -benigncnt ::oom_nbenign]
   set nFail
 }
 
@@ -303,9 +302,11 @@ proc faultsim_test_result_int_strict {args} {
   set t [list $testrc $testresult]
   set r $args
 
+  set nFail [expr $testnfail - $::oom_nbenign]
+
   set idx [lsearch -exact $r $t]
-  if {($testnfail==0 && $idx!=0) || ($testnfail>0 && $idx<=0)} {
-    error "nfail=$testnfail rc=$testrc result=$testresult list=$r"
+  if {($nFail==0 && $idx!=0) || ($nFail>0 && $idx<=0)} {
+    error "nfail=$nFail nbenign=$::oom_nbenign rc=$testrc result=$testresult list=$r"
   }
 }
 
@@ -381,6 +382,7 @@ proc do_one_faultsim_test {testname args} {
     # injection. Local var $nfail is set to the total number of faults 
     # injected into the system this trial.
     #
+    set ::oom_nbenign 0
     eval $O(-injectstart) $iFail
     set rc [catch $O(-body) res]
     set nfail [eval $O(-injectstop)]
