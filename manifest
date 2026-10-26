@@ -1,5 +1,5 @@
-C Update\sto\sinclude\sthe\slatest\strunk\senhancements.
-D 2026-10-26T15:26:25.023
+C Do\snot\sbe\sas\saggressive\sat\sblocking\sautomatic\sreprepares\sdue\sto\na\spending\sschema\sreset.
+D 2026-10-26T15:44:25.024
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -879,7 +879,7 @@ F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c a8cef3b8ec9bc20210fba653fc57b2fec70474cee9b1d483d5714f7ce331f557
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 581b112c6a763a5871ae1d2b948c5288e749d03c7e3829ebce2738402fe21074
-F src/vdbeapi.c 20dd81d9643d265f582b437b0654a90269612b2252a28d18abae781af3707658
+F src/vdbeapi.c 422e7285f89c7f41375ffcce793c98722ebfea1d570e007bf382a7a83b1d6474
 F src/vdbeaux.c 7af03afdcee3b1d22a599c04fc99a1be4e8c71ee81782cf9e30ea22a381cffeb
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 29f9bf1f900c85415182e7f97cfcee296742297b3f93113927f3767eeedd8df2
@@ -2302,8 +2302,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 35cf7c1e811b2b5fa00fd3a2bb1918dd841bc1e950aa0ca00f5102c3b616f104 46476df942c3684665e66f9e2cb7e7fa6a1822d1f059969cca91a6b665c4eea0
-R ab45a7b83a77ba9c16d3be979c489a92
+P 95da88756c843bedc858c6e973170770459032340c109bdacb1efc81fc27af8a
+R 5a197195e0c42042015ca5e71d7e901a
 U drh
-Z 5eae7e724749e7cd35dfb59bb7762c8d
+Z d210155426056f8c4f19a8faee879f23
 # Remove this line to create a well-formed Fossil manifest.
