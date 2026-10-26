@@ -1,5 +1,5 @@
-C More\sprecision\sin\scontrolling\swhen\sto\sreset\sschemas.
-D 2026-10-26T19:51:23.702
+C Be\svery\spermissive\sfor\sschema\sresets\sfollowing\sa\sschema\scookie\smismatch.
+D 2026-10-26T20:07:13.866
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -876,7 +876,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c c5bec56770b71fe75e12f1f7b0a512032e1fd3d1f83c50c4ab4474ced20347a4
 F src/util.c eac3374a77a078a9cac562c46e034bbe451c8905c0f6c7f0ca56a7242b00de79
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 1aff9afe6db60faee45c099de1359b778cab8fee3bb8470a799a6e9e48463390
+F src/vdbe.c 21fc7deef4622148cb1f37b7189e8f99846009b9dde09975d04ce6aa5580a749
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 581b112c6a763a5871ae1d2b948c5288e749d03c7e3829ebce2738402fe21074
 F src/vdbeapi.c b1501e7184c5286cf2507e80bd437e8ea749997376bacaf199160c8563ef1d16
@@ -2302,8 +2302,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 258891bee056c57cf0459bfcfc0e34bb736866a3ea81fc9d8a1117c572e6f48e
-R 4d3318d5ca337f77a49a1cde3f63c43e
+P 717b1b90c52d94c54615ef954288695adb8e1647fb2259a906641b6279af8d96
+R b871d6a525e46aa7cdacf2c46d07628c
 U drh
-Z f5f3b94952bf2a142723f6b282e4bfe8
+Z ad2e2df001dd182a7d21e895426076f1
 # Remove this line to create a well-formed Fossil manifest.

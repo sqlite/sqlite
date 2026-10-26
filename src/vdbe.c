@@ -4341,7 +4341,7 @@ case OP_Transaction: {
     ** a v-table method.
     */
     if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
-      sqlite3ResetOneSchema(db, pOp->p1, 1);
+      sqlite3ResetOneSchema(db, pOp->p1, db->nVdbeActive);
     }
     p->expired = 1;
     rc = SQLITE_SCHEMA;
