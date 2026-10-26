@@ -1,5 +1,5 @@
-C Reorganize\sOP_MakeRecord\sslightly\sto\savoid\ssigned\s32-bit\sinteger\soverflow\nprior\sto\sdiscovering\san\soversize\serror.
-D 2026-10-26T12:46:03.791
+C Fix\sthe\sext/recover/recovercorrupt4.test\sscript\sso\sthat\sworks\seven\nif\scell_size_check\sis\sturned\son\sby\sdefault.
+D 2026-10-26T13:55:24.952
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1584,7 +1584,7 @@ F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/parser1.test 1901cf7157fbf7842eaee4a7dea65e096c606f01d42740a7991fa85eba421d45
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test 8a801d2b8e4b0ebb99701f026a67a9e84634c8aa24799a842c44003b93250da1
-F test/pcacheleak.test d43df22205a9376dcd8811adcdc79d4fb2b4f88962f48b3def6e1f3c982e4aee
+F test/pcacheleak.test b01e2bf0cde8140e3fdb44a251aa09e7377cd8ea4585305c25074da274352c14
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
 F test/percentile.test fd78896fa882fa4fbf693640097859721f3629926c2ccf804af5bcb7001fd35b
 F test/permutations.test c919e9d9b9d17faccd543128ac714efbba0606c7051bcb54f264006eecdb4627
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P fc56735f1c34ee0d8605d4f79ed2e13e5f54017898178c8d20a79d34fea6597c
-R f196cca21fe3ddc129da566794447386
+P 8575e97c30c076d886ca8ce901a8e413d11a41308ca3494b2e196f49160c36fb
+R feb51fba6d9c800a315841fba30f70d4
 U drh
-Z b321620f8b59960ad4bc1840b61e4eaa
+Z 9b5ac9e0ba41d7306f8f9e3caea6fc78
 # Remove this line to create a well-formed Fossil manifest.
