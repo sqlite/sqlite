@@ -344,5 +344,34 @@ foreach {tn detail} {
 }
 
 
+#-------------------------------------------------------------------------
+# Secure-delete of an entry that is itself a delete marker with content
+# (an INSERT OR REPLACE of an existing rowid). In detail=none mode this
+# used to corrupt the leaf page.
+#
+foreach {tn detail} {
+  1 full
+  2 column
+  3 none
+} {
+  reset_db
+  do_execsql_test 7.$tn.0 "
+    CREATE VIRTUAL TABLE t1 USING fts5(x, detail=$detail);
+  "
+  do_execsql_test 7.$tn.1 {
+    INSERT INTO t1(rowid, x) VALUES(1, 'a');
+    INSERT OR REPLACE INTO t1(rowid, x) VALUES(1, 'a');
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+    DELETE FROM t1 WHERE rowid=1;
+  }
+  do_execsql_test 7.$tn.2 {
+    SELECT count(*) FROM t1;
+    SELECT rowid FROM t1('a');
+  } {0}
+  do_execsql_test 7.$tn.3 {
+    INSERT INTO t1(t1) VALUES('integrity-check');
+  }
+}
+
 finish_test
 

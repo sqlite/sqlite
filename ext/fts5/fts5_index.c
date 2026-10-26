@@ -5337,7 +5337,8 @@ static void fts5DoSecureDelete(
     assert_nc( iSOP<=pSeg->iLeafOffset );
 
     if( bDetailNone ){
-      while( iSOP<pSeg->iLeafOffset ){
+      int iEnd = pSeg->iLeafOffset - (pSeg->bDel ? 1 + pSeg->nPos : 0);
+      while( iSOP<iEnd ){
         if( aPg[iSOP]==0x00 ) iSOP++;
         if( aPg[iSOP]==0x00 ) iSOP++;
         iStart = iSOP;
@@ -5402,7 +5403,7 @@ static void fts5DoSecureDelete(
 
   if( pSeg->bDel ){
     iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta);
-    aPg[iOff++] = 0x01;
+    aPg[iOff++] = bDetailNone ? 0x00 : 0x01;
   }else if( bLastInDoclist==0 ){
     if( iNextOff!=iPgIdx ){
       u64 iNextDelta = 0;
