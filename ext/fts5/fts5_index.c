@@ -557,6 +557,9 @@ struct Fts5SegIter {
   i64 iRowid;                     /* Current rowid */
   int nPos;                       /* Number of bytes in current position list */
   u8 bDel;                        /* True if the delete flag is set */
+
+  /* True if the current entry shadows an entry that has the delete flag set */
+  u8 bDelDup;
 };
 
 static int fts5IndexCorruptRowid(Fts5Index *pIdx, i64 iRowid){
@@ -3104,6 +3107,10 @@ static int fts5MultiIterDoCompare(Fts5Iter *pIter, int iOut){
       assert_nc( i2!=0 );
       pRes->bTermEq = 1;
       if( p1->iRowid==p2->iRowid ){
+        /* p2 is about to be advanced past this entry. If it, or an entry
+        ** it shadowed, has the delete flag set, record this on p1.  */
+        p1->bDelDup |= (p2->bDel | p2->bDelDup);
+        p2->bDelDup = 0;
         return i2;
       }
       res = ((p1->iRowid > p2->iRowid)==pIter->bRev) ? -1 : +1;
@@ -4866,6 +4873,14 @@ static void fts5IndexMergeLevel(
     int nPos;                     /* position-list size field value */
     int nTerm;
     const u8 *pTerm;
+    int bDel;                     /* True to set delete flag on output */
+
+    /* If this entry has the delete flag set, or shadows an entry with the
+    ** delete flag set, set the delete flag on the output. Unless the output
+    ** will be the oldest segment in the table - in that case the delete flag
+    ** may be discarded.  */
+    bDel = bOldest ? 0 : (pSegIter->bDel || pSegIter->bDelDup);
+    pSegIter->bDelDup = 0;
 
     pTerm = fts5MultiIterTerm(pIter, &nTerm);
     if( nTerm!=term.n || fts5Memcmp(pTerm, term.p, nTerm) ){
@@ -4877,7 +4892,7 @@ static void fts5IndexMergeLevel(
     }
 
     /* Check for key annihilation. */
-    if( pSegIter->nPos==0 && (bOldest || pSegIter->bDel==0) ) continue;
+    if( pSegIter->nPos==0 && (bOldest || bDel==0) ) continue;
 
     if( p->rc==SQLITE_OK && bTermWritten==0 ){
       /* This is a new term. Append a term to the output segment. */
@@ -4890,7 +4905,7 @@ static void fts5IndexMergeLevel(
     fts5WriteAppendRowid(p, &writer, fts5MultiIterRowid(pIter));
 
     if( eDetail==FTS5_DETAIL_NONE ){
-      if( pSegIter->bDel ){
+      if( bDel ){
         fts5BufferAppendVarint(&p->rc, &writer.writer.buf, 0);
         if( pSegIter->nPos>0 ){
           fts5BufferAppendVarint(&p->rc, &writer.writer.buf, 0);
@@ -4898,7 +4913,7 @@ static void fts5IndexMergeLevel(
       }
     }else{
       /* Append the position-list data to the output */
-      nPos = pSegIter->nPos*2 + pSegIter->bDel;
+      nPos = pSegIter->nPos*2 + bDel;
       fts5BufferAppendVarint(&p->rc, &writer.writer.buf, nPos);
       fts5ChunkIterate(p, pSegIter, (void*)&writer, fts5MergeChunkCallback);
     }
