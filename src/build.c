@@ -621,8 +621,10 @@ void sqlite3CollapseDatabaseArray(sqlite3 *db){
 
 /*
 ** Reset the schema for the database at index iDb.  Also reset the
-** TEMP schema.  The reset is deferred if db->nSchemaLock is not zero.
-** Deferred resets may be run by calling with iDb<0.
+** TEMP schema.  The reset is deferred if db->nSchemaLock is not zero
+** or if there is more than one active VDBE.
+**
+** Deferred schema resets may be retried by calling with iDb<0.
 */
 void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
   int i;
@@ -633,15 +635,17 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb){
     DbSetProperty(db, iDb, DB_ResetWanted);
     DbSetProperty(db, 1, DB_ResetWanted);
     db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
+    db->bPendingSchemaReset = 1;
   }
 
-  if( db->nSchemaLock==0 ){
+  if( db->nSchemaLock==0 && db->nVdbeActive<=1 ){
     for(i=0; i<db->nDb; i++){
       if( DbHasProperty(db, i, DB_ResetWanted) ){
         sqlite3SchemaClear(db->aDb[i].pSchema);
         db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
       }
     }
+    db->bPendingSchemaReset = 0;
   }
 }
 

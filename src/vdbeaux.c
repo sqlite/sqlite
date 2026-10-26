@@ -3527,6 +3527,13 @@ int sqlite3VdbeHalt(Vdbe *p){
     sqlite3ConnectionUnlocked(db);
   }
 
+  /* Do any pending schema resets that were deferred because multiple
+  ** VDBEs where active at the same time.
+  */
+  if( db->bPendingSchemaReset && db->nVdbeActive==0 ){
+    sqlite3ResetOneSchema(db, -1);
+  }
+
   assert( db->nVdbeActive>0 || db->autoCommit==0 || db->nStatement==0 );
   return (p->rc==SQLITE_BUSY ? SQLITE_BUSY : SQLITE_OK);
 }
