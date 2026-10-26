@@ -190,6 +190,7 @@ ifcapable !oversize_cell_check {
 # state that would lead to segfaults and or assertion faults.
 #
 do_execsql_test dbfuzz001-110 {
+  PRAGMA cell_size_check=OFF;
   DELETE FROM t3 WHERE x IS NOT NULL AND +rowid=6;
 } {}
 
