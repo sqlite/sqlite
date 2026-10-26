@@ -5158,6 +5158,7 @@ void sqlite3CreateView(Parse*,Token*,Token*,Token*,ExprList*,Select*,int,int);
 
 #if SQLITE_MAX_ATTACHED>30
   int sqlite3DbMaskAllZero(yDbMask);
+  void sqlite3DbMaskUnion(yDbMask,yDbMask);
 #endif
 void sqlite3DropTable(Parse*, SrcList*, int, int);
 void sqlite3CodeDropTable(Parse*, Table*, int, int);

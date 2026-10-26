@@ -1,5 +1,5 @@
-C A\smore\saccurate\sapproach\sto\sresetting\sschemas\son\sactive\sstatements.
-D 2026-10-26T21:07:46.768
+C Fix\smissing\sprototype\sfor\ssqlite3DbMaskUnion()
+D 2026-10-26T22:53:00.029
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -814,7 +814,7 @@ F src/shell.c.in d06bb3d79b22a3aef840c2fe0c1e1e909ce2146343a51029bf3943695aeaff0
 F src/sqlite.h.in 5588081b98e60a771c6ee3512a9f5837ee3268130e524d5dc956601eafc737ae
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5e113c4c0442f2f1b3345d44cbe4b82fad45f2fc0c35f0ed4eef27fb8f1cb394
-F src/sqliteInt.h ecc00d125939d5de302a3be8fe11c5d54279b72577e728be1edda74afcd34dca
+F src/sqliteInt.h bc5504bb4a8f5ec8cfd143e02c18311eb3decc971b4967785d959cc4ae374dca
 F src/sqliteLimit.h a905209cea2a167391382f64ecd42f944863ae44eabd540ef24a70361182f5ae
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2302,8 +2302,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bfb2c110a9b72d6e6df17c6f4cc50d36e834e290eb95ef990dd941c29a8f305c
-R ff5e97844a9e4a930958e71274cfa740
+P 031a3911c352c7d1a70dc9d3b6fa32438ac585ae13e2558759b0b90580784ecf
+R 319882896f3cba26917bf19099cad339
 U drh
-Z e4aebdd66c6c75cff221ab0db81f2eaa
+Z 86dbb5a622e1c330778fdb728263b958
 # Remove this line to create a well-formed Fossil manifest.
