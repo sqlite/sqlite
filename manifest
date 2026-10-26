@@ -1,5 +1,5 @@
-C Improve\sdetection\sof\scorrupt\schangesets\sin\ssession\smodule\sfunction\ssqlite3changeset_next().
-D 2026-10-26T08:23:03.057
+C Test\scase\schanges\sto\saccount\sfor\svarious\sconfigurations.
+D 2026-10-26T13:21:51.992
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -487,7 +487,7 @@ F ext/recover/recoverclobber.test 3ba6c0c373c5c63d17e82eced64c05c57ccaf26c1abe1c
 F ext/recover/recovercorrupt.test 64c081ad1200ae77b447da99eb724785d6bf71715f394543dc7689642e92bf49
 F ext/recover/recovercorrupt2.test 7347ccc9c36a925d99b56689c791423b45294834198f17575183fd500f52d85d
 F ext/recover/recovercorrupt3.test 2e7b9a1b528ca23ed382cec6f64e3fcbbd0f8e852add7562397fd8df83f335d5
-F ext/recover/recovercorrupt4.test 32bfc1257ce9dae559314e5d087a7f6b915c8f40c303f88e805f3a2e2fb53ca5
+F ext/recover/recovercorrupt4.test 6a4d7174e5c437ade3c13cb0ea5c97d45a6349fa0d67cfa158c6a24215c819f7
 F ext/recover/recoverfault.test 9d9f88eeb222615a25e7514f234c950d46bee20d24cd8db49d8fff8d650dcfe1
 F ext/recover/recoverfault2.test 730e7371bcda769554d15460cb23126abba1be8eca9539ccabf63623e7bb7e09
 F ext/recover/recoverold.test 68db3d6f85dd2b98e785b6c4da4f5eea4bbe52ccf6674d9a94c7506dc92596aa
@@ -1086,7 +1086,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test bcb3aea07d16a18c627514799b780bacb475bbae5caf24d9e774a67b2519cd1a
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test ac13504593d89d69690d45479547616ed12644d42b5cb7eeb2e759a76fc23dcb
-F test/corruptL.test bd90d9601a57299050b54d4331f5b6cf480c43aa254f5b6a36700d0cadf228ed
+F test/corruptL.test af200fc3b20a3f7efc6e3eb7c67edc246f375d5b9b817e92bbdae34759f0e0ef
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/corruptN.test a034bb217bebd8d007625dfb078e76ec3d53515052dbceb68bd47b2c27674d5c
 F test/cost.test 3786cd1cc6d1ab416004a1e39387fb0db0c8e259f46b0bce62cbdc328f2c55a0
@@ -2301,8 +2301,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 888adfb93ac74cc79fd04baf1c1c75aef1a8e0f4fe73a6f853c31e009d2cc043
-R bc50339f8a63658a2c9de8db5afe930a
-U dan
-Z e9ddb942e827f38f570741923d8f54b2
+P 75cb77338bd7ed2d347c326b9fb4410543eeed59fc3c6cbed08316b0443fcddd
+R 9385aa8d58765013126956d3638e682e
+U drh
+Z 7b930522e215cb409582fb9125212c27
 # Remove this line to create a well-formed Fossil manifest.
