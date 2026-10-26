@@ -8681,6 +8681,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_stmtrand_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_strdup_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_totype_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_tryeval_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_unionvtab_init(sqlite3*,char**,const sqlite3_api_routines*);
 #ifdef SQLITE_HAVE_ZLIB
@@ -8715,6 +8716,7 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "stmtrand",              sqlite3_stmtrand_init             },
     { "strdup",                sqlite3_strdup_init               },
     { "totype",                sqlite3_totype_init               },
+    { "tryeval",               sqlite3_tryeval_init              },
     { "unionvtab",             sqlite3_unionvtab_init            },
     { "wholenumber",           sqlite3_wholenumber_init          },
 #ifdef SQLITE_HAVE_ZLIB
