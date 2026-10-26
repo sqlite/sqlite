@@ -148,4 +148,29 @@ do_execsql_test 3.1 {
   ROLLBACK TO nightly;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+vec1_load db
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  INSERT INTO v1(rowid, v) 
+  VALUES(1, vec1_from_json('[1,0]')), (2, vec1_from_json('[0,1]'));
+}
+
+do_execsql_test 4.1 {
+  SAVEPOINT s1;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  ROLLBACK TO s1;
+  RELEASE s1;
+}
+
+do_execsql_test 4.2 {
+  SELECT rowid FROM v1(vec1_from_json('[1,0]'), 5);
+} {1 2}
+
+do_execsql_test 4.3 { SELECT rowid FROM v1 } {1 2}
+
+do_execsql_test 4.4 { PRAGMA integrity_check } {ok}
+
 finish_test

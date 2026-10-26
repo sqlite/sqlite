@@ -12013,8 +12013,14 @@ static int vec1ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 static int vec1RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Vec1Tab *pTab = (Vec1Tab*)pVtab;
   UNUSED_PARAMETER(iSavepoint);
+
+  /* Discard any cached writes */
   vec1FinishWriter(pTab, 1);
+
+  /* Drop the in-memory cache of both the config and the model. The 
+  ** database ROLLBACK TO operation may have modified them on disk. */
   vec1UnloadConfig(pTab);
+  vec1UnloadModel(pTab);
   return SQLITE_OK;
 }
 
