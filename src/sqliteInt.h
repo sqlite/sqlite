@@ -909,16 +909,6 @@ typedef unsigned bft;  /* Bit Field Type */
 typedef u64 tRowcnt;
 
 /*
-** The datatype used to store serial-types.  The size depends on the
-** maximum length of a string or blob.
-*/
-#if SQLITE_MAX_LENGTH>=1073741817
-typedef u64 tSerial;
-#else
-typedef u32 tSerial;
-#endif
-
-/*
 ** Estimated quantities used for query planning are stored as 16-bit
 ** logarithms.  For quantity X, the value stored is 10*log2(X).  This
 ** gives a possible range of values of approximately 1.0e986 to 1e-986.
