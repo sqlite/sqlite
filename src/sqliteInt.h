@@ -3852,6 +3852,7 @@ struct TriggerPrg {
 # define DbMaskTest(M,I)    (((M)[(I)/8]&(1<<((I)&7)))!=0)
 # define DbMaskZero(M)      memset((M),0,sizeof(M))
 # define DbMaskSet(M,I)     (M)[(I)/8]|=(1<<((I)&7))
+# define DbMaskUnion(M,X)   sqlite3DbMaskUnion(M,X)
 # define DbMaskAllZero(M)   sqlite3DbMaskAllZero(M)
 # define DbMaskNonZero(M)   (sqlite3DbMaskAllZero(M)==0)
 #else
@@ -3859,9 +3860,14 @@ struct TriggerPrg {
 # define DbMaskTest(M,I)    (((M)&(((yDbMask)1)<<(I)))!=0)
 # define DbMaskZero(M)      ((M)=0)
 # define DbMaskSet(M,I)     ((M)|=(((yDbMask)1)<<(I)))
+# define DbMaskUnion(M,X)   ((M)|=(X))
 # define DbMaskAllZero(M)   ((M)==0)
 # define DbMaskNonZero(M)   ((M)!=0)
 #endif
+
+/* Should be in vdbe.h, but we needed yDbMask definition first */
+void sqlite3VdbeSchemaInUse(sqlite3*,Vdbe*,yDbMask*);
+
 
 /*
 ** For each index X that has as one of its arguments either an expression
@@ -5075,7 +5081,7 @@ void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
 Module *sqlite3PragmaVtabRegister(sqlite3*,const char *zName);
 #endif
 void sqlite3ResetAllSchemasOfConnection(sqlite3*);
-void sqlite3ResetOneSchema(sqlite3*,int,int);
+void sqlite3ResetOneSchema(sqlite3*,int,Vdbe*);
 void sqlite3CollapseDatabaseArray(sqlite3*);
 void sqlite3CommitInternalChanges(sqlite3*);
 void sqlite3ColumnSetExpr(Parse*,Table*,Column*,Expr*);

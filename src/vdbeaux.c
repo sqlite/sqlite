@@ -3222,6 +3222,22 @@ static void checkActiveVdbeCnt(sqlite3 *db){
 #endif
 
 /*
+** Return a bitmask of all schemas referenced by active VDBEs, other
+** than pExcept.
+*/
+void sqlite3VdbeSchemaInUse(sqlite3 *db, Vdbe *pExcept, yDbMask *pM){
+  Vdbe *p;
+  yDbMask m;
+  DbMaskZero(m);
+  for(p=db->pVdbe; p; p=p->pVNext){
+    if( p==pExcept ) continue;
+    if( p->eVdbeState!=VDBE_RUN_STATE ) continue;
+    DbMaskUnion(m,p->btreeMask);
+  }
+  memcpy(pM, &m, sizeof(m));
+}
+
+/*
 ** If the Vdbe passed as the first argument opened a statement-transaction,
 ** close it now. Argument eOp must be either SAVEPOINT_ROLLBACK or
 ** SAVEPOINT_RELEASE. If it is SAVEPOINT_ROLLBACK, then the statement
