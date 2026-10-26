@@ -4000,7 +4000,7 @@ const u8 sqlite3SmallTypeSizes[128] = {
 /*
 ** Return the length of the data corresponding to the supplied serial-type.
 */
-u32 sqlite3VdbeSerialTypeLen(tSerial serial_type){
+u32 sqlite3VdbeSerialTypeLen(u32 serial_type){
   if( serial_type>=128 ){
     return (serial_type-12)/2;
   }else{
@@ -4093,7 +4093,7 @@ static int sqlite3VdbeSerialGet7(
 */
 void sqlite3VdbeSerialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
-  tSerial serial_type,          /* Serial type to deserialize */
+  u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
 ){
   switch( serial_type ){
@@ -4234,7 +4234,7 @@ void sqlite3VdbeRecordUnpack(
   d = szHdr;
   u = 0;
   while( idx<szHdr && d<=(u32)nKey ){
-    tSerial serial_type;
+    u32 serial_type;
 
     idx += getVarint32(&aKey[idx], serial_type);
     pMem->enc = pKeyInfo->enc;
@@ -4310,7 +4310,7 @@ static int vdbeRecordCompareDebug(
   assert( pKeyInfo->nKeyField>0 );
   assert( idx1<=szHdr1 || CORRUPT_DB );
   do{
-    tSerial serial_type1;
+    u32 serial_type1;
 
     /* Read the serial types for the next element in each key. */
     idx1 += getVarint32( aKey1+idx1, serial_type1 );
@@ -4651,7 +4651,7 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
 ** serialized according to serial_type. This function deserializes
 ** and returns the value.
 */
-static i64 vdbeRecordDecodeInt(tSerial serial_type, const u8 *aKey){
+static i64 vdbeRecordDecodeInt(u32 serial_type, const u8 *aKey){
   u32 y;
   assert( CORRUPT_DB || (serial_type>=1 && serial_type<=9 && serial_type!=7) );
   switch( serial_type ){
@@ -4756,7 +4756,7 @@ int sqlite3VdbeRecordCompareWithSkip(
   assert( pPKey2->pKeyInfo->nKeyField>0 );
   assert( idx1<=szHdr1 || CORRUPT_DB );
   while( 1 /*exit-by-break*/ ){
-    tSerial serial_type;
+    u32 serial_type;
 
     /* RHS is an integer */
     if( pRhs->flags & (MEM_Int|MEM_IntReal) ){

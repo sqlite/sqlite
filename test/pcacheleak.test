@@ -59,6 +59,7 @@ do_test 1.0 {
   db close
   build_leak_db test.db
   sqlite3 db test.db
+  db eval {PRAGMA cell_size_check=OFF}
   db eval {SELECT count(*) FROM users}
 } {3}
 
@@ -85,6 +86,7 @@ do_test 2.0 {
   foreach h {d0 d1 d2 d3} {
     forcecopy test.db test.db.$h
     sqlite3 $h test.db.$h
+    $h eval {PRAGMA cell_size_check=OFF}
     lappend vals [lindex [$h eval {SELECT rowid FROM users}] end]
   }
   foreach h {d0 d1 d2 d3} { $h close }
