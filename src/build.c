@@ -682,6 +682,7 @@ void sqlite3ResetAllSchemasOfConnection(sqlite3 *db){
       }
     }
   }
+  sqlite3ExpirePreparedStatements(db, 0);
   db->mDbFlags &= ~(DBFLAG_SchemaChange|DBFLAG_SchemaKnownOk);
   sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);

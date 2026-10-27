@@ -5318,6 +5318,23 @@ void sqlite3ExpirePreparedStatements(sqlite3 *db, int iCode){
 }
 
 /*
+** Expire (urgently, with iCode 0) every prepared statement that is using
+** a particular schema (iDb).
+*/
+void sqlite3ExpireStmtsUsingSchema(
+  sqlite3 *db,      /* The database connection statements belong to */
+  int iDb,          /* Index of the schema they are using */
+  Vdbe *pExcept     /* Except, don't expire this one */
+){
+  Vdbe *p;
+  for(p = db->pVdbe; p; p=p->pVNext){
+    if( p==pExcept ) continue;
+    if( !DbMaskTest(p->btreeMask, iDb) ) continue;
+    p->expired = 1;
+  }
+}
+
+/*
 ** Return the database associated with the Vdbe.
 */
 sqlite3 *sqlite3VdbeDb(Vdbe *v){

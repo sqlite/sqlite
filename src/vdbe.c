@@ -3442,6 +3442,7 @@ case OP_TypeCheck: {
   int nCol;
 
   assert( pOp->p4type==P4_TABLE );
+  if( p->expired==1 ) goto abort_due_to_expired;
   pTab = pOp->p4.pTab;
   assert( pTab->tabFlags & TF_Strict );
   assert( pOp->p3>=0 && pOp->p3<pTab->nCol+2 );
@@ -5951,6 +5952,7 @@ case OP_Insert: {
 
   if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
     assert( pC->iDb>=0 );
+    if( p->expired==1 ) goto abort_due_to_expired;
     zDb = db->aDb[pC->iDb].zDbSName;
     pTab = pOp->p4.pTab;
     assert( (pOp->p5 & OPFLAG_ISNOOP) || HasRowid(pTab) );
@@ -6093,6 +6095,7 @@ case OP_Delete: {
 
 #ifdef SQLITE_DEBUG
   if( pOp->p4type==P4_TABLE
+   && !p->expired
    && HasRowid(pOp->p4.pTab)
    && pOp->p5==0
    && sqlite3BtreeCursorIsValidNN(pC->uc.pCursor)
@@ -6111,6 +6114,7 @@ case OP_Delete: {
   ** last moved with OP_Next or OP_Prev, not Seek or NotFound, set
   ** VdbeCursor.movetoTarget to the current rowid.  */
   if( pOp->p4type==P4_TABLE && HAS_UPDATE_HOOK(db) ){
+    if( p->expired==1 ) goto abort_due_to_expired;
     assert( pC->iDb>=0 );
     assert( pOp->p4.pTab!=0 );
     zDb = db->aDb[pC->iDb].zDbSName;
@@ -6840,6 +6844,7 @@ case OP_IdxDelete: {
   rc = sqlite3BtreeIndexMoveto(pCrsr, &r, &res);
   if( rc ) goto abort_due_to_error;
   if( res!=0 ){
+    if( p->expired==1 ) goto abort_due_to_expired;
     rc = sqlite3VdbeFindIndexKey(pCrsr, pOp->p4.pIdx, &r, &res, 0);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res!=0 ){
@@ -7339,6 +7344,7 @@ case OP_ParseSchema: {
 #ifndef SQLITE_OMIT_ALTERTABLE
   if( pOp->p4.z==0 ){
     assert( pOp->p5!=0 );
+    sqlite3ExpireStmtsUsingSchema(db, iDb, p);
     sqlite3SchemaClear(db->aDb[iDb].pSchema);
     db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
     rc = sqlite3InitOne(db, iDb, &p->zErrMsg, pOp->p5);
@@ -7379,6 +7385,7 @@ case OP_ParseSchema: {
   }
   if( rc ){
     sqlite3ResetAllSchemasOfConnection(db);
+    sqlite3ExpirePreparedStatements(db, 0);
     if( rc==SQLITE_NOMEM ){
       goto no_mem;
     }
@@ -7537,6 +7544,7 @@ case OP_IFindKey: {     /* jump, in3 */
   assert( pOp[-1].p3==pOp->p3 );
   pC = p->apCsr[pOp->p1];
   assert( pOp->p4type==P4_INDEX );
+  if( p->expired==1 ) goto abort_due_to_expired;
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0 );
   assert( pC->isTable==0 );
@@ -9596,5 +9604,9 @@ no_mem:
 abort_due_to_interrupt:
   assert( AtomicLoad(&db->u1.isInterrupted) );
   rc = SQLITE_INTERRUPT;
+  goto abort_due_to_error;
+
+abort_due_to_expired:
+  rc = SQLITE_SCHEMA;
   goto abort_due_to_error;
 }

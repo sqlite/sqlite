@@ -5593,6 +5593,7 @@ void sqlite3AlterSetNotNull(Parse*, SrcList*, Token*, Token*);
 i64 sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*, int);
+void sqlite3ExpireStmtsUsingSchema(sqlite3*, int, Vdbe*);
 void sqlite3CodeRhsOfIN(Parse*, Expr*, int, int);
 int sqlite3CodeSubselect(Parse*, Expr*);
 void sqlite3SelectPrep(Parse*, Select*, NameContext*);
