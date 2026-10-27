@@ -2258,7 +2258,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        that we're generally fetching rows of mixed data types. As of
        3.54, it still behaves that way when passed the undefined value
        resp. is not passed a value, but will coerce each column to the
-       request type of it is not the undefined value. It is not
+       requested type if it is not the undefined value. It is not
        believed that this change adversely affects any existing
        client-level code because this argument was ignored and
        applications passing a non-undefined value were not necessarily

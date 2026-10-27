@@ -1522,7 +1522,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       Expr *pRHS = Y->a[0].pExpr;
       if( Y->nExpr==1
        && sqlite3ExprIsConstant(pParse,pRHS)
-       && pRHS->op!=TK_COLLATE
+       && ExprHasProperty(pRHS, EP_Collate)==0
        && A->op!=TK_VECTOR
       ){
         Y->a[0].pExpr = 0;
