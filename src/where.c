@@ -7791,6 +7791,16 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
           }
         }
       }
+#ifndef SQLITE_LIKE_DOESNT_MATCH_BLOBS
+      if( pLevel->addrLikeRep ){
+        /* The LIKE loop counter is initialized after the == and IN terms
+        ** are coded, so a NULL == term or an empty IN list can reach this
+        ** point without ever setting it.  Set it to 0 so that the
+        ** OP_DecrJumpZero at the bottom of the loop falls through after
+        ** the NULL row instead of reading an undefined register.  */
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, (int)(pLevel->iLikeRepCntr>>1));
+      }
+#endif
       if( pLevel->op==OP_Return ){
         sqlite3VdbeAddOp2(v, OP_Gosub, pLevel->p1, pLevel->addrFirst);
       }else{
