@@ -4341,9 +4341,10 @@ static void sqlite3ExprCodeIN(
   ** of the RHS.
   */
   if( destStep6 ) sqlite3VdbeResolveLabel(v, destStep6);
-  if( eType==IN_INDEX_INDEX_DESC ){
+  if( eType==IN_INDEX_INDEX_DESC && nVector==1 ){
     addrTop = sqlite3VdbeAddOp2(v, OP_Last, iTab, destIfFalse);
   }else{
+    testcase( eType==IN_INDEX_INDEX_DESC );
     testcase( eType==IN_INDEX_EPH );
     testcase( eType==IN_INDEX_ROWID );
     addrTop = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, destIfFalse);
