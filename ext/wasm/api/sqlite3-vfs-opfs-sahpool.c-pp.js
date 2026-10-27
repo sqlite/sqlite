@@ -730,7 +730,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        On error it disassociates SAH from the pool and returns an
        empty string. Propagates any exceptions from the SAH API and
-       throws for short reads.
+       throws for short header reads.
     */
     getClientPath(sah){
       const nRead = sah.read(this.#apBody, {at: 0});
@@ -760,11 +760,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         this.setClientPath(sah, '', 0);
         return '';
       }
-      const nDigest = HEADER_DIGEST_SIZE / 4;
-      const fileDigest = new Uint32Array(nDigest);
-      if( sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST}) < nDigest ){
-        toss("OPFSSAHPool[",this.vfsName,"]: Short read of digest bytes");
-      }
+      const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
+      sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
       const compDigest = this.computeDigest(this.#apBody, flags);
       //warn("getClientPath() flags",'0x'+flags.toString(16), "compDigest", compDigest);
       if(fileDigest.every((v,i) => v===compDigest[i])){
