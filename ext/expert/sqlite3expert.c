@@ -299,7 +299,7 @@ static IdxConstraint *idxNewConstraint(int *pRc, const char *zColl){
   int nColl = STRLEN(zColl);
 
   assert( *pRc==SQLITE_OK );
-  pNew = (IdxConstraint*)idxMalloc(pRc, sizeof(IdxConstraint) * nColl + 1);
+  pNew = (IdxConstraint*)idxMalloc(pRc, sizeof(IdxConstraint) + nColl + 1);
   if( pNew ){
     pNew->zColl = (char*)&pNew[1];
     memcpy(pNew->zColl, zColl, nColl+1);
