@@ -1,0 +1,119 @@
+# 2026-10-26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# This file implements tests for running DDL or similar statements from
+# within an application-defined function, such that those statements
+# cause a schema reset, which then frees the schema out from under
+# prepared statements that are still using it.
+#
+# See bug report https://sqlite.org/bugs/info/3577bc69c52237a4
+# from 2026-10-25.
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix schemareset
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+load_static_extension db series
+load_static_extension db tryeval
+sqlite3_db_config db DEFENSIVE 0
+
+do_execsql_test 1.1 {
+  CREATE TABLE t1(a,b);
+  INSERT INTO t1(a,b) SELECT value,value*10 FROM generate_series(1,5);
+  CREATE INDEX t1x ON t1(a);
+  UPDATE t1
+     SET b=coalesce(tryeval('DROP INDEX t1x','SELECT sum(a) FROM t1'),b+1);
+  SELECT * FROM t1 ORDER BY a;
+} {1 15 2 15 3 15 4 15 5 15}
+
+do_execsql_test 1.2 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b);
+  INSERT INTO t1 VALUES(1,'a'),(2,'b'),(3,'c');
+  CREATE INDEX t1x ON t1(a);
+  UPDATE t1 
+     SET b=coalesce(tryeval('DROP INDEX t1x','SELECT count(*) FROM t1'),'xyz');
+  SELECT * FROM t1 ORDER BY a;
+} {1 3 2 3 3 3}
+
+do_execsql_test 1.3 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, l INT, c INT) STRICT;
+  INSERT INTO t1 VALUES(1,1,1),(2,2,2);
+  UPDATE t1
+     SET c = coalesce(tryeval('PRAGMA schema_version=1000',
+                              'SELECT max(l) FROM t'), c+1);
+  SELECT * FROM t1 ORDER BY a;
+} {1 1 2 2 2 3}
+
+do_execsql_test 1.4.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT) STRICT;
+  INSERT INTO t1 VALUES(1,1),(2,2);
+}
+do_catchsql_test 1.4.2 {
+  UPDATE t1
+     SET b = coalesce(tryeval('ATTACH ''/no/such/dir/x.db'' AS aux'), b+1);
+} {1 {database schema has changed}}
+do_catchsql_test 1.4.3 {
+  SELECT * FROM t1 ORDER BY a;
+} {0 {1 1 2 2}}
+
+do_execsql_test 1.5.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT) STRICT;
+  INSERT INTO t1 VALUES(1,1),(2,2);
+  BEGIN;
+  SAVEPOINT sp;
+  CREATE TABLE zz(x);
+}
+do_catchsql_test 1.5.2 {
+  UPDATE t1
+     SET b = coalesce(tryeval('ROLLBACK TO sp', 'SELECT 5'), b+1);
+} {1 {database schema has changed}}
+do_execsql_test 1.5.3 {
+  SELECT * FROM t1 ORDER BY a;
+} {1 1 2 2}
+catch {db eval ROLLBACK}
+
+do_execsql_test 1.6.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT) STRICT;
+  INSERT INTO t1 VALUES(1,1),(2,2);
+}
+do_catchsql_test 1.6.2 {
+  UPDATE t1 SET b = coalesce(tryeval('PRAGMA writable_schema=RESET'), b+1);
+} {1 {database schema has changed}}
+do_execsql_test 1.6.3 {
+  SELECT * FROM t1 ORDER BY a;
+} {1 1 2 2}
+
+do_execsql_test 1.7.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, l INT, c INT) STRICT;
+  CREATE TABLE u1(x);
+  INSERT INTO t1 VALUES(1,1,1),(2,2,2);
+}
+do_catchsql_test 1.7.2 {
+  UPDATE t1 SET c = coalesce(tryeval('ALTER TABLE u1 ADD COLUMN z'), c+1);
+} {1 {database schema has changed}}
+do_execsql_test 1.7.3 {
+  SELECT sql FROM sqlite_master WHERE name='u1';
+} {{CREATE TABLE u1(x)}}
+do_execsql_test 1.7.4 {
+  SELECT * FROM t1 ORDER BY a;
+} {1 1 1 2 2 2}
+
+finish_test

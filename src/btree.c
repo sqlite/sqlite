@@ -9492,6 +9492,7 @@ int sqlite3BtreeInsert(
     testcase( pCur->eState==CURSOR_FAULT );
     rc = moveToRoot(pCur);
     if( rc && rc!=SQLITE_EMPTY ) return rc;
+    loc = 0;  /* Indicate the the cursor is not in a known position */
   }
 
   assert( cursorOwnsBtShared(pCur) );
@@ -9515,11 +9516,13 @@ int sqlite3BtreeInsert(
       invalidateIncrblobCursors(p, pCur->pgnoRoot, pX->nKey, 0);
     }
 
-    /* If BTREE_SAVEPOSITION is set, the cursor must already be pointing
-    ** to a row with the same key as the new entry being inserted.
+    /* If BTREE_SAVEPOSITION is set and seekResult is non-zero and
+    ** if we didn't have to reposition the cursor initially, then
+    ** the cursor must already be pointing to a row with the same
+    ** key as the new entry being inserted.  Verify that this is so.
     */
 #ifdef SQLITE_DEBUG
-    if( flags & BTREE_SAVEPOSITION ){
+    if( (flags & BTREE_SAVEPOSITION)!=0 && loc!=0 ){
       assert( pCur->curFlags & BTCF_ValidNKey );
       assert( pX->nKey==pCur->info.nKey );
       assert( loc==0 );
