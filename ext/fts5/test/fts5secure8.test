@@ -113,6 +113,58 @@ do_execsql_test 3.7 {
   SELECT rowid FROM t1c WHERE t1c MATCH 'a' ORDER BY rowid;
 } {1 2}
 
+#-------------------------------------------------------------------------
+
+foreach {tn bSecure} {
+  0 0
+  1 1
+} {
+  reset_db
+  do_execsql_test 4.$tn.0 {
+    CREATE VIRTUAL TABLE f USING fts5(x);
+    INSERT INTO f(f, rank) VALUES('pgsz', 32);
+  }
+  if {$bSecure} {
+    execsql { INSERT INTO f(f, rank) VALUES('secure-delete', 1) }
+  }
+
+  do_execsql_test 4.$tn.1 {
+    WITH s(i) AS (
+      VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<6
+    )
+    INSERT INTO f(rowid, x) 
+    SELECT i, trim (
+        replace(printf('%.40c', '.'), '.', iif(i<=4, 'cd ', 'zz '))
+    ) FROM s;
+  }
+
+  # execsql_pp { SELECT fts5_decode(id, block) FROM f_data }
+  do_execsql_test 4.$tn.2 {
+    DELETE FROM f WHERE rowid = 4;
+  }
+  # execsql_pp { SELECT fts5_decode(id, block) FROM f_data }
+
+  do_execsql_test 4.$tn.3 {
+    SELECT rowid FROM f('cd')
+  } {1 2 3}
+  do_execsql_test 4.$tn.4 {
+    SELECT rowid FROM f('zz')
+  } {5 6}
+
+  do_execsql_test 4.$tn.5 {
+    SELECT rowid FROM f WHERE f MATCH 'cd' AND rowid>=5
+  }
+  do_execsql_test 4.$tn.6 {
+    SELECT rowid FROM f('zz AND cd');
+  }
+  do_execsql_test 4.$tn.7 {
+    SELECT rowid FROM f('zz NOT cd');
+  } {5 6}
+  do_execsql_test 4.$tn.8 {
+    SELECT rowid FROM f('zz NOT cd') ORDER BY rowid DESC;
+  } {6 5}
+
+}
 
 
 

@@ -36,6 +36,50 @@ do_test 1.1 {
 } {42.0}
 sqlite3_finalize $stmt
 
+
+# Bug 2026-10-18T20:41:57Z
+#
+# In a UTF-16 database, using sqlite3_bind_value() to copy a TEXT value
+# that begins with U+FEFF or U+FFFE should copy the value exactly.  The
+# leading character is not a byte-order mark.
+#
+foreach enc {utf16le utf16be} {
+  forcedelete test.db3
+  sqlite3 db3 test.db3
+  do_execsql_test -db db3 2.$enc.0 "
+    PRAGMA encoding = '$enc';
+    CREATE TABLE t2(id INTEGER PRIMARY KEY, a TEXT);
+    INSERT INTO t2 VALUES
+       (1, char(0xfeff)||'abc'),
+       (2, char(0xfffe)||'xyz'),
+       (3, 'plain'),
+       (4, char(0xfeff)||printf('%.*c', 5000, 'a')),
+       (5, char(0xfffe)||printf('%.*c', 5000, 'b'));
+  "
+  foreach {id res} {
+    1 {4 65279 1}
+    2 {4 65534 1}
+    3 {5 112 1}
+    4 {5001 65279 1}
+    5 {5001 65534 1}
+  } {
+    do_test 2.$enc.$id {
+      set stmt [sqlite3_prepare db3 {
+        SELECT length(?1), unicode(?1), ?1=(SELECT a FROM t2 WHERE id=?2)
+      } -1 tail]
+      sqlite3_bind_int $stmt 2 $id
+      sqlite3_bind_value_from_select $stmt 1 "SELECT a FROM t2 WHERE id=$id"
+      sqlite3_step $stmt
+      set r [list [sqlite3_column_int $stmt 0] \
+                  [sqlite3_column_int $stmt 1] \
+                  [sqlite3_column_int $stmt 2]]
+      sqlite3_finalize $stmt
+      set r
+    } $res
+  }
+  db3 close
+}
+
 ifcapable !preupdate {
   finish_test
   return

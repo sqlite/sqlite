@@ -334,14 +334,40 @@ for {set c 1} {$c<=0x1f} {incr c} {
 
 # Forum post 2026-10-14T08:42:26Z
 #
-do_execsql_test 15.0 {
-  WITH json(jid,jx) AS (VALUES
-    (1,'{"a":"text","b":123,"c":[1,2,3,"t",{"cc":99,"dd":100}],"d":null}'),
-    (2,'[1,"a",{"aa":11,"bb":[9,8,7]},null]')
-  ), paths(pid,px) AS (VALUES(1,'$.c[4]'),(2,'$.c'),(3,'$[2].bb'),(4,'$[2]'))
-  SELECT jj.key, typeof(jj.key) FROM json, paths, json_tree(jx,px) AS jj
-   WHERE parent IS NULL
-   ORDER BY jid, pid;
-} {4 integer c text bb text 2 integer}
+ifcapable vtab {
+  do_execsql_test 15.0 {
+    WITH json(jid,jx) AS (VALUES
+      (1,'{"a":"text","b":123,"c":[1,2,3,"t",{"cc":99,"dd":100}],"d":null}'),
+      (2,'[1,"a",{"aa":11,"bb":[9,8,7]},null]')
+    ), paths(pid,px) AS (VALUES(1,'$.c[4]'),(2,'$.c'),(3,'$[2].bb'),(4,'$[2]'))
+    SELECT jj.key, typeof(jj.key) FROM json, paths, json_tree(jx,px) AS jj
+     WHERE parent IS NULL
+     ORDER BY jid, pid;
+  } {4 integer c text bb text 2 integer}
+}
+
+# Bug 2026-10-18T04:42:37Z
+#
+do_execsql_test 16.1 {
+  SELECT hex(('"ab\' || char(10) || '"') ->> '$');
+} {6162}
+do_execsql_test 16.2 {
+  SELECT hex(('"ab\' || char(13,10) || '"') ->> '$');
+} {6162}
+do_execsql_test 16.3 {
+  SELECT hex(('"ab\' || char(8232) || '"') ->> '$');
+} {6162}
+do_execsql_test 16.4 {
+  SELECT hex(('"\' || char(10) || '"') ->> '$');
+} {{}}
+do_execsql_test 16.5 {
+  SELECT hex(jsonb('"ab\' || char(10) || '"') ->> '$');
+} {6162}
+do_execsql_test 16.6 {
+  SELECT hex(('"ab\' || char(10) || 'c"') ->> '$');
+} {616263}
+do_execsql_test 16.7 {
+  SELECT hex('"ab\u0000"' ->> '$');
+} {616200}
 
 finish_test

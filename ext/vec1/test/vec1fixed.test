@@ -94,13 +94,15 @@ do_execsql_test 3.0 {
 
 do_catchsql_test 3.1 {
   INSERT INTO v1 VALUES( random_vector(1) );
-} {1 {invalid vector size: 4 bytes}}
+} {1 {vec1: invalid vector size: 4 bytes}}
 do_catchsql_test 3.2 {
   INSERT INTO v1 VALUES( random_vector(4097) );
-} {1 {invalid vector size: 16388 bytes}}
+} {1 {vec1: invalid vector size: 16388 bytes}}
 do_catchsql_test 3.3 {
   INSERT INTO v1 VALUES( randomblob(207) );
-} {1 {invalid vector size: 207 bytes}}
+} {1 {vec1: invalid vector size: 207 bytes}}
+
+
 
 do_execsql_test 3.4 {
   INSERT INTO v1 VALUES( random_vector(4096) );

@@ -80,4 +80,32 @@ do_execsql_test 2.1 {
   SELECT count(*) FROM t WHERE t MATCH 'NEAR(aaa aaa, 4)';
 } {1}
 
+#-------------------------------------------------------------------------
+# Check that if a NEAR group does not match a row that is matched by
+# another branch of an OR, the auxiliary functions do not see stale or
+# partially populated position lists for the phrases of the NEAR group.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+  INSERT INTO t1(rowid, a, b) VALUES (1, 'one', 'h e d c');
+  INSERT INTO t1(rowid, a, b) VALUES (2, 'r h c', 'p q s t u');
+}
+
+do_execsql_test 3.1 {
+  SELECT rowid, highlight(t1, 1, '[', ']') FROM t1('b : NEAR(h c, 2) OR r');
+} {1 {[h] e d [c]} 2 {p q s t u}}
+
+do_execsql_test 3.2 {
+  UPDATE t1 SET b = 'x' WHERE rowid = 2;
+  SELECT rowid, snippet(t1, 1, '[', ']', '..', 3) 
+  FROM t1('b : NEAR(h c, 2) OR r');
+} {1 {[h] e d..} 2 x}
+
+do_execsql_test 3.3 {
+  CREATE VIRTUAL TABLE t2 USING fts5(a);
+  INSERT INTO t2(a) VALUES ('r h d c');
+  SELECT highlight(t2, 0, '[', ']') FROM t2('NEAR(h "c d") OR r');
+} {{[r] h d c}}
+
 finish_test

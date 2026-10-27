@@ -212,5 +212,17 @@ do_execsql_test 5.2 {
   {} 4 'Aq'  {} 4 X'4171'
 }
 
+# Followup post: https://sqlite.org/bugs/forumpost/70e3174f54
+# on 2026-10-27T15:04:02Z
+#
+do_execsql_test 6.0 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  CREATE TABLE t1(a, b);
+  CREATE INDEX t1ab ON t1(a, b);
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(1);
+  SELECT 1 FROM t2 LEFT JOIN t1 ON t1.b GLOB 'a*' AND t1.a = NULL;
+} 1
 
 finish_test

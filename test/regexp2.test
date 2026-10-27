@@ -154,6 +154,20 @@ do_catchsql_test 5.3 {
   SELECT 'abc' REGEXP 'a{25000}bc';
 } {1 {REGEXP pattern too big}}
 
-
+# A backslash at the end of the pattern is an error.  Formerly it
+# was treated as an end-of-string anchor.
+#
+do_catchsql_test 6.0 {
+  SELECT 'x' REGEXP '\';
+} {1 {unknown \ escape}}
+do_catchsql_test 6.1 {
+  SELECT 'abc' REGEXP 'b\';
+} {1 {unknown \ escape}}
+do_catchsql_test 6.2 {
+  SELECT 'ab' REGEXP 'b\';
+} {1 {unknown \ escape}}
+do_execsql_test 6.3 {
+  SELECT 'a\' REGEXP 'a\\', 'a' REGEXP 'a\\';
+} {1 0}
 
 finish_test

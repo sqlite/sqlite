@@ -95,4 +95,27 @@ do_execsql_test fpconv1-3.0 {
 } {}
 #  ^---- Values that fail to round-trip will be reported
 
+# 2026-10-18 https://sqlite.org/forum/forumpost/98c37a671c
+# Signed integer overflow in sqlite3FpDecode() when the debugging-only
+# fpdecode() SQL function is given a very negative precision.
+#
+ifcapable debug {
+  do_execsql_test fpconv1-4.1 {
+    SELECT fpdecode(1.5, -2147483648, 10);
+  } {+15/1}
+  do_execsql_test fpconv1-4.2 {
+    SELECT fpdecode(1.5e300, -2147483600, 10),
+           fpdecode(1.5e300, -100000000, 10);
+  } {+15/301 +15/301}
+  do_execsql_test fpconv1-4.3 {
+    SELECT fpdecode(0.1, -2147483648, 16),
+           fpdecode(0.1, -2147483647, 16),
+           fpdecode(0.1, -100000001, 16),
+           fpdecode(0.1, -1000, 16);
+  } {+1/0 +1/0 +1/0 +1/0}
+  do_execsql_test fpconv1-4.4 {
+    SELECT fpdecode(-1.0e-300, -2147483648, 5);
+  } {-1/-299}
+}
+
 finish_test

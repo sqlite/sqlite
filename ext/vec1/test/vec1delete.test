@@ -274,6 +274,51 @@ do_execsql_test 6.6 {
   PRAGMA integrity_check
 } {ok}
 
+#-------------------------------------------------------------------------
+# Check that tombstone values do not confuse vec1 when deleting rows.
+# Report: https://sqlite.org/bugs/forumpost/2a33f0a661
+#
+foreach {tn xtra tombstone} {
+  0 1000 4294967295
+  1   -1 0
+} {
+  reset_db 
+  vec1_load db
+
+  do_execsql_test 7.$tn.0 {
+    CREATE VIRTUAL TABLE v1 USING vec1(v, m);
+  }
+  do_execsql_test 7.$tn.1 {
+    INSERT INTO v1(rowid, v, m) VALUES($xtra, random_vector(8), 'abc');
+    INSERT INTO v1(cmd, arg) VALUES('rebuild', '{index:"flat"}');
+  }
+  do_execsql_test 7.$tn.2 {
+    INSERT INTO v1(rowid, v, m) VALUES(1, random_vector(8), 'abc');
+    INSERT INTO v1(rowid, v, m) VALUES(2, random_vector(8), 'abc');
+    INSERT INTO v1(rowid, v, m) VALUES(3, random_vector(8), 'abc');
+    INSERT INTO v1(rowid, v, m) VALUES(4, random_vector(8), 'abc');
+    INSERT INTO v1(rowid, v, m) VALUES(5, random_vector(8), 'abc');
+
+    INSERT INTO v1(rowid, v, m) VALUES($tombstone, random_vector(8), 'abc');
+  }
+
+  do_execsql_test 7.$tn.3 {
+    DELETE FROM v1 WHERE rowid = 3;
+  }
+
+  do_execsql_test 7.$tn.4 {
+    BEGIN;
+      INSERT INTO v1(rowid, v, m) VALUES(6, random_vector(8), 'abc');
+      UPDATE v1 SET m='def' WHERE rowid = $tombstone;
+    COMMIT;
+  }
+
+  do_execsql_test 7.$tn.5 {
+    PRAGMA integrity_check
+  } {ok}
+}
+
+
 
 finish_test
 

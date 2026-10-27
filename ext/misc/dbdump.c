@@ -155,6 +155,7 @@ static char quoteChar(const char *zName){
 */
 static void freeColumnList(char **azCol){
   int i;
+  if( azCol==0 ) return;
   for(i=1; azCol[i]; i++){
     sqlite3_free(azCol[i]);
   }
@@ -216,7 +217,7 @@ static char **tableColumnList(DState *p, const char *zTab){
   }
   sqlite3_finalize(pStmt);
   pStmt = 0;
-  azCol[nCol+1] = 0;
+  if( azCol ) azCol[nCol+1] = 0;
 
   /* The decision of whether or not a rowid really needs to be preserved
   ** is tricky.  We never need to preserve a rowid for a WITHOUT ROWID table
@@ -388,6 +389,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 
   (void)azCol;
   if( nArg!=3 ) return 1;
+  if( azArg==0 ) return 1;
   zTable = azArg[0];
   zType = azArg[1];
   zSql = azArg[2];

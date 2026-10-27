@@ -30,6 +30,11 @@ do_execsql_test func7-200 {
 do_execsql_test func7-210 {
   SELECT ln(-5), log(-5,100.0);
 } {{} {}}
+db null NULL
+do_execsql_test func7-220 {
+  SELECT log(2,8), log(2,'8'), log(2,'8xyz'), log(2,x'38');
+} {3.0 3.0 NULL NULL}
+db null {}
 
 # Test cases derived from PostgreSQL documentation
 #

@@ -952,7 +952,7 @@ static void exprAnalyzeOrTerm(
       }else{
         pDup = sqlite3ExprDup(db, pLeft, 0);
         if( sqlite3ExprCollSeq(pParse, pDup)!=pCollSeq
-         && ALWAYS(pCollSeq!=0)
+         && pCollSeq!=0
         ){
           assert( pCollSeq->zName!=0 );
           pDup = sqlite3ExprAddCollateString(pParse, pDup, pCollSeq->zName);

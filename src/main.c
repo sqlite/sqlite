@@ -2997,6 +2997,7 @@ static const int aHardLimit[] = {
   SQLITE_MAX_PARSER_DEPTH,
   SQLITE_MAX_SCHEMA,
   SQLITE_MAX_TRIGGER_STEPS,
+  SQLITE_MAX_CTES,
 };
 
 /*
@@ -3084,7 +3085,8 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   assert( aHardLimit[SQLITE_LIMIT_WORKER_THREADS]==SQLITE_MAX_WORKER_THREADS );
   assert( aHardLimit[SQLITE_LIMIT_SCHEMA]==SQLITE_MAX_SCHEMA );
   assert( aHardLimit[SQLITE_LIMIT_TRIGGER_STEPS]==SQLITE_MAX_TRIGGER_STEPS );
-  assert( SQLITE_LIMIT_TRIGGER_STEPS==(SQLITE_N_LIMIT-1) );
+  assert( aHardLimit[SQLITE_LIMIT_CTES]==SQLITE_MAX_CTES );
+  assert( SQLITE_LIMIT_CTES==(SQLITE_N_LIMIT-1) );
 
 
   if( limitId<0 || limitId>=SQLITE_N_LIMIT ){
@@ -4199,9 +4201,14 @@ int sqlite3_sleep(int ms){
   if( pVfs==0 ) return 0;
 
   /* This function works in milliseconds, but the underlying OsSleep()
-  ** API uses microseconds. Hence the 1000's.
+  ** API uses microseconds. Hence the range limitation and the "*1000".
   */
-  rc = (sqlite3OsSleep(pVfs, ms<0 ? 0 : 1000*ms)/1000);
+  if( ms<0 ){
+    ms = 0;
+  }else if( ms>2147483 ){
+    ms = 2147483;  /* Maximum sleep time of 35 minutes and 47.484 seconds */
+  }
+  rc = sqlite3OsSleep(pVfs, ms*1000)/1000;
   return rc;
 }
 
@@ -4795,6 +4802,28 @@ int sqlite3_test_control(int op, ...){
       const char *z = va_arg(ap,const char*);
       double *pR = va_arg(ap,double*);
       rc = sqlite3AtoF(z,pR);
+      break;
+    }
+
+    /* sqlite3_test_control(SQLITE_TESTCTRL_ATOF, sqlite3 *db, int iDb)
+    **
+    ** Test access to the sqlite3ExpireStmtsUsingSchema() routine.  All
+    ** prepared statements associated with database connection db and that
+    ** use schema iDb (0==main, 1==temp, etc.) are marked as expired.
+    ** Or if iDb is exactly -1, then expire all prepared statements.
+    **
+    ** If iDb is out of range, this test-control is a harmless no-op.
+    */
+    case SQLITE_TESTCTRL_EXPIRE_STMTS: {
+      sqlite3 *db = va_arg(ap,sqlite3*);
+      int iDb = va_arg(ap,int);
+      assert( db!=0 );
+      if( iDb>=0 && iDb<db->nDb ){
+        sqlite3ExpireStmtsUsingSchema(db, iDb, 0);
+      }else if( iDb==(-1) ){
+        sqlite3ExpirePreparedStatements(db, 0);
+      }
+      rc = SQLITE_OK;
       break;
     }
 

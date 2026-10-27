@@ -201,8 +201,9 @@ do_test 6.1 {
   db close
   hexio_write test.db 616 8FFFFFFF7F02
   sqlite3 db test.db
-  execsql { DELETE FROM t1 WHERE rowid=2 }
-} {}
+  catch {execsql { DELETE FROM t1 WHERE rowid=2 }} msg
+  set msg
+} {database disk image is malformed}
 
 #-------------------------------------------------------------------------
 # See what happens if the sqlite_master entry associated with a PRIMARY

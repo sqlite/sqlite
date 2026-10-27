@@ -272,7 +272,7 @@ do_execsql_test 5.0 {
 }
 
 do_catchsql_test 5.1 {
-  INSERT INTO t1 SELECT rowid FROM v1
+  INSERT INTO t1 SELECT term||doc FROM v1
 } {1 {query aborted}}
 
 do_catchsql_test 5.2 {

@@ -371,7 +371,124 @@ do_execsql_test 19.0 {
 
 do_recover_test 19.1
 
+#-------------------------------------------------------------------------
+# Bug 2026-10-18T20:41:57Z
+#
+# In a UTF-16 database, TEXT values that begin with U+FEFF or U+FFFE
+# must be recovered unchanged.  The leading character is part of the
+# value, not a byte-order mark.  Values 4 and 5 are large enough to
+# spill onto overflow pages.
+#
+foreach enc {utf16le utf16be} {
+  reset_db
+  do_execsql_test 20.$enc.0 "
+    PRAGMA encoding = '$enc';
+    CREATE TABLE t1(id INTEGER PRIMARY KEY, a TEXT);
+    INSERT INTO t1 VALUES
+       (1, char(0xfeff)||'abc'),
+       (2, char(0xfffe)||'xyz'),
+       (3, 'plain'),
+       (4, char(0xfeff)||printf('%.*c', 5000, 'a')),
+       (5, char(0xfffe)||printf('%.*c', 5000, 'b'));
+  "
 
+  set sql {
+    SELECT id, length(a), unicode(a), hex(substr(a,1,3)), hex(substr(a,-2))
+      FROM t1 ORDER BY id
+  }
+  set expect [db eval $sql]
+
+  # Recover directly into a new database.
+  do_test 20.$enc.1 {
+    forcedelete test.db2
+    set R [sqlite3_recover_init db main test.db2]
+    $R run
+    $R finish
+    sqlite3 db2 test.db2
+    set res [db2 eval $sql]
+    db2 close
+    set res
+  } $expect
+
+  # Recover as SQL text (the path used by the CLI ".recover" command).
+  do_test 20.$enc.2 {
+    forcedelete test.db2
+    set ::sqlhook [list]
+    set R [sqlite3_recover_init_sql db main my_sql_hook]
+    $R run
+    $R finish
+    sqlite3 db2 test.db2
+    db2 eval [join $::sqlhook ";"]
+    set res [db2 eval $sql]
+    db2 close
+    set res
+  } $expect
+}
+
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/info/03b1348dfac769e0
+#
+# Ordinary columns that follow a VIRTUAL generated column.  A VIRTUAL
+# column has no field in the record, so a record has fewer fields than
+# the table has columns.  This used to cause the last ordinary column(s)
+# to be silently dropped for rowid tables, and an SQLITE_RANGE error
+# for tables with an INTEGER PRIMARY KEY and WITHOUT ROWID tables.
+#
+reset_db
+do_execsql_test 21.0 {
+  CREATE TABLE t1(a TEXT, v AS (upper(a)), b TEXT, c INT);
+  INSERT INTO t1(a, b, c) VALUES('x', 'keep me', 42), ('y', 'also', 7);
+}
+do_recover_test 21.1
+
+reset_db
+do_execsql_test 21.2 {
+  CREATE TABLE t2(id INTEGER PRIMARY KEY, a TEXT, v AS (upper(a)), b TEXT);
+  INSERT INTO t2(a, b) VALUES('x', 'keep me');
+  CREATE TABLE t3(z);
+  INSERT INTO t3 VALUES(1);
+}
+do_recover_test 21.3
+
+reset_db
+do_execsql_test 21.4 {
+  CREATE TABLE t4(a TEXT, v AS (upper(b)), b TEXT PRIMARY KEY, c INT)
+    WITHOUT ROWID;
+  INSERT INTO t4(a, b, c) VALUES('x', 'k1', 42), ('y', 'k2', 7);
+}
+do_recover_test 21.5
+
+# Several VIRTUAL and STORED columns, plus short records that predate an
+# ALTER TABLE ADD COLUMN.
+reset_db
+do_execsql_test 21.6 {
+  CREATE TABLE t5(a, v1 AS (a*2), b, v2 AS (b||'!') STORED, c, v3 AS (c+1));
+  INSERT INTO t5(a, b, c) VALUES(1, 'b', 3);
+  ALTER TABLE t5 ADD COLUMN d DEFAULT 'dflt';
+  INSERT INTO t5(a, b, c, d) VALUES(4, 'e', 6, 'z');
+  CREATE TABLE t6(id INTEGER PRIMARY KEY, v AS (id*10), a);
+  INSERT INTO t6(id, a) VALUES(5, 'five'), (6, 'six');
+}
+do_recover_test 21.7
+
+#-------------------------------------------------------------------------
+# A WITHOUT ROWID table with a column that appears more than once in
+# the PRIMARY KEY has more fields in each record than it has columns.
+# Such tables used to be recovered with NULL or missing values (see also
+# test 17 above).
+#
+reset_db
+do_execsql_test 22.0 {
+  CREATE TABLE t1(a, PRIMARY KEY(a, a COLLATE NOCASE)) WITHOUT ROWID;
+  INSERT INTO t1 VALUES('abc'), ('def');
+  CREATE TABLE t2(a, b, PRIMARY KEY(a, a COLLATE NOCASE)) WITHOUT ROWID;
+  INSERT INTO t2 VALUES('abc', 1), ('def', 2);
+  CREATE TABLE t3(
+    a, s AS (a||'s') STORED, v AS (a||'v'), b, c,
+    PRIMARY KEY(b, a, b COLLATE nocase)
+  ) WITHOUT ROWID;
+  INSERT INTO t3(a, b, c) VALUES(1, 'B', 3), (4, 'b2', 6);
+}
+do_recover_test 22.1
 
 finish_test
-

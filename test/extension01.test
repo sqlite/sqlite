@@ -80,4 +80,33 @@ do_test 1.7 {
   }
 } {nil}
 
+# readfile() must read until EOF rather than trusting the size reported
+# by ftell().  That size is -1 for a pipe or FIFO and 0 for many files
+# under /proc.
+#
+forcedelete fifo1
+if {$::tcl_platform(platform)=="unix" && ![catch {exec mkfifo fifo1}]} {
+  do_test 2.1 {
+    exec sh -c {printf hello >fifo1} &
+    db eval { SELECT CAST(readfile('fifo1') AS TEXT) }
+  } {hello}
+  do_test 2.2 {
+    exec sh -c {head -c 100000 /dev/zero >fifo1} &
+    db eval { SELECT length(readfile('fifo1')) }
+  } {100000}
+  do_test 2.3 {
+    set mx [sqlite3_limit db SQLITE_LIMIT_LENGTH 1000]
+    exec sh -c {head -c 100000 /dev/zero >fifo1 2>/dev/null} &
+    set res [catchsql { SELECT length(readfile('fifo1')) }]
+    sqlite3_limit db SQLITE_LIMIT_LENGTH $mx
+    set res
+  } {1 {string or blob too big}}
+  forcedelete fifo1
+}
+if {[file readable /proc/self/status]} {
+  do_execsql_test 2.4 {
+    SELECT length(readfile('/proc/self/status'))>0
+  } {1}
+}
+
 finish_test

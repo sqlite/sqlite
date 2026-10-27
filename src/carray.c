@@ -487,7 +487,7 @@ SQLITE_API int sqlite3_carray_bind_v2(
       }
     } 
 
-    pNew->aData = sqlite3_malloc64( sz );
+    pNew->aData = sqlite3_malloc64( sz>0 ? sz : 1 );
     if( pNew->aData==0 ){
       rc = SQLITE_NOMEM;
       goto carray_bind_error;
@@ -518,7 +518,7 @@ SQLITE_API int sqlite3_carray_bind_v2(
         z += n;
         memcpy(p[i].iov_base, ((struct iovec*)aData)[i].iov_base, n);
       }
-    }else{
+    }else if( sz>0 ){
       memcpy(pNew->aData, aData, sz);
     }
     pNew->xDel = sqlite3_free;
