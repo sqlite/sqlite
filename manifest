@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_FILECTRL_EXPIRE_STMTS\sfile-control\sto\sfacilitate\stesting.
-D 2026-10-27T12:18:02.317
+C Remove\sDIRECTONLY\smarkings\sfrom\sthe\stryeval()\sand\sexpire()\sfunctions.
+D 2026-10-27T14:28:17.442
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -413,7 +413,7 @@ F ext/misc/strdup.c eaa6592f5d29543eef591e2919d7410363e2b75d720ee7144a8b31590713
 F ext/misc/templatevtab.c e76d4cdb73f986c8165c0fe7831f1a94da55d4f1eafcb7d377e1b0b79ee8679a
 F ext/misc/tmstmpvfs.c 8fe8b10e0ac7c46faf491811e21dcb67ccde5cff8f133701121f793d2a7d41e4
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
-F ext/misc/tryeval.c 74cacf884daebd38304bb0cd30ecaf2941630e6032486042abe83ee32169772b
+F ext/misc/tryeval.c 8f23aadd6d0b99ee083a8c3205b37e7782e5f63151236f64faba7ba6a954c119
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c fe1011f185408b0afd1631fdce8090c4e69ff4eae10a760101e08b624f53bcb1
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
@@ -2303,8 +2303,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6ca068cdcef197ffe137d77d445b17a9d6b7f25d120acb55fb719b6842aef638
-R 4a54f703735689f37c1bea5297f6e4b2
+P fc75988f7591ec24db06d03050e5f6c893fb328d99b6392ea6aab0ef0f31aa59
+R 6ca5f12bf55cc5c398877bec21d2b5f5
 U drh
-Z 16c2c45e6b9a9f26031b2638ba2f38b5
+Z 17ac74dd20da812c266c28f41c4f5623
 # Remove this line to create a well-formed Fossil manifest.

@@ -116,16 +116,16 @@ int sqlite3_tryeval_init(
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
   rc = sqlite3_create_function(db, "tryeval", -1, 
-                               SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
+                               SQLITE_UTF8, 0,
                                tryEvalFunc, 0, 0);
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "expire", 1, 
-                               SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
+                               SQLITE_UTF8|SQLITE_DETERMINISTIC, 0,
                                expireFunc, 0, 0);
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "expire", 2, 
-                               SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
+                               SQLITE_UTF8|SQLITE_DETERMINISTIC, 0,
                                expireFunc, 0, 0);
   }
   return rc;
