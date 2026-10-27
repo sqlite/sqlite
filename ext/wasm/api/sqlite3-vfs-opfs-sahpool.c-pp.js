@@ -728,14 +728,30 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Given an SAH, returns the client-specified name of
        that file by extracting it from the SAH's header.
 
-       On error, it disassociates SAH from the pool and
-       returns an empty string.
+       On error it disassociates SAH from the pool and returns an
+       empty string. Propagates any exceptions from the SAH API and
+       throws for short reads.
     */
     getAssociatedPath(sah){
-      sah.read(this.#apBody, {at: 0});
+      const nRead = sah.read(this.#apBody, {at: 0});
+      const nSah = sah.getSize();
+      const minSz = Math.min(this.#apBody.byteLength, nSah);
+      if( nRead<minSz ){
+        toss("OPFSSAHPool[",this.vfsName,"]: Short header read:",
+             nRead,"of", minSz," bytes");
+      }
       // Delete any unexpected files left over by previous
-      // untimely errors...
+      // untimely errors, recovering when we can...
       const flags = this.#dvBody.getUint32(HEADER_OFFSET_FLAGS);
+      const nPath = this.#apBody.indexOf(0);
+      if( nPath>0
+          && nSah>HEADER_OFFSET_DATA
+          && 0==(flags & capi.SQLITE_OPEN_DELETEONCLOSE) ){
+        /* This entry's header has presumably been "torn" by untimely
+           death during a write, but we can recover from that.
+           Discussion: bugs:7418667df7 */
+        return textDecoder.decode(this.#apBody.subarray(0, nPath));
+      }
       if(this.#apBody[0] &&
          ((flags & capi.SQLITE_OPEN_DELETEONCLOSE) ||
           (flags & PERSISTENT_FILE_TYPES)===0)){
@@ -744,22 +760,23 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         this.setAssociatedPath(sah, '', 0);
         return '';
       }
-
-      const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
-      sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
+      const nDigest = HEADER_DIGEST_SIZE / 4;
+      const fileDigest = new Uint32Array(nDigest);
+      if( sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST}) < nDigest ){
+        toss("OPFSSAHPool[",this.vfsName,"]: Short read of digest bytes");
+      }
       const compDigest = this.computeDigest(this.#apBody, flags);
       //warn("getAssociatedPath() flags",'0x'+flags.toString(16), "compDigest", compDigest);
       if(fileDigest.every((v,i) => v===compDigest[i])){
         // Valid digest
-        const pathBytes = this.#apBody.findIndex((v)=>0===v);
-        if(0===pathBytes){
+        if(0===nPath){
           // This file is unassociated, so truncate it to avoid
           // leaving stale db data laying around.
           sah.truncate(HEADER_OFFSET_DATA);
         }
-        //warn("getAssociatedPath() flags",'0x'+flags.toString(16), "compDigest", compDigest,"pathBytes",pathBytes);
-        return pathBytes
-          ? textDecoder.decode(this.#apBody.subarray(0,pathBytes))
+        //warn("getAssociatedPath() flags",'0x'+flags.toString(16), "compDigest", compDigest,"nPath",nPath);
+        return nPath
+          ? textDecoder.decode(this.#apBody.subarray(0, nPath))
           : '';
       }else{
         // Invalid digest
