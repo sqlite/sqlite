@@ -508,5 +508,32 @@ do_execsql_test 23.4 {
   SELECT count(*) FROM x1_data;
 } {2}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 24.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(a);
+  INSERT INTO ft(rowid, a) VALUES (1, 'apple'), (2, 'apple'), (3, 'apple pie');
+}
+
+do_execsql_test 24.1 {
+  SELECT rowid FROM ft('apple') WHERE rowid='abc';
+} {}
+
+do_execsql_test 24.2 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES (3), (2.5), ('x');
+  SELECT t1.x, ft.rowid 
+  FROM t1 LEFT JOIN ft ON ft.rowid = t1.x AND ft MATCH 'pie';
+} {
+  3 3 
+  2.5 {} 
+  x {}
+}
+
+do_execsql_test 24.3 {
+  SELECT count(*) FROM ft WHERE ft MATCH 'apple' AND rowid IN (2.5, 'x');
+} {0}
+
+
 
 finish_test

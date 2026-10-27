@@ -70,6 +70,27 @@ if {[catch {db eval { SELECT * FROM dbstat }} msg]==0} {
   do_test 2.3 {
     catchcmd test.db "SELECT length( diskused('main') ) > 1000"
   } {0 1}
+
+  # https://sqlite.org/bugs/info/23d77b5d47908a41
+  # Very small percentages should not be shown in exponential notation.
+  #
+  do_test 2.4 {
+    forcedelete test2.db
+    sqlite3 db2 test2.db
+    db2 eval {
+      PRAGMA auto_vacuum=OFF;
+      PRAGMA page_size=4096;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES(zeroblob(30000000));
+      DELETE FROM t1;
+      INSERT INTO t1 VALUES('x');
+    }
+    db2 close
+    set res [catchcmd test2.db ".diskused"]
+    list [lindex $res 0] [regexp {e-0} [lindex $res 1]] \
+         [regexp {<0\.0001%} [lindex $res 1]]
+  } {0 0 1}
+  forcedelete test2.db
 }
 
 finish_test

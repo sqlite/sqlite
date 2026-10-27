@@ -36,6 +36,11 @@ do_execsql_test 1.1 {
    amsterdamania  100 9
    amsterdammetje 100 9
 }
+do_execsql_test 1.1b {
+  SELECT count(*) FROM demo 
+  WHERE word MATCH 'amstedam*' AND top=787410671
+  ORDER BY +word;
+} 6
 
 do_execsql_test 1.2 {
   SELECT word, distance, matchlen FROM demo WHERE 

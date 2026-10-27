@@ -1,0 +1,61 @@
+# 2026-10-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# OOM tests for vec1.
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1faultA
+vec1_load db
+
+foreach {tn model} {
+  1 { '{index:"flat"}' }
+  2 { (SELECT vec1_train(v, '{codesize:8}') FROM t1) }
+  3 { (SELECT vec1_train(v, '{codesize:8, nbucket:4}') FROM t1) }
+} {
+  reset_db
+  vec1_load db
+
+  do_execsql_test $tn.0 {
+    CREATE VIRTUAL TABLE t1 USING vec1(v, b);
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<600 )
+    INSERT INTO t1(rowid, v, b) SELECT i, rvec(32, i), 'b'||i FROM s;
+  }
+  do_execsql_test $tn.1 "
+    INSERT INTO t1(cmd, arg) VALUES('rebuild', $model);
+  "
+
+  faultsim_save_and_close
+
+  do_faultsim_test $tn -faults oom* -prep {
+    faultsim_restore_and_reopen
+    vec1_load db
+    execsql {
+      BEGIN;
+        INSERT INTO t1(rowid, v, b) VALUES(1001, rvec(32, 5000), 'new');
+        UPDATE t1 SET v = rvec(32, 5001) WHERE rowid=7;
+    }
+  } -body {
+    execsql {
+      SELECT count(*) FROM t1(rvec(32, 5000), '{K:5}') WHERE rowid=1001;
+    }
+  } -test {
+    faultsim_test_result {0 1} {1 {out of memory}}
+    catchsql COMMIT
+
+    set ic [db one { PRAGMA integrity_check }]
+    if {$ic!="ok"} {
+      error "integrity-check failed: $ic"
+    }
+  }
+}
+
+finish_test

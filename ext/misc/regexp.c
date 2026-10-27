@@ -421,7 +421,10 @@ static unsigned re_esc_char(ReCompiled *p){
   static const char zTrans[] = "\a\f\n\r\t\v";
   int i, v = 0;
   char c;
-  if( p->sIn.i>=p->sIn.mx ) return 0;
+  if( p->sIn.i>=p->sIn.mx ){
+    p->zErr = "unknown \\ escape";
+    return 0;
+  }
   c = p->sIn.z[p->sIn.i];
   if( c=='u' && p->sIn.i+4<p->sIn.mx ){
     const unsigned char *zIn = p->sIn.z + p->sIn.i;

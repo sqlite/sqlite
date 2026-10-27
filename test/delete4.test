@@ -268,5 +268,43 @@ do_execsql_test 7.3.3 {
   SELECT * FROM t3;
 } {}
 
+#-------------------------------------------------------------------------
+# Report <https://sqlite.org/bugs/forumpost/85d3969644>
+#
+foreach {tn expr res} {
+  1 {a > 8} {0 1 1 40 2 40 3 40 4 40 5 40 6 40 7 40 8 40}
+  2 {a = 5} {0 1 1 40 2 40 3 40 4 40 6 40 7 40 8 40 9 1300}
+  3 {a = 1} {0 1 2 40 3 40 4 40 5 40 6 40 7 40 8 40 9 1300}
+} {
+  reset_db
+
+  do_execsql_test 8.$tn.0 "
+    PRAGMA page_size = 512;
+    CREATE TABLE t(a PRIMARY KEY, b, c) WITHOUT ROWID;
+    CREATE INDEX tc ON t(c);
+    INSERT INTO t VALUES 
+      (1, zeroblob(40), 1), (2, zeroblob(40), 2), 
+      (3, zeroblob(40), 3), (4, zeroblob(40), 4), 
+      (5, zeroblob(40), 5), (6, zeroblob(40), 6), 
+      (7, zeroblob(40), 7), (8, zeroblob(40), 8), 
+      (9, zeroblob(1300), 9);
+
+    CREATE TABLE u(x);
+
+    CREATE TRIGGER r AFTER INSERT ON u BEGIN
+      DELETE FROM t WHERE c IS NULL OR $expr ;
+    INSERT INTO t VALUES (0, 0, 0);
+    END;
+
+    PRAGMA integrity_check;
+  " {ok}
+
+
+  do_execsql_test 8.$tn.1 { INSERT INTO u VALUES (1) }
+  do_execsql_test 8.$tn.2 { SELECT a, length(b) FROM t; } $res
+  do_execsql_test 8.$tn.3 { PRAGMA integrity_check } {ok}
+}
+
+
 
 finish_test

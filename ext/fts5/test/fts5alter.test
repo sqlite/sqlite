@@ -98,4 +98,37 @@ do_execsql_test 3.3 {
   SELECT rowid FROM abc WHERE abc MATCH 'a';
 } {1 2}
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/forumpost/9f84b69d92
+#
+reset_db
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(
+      a, b UNINDEXED, content='', contentless_unindexed=1
+  );
+  INSERT INTO ft(rowid, a, b) VALUES (1, 'x y', 'b1');
+} 
+
+do_execsql_test 4.1 {
+  SELECT name FROM sqlite_schema ORDER BY name;
+} {
+  ft ft_config ft_content ft_data ft_docsize ft_idx
+}
+do_execsql_test 4.2 {
+  ALTER TABLE ft RENAME TO ft2;
+}
+do_execsql_test 4.3 {
+  SELECT name FROM sqlite_schema ORDER BY name;
+} {
+  ft2 ft2_config ft2_content ft2_data ft2_docsize ft2_idx
+}
+do_execsql_test 4.4 {
+  INSERT INTO ft2(rowid, a, b) VALUES (2, 'x z', 'b2');
+}
+do_execsql_test 4.5 {
+  DROP TABLE ft2;
+  SELECT name FROM sqlite_schema;
+}
+
 finish_test

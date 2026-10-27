@@ -581,4 +581,13 @@ do_execsql_test 12.1 {
    LIMIT 1;
 } {2}
 
+# Bug 2026-10-16T12:58:09Z
+do_execsql_test 13.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(4),(1),(3),(2);
+  PRAGMA reverse_unordered_selects=OFF;
+  SELECT * FROM t1 ORDER BY 123 ISNULL;
+} {4 1 3 2}
+
 finish_test

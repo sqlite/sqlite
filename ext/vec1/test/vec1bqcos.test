@@ -1,0 +1,107 @@
+# 2026-10-18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test recall of binary-quantized ("bq") indexes.
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1bqcos
+
+vec1_load db
+expr srand(0)
+
+set N  20000            ;# Number of vectors in the table
+set D  256              ;# Dimensions per vector
+set NQ 100              ;# Number of queries
+set NB 64               ;# Number of buckets
+
+# Return a normally distributed random value.
+proc gauss {} {
+  set u1 [expr {1.0 - rand()}]
+  set u2 [expr {rand()}]
+  expr {sqrt(-2.0 * log($u1)) * cos(6.283185307179586 * $u2)}
+}
+
+# Generate the common offset vector.
+set lOffset [list]
+for {set ii 0} {$ii < $D} {incr ii} {
+  lappend lOffset [gauss]
+}
+
+# Return a unit-length vector equal to the common offset plus
+# gaussian noise.
+proc offset_vector {} {
+  global lOffset
+  set lVec [list]
+  set sum 0.0
+  foreach o $lOffset {
+    set x [expr {$o + [gauss]}]
+    lappend lVec $x
+    set sum [expr {$sum + $x*$x}]
+  }
+  set norm [expr {sqrt($sum)}]
+  set lRet [list]
+  foreach x $lVec {
+    lappend lRet [expr {$x / $norm}]
+  }
+  binary format f* $lRet
+}
+db func offset_vector offset_vector
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t USING vec1(v);
+  CREATE TABLE q(id INTEGER PRIMARY KEY, v BLOB);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<CAST($N AS INTEGER)
+  )
+  INSERT INTO t(rowid, v) SELECT i, offset_vector() FROM s;
+  INSERT INTO q SELECT rowid, v FROM t WHERE rowid<=CAST($NQ AS INTEGER);
+}
+
+# Exact top-10 (by cosine distance) for each query.
+do_test 1.1 {
+  set aTruth [dict create]
+  db eval { SELECT id, v FROM q } {
+    dict set aTruth $id [db eval {
+      SELECT rowid FROM t ORDER BY vec1_cos_distance(t.v, $v) LIMIT 10
+    }]
+  }
+  dict size $aTruth
+} $NQ
+
+foreach {tn extra} {
+  1 {"distance": "cos"}
+  2 {"distance": "l2"}
+  3 {"distance": "cos", "wht": false}
+} {
+  set p "{\"nbucket\": $NB, \"quantizer\": \"bq\", \"codesize\": [expr $D/8], $extra}"
+
+  do_test 2.$tn.1 {
+    set model [db one { SELECT vec1_train(v, $p) FROM t }]
+    execsql { INSERT INTO t(cmd, arg) VALUES('rebuild', $model) }
+  } {}
+
+  # Search all buckets, with no re-ranking.
+  set hits 0
+  set qp "{\"k\": 10, \"nprobe\": $NB}"
+  db eval { SELECT id, v FROM q } {
+    foreach r [db eval { SELECT rowid FROM t($v, $qp) }] {
+      if {[lsearch -exact [dict get $aTruth $id] $r]>=0} { incr hits }
+    }
+  }
+  set recall [expr {double($hits) / (10 * $NQ)}]
+  set fmt [format "  {%s} recall@10 = %.3f" $extra $recall]
+  do_test 2.$tn.2.$fmt {
+    expr {$recall > 0.25}
+  } 1
+}
+
+finish_test

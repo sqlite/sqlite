@@ -17,6 +17,8 @@ themselves.
 
 SQLite does not accept agentic code.  However the project
 will accept agentic bug reports that include a reproducible test case.
+Ideally, a test case should be a script of SQL commands that is directly
+executable by the [CLI](https://sqlite.org/cli.html).
 Patches or pull requests demonstrating a possible fix, for documentation
 purposes, are welcomed.
 

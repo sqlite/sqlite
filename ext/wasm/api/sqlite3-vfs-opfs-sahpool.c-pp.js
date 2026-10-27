@@ -405,7 +405,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           if(pool.getFileCount() < pool.getCapacity()) {
             // Choose an unassociated OPFS file from the pool.
             sah = pool.nextAvailableSAH();
-            pool.setAssociatedPath(sah, path, flags);
+            pool.setClientPath(sah, path, flags);
           }else{
             // File pool is full.
             toss('SAH pool is full. Cannot create file',path);
@@ -527,7 +527,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* Maps SAH to an abstract File Object which contains
        various metadata about that handle. */
 
-    /** Buffer used by [sg]etAssociatedPath(). */
+    /** Buffer used by [sg]etClientPath(). */
     #apBody = new Uint8Array(HEADER_CORPUS_SIZE);
     // DataView for this.#apBody
     #dvBody;
@@ -596,7 +596,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         const h = await this.#dhOpaque.getFileHandle(name, {create:true});
         const ah = await h.createSyncAccessHandle();
         this.#mapSAHToName.set(ah,name);
-        this.setAssociatedPath(ah, '', 0);
+        this.setClientPath(ah, '', 0);
         //this.#createFileObject(ah,undefined,name);
       }
       return this.getCapacity();
@@ -702,9 +702,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         this.#mapSAHToName.set(ah, name);
         if(clearFiles){
           ah.truncate(HEADER_OFFSET_DATA);
-          this.setAssociatedPath(ah, '', 0);
+          this.setClientPath(ah, '', 0);
         }else{
-          const path = this.getAssociatedPath(ah);
+          const path = this.getClientPath(ah);
           if(path){
             this.#mapFilenameToSAH.set(path, ah);
           }else{
@@ -728,43 +728,57 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Given an SAH, returns the client-specified name of
        that file by extracting it from the SAH's header.
 
-       On error, it disassociates SAH from the pool and
-       returns an empty string.
+       On error it disassociates SAH from the pool and returns an
+       empty string. Propagates any exceptions from the SAH API and
+       throws for short header reads.
     */
-    getAssociatedPath(sah){
-      sah.read(this.#apBody, {at: 0});
+    getClientPath(sah){
+      const nRead = sah.read(this.#apBody, {at: 0});
+      const nSah = sah.getSize();
+      const minSz = Math.min(this.#apBody.byteLength, nSah);
+      if( nRead<minSz ){
+        toss("OPFSSAHPool[",this.vfsName,"]: Short header read:",
+             nRead,"of", minSz," bytes");
+      }
       // Delete any unexpected files left over by previous
-      // untimely errors...
+      // untimely errors, recovering when we can...
       const flags = this.#dvBody.getUint32(HEADER_OFFSET_FLAGS);
+      const nPath = this.#apBody.indexOf(0);
+      if( nPath>0
+          && nSah>HEADER_OFFSET_DATA
+          && 0===(flags & capi.SQLITE_OPEN_DELETEONCLOSE) ){
+        /* This entry's header has presumably been "torn" by untimely
+           death during a write, but we can recover from that.
+           Discussion: bugs:7418667df7 */
+        return textDecoder.decode(this.#apBody.subarray(0, nPath));
+      }
       if(this.#apBody[0] &&
          ((flags & capi.SQLITE_OPEN_DELETEONCLOSE) ||
           (flags & PERSISTENT_FILE_TYPES)===0)){
         warn(`Removing file with unexpected flags ${flags.toString(16)}`,
              this.#apBody);
-        this.setAssociatedPath(sah, '', 0);
+        this.setClientPath(sah, '', 0);
         return '';
       }
-
       const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
       sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
       const compDigest = this.computeDigest(this.#apBody, flags);
-      //warn("getAssociatedPath() flags",'0x'+flags.toString(16), "compDigest", compDigest);
+      //warn("getClientPath() flags",'0x'+flags.toString(16), "compDigest", compDigest);
       if(fileDigest.every((v,i) => v===compDigest[i])){
         // Valid digest
-        const pathBytes = this.#apBody.findIndex((v)=>0===v);
-        if(0===pathBytes){
+        if(0===nPath){
           // This file is unassociated, so truncate it to avoid
           // leaving stale db data laying around.
           sah.truncate(HEADER_OFFSET_DATA);
         }
-        //warn("getAssociatedPath() flags",'0x'+flags.toString(16), "compDigest", compDigest,"pathBytes",pathBytes);
-        return pathBytes
-          ? textDecoder.decode(this.#apBody.subarray(0,pathBytes))
+        //warn("getClientPath() flags",'0x'+flags.toString(16), "compDigest", compDigest,"nPath",nPath);
+        return nPath
+          ? textDecoder.decode(this.#apBody.subarray(0, nPath))
           : '';
       }else{
         // Invalid digest
         warn('Disassociating file with bad digest.');
-        this.setAssociatedPath(sah, '', 0);
+        this.setClientPath(sah, '', 0);
         return '';
       }
     }
@@ -779,7 +793,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        is falsy. This function removes the mapping of that name to an
        SAH.
     */
-    setAssociatedPath(sah, path, flags, nameToRemove){
+    setClientPath(sah, path, flags, nameToRemove){
       const enc = textEncoder.encodeInto(path, this.#apBody);
       if(HEADER_MAX_PATH_SIZE <= enc.written + 1/*NUL byte*/){
         toss("Path too long:",path);
@@ -794,7 +808,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       this.#apBody.fill(0, enc.written, HEADER_MAX_PATH_SIZE);
       this.#dvBody.setUint32(HEADER_OFFSET_FLAGS, flags);
       const digest = this.computeDigest(this.#apBody, flags);
-      //console.warn("setAssociatedPath(",path,") digest",digest);
+      //console.warn("setClientPath(",path,") digest",digest);
       sah.write(this.#apBody, {at: 0});
       if(nameToRemove){
         /* The placement of this is very specific: between the above
@@ -896,7 +910,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     deletePath(path) {
       const sah = this.#mapFilenameToSAH.get(path);
       if(sah) {
-        this.setAssociatedPath(sah, '', 0, path);
+        this.setClientPath(sah, '', 0, path);
       }
       return !!sah;
     }
@@ -1121,10 +1135,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           at: HEADER_OFFSET_DATA + 18
         }/*force db out of WAL mode*/);
       }catch(e){
-        this.setAssociatedPath(sah, '', 0);
+        this.setClientPath(sah, '', 0);
         throw e;
       }
-      this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
+      this.setClientPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
       return nWrote;
     }
 
@@ -1139,7 +1153,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const n = bytes.byteLength;
       const nWrote = sah.write(bytes, {at: HEADER_OFFSET_DATA});
       if(nWrote != n){
-        this.setAssociatedPath(sah, '', 0);
+        this.setClientPath(sah, '', 0);
         toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
       }else{
         sah.truncate(HEADER_OFFSET_DATA + n
@@ -1147,7 +1161,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                         existing file with a shorter one. */);
         sah.write(new Uint8Array([1,1]), {at: HEADER_OFFSET_DATA+18}
                    /* force db out of WAL mode */);
-        this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
+        this.setClientPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
       }
       return nWrote;
     }

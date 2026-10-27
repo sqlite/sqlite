@@ -666,6 +666,23 @@ do_test 9.1 {
 
 $expert destroy
 
+#-------------------------------------------------------------------------
+# Collation sequences with names of 0 or 1 characters.
+#
+foreach {tn coll} {1 x 2 {}} {
+  reset_db
+  db collate $coll {string compare}
+  do_execsql_test 10.$tn.0 "CREATE TABLE t1(a COLLATE \"$coll\", b)"
+  do_test 10.$tn.1 {
+    set expert [sqlite3_expert_new db]
+    $expert sql { SELECT * FROM t1 WHERE a=? }
+    $expert analyze
+    set res [string trim [$expert report 0 indexes]]
+    $expert destroy
+    set res
+  } {CREATE INDEX t1_idx_00000061 ON t1(a);}
+}
+
 
 
 finish_test

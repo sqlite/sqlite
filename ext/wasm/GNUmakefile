@@ -757,7 +757,9 @@ emcc.jsflags = -fPIC
 #emcc.jsflags += -Wno-gcc-install-dir-libstdcxx
 #emcc is not passing ^^^ this on to clang
 emcc.jsflags += --no-entry
-emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
+# emcc 6.0.12+ emits ugly warnings if we turn on BIGINT,
+# despite the value being the same one it will use by
+# default: emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 emcc.jsflags += -sMODULARIZE
 emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
@@ -1084,7 +1086,6 @@ $(EXPORTED_FUNCTIONS.fiddle): $(EXPORTED_FUNCTIONS.api.in) \
 
 emcc.flags.fiddle = \
   $(emcc.cflags) $(emcc_opt_full) \
-  $(emcc.MEMORY64) \
   --minify 0 \
   -sALLOW_TABLE_GROWTH \
   -sALLOW_MEMORY_GROWTH \
@@ -1095,7 +1096,6 @@ emcc.flags.fiddle = \
   -sENVIRONMENT=web,worker \
   -sMODULARIZE \
   -sDYNAMIC_EXECUTION=0 \
-  -sWASM_BIGINT=$(emcc.WASM_BIGINT) \
   -sEXPORT_NAME=$(sqlite3.js.init-func) \
   -Wno-limited-postlink-optimizations \
   $(emcc.exportedRuntimeMethods),FS \
@@ -1221,7 +1221,6 @@ $(eval $(call gen-worker1,-bundler-friendly.mjs,$(c-pp.D.bundler)))
 
 #
 # sqlite3-worker1-promiser*.*
-# TODO: 64-bit
 #
 define gen-promiser
 # $1 = X.ext part of sqlite3-worker1-promiserX.ext
@@ -1312,7 +1311,6 @@ emcc.speedtest1.common += -sALLOW_TABLE_GROWTH
 emcc.speedtest1.common += -sDYNAMIC_EXECUTION=0
 emcc.speedtest1.common += --minify 0
 emcc.speedtest1.common += -sEXPORT_NAME=$(sqlite3.js.init-func)
-emcc.speedtest1.common += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 speedtest1.exit-runtime0 = -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get
@@ -1466,9 +1464,9 @@ all: tester1
 #
 # jquery.terminal support for fiddle:
 #
-# If a clone of https://github.com/jcubic/jquery.terminal
-# is found in $(JQTERM), defaulting to $(HOME)/src/jquery.terminal
-# then add jquery.terminal support to fiddle.
+# If a clone of https://github.com/jcubic/jquery.terminal is found in
+# dir $(JQTERM), defaulting to $(HOME)/src/jquery.terminal then add
+# jquery.terminal support to fiddle.
 #
 # To build that package, from its checkout dir:
 #

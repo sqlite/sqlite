@@ -64,7 +64,7 @@ do_execsql_test 1.1.1 {
   CREATE VIRTUAL TABLE v1 USING fts5vocab(t1, 'row');
   PRAGMA table_info = v1;
 } {
-  0 term {} 0 {} 0
+  0 term {} 1 {} 1
   1 doc {} 0 {} 0
   2 cnt {} 0 {} 0
 }
@@ -73,8 +73,8 @@ do_execsql_test 1.1.2 {
   CREATE VIRTUAL TABLE v2 USING fts5vocab(t1, 'col');
   PRAGMA table_info = v2;
 } {
-  0 term {} 0 {} 0
-  1 col {} 0 {} 0
+  0 term {} 1 {} 1
+  1 col {} 1 {} 2
   2 doc {} 0 {} 0
   3 cnt {} 0 {} 0
 }
@@ -552,8 +552,8 @@ do_execsql_test 11.100 {
   CREATE VIRTUAL TABLE rowid USING fts5vocab(rowid , 'instance');
 } {}
 do_catchsql_test 11.110 {
-  SELECT rowid+1,rowid, * FROM t3 WHERE null>rowid ;
-} {1 {SQL logic error}}
+  SELECT term+1, term, * FROM t3 WHERE null>term ;
+} {1 {no such fts5 table: main.rowid}}
 
 #-------------------------------------------------------------------------
 # Ensure fts5vocab columns behave consistently as if they have blob

@@ -618,6 +618,9 @@ static Expr *removeUnindexableInClauseTerms(
           nRhs++;
         }
       }
+      if( nRhs<pOrigRhs->nExpr ){
+        ExprClearProperty(pNew, EP_Subrtn); /* See bug 2026-10-16T22:07:15Z */
+      }
       sqlite3ExprListDelete(db, pOrigRhs);
       if( pOrigLhs ){
         sqlite3ExprListDelete(db, pOrigLhs);
@@ -2143,7 +2146,9 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       SWAP(u8, nBtm, nTop);
     }
 
-    if( iLevel>0 && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0 ){
+    if( (iLevel>0 || (pWInfo->wctrlFlags & WHERE_OR_SUBCLAUSE)!=0)
+     && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)!=0
+    ){
       /* In case OP_SeekScan is used, ensure that the index cursor does not
       ** point to a valid row for the first iteration of this loop. */
       sqlite3VdbeAddOp1(v, OP_NullRow, iIdxCur);

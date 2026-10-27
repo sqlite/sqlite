@@ -217,7 +217,7 @@ do_faultsim_test 2.4 -faults oom* -prep {
   set {} {}
 } -test {
   catch { R delete } 
-  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  faultsim_test_result_strict {0 {}} {1 SQLITE_NOMEM}
 }
 do_faultsim_test 2.5 -faults oom* -prep {
   catch {db2 close}

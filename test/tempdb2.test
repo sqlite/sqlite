@@ -96,4 +96,27 @@ do_execsql_test 2.2 {
   SELECT b FROM t1 WHERE a = 10001;
 } "[int2str 1001][int2str 1001][int2str 1001]"
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/info/2d5a585cd81b9fa4
+#
+# When the core requests a temporary file (zName==NULL), xOpen() must
+# still set *pOutFlags.  On Linux, the unix VFS opens such files using
+# O_TMPFILE, and that path used to return without setting *pOutFlags.
+# The core itself never looks at the output flags for temp files, so
+# call xOpen() directly.  The vfs_open_tempfile command initializes
+# *pOutFlags to zero, so check that SQLITE_OPEN_READWRITE (0x02) is set
+# on return - which all VFS implementations are expected to do.
+#
+set vfslist [list {}]
+if {$::tcl_platform(platform)=="unix"} {
+  lappend vfslist unix unix-excl unix-none unix-dotfile
+}
+foreach vfs $vfslist {
+  if {$vfs!="" && [lsearch [sqlite3_vfs_list] $vfs]<0} continue
+  do_test 3.[expr {$vfs=="" ? "default" : $vfs}] {
+    foreach {rc outFlags} [eval vfs_open_tempfile $vfs] break
+    list $rc [expr {($outFlags & 0x02)!=0}]
+  } {0 1}
+}
+
 finish_test

@@ -59,5 +59,43 @@ if {[permutation]!="inmemory_journal"} {
     }
   } {1 1 2 2 4 4 8 8}
 }
+catch {close $fd}
+db close
+
+# Bug 2026-10-25T12:08:19Z
+#
+reset_db
+do_execsql_test 2.0 {
+  PRAGMA auto_vacuum=OFF;
+  PRAGMA page_size=4096;
+  CREATE TABLE x(a); INSERT INTO x VALUES(1);
+  PRAGMA writable_schema=ON;
+  DELETE FROM sqlite_schema WHERE name='x';
+  INSERT INTO sqlite_schema VALUES('table','aa','aa',0,
+    'CREATE TEMP TABLE tb(c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17)');
+  INSERT INTO sqlite_schema VALUES('table','ab','ab',0,'CREATE INDEX temp.x ON tb(c17)');
+  INSERT INTO sqlite_schema VALUES('table','x','x',2,'CREATE TABLE x(a)');
+  PRAGMA writable_schema=RESET;
+}
+do_catchsql_test 2.1 {
+  PRAGMA integrity_check;
+} {1 {malformed database schema (aa)}}
+do_test 2.3 {
+  forcedelete test.db2
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  $R finish
+} {}
+do_test 2.4 {
+  sqlite3 db2 test.db2
+  db2 eval {PRAGMA integrity_check}
+} {ok}
+
+# TODO:  Different answers for --config Android and
+# for --config Device-Two.
+# 
+#do_test 2.5 {
+#  db2 eval {SELECT * FROM x}
+#} {1}
 
 finish_test

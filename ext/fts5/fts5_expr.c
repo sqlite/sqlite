@@ -401,7 +401,7 @@ int sqlite3Fts5ExprPattern(
           zExpr[iOut++] = '"';
           zExpr[iOut++] = ' ';
         }
-        if( zText[i]==aSpec[2] ){
+        if( i<nText && zText[i]==aSpec[2] ){
           i += 2;
           if( zText[i-1]=='^' ) i++;
           while( i<nText && zText[i]!=']' ) i++;
@@ -940,6 +940,13 @@ static int fts5ExprNearTest(
     if( i==pNear->nPhrase && (i==1 || fts5ExprNearIsMatch(pRc, pNear)) ){
       return 1;
     }
+
+    /* Not a match. Clear the position lists of all phrases, as some may
+    ** have been populated before the loop above exited early, and others
+    ** may still contain data left over from a previous row.  */
+    for(i=0; i<pNear->nPhrase; i++){
+      pNear->apPhrase[i]->poslist.n = 0;
+    }
     return 0;
   }
 }
@@ -1052,6 +1059,24 @@ static void fts5ExprNodeZeroPoslist(Fts5ExprNode *pNode){
     int i;
     for(i=0; i<pNode->nChild; i++){
       fts5ExprNodeZeroPoslist(pNode->apChild[i]);
+    }
+  }
+}
+
+/*
+** Zero the position lists of all phrases within the sub-tree headed by
+** pNode that are currently positioned at rowid iRowid. Phrases positioned
+** at other rowids are not modified - their position lists belong to rows
+** that have not yet been tested by the parent node.
+*/
+static void fts5ExprNodeZeroPoslistAt(Fts5ExprNode *pNode, i64 iRowid){
+  if( pNode->iRowid!=iRowid ) return;
+  if( pNode->eType==FTS5_STRING || pNode->eType==FTS5_TERM ){
+    fts5ExprNodeZeroPoslist(pNode);
+  }else{
+    int i;
+    for(i=0; i<pNode->nChild; i++){
+      fts5ExprNodeZeroPoslistAt(pNode->apChild[i], iRowid);
     }
   }
 }
@@ -1374,10 +1399,10 @@ static int fts5ExprNodeTest_AND(
     }
   }while( bMatch==0 );
 
-  if( pAnd->bNomatch && pAnd!=pExpr->pRoot ){
-    fts5ExprNodeZeroPoslist(pAnd);
-  }
   pAnd->iRowid = iLast;
+  if( pAnd->bNomatch && pAnd!=pExpr->pRoot ){
+    fts5ExprNodeZeroPoslistAt(pAnd, iLast);
+  }
   return SQLITE_OK;
 }
 
@@ -1523,6 +1548,7 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
       default:
         assert( pNode->eType==FTS5_NOT );
         pNode->bEof = pNode->apChild[0]->bEof;
+        if( pNode->bEof ) fts5ExprNodeZeroPoslist(pNode->apChild[1]);
         break;
     }
   }

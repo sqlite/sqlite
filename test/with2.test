@@ -669,5 +669,25 @@ if {$::SQLITE_MAX_EXPR_DEPTH>0} {
     SELECT x FROM c10;
   } {1 {VIEWs and/or subqueries nested too deep}}
 }
+do_execsql_test 14.3 {
+  CREATE VIEW vcte AS
+  WITH c0 AS (SELECT 1 AS x),
+       c1 AS (SELECT a.x AS x FROM c0 AS a, c0 AS b),
+       c2 AS (SELECT a.x AS x FROM c1 AS a, c1 AS b),
+       c3 AS (SELECT a.x AS x FROM c2 AS a, c2 AS b),
+       c4 AS (SELECT a.x AS x FROM c3 AS a, c3 AS b),
+       c5 AS (SELECT a.x AS x FROM c4 AS a, c4 AS b),
+       c6 AS (SELECT a.x AS x FROM c5 AS a, c5 AS b),
+       c7 AS (SELECT a.x AS x FROM c6 AS a, c6 AS b)
+  SELECT count(*) FROM c7;
+}
+sqlite3_limit db SQLITE_LIMIT_CTES 100
+do_catchsql_test 14.4 {
+  SELECT * FROM vcte;
+} {1 {too many CTEs}}
+sqlite3_limit db SQLITE_LIMIT_CTES 0
+do_catchsql_test 14.5 {
+  SELECT * FROM vcte;
+} {1 {at most 64 tables in a join}}
 
 finish_test

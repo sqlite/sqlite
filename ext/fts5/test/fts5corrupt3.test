@@ -3356,7 +3356,7 @@ do_catchsql_test 29.1 {
   CREATE VIRTUAL TABLE t3 USING fts5vocab('t1','col');
 } {0 {}}
 do_catchsql_test 29.2 {
-  SELECT rowid, quote(term), * FROM t3 WHERE term=='nocase';
+  SELECT quote(term), * FROM t3 WHERE term=='nocase';
 } {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
@@ -15154,7 +15154,7 @@ do_execsql_test 78.1 {
 }
 
 do_catchsql_test 78.2 {
-  SELECT count(rowid) FROM t3 WHERE term>='nsocse';
+  SELECT count(term) FROM t3 WHERE term>='nsocse';
 } {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------

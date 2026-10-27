@@ -22,6 +22,10 @@
 .mode tty
 .check ''
 
+.if NOT capable('vtab')
+.exit
+.endif
+
 .testcase 100
 CREATE TABLE t1(a,b,c);
 .import -csv <<END t1

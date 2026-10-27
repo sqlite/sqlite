@@ -225,9 +225,7 @@ do_test shell2-1.4.9 {
 .clone clone.db
 .open clone.db
  SELECT max(seq) FROM sqlite_sequence;}]]
-} {0 {t... done
-done
-2}}
+} {0 2}
 
 ifcapable vtab {
 # Verify that generate_series stays sane near 64-bit range boundaries.

@@ -1,0 +1,99 @@
+# 2026 October 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements a regression test for an information-leak primitive
+# that exploits the b-tree page overread. 
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix pcacheleak
+
+database_may_be_corrupt
+
+# Build the corrupted db.
+#
+proc build_leak_db {filename} {
+  forcedelete $filename
+  sqlite3 dbx $filename
+  dbx eval {
+    PRAGMA page_size=4096;
+    PRAGMA auto_vacuum=0;
+    CREATE TABLE users(id INTEGER PRIMARY KEY, name TEXT);
+    INSERT INTO users(id,name) VALUES(1,'Alice');
+    INSERT INTO users(id,name) VALUES(2,'Bob');
+  }
+  dbx close
+
+  # Modification 1: bump the page-2 cell count from 2 to 3.  The 2-byte
+  # cell count is at page offset 3; page 2 starts at file offset 0x1000,
+  # so the low byte is at 0x1004 == 4100.
+  hexio_write $filename 4100 03
+
+  # Modification 2: write a third cell pointer into the cell pointer array
+  # (which begins at page offset 8, file offset 0x1008).  The two real
+  # pointers occupy 0x1008 and 0x100A; the fake third pointer goes at
+  # 0x100C == 4108 and is set to the page-relative offset 0x0FF8, i.e. the
+  # last 8 bytes of the 4096-byte page.
+  hexio_write $filename 4108 0ff8
+
+  # Modification 3: overwrite those last 8 bytes (0x1FF8 == 8184) with
+  # 0xFF.  Every byte has its high bit set, so the varint parser treats
+  # them all as continuation bytes and is forced to read past the end of
+  # the page buffer to find the end of the number.
+  hexio_write $filename 8184 ffffffffffffffff
+}
+
+# The fake cell is parsed, so the table now appears to hold three rows 
+# instead of two.
+#
+do_test 1.0 {
+  db close
+  build_leak_db test.db
+  sqlite3 db test.db
+  db eval {PRAGMA cell_size_check=OFF}
+  db eval {SELECT count(*) FROM users}
+} {3}
+
+
+# Turning the cell size check on causes the same file to be rejected as
+# corrupt, because the fake cell is detected before it can be parsed.
+#
+do_test 1.1 {
+  sqlite3 db test.db
+  db eval {PRAGMA cell_size_check=ON}
+  list [catch {db eval {SELECT rowid FROM users}} msg] $msg
+} {1 {database disk image is malformed}}
+db close
+
+# The leak itself.  Make four byte-identical copies of the manipulated
+# database and open them all at once.  Each open allocates its own page-2
+# buffer, and because all four buffers are live simultaneously they must
+# occupy four different heap addresses.  If the leaked rowid contains
+# heap address bytes, all four values should be distinct. Otherwise,
+# they should all be identical (and either 0 or 1)
+#
+do_test 2.0 {
+  set vals [list]
+  foreach h {d0 d1 d2 d3} {
+    forcecopy test.db test.db.$h
+    sqlite3 $h test.db.$h
+    $h eval {PRAGMA cell_size_check=OFF}
+    lappend vals [lindex [$h eval {SELECT rowid FROM users}] end]
+  }
+  foreach h {d0 d1 d2 d3} { $h close }
+
+  # More than two distinct values (0 and 1) proves the leaked rowid 
+  # the buffer's memory address rather than on the (identical) file contents.
+  list [llength [lsort -unique $vals]] [lindex $vals 0]
+} {1 0}
+
+finish_test

@@ -15,6 +15,11 @@
 #
 #   ./sqlite3 test/dotcmd01.sql
 #
+.if NOT capable('vtab')
+.testcase setup
+.check ''
+.exit
+.endif
 
 .testcase setup
 .open :memory:
