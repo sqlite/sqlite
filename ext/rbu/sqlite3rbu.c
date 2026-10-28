@@ -1347,6 +1347,25 @@ static void rbuObjIterCacheIndexedCols(sqlite3rbu *p, RbuObjIter *pIter){
   if( bIndex==0 ) pIter->abIndexed = 0;
 }
 
+/*
+** Return true if table zTbl in the main database of the target is a
+** STRICT table, or false otherwise. If an error occurs, an error code
+** and message are left in the RBU handle and zero is returned.
+*/
+static int rbuTableIsStrict(sqlite3rbu *p, const char *zTbl){
+  int bStrict = 0;
+  sqlite3_stmt *pStmt = 0;
+  if( p->rc==SQLITE_OK ){
+    p->rc = prepareFreeAndCollectError(p->dbMain, &pStmt, &p->zErrmsg,
+        sqlite3_mprintf("PRAGMA main.table_list(%Q)", zTbl)
+    );
+    if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      bStrict = sqlite3_column_int(pStmt, 5);
+    }
+    rbuFinalize(p, pStmt);
+  }
+  return bStrict;
+}
 
 /*
 ** If they are not already populated, populate the pIter->azTblCol[],
@@ -1365,6 +1384,7 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
     int bRbuRowid = 0;            /* If input table has column "rbu_rowid" */
     int iOrder = 0;
     int iTnum = 0;
+    int bStrict = 0;              /* True if target is a STRICT table */
 
     /* Figure out the type of table this step will deal with. */
     assert( pIter->eType==0 );
@@ -1416,6 +1436,8 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
       );
     }
 
+    bStrict = rbuTableIsStrict(p, pIter->zTbl);
+
     /* Check that all non-HIDDEN columns in the destination table are also
     ** present in the input table. Populate the abTblPk[], azTblType[] and
     ** aiTblOrder[] arrays at the same time.
@@ -1457,6 +1479,9 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
           SWAP(char*, pIter->azTblCol[i], pIter->azTblCol[iOrder]);
         }
 
+        /* In a STRICT table, ANY means no affinity. In the non-STRICT
+        ** imposter it would mean NUMERIC, so declare it without a type. */
+        if( bStrict && sqlite3_stricmp(zType, "ANY")==0 ) zType = "";
         pIter->azTblType[iOrder] = rbuStrndup(zType, &p->rc);
         assert( iPk>=0 );
         pIter->abTblPk[iOrder] = (u8)iPk;
