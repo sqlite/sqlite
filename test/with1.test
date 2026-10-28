@@ -1090,7 +1090,7 @@ if {$::SQLITE_MAX_EXPR_DEPTH>10} {
        SELECT 3 FROM c,c,c,c,c,c,c,c,c
     )
     SELECT 4 FROM c,c,c,c,c,c,c,c,c;
-  } {1 {VIEWs and/or subqueries nested too deep}}
+  } {1 {too many FROM clause terms, max: 200}}
 }
   
 # 2019-05-22

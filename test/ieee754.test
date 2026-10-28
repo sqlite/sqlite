@@ -67,6 +67,20 @@ do_execsql_test ieee754-201 {
   SELECT ieee754(-0.0), hex(ieee754_to_blob(ieee754(-1,-3071)));
 } {ieee754(-1,-3071) 8000000000000000}
 
+# A zero mantissa gives zero, whatever the exponent.  Formerly the result
+# was Inf or an exact power of two for exponents outside -1000<Z<1000.
+#
+do_execsql_test ieee754-202 {
+  SELECT ieee754(0,999), ieee754(0,1000), ieee754(0,-1000), ieee754(0,-1074),
+         ieee754(0,10000), ieee754(0,-10000);
+} {0.0 0.0 0.0 0.0 0.0 0.0}
+
+# The -0.0 encoding uses a negative mantissa, so it is unaffected.
+#
+do_execsql_test ieee754-203 {
+  SELECT ieee754(-0.0), hex(ieee754_to_blob(ieee754(-1,-3071)));
+} {ieee754(-1,-3071) 8000000000000000}
+
 
 
 finish_test

@@ -163,6 +163,13 @@ do_test 4.1 {
 do_test 4.2 {
   list [catch { rbu close } msg] $msg
 } {1 {SQLITE_ERROR - rbu vfs not found}}
+do_test 4.3 {
+  sqlite3rbu_vacuum rbu file:test.db?vfs=tvfs
+  list [catch { rbu step } msg] $msg
+} {0 SQLITE_ERROR}
+do_test 4.4 {
+  list [catch { rbu close } msg] $msg
+} {1 {SQLITE_ERROR - rbu vfs not found}}
 tvfs delete
 
 #-------------------------------------------------------------------------

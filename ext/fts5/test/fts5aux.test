@@ -488,4 +488,85 @@ foreach {tn iCol} {
   } {1 {column index out of range}}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 16.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b UNINDEXED, detail=none);
+  INSERT INTO t1 VALUES ('one two zeta three four', 'x y zeta');
+}
+
+do_execsql_test 16.1 {
+  SELECT snippet(t1, -1, '[', ']', '..', 3) FROM t1('zeta');
+} {{one two [zeta]..}}
+
+do_execsql_test 16.2 {
+  SELECT highlight(t1, 1, '[', ']') FROM t1('zeta');
+} {{x y zeta}}
+
+do_execsql_test 16.3 {
+  SELECT highlight(t1, 0, '[', ']') FROM t1('zeta');
+} {{one two [zeta] three four}}
+
+do_execsql_test 16.4 {
+  SELECT highlight(t1, -1, '[', ']') FROM t1('zeta');
+} {{}}
+
+#-------------------------------------------------------------------------
+# Test that phrase instances reported to auxiliary functions are correct
+# for queries with AND and NOT nodes that are not the root of the
+# expression.
+#
+#   17.1.*: When a non-root AND node visits a row that does not match, only
+#           the phrases of its sub-tree that point to that row are cleared.
+#           Phrases that have already advanced to a later row (e.g. "z"
+#           below) keep their instances for that row.
+#
+#   17.2.*: If the LHS of a NOT matches no rows at all, the instances of
+#           phrases on its RHS are not reported for rows matched by other
+#           parts of the expression.
+#
+#   17.3.*: Combination of the two above, with a NOT below an AND.
+#
+reset_db
+do_execsql_test 17.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  INSERT INTO t1(rowid, a) VALUES (1, 'x y'), (2, 'x z');
+  CREATE VIRTUAL TABLE t3 USING fts5(a);
+  INSERT INTO t3(rowid, a) VALUES (1, 'g b');
+  CREATE VIRTUAL TABLE t4 USING fts5(a);
+  INSERT INTO t4(rowid, a) VALUES (1, 'y x'), (2, 'g b'), (3, 'x y');
+}
+
+foreach {tn order res1 res3} {
+  1 ASC  {2 {[x] [z]}} {2 {[g] b} 3 {[x y]}}
+  2 DESC {2 {[x] [z]}} {3 {[x y]} 2 {[g] b}}
+} {
+  set M [list %ORDER% $order]
+  do_execsql_test 17.1.$tn.1 [string map $M {
+    SELECT rowid, highlight(t1, 0, '[', ']') FROM t1('x AND (z OR "y x")')
+    ORDER BY rowid %ORDER%
+  }] $res1
+  do_execsql_test 17.1.$tn.2 [string map $M {
+    SELECT rowid, highlight(t1, 0, '[', ']') 
+    FROM t1('(x AND (z OR "y x")) OR zz') ORDER BY rowid %ORDER%
+  }] $res1
+  do_execsql_test 17.3.$tn [string map $M {
+    SELECT rowid, highlight(t4, 0, '[', ']') 
+    FROM t4('g OR ("x y" AND (y OR (zz NOT b)))') ORDER BY rowid %ORDER%
+  }] $res3
+}
+
+do_execsql_test 17.2.1 {
+  SELECT rowid, highlight(t3, 0, '[', ']') FROM t3('g OR (zz NOT b)');
+} {1 {[g] b}}
+do_execsql_test 17.2.2 {
+  INSERT INTO t3(rowid, a) VALUES (2, 'zz');
+  SELECT rowid, highlight(t3, 0, '[', ']') FROM t3('g OR (zz NOT b)');
+} {1 {[g] b} 2 {[zz]}}
+do_execsql_test 17.2.3 {
+  SELECT rowid, highlight(t3, 0, '[', ']') FROM t3('g OR (zz NOT b)')
+  ORDER BY rowid DESC;
+} {2 {[zz]} 1 {[g] b}}
+
 finish_test

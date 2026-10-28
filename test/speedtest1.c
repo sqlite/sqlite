@@ -2534,6 +2534,65 @@ void testset_orm(void){
 }
 
 /*
+** A testset to measure the performance impact of OR-index coding mistake
+** identified by https://sqlite.org/bugs/info/7be1ae492ca65354.
+*/
+void testset_orindex(void){
+  unsigned n;
+
+  speedtest1_begin_test(100, "Prepare database schema");
+  speedtest1_exec(
+    "CREATE TABLE t1(a INT, b INT, c INT, d INT);\n"
+    "CREATE INDEX t1ac ON t1(a,c);\n"
+    "CREATE INDEX t1ba ON t1(b,a);\n"
+    "CREATE TABLE x1(a INT, b INT);\n"
+    "CREATE TABLE x2(a INT);\n"
+    "CREATE TABLE x3(a INT);\n"
+    "ANALYZE sqlite_schema;\n"
+    "INSERT INTO sqlite_stat1 VALUES\n"
+    "  ('t1','t1ac','1000000 100 10'),\n"
+    "  ('t1','t1ba','1000000 100 5'),\n"
+    "  ('x1',NULL,'100000'),\n"
+    "  ('x2',NULL,'5'),\n"
+    "  ('x3',NULL,'5');\n"
+    "ANALYZE sqlite_schema;"
+  );
+  speedtest1_end_test();
+
+  n = 60*g.szTest;
+  speedtest1_begin_test(110, "Load data (%d rows)", n);
+  speedtest1_prepare(
+    "WITH RECURSIVE c(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM c WHERE i<?1)"
+    "  INSERT INTO t1 SELECT i%%7, i%%5, i%%11, i FROM c;"
+  );
+  sqlite3_bind_int(g.pStmt, 1, n);
+  speedtest1_run();
+  speedtest1_prepare(
+    "WITH RECURSIVE c(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM c WHERE i<?1)"
+    "  INSERT INTO x1 SELECT i%%13, i%%5 FROM c;"
+  );
+  sqlite3_bind_int(g.pStmt, 1, n/4);
+  speedtest1_run();
+  speedtest1_exec(
+    "INSERT INTO x2 VALUES(1),(2),(3);\n"
+    "INSERT INTO x3 VALUES(2),(4);\n"
+  );
+  speedtest1_end_test();
+
+  speedtest1_begin_test(110, "Query using OR-index");
+  speedtest1_exec(
+    "SELECT "
+    " (SELECT count(*) FROM x1, x2, x3, t1"
+    "   WHERE x1.a=t1.c AND ((t1.b=x1.b AND t1.a=x2.a) OR t1.a=x3.a))=="
+           "(SELECT count(*) FROM x1, x2, x3, t1 NOT INDEXED"
+           "  WHERE x1.a=t1.c AND ((t1.b=x1.b AND t1.a=x2.a) OR t1.a=x3.a)),"
+           "(SELECT count(*) FROM x1, x2, x3, t1"
+           "  WHERE x1.a=t1.c AND ((t1.b=x1.b AND t1.a=x2.a) OR t1.a=x3.a))>0;"
+  );
+  speedtest1_end_test();
+}
+
+/*
 */
 void testset_trigger(void){
   int jj, ii;
@@ -2995,7 +3054,7 @@ int main(int argc, char **argv){
 
   /* "mix1" is a macro testset: */
   static char zMix1Tests[] =
-    "main,orm/25,cte/20,json,fp/3,parsenumber/25"
+    "main,orm/25,cte/20,json,fp/3,parsenumber/25,orindex"
 #ifdef SQLITE_ENABLE_RTREE
     ",rtree/10"
 #endif
@@ -3369,6 +3428,8 @@ int main(int argc, char **argv){
       testset_trigger();
     }else if( strcmp(zThisTest,"parsenumber")==0 ){
       testset_parsenumber();
+    }else if( strcmp(zThisTest,"orindex")==0 ){
+      testset_orindex();
     }else if( strcmp(zThisTest,"rtree")==0 ){
 #ifdef SQLITE_ENABLE_RTREE
       testset_rtree(6, 147);

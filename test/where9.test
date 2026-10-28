@@ -1001,4 +1001,64 @@ do_execsql_test where9-11.1 {
       OR (a=2 AND (SELECT 4 FROM t2,(SELECT 5 FROM t1 ORDER BY a) WHERE a));
 } {}
 
+# https://sqlite.org/bugs/info/7be1ae492ca65354
+# When the WhereOrSet is full, whereOrInsert() should evict the most
+# expensive entry, not the least expensive.  Here the candidate OR-costs
+# for t are {x1,x3}:91, {x1}:200, {x1,x2,x3}:63 and {x2,x3}:101.  Only the
+# last of these allows the large table x1 to be in the innermost loop,
+# but it used to be discarded in favor of {x1}:200.
+#
+ifcapable autoindex {
+  if {[permutation] ne "no_optimization"} {
+    reset_db
+    do_execsql_test where9-12.0 {
+      CREATE TABLE t(a INT, b INT, c INT, d INT);
+      CREATE INDEX t_ac ON t(a,c);
+      CREATE INDEX t_ba ON t(b,a);
+      CREATE TABLE x1(a INT, b INT);
+      CREATE TABLE x2(a INT);
+      CREATE TABLE x3(a INT);
+      ANALYZE sqlite_schema;
+      INSERT INTO sqlite_stat1 VALUES
+        ('t','t_ac','1000000 100 10'),
+        ('t','t_ba','1000000 100 5'),
+        ('x1',NULL,'100000'),
+        ('x2',NULL,'5'),
+        ('x3',NULL,'5');
+      ANALYZE sqlite_schema;
+    } {}
+    do_eqp_test where9-12.1 {
+      SELECT count(*) FROM x1, x2, x3, t
+       WHERE x1.a=t.c AND ((t.b=x1.b AND t.a=x2.a) OR t.a=x3.a);
+    } {
+      QUERY PLAN
+      |--SCAN x2
+      |--SCAN x3
+      |--MULTI-INDEX OR
+      |  |--INDEX 1
+      |  |  `--SEARCH t USING INDEX t_ac (a=?)
+      |  `--INDEX 2
+      |     `--SEARCH t USING INDEX t_ac (a=?)
+      |--BLOOM FILTER ON x1 (a=?)
+      `--SEARCH x1 USING AUTOMATIC COVERING INDEX (a=?)
+    }
+    do_execsql_test where9-12.2 {
+      WITH RECURSIVE c(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM c WHERE i<200)
+      INSERT INTO t SELECT i%7, i%5, i%11, i FROM c;
+      WITH RECURSIVE c(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM c WHERE i<50)
+      INSERT INTO x1 SELECT i%13, i%5 FROM c;
+      INSERT INTO x2 VALUES(1),(2),(3);
+      INSERT INTO x3 VALUES(2),(4);
+      SELECT
+        (SELECT count(*) FROM x1, x2, x3, t
+          WHERE x1.a=t.c AND ((t.b=x1.b AND t.a=x2.a) OR t.a=x3.a))
+        ==
+        (SELECT count(*) FROM x1, x2, x3, t NOT INDEXED
+          WHERE x1.a=t.c AND ((t.b=x1.b AND t.a=x2.a) OR t.a=x3.a)),
+        (SELECT count(*) FROM x1, x2, x3, t
+          WHERE x1.a=t.c AND ((t.b=x1.b AND t.a=x2.a) OR t.a=x3.a))>0;
+    } {1 1}
+  }
+}
+
 finish_test

@@ -142,4 +142,57 @@ do_eqp_test 111 {
         `--SCAN generate_series VIRTUAL TABLE INDEX 0x17:
 }
 
+
+# Bug 2026-10-18T23:46:25Z
+#
+# When a compound is coded as a merge of two smaller compounds,
+# the smaller compounds must remove duplicates using the collating
+# sequence of the whole compound, not the collating sequence
+# of their own SELECTs.
+#
+# Problem bisects to check-in 2021-12-30T00:37:11.863Z (released 3.38.0):
+#
+#     When implementing a multi-way compound SELECT using merge,
+#     try to balance the merge tree. 
+#
+optimization_control db all on
+do_execsql_test 200 {
+  CREATE TABLE t0(c0);
+  CREATE TABLE t1(c0 COLLATE RTRIM);
+  INSERT INTO t1 VALUES (''), (' ');
+  SELECT quote(x) FROM (
+    SELECT c0 AS x FROM t0 UNION SELECT 1 UNION SELECT 2 UNION SELECT c0 FROM t1
+  );
+} {1 2 '' {' '}}
+do_execsql_test 210 {
+  SELECT quote(c0) FROM (
+    SELECT c0 FROM t0 UNION SELECT 1 UNION SELECT 2 UNION SELECT c0 FROM t1
+    ORDER BY 1
+  );
+} {1 2 '' {' '}}
+do_execsql_test 220 {
+  SELECT quote(x) FROM (
+    SELECT 1 COLLATE BINARY AS x UNION SELECT 2 UNION SELECT ''
+    UNION SELECT ' ' COLLATE RTRIM EXCEPT SELECT 9
+  );
+} {1 2 '' {' '}}
+do_execsql_test 230 {
+  CREATE TABLE t2(c);
+  INSERT INTO t2 VALUES ('a'), ('A');
+  SELECT c || '' FROM t2 UNION SELECT 'b'
+    UNION ALL SELECT 'x' COLLATE NOCASE ORDER BY 1;
+} {a b x}
+do_execsql_test 240 {
+  SELECT 'a','b' UNION SELECT 'A','B'
+    UNION ALL SELECT 'x' COLLATE NOCASE, 'y' COLLATE NOCASE ORDER BY 1;
+} {A B x y}
+optimization_control db BalancedMerge off
+do_execsql_test 250 {
+  SELECT quote(c0) FROM (
+    SELECT c0 FROM t0 UNION SELECT 1 UNION SELECT 2 UNION SELECT c0 FROM t1
+    ORDER BY 1
+  );
+} {1 2 '' {' '}}
+optimization_control db all on
+
 finish_test

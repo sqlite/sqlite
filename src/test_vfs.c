@@ -554,6 +554,7 @@ static int tvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
       { SQLITE_FCNTL_BEGIN_ATOMIC_WRITE, "BEGIN_ATOMIC_WRITE" },
       { SQLITE_FCNTL_COMMIT_ATOMIC_WRITE, "COMMIT_ATOMIC_WRITE" },
       { SQLITE_FCNTL_ZIPVFS, "ZIPVFS" },
+      { SQLITE_FCNTL_LOCK_TIMEOUT, "LOCK_TIMEOUT" },
     };
     int i;
     for(i=0; i<sizeof(aF)/sizeof(aF[0]); i++){

@@ -348,5 +348,30 @@ do_eqp_test 9.5e {
   *SEARCH t1 USING COVERING INDEX i2*
 }
 
+# Bug 2026-10-16T22:07:15Z
+#
+# Problem bisects to check-in 18a99d9cfbc3a041 (2023-02-13 18:37:48.912).
+# Prior to fix, tests 10.1 and 10.2 would fail.
+#
+reset_db
+do_execsql_test 10.0 {
+  CREATE TABLE t1(a INT PRIMARY KEY, b INT);
+  INSERT INTO t1 VALUES(1,1);
+  CREATE TABLE t2(c INT PRIMARY KEY, d INT);
+  INSERT INTO t2 VALUES(1,1);
+  ANALYZE;
+}
+do_execsql_test 10.1 {
+  SELECT count(*) FROM t1, t2 WHERE a=c AND (a,b) IN ((1,1), (1,2), (1,3));
+} 1
+do_execsql_test 10.2 {
+  SELECT t1.*     FROM t1, t2 WHERE a=c AND (a,b) IN ((1,1), (1,2), (1,3));
+} {1 1}
+do_execsql_test 10.3 {
+  SELECT t2.*     FROM t1, t2 WHERE a=c AND (a,b) IN ((1,1), (1,2), (1,3));
+} {1 1}
+do_execsql_test 10.4 {
+  SELECT *        FROM t1, t2 WHERE a=c AND (a,b) IN ((1,1), (1,2), (1,3));
+} {1 1 1 1}
 
 finish_test

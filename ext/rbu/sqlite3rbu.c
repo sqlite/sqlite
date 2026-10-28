@@ -2891,7 +2891,7 @@ static void rbuOpenDatabase(sqlite3rbu *p, sqlite3 *dbMain, int *pbRetry){
     p->nRbu = 0;
     p->pRbuFd = 0;
     rc = sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
-    if( rc!=SQLITE_NOTFOUND ) p->rc = rc;
+    if( rc!=SQLITE_NOTFOUND || p->pRbuFd==0 ) p->rc = rc;
     if( p->eStage>=RBU_STAGE_MOVE ){
       bOpen = 1;
     }else{

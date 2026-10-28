@@ -293,5 +293,75 @@ do_execsql_test 6.4 {
   300 {} b3 c3.1 {}
 }
 
+#-------------------------------------------------------------------------
+# Forum post c9c5ddb17e (2026-10-21).
+#
+# A contentless_unindexed=1 table with locale=1 and an UNINDEXED column
+# could not be written to, as the %_content table was created with
+# locale columns for the indexed columns, which are not stored.
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE h USING fts5(a, b UNINDEXED, 
+      locale=1, content='', contentless_unindexed=1
+  );
+  INSERT INTO h(rowid, a, b) VALUES (4, 'p q', 'r');
+  SELECT rowid, * FROM h;
+} {4 {} r}
+
+do_execsql_test 7.1 {
+  SELECT sql FROM sqlite_schema WHERE name='h_content';
+} {{CREATE TABLE 'h_content'(id INTEGER PRIMARY KEY, c1)}}
+
+reset_db
+do_execsql_test 7.2 {
+  CREATE VIRTUAL TABLE h USING fts5(a, b UNINDEXED, c, d UNINDEXED,
+      locale=1, content='', contentless_unindexed=1, contentless_delete=1
+  );
+  INSERT INTO h(rowid, a, b, c, d) VALUES
+      (1, 'p q', 'b1', 'x y', 'd1'),
+      (2, fts5_locale('en', 's t'), 'b2', 'x z', fts5_locale('en', 'd2')),
+      (3, 'v w', fts5_locale('fr', 'b3'), fts5_locale('fr', 'y z'), 'd3');
+  SELECT rowid, * FROM h;
+} {
+  1 {} b1 {} d1
+  2 {} b2 {} d2
+  3 {} b3 {} d3
+}
+
+do_execsql_test 7.3 {
+  SELECT rowid, b, d FROM h('q');
+  SELECT rowid, b, d FROM h('t');
+  SELECT rowid, b, d FROM h('c:z');
+} {1 b1 d1   2 b2 d2   2 b2 d2 3 b3 d3}
+
+do_execsql_test 7.4 {
+  UPDATE h SET b='b1.1' WHERE rowid=1;
+  UPDATE h SET a='m n', c='o' WHERE rowid=3;
+  DELETE FROM h WHERE rowid=2;
+  SELECT rowid, * FROM h;
+} {
+  1 {} b1.1 {} d1
+  3 {} b3 {} d3
+}
+
+do_execsql_test 7.5 {
+  SELECT rowid FROM h('n');
+  INSERT INTO h(h) VALUES('integrity-check');
+  PRAGMA integrity_check;
+} {3 ok}
+
+# A normal content table with locale=1 still stores locales.
+reset_db
+do_execsql_test 7.6 {
+  CREATE VIRTUAL TABLE h USING fts5(a, b UNINDEXED, locale=1);
+  INSERT INTO h(rowid, a, b) VALUES (4, fts5_locale('en', 'p q'), 'r');
+  SELECT sql FROM sqlite_schema WHERE name='h_content';
+  SELECT rowid, a, b, fts5_get_locale(h, 0) FROM h;
+} {
+  {CREATE TABLE 'h_content'(id INTEGER PRIMARY KEY, c0, c1, l0)}
+  4 {p q} r en
+}
+
 finish_test
 

@@ -671,7 +671,7 @@ int sqlite3VdbeMemIntegerify(Mem*);
 double sqlite3VdbeRealValue(Mem*);
 int sqlite3MemRealValueRC(Mem*, double*);
 int sqlite3VdbeBooleanValue(Mem*, int ifNull);
-void sqlite3VdbeIntegerAffinity(Mem*);
+void sqlite3VdbeIntegerAffinity(Mem*,int bFromText);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemNumerify(Mem*);
 int sqlite3VdbeMemCast(Mem*,u8,u8);

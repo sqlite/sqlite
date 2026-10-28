@@ -99,6 +99,69 @@ foreach_detail_mode $testprefix {
     3 {0.0.0 0.0.1 0.0.2}
     4 {0.0.0 0.0.1 0.0.2 0.1.0}
   }
+
+  reset_db
+  do_execsql_test 2.0 {
+    CREATE VIRTUAL TABLE f USING fts5(a, tokendata=1);
+    INSERT INTO f(f, rank) VALUES('pgsz', 64);
+    WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100)
+      INSERT INTO f(rowid, a) SELECT i, iif(i<100, 'u0', 'v') FROM s;
+  }
+
+  do_execsql_test 2.1 {
+    SELECT count(*) FROM f('u1');
+  } {0}
+
+  do_execsql_test 2.2 {
+    PRAGMA integrity_check
+  } {ok}
+
+  reset_db
+  sqlite3_fts5_register_origintext db
+  do_execsql_test 3.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a, tokendata=1,
+      tokenize="origintext unicode61", detail=%DETAIL%
+    );
+    INSERT INTO ft(ft, rank) VALUES('pgsz', 64);
+    INSERT INTO ft(ft, rank) VALUES('automerge', 0);
+  }
+
+  do_test 3.1 {
+    for {set s 0} {$s < 4} {incr s} {
+      execsql {
+        WITH r(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i<2000)
+        INSERT INTO ft(rowid, a)
+          SELECT i*4+$s, iif(i%2, 'xyz', 'Xyz') FROM r;
+      }
+    }
+    execsql { SELECT count(*) FROM ft_idx WHERE pgno & 1 }
+  } {8}
+
+  proc reads {} {
+    db one {SELECT ft FROM ft WHERE ft MATCH '*reads'}
+  }
+
+  do_test 3.2 {
+    set nRead [reads]
+    set res [execsql { SELECT rowid FROM ft('xyz') }]
+    set nReadFull [expr [reads] - $nRead]
+    llength $res
+  } {8000}
+
+  do_execsql_test 3.3 {
+    SELECT rowid FROM ft('xyz') WHERE rowid BETWEEN 7990 AND 8000
+  } {7990 7991 7992 7993 7994 7995 7996 7997 7998 7999 8000}
+
+  do_test 3.4 {
+    set nRead [reads]
+    execsql { SELECT rowid FROM ft('xyz') WHERE rowid BETWEEN 7990 AND 8000 }
+    set nReadRange [expr [reads] - $nRead]
+    expr {$nReadRange*4 < $nReadFull}
+  } {1}
+
+  do_execsql_test 3.5 {
+    INSERT INTO ft(ft) VALUES('integrity-check');
+  }
 }
 
 finish_test

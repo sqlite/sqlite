@@ -1,0 +1,199 @@
+# 2026 October 23
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for race conditions between a connection with a read-only *-shm
+# file and a writer. 
+#
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix walroshm
+
+ifcapable !wal {finish_test ; return }
+
+
+#-------------------------------------------------------------------------
+# Test that a connection with a read-only *-shm file does not return
+# SQLITE_READONLY_CANTINIT if a writer appends to the wal file between the
+# time the reader reads the wal-index header and the time it scans the
+# aReadMark[] array in walTryBeginRead(). This test runs for all builds,
+# but because it depends on intercepting an xFileControl(LOCK_TIMEOUT)
+# call it is only effective in SQLITE_ENABLE_SETLK_TIMEOUT builds.
+#
+
+# While $::ro is true, all xShmMap calls return SQLITE_READONLY, which
+# causes the wal module to set WAL_SHM_RDONLY. 
+#
+# While $::count is true, LOCK_TIMEOUT file-controls are counted in
+# $::nCall. When the count reaches $::iInject, connection [db] writes to
+# table t2 and then starts a read transaction, which moves aReadMark[1]
+# past the snapshot that the reader may have just loaded from the 
+# wal-index. $::bInjected is set to true if this happens.
+#
+set ::ro 0
+set ::count 0
+proc tvfs_cb {method file args} {
+  switch -- $method {
+    xShmMap {
+      if {$::ro} { return SQLITE_READONLY }
+    }
+    xFileControl {
+      if {$::count && [lindex $args 0]=="LOCK_TIMEOUT"} {
+        incr ::nCall
+        if {$::nCall==$::iInject} {
+          set ::count 0
+          set ::ro 0
+          db eval {
+            INSERT INTO t2 VALUES(2, 200);
+            SELECT count(*) FROM t2;
+          }
+          set ::ro 1
+          set ::count 1
+          set ::bInjected 1
+        }
+      }
+    }
+  }
+  return SQLITE_OK
+}
+
+db close
+testvfs tvfs
+tvfs filter {xShmMap xFileControl}
+tvfs script tvfs_cb
+
+# Iteration $i injects the write into the $i'th LOCK_TIMEOUT file-control
+# made by the SELECT statement run by [db2]. The loop stops after the
+# first iteration in which the SELECT makes fewer than $i such calls.
+#
+for {set i 1} {$i<100} {incr i} {
+  forcedelete test.db test.db-wal test.db-shm
+  sqlite3 db test.db -vfs tvfs
+  do_execsql_test 1.$i.0 {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(k INTEGER PRIMARY KEY, v INT);
+    CREATE TABLE t2(k INTEGER PRIMARY KEY, v INT);
+    INSERT INTO t1 VALUES(1, 100);
+    INSERT INTO t2 VALUES(1, 100);
+  } {wal}
+
+  # Open the read-only connection and load the schema, so that the shm is
+  # mapped read-only and the next query does not need to reload the schema.
+  #
+  set ::ro 1
+  sqlite3 db2 test.db -vfs tvfs -readonly 1
+  do_execsql_test -db db2 1.$i.1 {
+    SELECT v FROM t1 WHERE k=1;
+  } {100}
+
+  set ::iInject $i
+  set ::nCall 0
+  set ::bInjected 0
+  set ::count 1
+  do_test 1.$i.2 {
+    catchsql { SELECT v FROM t1 WHERE k=1 } db2
+  } {0 100}
+  set ::count 0
+  set ::ro 0
+
+  db2 close
+  db close
+  if {$::bInjected==0} break
+}
+
+tvfs delete
+
+#-------------------------------------------------------------------------
+# Test that the reader does not return SQLITE_READONLY_RECOVERY if a
+# writer commits a transaction while the reader is reading the
+# wal-index header in walIndexTryHdr(). This depends on intercepting
+# xShmBarrier() calls, so it is effective in all builds.
+
+# While $::ro2 is true, all xShmMap calls return SQLITE_READONLY, which
+# causes the wal module to set WAL_SHM_RDONLY.
+#
+# While $::count2 is true, xShmBarrier calls are counted in $::nCall2.
+# When the count reaches $::iInject2, connection [db] commits a write to
+# table t2, which modifies the wal-index header while the reader may be
+# in the middle of reading it. $::bInjected2 is set to true if this
+# happens.
+#
+set ::ro2 0
+set ::count2 0
+proc tvfs2_cb {method file args} {
+  switch -- $method {
+    xShmMap {
+      if {$::ro2} { return SQLITE_READONLY }
+    }
+    xShmBarrier {
+      if {$::count2} {
+        incr ::nCall2
+        if {$::nCall2==$::iInject2} {
+          set ::count2 0
+          set ::ro2 0
+          db eval { INSERT INTO t2 VALUES(2, 200) }
+          set ::ro2 1
+          set ::count2 1
+          set ::bInjected2 1
+        }
+      }
+    }
+  }
+  return SQLITE_OK
+}
+
+testvfs tvfs2
+tvfs2 filter {xShmMap xShmBarrier}
+tvfs2 script tvfs2_cb
+
+# Iteration $i injects the write into the $i'th xShmBarrier call made by
+# the SELECT statement run by [db2]. The loop stops after the first
+# iteration in which the SELECT makes fewer than $i such calls.
+#
+for {set i 1} {$i<100} {incr i} {
+  forcedelete test.db test.db-wal test.db-shm
+  sqlite3 db test.db -vfs tvfs2
+  do_execsql_test 2.$i.0 {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(k INTEGER PRIMARY KEY, v INT);
+    CREATE TABLE t2(k INTEGER PRIMARY KEY, v INT);
+    INSERT INTO t1 VALUES(1, 100);
+    INSERT INTO t2 VALUES(1, 100);
+  } {wal}
+
+  # Open the read-only connection and load the schema, so that the shm is
+  # mapped read-only and the next query does not need to reload the schema.
+  #
+  set ::ro2 1
+  sqlite3 db2 test.db -vfs tvfs2 -readonly 1
+  do_execsql_test -db db2 2.$i.1 {
+    SELECT v FROM t1 WHERE k=1;
+  } {100}
+
+  set ::iInject2 $i
+  set ::nCall2 0
+  set ::bInjected2 0
+  set ::count2 1
+  do_test 2.$i.2 {
+    catchsql { SELECT v FROM t1 WHERE k=1 } db2
+  } {0 100}
+  set ::count2 0
+  set ::ro2 0
+
+  db2 close
+  db close
+  if {$::bInjected2==0} break
+}
+
+tvfs2 delete
+finish_test

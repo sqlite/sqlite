@@ -256,4 +256,59 @@ do_execsql_test 8100 {
   SELECT count(*) FROM (SELECT x FROM t ORDER BY x COLLATE decimal);
 } {5000}
 
+# Bug 2026-10-18T14:25:03Z: decimal_add() and decimal_sub() with a 
+# NULL argument should return NULL, not raise an "out of memory" error.
+#
+do_execsql_test 8200 {
+  SELECT quote(decimal_add(NULL,1)), quote(decimal_add(1,NULL)),
+         quote(decimal_add(NULL,NULL)),
+         quote(decimal_sub(NULL,1)), quote(decimal_sub(1,NULL)),
+         quote(decimal_sub(NULL,NULL)),
+         quote(decimal_mul(NULL,2)), quote(decimal_mul(2,NULL));
+} {NULL NULL NULL NULL NULL NULL NULL NULL}
+do_execsql_test 8210 {
+  CREATE TABLE t2(x,y);
+  INSERT INTO t2 VALUES(1,2),(NULL,3),(4,NULL),('1.5','2.25');
+  SELECT quote(decimal_add(x,y)), quote(decimal_sub(x,y)) FROM t2;
+} {'3' '-1' NULL NULL NULL NULL '3.75' '-0.75'}
+
+# Bug 2026-10-19T06:35:26Z (c8ec3b0a1fddd7d2): decimal_cmp() and the
+# decimal collating sequence must ignore leading zeros in the integer
+# part, such as those left behind when an exponent is applied.
+#
+do_execsql_test 8300 {
+  SELECT decimal_cmp('3e-1','0.5'), decimal_cmp('0e1','0.5'),
+         decimal_cmp('0.000001e34','1e28'), decimal_cmp('0e-10','0'),
+         decimal_cmp(decimal('3e-1'), decimal('0.5'));
+} {-1 -1 0 0 -1}
+do_execsql_test 8310 {
+  SELECT decimal_cmp(decimal_exp('0.5'),'0.5'),
+         decimal_cmp('0.5',decimal_exp('0.5'));
+} {0 0}
+do_execsql_test 8320 {
+  SELECT decimal_cmp('-3e-1','-0.5'), decimal_cmp('-0.5','-3e-1'),
+         decimal_cmp('0.04e1','3e-1'), decimal_cmp('000123','1.23e2'),
+         decimal_cmp('12e-1','1.2'), decimal_cmp('12e-1','1.25'),
+         decimal_cmp('0.000001e34','1.0000000000000000000000000001e28');
+} {1 -1 1 0 0 -1 -1}
+do_execsql_test 8330 {
+  CREATE TABLE price(id INTEGER PRIMARY KEY, amount TEXT COLLATE decimal UNIQUE);
+  INSERT INTO price(amount) VALUES('1e28');
+}
+do_catchsql_test 8331 {
+  INSERT INTO price(amount) VALUES('0.000001E+34');
+} {1 {UNIQUE constraint failed: price.amount}}
+do_execsql_test 8332 {
+  INSERT INTO price(amount)
+    VALUES('0.5'),('0e1'),('2'),('0.25'),('3e-1'),('0.04e1'),('1');
+  SELECT group_concat(amount, ' ') FROM (SELECT amount FROM price ORDER BY amount);
+} {{0e1 0.25 3e-1 0.04e1 0.5 1 2 1e28}}
+do_execsql_test 8333 {
+  DELETE FROM price WHERE amount <= '0.5';
+  SELECT group_concat(amount, ' ') FROM (SELECT amount FROM price ORDER BY id);
+} {{1e28 2 1}}
+do_execsql_test 8334 {
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test

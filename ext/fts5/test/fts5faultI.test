@@ -302,7 +302,7 @@ ifcapable foreignkey {
 
   faultsim_save_and_close
 
-  do_faultsim_test 11 -faults oom* -prep {
+  do_faultsim_test 12 -faults oom* -prep {
     faultsim_restore_and_reopen
     execsql {
       PRAGMA foreign_keys = 1;

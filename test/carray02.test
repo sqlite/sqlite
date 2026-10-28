@@ -159,4 +159,25 @@ do_test 3.1 {
   list [sqlite3_finalize $STMT] [sqlite3_errmsg db]
 } {SQLITE_ERROR {unknown datatype: 'apples'}}
 
+# Binding an empty array with SQLITE_TRANSIENT used to fail with
+# SQLITE_NOMEM, leaving any prior binding in place.
+#
+set STMT [sqlite3_prepare_v2 db {SELECT count(*) FROM carray(?1)} -1 TAIL]
+foreach {tn opts} {
+  1 {-int32}
+  2 {-int64}
+  3 {-double}
+  4 {-text}
+  5 {-blob}
+  6 {-v2 -int32}
+  7 {-v2 -text}
+} {
+  do_test 4.$tn {
+    sqlite3_carray_bind -transient -int32 $STMT 1 1 2 3
+    set rc [catch {sqlite3_carray_bind -transient {*}$opts $STMT 1} msg]
+    list $rc $msg [run_stmt $STMT]
+  } {0 {} 0}
+}
+sqlite3_finalize $STMT
+
 finish_test

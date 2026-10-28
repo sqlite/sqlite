@@ -799,6 +799,58 @@ do_execsql_test 1523ck {
    LIMIT 3;
 } {9223372036854775805 9223372036854775806 9223372036854775807}
 
+# Bug 2026-10-17T09:24:09Z
+#
+breakpoint
+do_execsql_test 1530 {
+  SELECT value FROM generate_series(1,10) ORDER BY value DESC LIMIT 3;
+} {10 9 8}
+
+# Bug 2026-10-26T12:55:22Z
+#
+# The "value" column has no affinity, so a TEXT or BLOB operand in a
+# constraint on "value" must not be converted into a number.  Every
+# INTEGER is less than every TEXT or BLOB.
+#
+do_execsql_test 1540 {
+  SELECT value FROM generate_series(1,10) WHERE value='3';
+} {}
+do_execsql_test 1541 {
+  SELECT value FROM generate_series(1,10) WHERE value>='3';
+} {}
+do_execsql_test 1542 {
+  SELECT value FROM generate_series(1,10) WHERE value>'3.5';
+} {}
+do_execsql_test 1543 {
+  SELECT value FROM generate_series(1,10) WHERE value<'5';
+} {1 2 3 4 5 6 7 8 9 10}
+do_execsql_test 1544 {
+  SELECT value FROM generate_series(1,10) WHERE value<='a';
+} {1 2 3 4 5 6 7 8 9 10}
+do_execsql_test 1545 {
+  SELECT value FROM generate_series(1,10) WHERE value>x'00';
+} {}
+do_execsql_test 1546 {
+  SELECT value FROM generate_series(1,10) WHERE value=x'33';
+} {}
+do_execsql_test 1547 {
+  SELECT value FROM generate_series(1,10) WHERE value>3 AND value<'5';
+} {4 5 6 7 8 9 10}
+do_execsql_test 1548 {
+  SELECT value FROM generate_series(10,1,-1) WHERE value<'5' AND value>=7;
+} {10 9 8 7}
+do_execsql_test 1549 {
+  SELECT value FROM generate_series(1,10) WHERE value IN ('3',4,'5');
+} {4}
+do_execsql_test 1550 {
+  CREATE TABLE t1550(x);
+  INSERT INTO t1550 VALUES('3'),(3),(x'33'),(3.0);
+  SELECT quote(x), value FROM t1550 CROSS JOIN generate_series(1,10)
+   WHERE value=t1550.x;
+} {3 3 3.0 3}
+do_execsql_test 1551 {
+  SELECT value, value='3' FROM generate_series(3,3);
+} {3 0}
 
 #------------------------------------------------------------------------
 #

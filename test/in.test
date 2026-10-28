@@ -897,4 +897,22 @@ do_execsql_test in-23.1 {
   SELECT * FROM t5;
 } 1
 
+#-------------------------------------------------------------------------
+# Report: https://sqlite.org/bugs/forumpost/6cdcfba787
+#
+reset_db
+do_execsql_test in-24.0 {
+  CREATE TABLE t1(c TEXT);
+  INSERT INTO t1 VALUES('abc');
+}
+
+do_execsql_test in-24.1 {
+  SELECT * FROM t1 WHERE c IN ('ABC' COLLATE nocase);
+}
+
+do_execsql_test in-24.2 {
+  SELECT * FROM t1 WHERE c IN (+('ABC' COLLATE nocase));
+}
+
 finish_test
+

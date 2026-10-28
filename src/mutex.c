@@ -255,6 +255,12 @@ int sqlite3MutexInit(void){
     pTo->xMutexNotheld = pFrom->xMutexNotheld;
     sqlite3MemoryBarrier();
     pTo->xMutexAlloc = pFrom->xMutexAlloc;
+  }else{
+    /* Another thread may have just installed the default methods above.
+    ** This barrier pairs with the one prior to setting xMutexAlloc, so
+    ** that the load of xMutexInit below cannot be satisfied before the
+    ** load of xMutexAlloc on processors with weak memory ordering. */
+    sqlite3MemoryBarrier();
   }
   assert( sqlite3GlobalConfig.mutex.xMutexInit );
   rc = sqlite3GlobalConfig.mutex.xMutexInit();
