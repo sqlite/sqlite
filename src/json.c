@@ -1874,6 +1874,7 @@ json_parse_restart:
         }
       }else{
         if( !sqlite3Isdigit(z[i+1]) ){
+          assert( z[i]=='-' || z[i]=='+' );
           /* JSON5 allows for "+Infinity" and "-Infinity" using exactly
           ** that case.  SQLite also allows these in any case and it allows
           ** "+inf" and "-inf". */
@@ -1893,6 +1894,18 @@ json_parse_restart:
             t |= 0x01;
             goto parse_number_2;
           }
+#if 0
+          /* Full JSON5 compliance requires support for +NaN and -NaN, even
+          ** though the extra prefix is not used for anything.  Enable this
+          ** block of code to get SQLite to do the same thing.  It never
+          ** has in an official release, and the only accomplishment of
+          ** enabling it would be to take up a few bytes more code space. */
+          if( sqlite3StrNICmp(&z[i+1],"NaN",3)==0 ){
+            pParse->hasNonstd = 1;
+            jsonBlobAppendOneByte(pParse, JSONB_NULL);
+            return i+4;
+          }
+#endif
           pParse->iErr = i;
           return -1;
         }
