@@ -156,6 +156,7 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
   int i;
   int rc = SQLITE_OK;
   Vdbe *p = (Vdbe*)pStmt;
+  u32 maskSmallInt = 0;  /* Bitmask of bindings with value 0 or 1 */
 #if SQLITE_THREADSAFE
   sqlite3_mutex *mutex;
 #endif
@@ -167,13 +168,18 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 #if SQLITE_THREADSAFE
   mutex = p->db->mutex;
 #endif
+
   sqlite3_mutex_enter(mutex);
   for(i=0; i<p->nVar; i++){
-    sqlite3VdbeMemRelease(&p->aVar[i]);
-    p->aVar[i].flags = MEM_Null;
+    Mem *pVar = &p->aVar[i];
+    if( (pVar->flags & MEM_Int)!=0 && pVar->u.i>=0 && pVar->u.i<=1 ){
+      maskSmallInt |= i>=31 ? 0x80000000 : ((u32)1)<<i;
+    }
+    sqlite3VdbeMemRelease(pVar);
+    pVar->flags = MEM_Null;
   }
   assert( (p->prepFlags & SQLITE_PREPARE_SAVESQL)!=0 || p->expmask==0 );
-  if( p->expmask ){
+  if( (p->expmask&~p->smimask)!=0 || (p->smimask&maskSmallInt)!=0 ){
     p->expired = 1;
   }
   sqlite3_mutex_leave(mutex);
@@ -685,6 +691,7 @@ int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
   }
 #ifndef SQLITE_OMIT_INCRBLOB
   sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
+  pOut->enc = pCtx->enc;
   return SQLITE_OK;
 #else
   return sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
@@ -1777,12 +1784,13 @@ static int bindText(
   const void *zData,     /* Pointer to the data to be bound */
   i64 nData,             /* Number of bytes of data to be bound */
   void (*xDel)(void*),   /* Destructor for the data */
-  u8 encoding            /* Encoding for the data */
+  u8 encoding            /* Encoding for the data + optional ENC_KEEPBOM */
 ){
   Vdbe *p = (Vdbe *)pStmt;
   Mem *pVar;
   int rc;
 
+  assert( (encoding&ENC_KEEPBOM)==0 || (encoding&ENC_MASK)>SQLITE_UTF8 );
   rc = vdbeUnbind(p, (u32)(i-1));
   if( rc==SQLITE_OK ){
     assert( p!=0 && p->aVar!=0 && i>0 && i<=p->nVar ); /* tag-20240917-01 */
@@ -1989,8 +1997,9 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       break;
     }
     case SQLITE_TEXT: {
+      assert( pValue->enc!=0 );
       rc = bindText(pStmt,i,  pValue->z, pValue->n, SQLITE_TRANSIENT,
-                              pValue->enc);
+              pValue->enc<=SQLITE_UTF8 ? pValue->enc : pValue->enc|ENC_KEEPBOM);
       break;
     }
     default: {
@@ -2011,6 +2020,7 @@ int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
 #else
     rc = sqlite3VdbeMemSetZeroBlob(&p->aVar[i-1], n);
 #endif
+    p->aVar[i-1].enc = ENC(p->db);
     sqlite3_mutex_leave(p->db->mutex);
   }
   return rc;
@@ -2164,9 +2174,14 @@ int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode){
     v->explain = eMode;
     rc = SQLITE_OK;
   }else{
+    int savedMode = v->explain;
     v->explain = eMode;
     rc = sqlite3Reprepare(v);
-    v->haveEqpOps = eMode==2;
+    if( rc ){
+      v->explain = savedMode;
+    }else{
+      v->haveEqpOps = eMode==2;
+    }
   }
   if( v->explain ){
     v->nResColumn = 12 - 4*v->explain;
@@ -2358,10 +2373,11 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
 
       assert( p->pCsr->eCurType==CURTYPE_BTREE );
       nRec = sqlite3BtreePayloadSize(p->pCsr->uc.pCursor);
-      aRec = sqlite3DbMallocRaw(db, nRec);
+      aRec = sqlite3DbMallocRaw(db, (u64)nRec+8);
       if( !aRec ) goto preupdate_old_out;
       rc = sqlite3BtreePayload(p->pCsr->uc.pCursor, 0, nRec, aRec);
       if( rc==SQLITE_OK ){
+        memset(aRec+nRec, 0, 8);
         p->pUnpacked = vdbeUnpackRecord(p->pKeyinfo, nRec, aRec);
         if( !p->pUnpacked ) rc = SQLITE_NOMEM;
       }

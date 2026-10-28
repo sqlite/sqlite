@@ -317,4 +317,137 @@ if {[catch { load_static_extension db fileio }]==0} {
   } {1 {failed to read LFH at offset 0}}
 }
 
+# The EOCD record stores the number of entries as a 16-bit value, and
+# zipfile does not support zip64. Check that attempts to create an
+# archive with more than 65535 entries fail with an error, instead of
+# writing a wrapped entry count that causes later writes to discard
+# entries.
+#
+if {[catch { load_static_extension db fileio }]==0} {
+  do_catchsql_test 9.0 {
+    WITH c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<65536)
+    SELECT length(zipfile('f'||i, 'x')) FROM c;
+  } {1 {too many entries for zipfile(); max: 65535}}
+
+  forcedelete test.zip
+  do_execsql_test 9.1 {
+    WITH c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<65535)
+    SELECT writefile('test.zip', zipfile('f'||i, 'x'))>0 FROM c;
+    SELECT count(*) FROM zipfile('test.zip');
+  } {1 65535}
+
+  do_execsql_test 9.2 {
+    CREATE VIRTUAL TABLE temp.zz USING zipfile('test.zip');
+    SELECT count(*) FROM zz;
+  } {65535}
+
+  do_catchsql_test 9.3 {
+    INSERT INTO zz(name, data) VALUES('g', 'y');
+  } {1 {too many entries; max: 65535}}
+  do_execsql_test 9.3.1 {
+    SELECT count(*) FROM zipfile(readfile('test.zip'));
+  } {65535}
+
+  # Operations that do not increase the number of entries still work.
+  do_execsql_test 9.4 {
+    INSERT OR REPLACE INTO zz(name, data) VALUES('f1', 'y');
+    INSERT OR IGNORE INTO zz(name, data) VALUES('f2', 'z');
+    UPDATE zz SET name='renamed' WHERE name='f3';
+    SELECT count(*) FROM zipfile(readfile('test.zip'));
+    SELECT name, data FROM zz WHERE name IN ('f1', 'f2', 'renamed');
+  } {65535 f2 x renamed x f1 y}
+
+  # After a DELETE, there is room for exactly one more entry.
+  do_execsql_test 9.5 {
+    DELETE FROM zz WHERE name='f4';
+    INSERT INTO zz(name, data) VALUES('g', 'y');
+    SELECT count(*) FROM zipfile(readfile('test.zip'));
+  } {65535}
+  do_catchsql_test 9.6 {
+    INSERT INTO zz(name, data) VALUES('h', 'y');
+  } {1 {too many entries; max: 65535}}
+
+  do_execsql_test 9.7 {
+    DROP TABLE temp.zz;
+    SELECT count(*) FROM zipfile('test.zip');
+  } {65535}
+}
+
+#-------------------------------------------------------------------------
+# Bug 7faad02e21dced4d. The LEVEL constraint on fsdir() must give the
+# same results as if it were not passed to xBestIndex, even for values
+# that are out of range, negative, NULL or non-integer.
+#
+if {[catch { load_static_extension db fileio }]==0} {
+  forcedelete test_fsdir
+  file mkdir test_fsdir/a/b/c
+  foreach f {test_fsdir/x test_fsdir/a/y test_fsdir/a/b/z test_fsdir/a/b/c/w} {
+    close [open $f w]
+  }
+
+  set i 0
+  foreach {w res} {
+    {level<=2147483647}  8
+    {level<=4294967296}  8
+    {level<=4294967297}  8
+    {level<0}            0
+    {level<=-1}          0
+    {level<=0}           0
+    {level<1}            0
+    {level<=1}           1
+    {level<2}            1
+    {level<=2}           3
+    {level<2.5}          3
+    {level<=2.5}         3
+    {level<=NULL}        0
+    {level<NULL}         0
+    {level=NULL}         0
+    {level<'x'}          8
+    {level<x'00'}        8
+    {level=3}            2
+    {level=3.0}          2
+    {level=3.5}          0
+    {level=4294967299}   0
+  } {
+    incr i
+    do_execsql_test 10.$i.1 "
+      SELECT count(*) FROM fsdir('test_fsdir') WHERE $w
+    " $res
+    do_execsql_test 10.$i.2 "
+      SELECT count(*) FROM fsdir('test_fsdir') WHERE +$w
+    " $res
+  }
+
+  # Check that the LEVEL constraint still limits the depth of the
+  # search. Make directory test_fsdir/a/b/c (itself at level 4) unreadable.
+  # Then queries that need the entries within it (level 5) fail, and
+  # those that do not succeed.
+  #
+  if {$::tcl_platform(platform)=="unix"} {
+    file attributes test_fsdir/a/b/c -permissions 0000
+    if {[catch {glob -nocomplain test_fsdir/a/b/c/*}]} {
+      do_execsql_test 10.100 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<=4
+      } {7}
+      do_execsql_test 10.101 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<5
+      } {7}
+      do_execsql_test 10.102 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<4.5
+      } {7}
+      do_execsql_test 10.103 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level=4
+      } {2}
+      do_catchsql_test 10.104 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<5.5
+      } {1 {cannot read directory: test_fsdir/a/b/c}}
+      do_catchsql_test 10.105 {
+        SELECT count(*) FROM fsdir('test_fsdir') WHERE level<=5
+      } {1 {cannot read directory: test_fsdir/a/b/c}}
+    }
+    file attributes test_fsdir/a/b/c -permissions 0755
+  }
+  forcedelete test_fsdir
+}
+
 finish_test

@@ -275,7 +275,12 @@ static void diskusedPercent(
   }else{
     r = num*100.0/(double)denom;
   }
-  sqlite3_snprintf(sizeof(zNum)-5, zNum, r>=10.0 ? "%.3g" :"%.2g", r);
+  if( r>0.0 && r<0.0001 ){
+    /* Avoid exponential notation for very small percentages */
+    sqlite3_snprintf(sizeof(zNum)-5, zNum, "<0.0001");
+  }else{
+    sqlite3_snprintf(sizeof(zNum)-5, zNum, r>=10.0 ? "%.3g" :"%.2g", r);
+  }
   sz = (int)strlen(zNum);
   zDP = strchr(zNum, '.');
   if( zDP==0 ){

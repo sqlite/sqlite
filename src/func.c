@@ -2351,7 +2351,7 @@ static void groupConcatInverse(
       pGCC->str.nChar -= nVS;
       memmove(pGCC->str.zText, &pGCC->str.zText[nVS], pGCC->str.nChar);
     }
-    if( pGCC->str.nChar==0 ){
+    if( pGCC->nAccum==0 ){
       pGCC->str.mxAlloc = 0;
       sqlite3_free(pGCC->pnSepLengths);
       pGCC->pnSepLengths = 0;
@@ -2579,11 +2579,11 @@ static void logFunc(
       return;
   }
   if( argc==2 ){
-    switch( sqlite3_value_numeric_type(argv[0]) ){
+    switch( sqlite3_value_numeric_type(argv[1]) ){
       case SQLITE_INTEGER:
       case SQLITE_FLOAT:
         b = log(x);
-        if( b<=0.0 ) return;
+        if( b==0.0 ) return;
         x = sqlite3_value_double(argv[1]);
         if( x<=0.0 ) return;
         break;
@@ -3313,6 +3313,7 @@ static void fpdecodeFunc(
   y = sqlite3_value_int(argv[1]);
   z = sqlite3_value_int(argv[2]);
   if( z<=0 ) z = 1;
+  if( y<-100000000 ) y = -100000000;  /* Same limit as printf() */
   sqlite3FpDecode(&s, x, y, z);
   if( s.isSpecial==2 ){
     sqlite3_snprintf(sizeof(zBuf), zBuf, "NaN");

@@ -1,0 +1,54 @@
+# 2026 October 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The tests in this file focus on queries against fts5vocab tables that
+# require the same row to be identified across more than one scan of the
+# table - multi-index OR and RIGHT JOIN.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5vocab3
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+  INSERT INTO ft VALUES('apple banana');
+  CREATE VIRTUAL TABLE v_row USING fts5vocab(ft, 'row');
+  CREATE VIRTUAL TABLE v_col USING fts5vocab(ft, 'col');
+  CREATE VIRTUAL TABLE v_inst USING fts5vocab(ft, 'instance');
+}
+
+foreach {tn tbl} {
+  1 v_row
+  2 v_col
+  3 v_inst
+} {
+  # Multi-index OR. The order of the rows returned is not defined.
+  do_test 1.$tn.1 {
+    lsort [execsql "SELECT term FROM $tbl WHERE term='banana' OR term<'c'"]
+  } {apple banana}
+
+  # RIGHT JOIN. The unmatched row for 'apple' must be returned.
+  do_execsql_test 1.$tn.2 "
+    SELECT t.a, v.term
+    FROM (SELECT 'banana' AS a) t RIGHT JOIN $tbl v ON v.term = t.a
+    ORDER BY v.term
+  " {
+    {} apple banana banana
+  }
+}
+
+finish_test

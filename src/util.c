@@ -843,11 +843,13 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 **                    there is no prefix of the input that can be seen as
 **                    a valid floating point number.
 **   bit 1       =>   Set if the input contains a decimal point or eNNN
-**                    clause.  Zero if the input is an integer.
+**                    clause or other text that disqualifies it as an
+**                    integer value.  Zero if the input is an integer.
 **   bit 2       =>   The input is exactly 0.0, not an underflow from
 **                    some value near zero.
 **   bit 3       =>   Set if there are more than about 19 significant
 **                    digits in the input.
+**   bit 4       =>   The input is a special value like "Inf" or "NaN"
 **
 ** If the input contains a syntax error but begins with text that might
 ** be a valid number of some kind, then the result is negative.  The
@@ -932,8 +934,13 @@ int sqlite3AtoF(const char *zIn, double *pResult){
     }
     mState |= 2;
   }else if( mState==0 ){
-    *pResult = 0.0;
-    return 0;
+    if( sqlite3StrICmp((const char*)z,"Inf")==0 ){
+      *pResult = neg ? -INFINITY : INFINITY;
+      return 0x13;
+    }else{
+      *pResult = 0.0;
+      return 0;
+    }
   }
 
   /* if exponent is present */
@@ -1382,7 +1389,9 @@ int sqlite3Atoi(const char *z){
 **
 ** If iRound>0 round to min(iRound,mxRound) significant digits total.
 **
-** mxRound must be positive.
+** mxRound must be positive.  iRound must not be less than -100000000
+** (the SQLITE_FP_PRECISION_LIMIT maximum in printf.c) so that the
+** computation of the number of significant digits cannot overflow.
 **
 ** The significant digits of the decimal representation are
 ** stored in p->z[] which is a often (but not always) a pointer
@@ -1399,6 +1408,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
 
   p->isSpecial = 0;
   assert( mxRound>0 );
+  assert( iRound>=-100000000 );
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
   ** NaN. */

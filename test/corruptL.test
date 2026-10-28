@@ -1590,4 +1590,51 @@ do_catchsql_test 18.1 {
   SELECT a FROM t1 WHERE b GLOB b AND b GLOB '0^x]␅6␚xz]';
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/info/2ceae01b304598f2
+#
+# With PRAGMA cell_size_check=ON, a page that fails the cell size check
+# must be reported as corrupt every time it is used, not just the first
+# time it is loaded into the page cache.
+#
+reset_db
+do_execsql_test 20.0 {
+  PRAGMA auto_vacuum=off;
+  PRAGMA page_size = 4096;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES('aaaaaaaaaaaaaaaaaaaa'),('bbbbbbbbbbbbbbbbbbbb'),
+                       ('cccccccccccccccccccc');
+  SELECT rootpage FROM sqlite_schema WHERE name='t1';
+  PRAGMA page_size;
+} {2 4096}
+do_test 20.1 {
+  db close
+  # Offset of the first cell (rowid 1) on page 2.  Change the first byte
+  # of that cell, the payload size, to 0x40 so that the cell appears to
+  # extend past the end of the page.
+  set pc [expr 0x[hexio_read test.db [expr 4096+8] 2]]
+  hexio_write test.db [expr 4096+$pc] 40
+  sqlite3 db test.db
+  execsql { PRAGMA cell_size_check = ON; }
+} {}
+do_catchsql_test 20.2 {
+  SELECT count(*) FROM t1;
+} {1 {database disk image is malformed}}
+do_catchsql_test 20.3 {
+  SELECT count(*) FROM t1;
+} {1 {database disk image is malformed}}
+do_catchsql_test 20.4 {
+  SELECT rowid FROM t1;
+} {1 {database disk image is malformed}}
+do_catchsql_test 20.5 {
+  UPDATE t1 SET x='zzz' WHERE rowid=3;
+} {1 {database disk image is malformed}}
+do_execsql_test 20.6 {
+  PRAGMA cell_size_check = OFF;
+  SELECT count(*) FROM t1;
+} {3}
+do_execsql_test 20.7 {
+  SELECT x FROM t1 WHERE rowid=3;
+} {cccccccccccccccccccc}
+
 finish_test

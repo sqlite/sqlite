@@ -731,7 +731,16 @@ do_execsql_test 29.2 {
   SELECT rowid, fts5_test_columntotalsize( t1 ) FROM t1('baz');
 } {1 {4 4 4} 2 {4 4 4}}
 
-
+# Bug 2026-10-23T03:10:17Z
+#
+do_execsql_test 30.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE VIRTUAL TABLE t1 USING fts5(x, tokendata=1, prefix=1);
+  INSERT INTO t1 VALUES('vv aa');
+  BEGIN;
+  INSERT INTO t1 VALUES('vv aa');
+  SELECT rowid FROM t1 WHERE t1 MATCH 'v* AND aa';
+  COMMIT;
+} {1 2}
 
 finish_test
-

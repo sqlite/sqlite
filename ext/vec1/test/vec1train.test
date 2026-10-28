@@ -61,14 +61,14 @@ do_execsql_test 3.0 {
 
 do_catchsql_test 3.1 {
   SELECT vec1_train(x, '{codesize: 8}') FROM t2
-} {1 {vec1_train: bad argument}}
+} {1 {vec1_train: invalid vector size: 0 bytes}}
 
 do_execsql_test 3.2.0 {
   UPDATE t2 SET x=randomblob(7) WHERE rowid=4;
 }
 do_catchsql_test 3.2.1 {
   SELECT vec1_train(x, '{codesize: 8}') FROM t2
-} {1 {vec1_train: bad argument}}
+} {1 {vec1_train: invalid vector size: 7 bytes}}
 
 do_execsql_test 3.3.0 {
   UPDATE t2 SET x=random_vector(20) WHERE rowid=4;
@@ -194,6 +194,33 @@ do_execsql_test 7.2.2 {
   SELECT count(*) FROM t2;
   SELECT count(*) FROM log;
 } {0 0}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+vec1_load db
+
+do_catchsql_test 8.0 {
+
+  WITH data(i, v) AS (
+    SELECT 1, random_vector(4097) 
+      UNION ALL
+    SELECT i+1, random_vector(4097) FROM data WHERE i<550
+  )
+  SELECT length( vec1_train(v, '{nbucket: 8}') ) FROM data;
+
+} {1 {vec1_train: invalid vector size: 16388 bytes}}
+
+do_execsql_test 8.1 {
+
+  WITH data(i, v) AS (
+    SELECT 1, random_vector(4096) 
+      UNION ALL
+    SELECT i+1, random_vector(4096) FROM data WHERE i<550
+  )
+  SELECT length( vec1_train(v, '{nbucket: 8}') ) FROM data;
+
+} [expr 8*4096*4 + 24]
 
 finish_test
 

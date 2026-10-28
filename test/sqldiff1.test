@@ -85,4 +85,97 @@ do_test sqldiff-2.1 {
   set ::MSG
 } {ALTER TABLE t1 ADD COLUMN b;}
 
+# Bug 2026-10-18T20:38:30Z
+#
+proc sqldiff_apply_test {tn} {
+  set patch [exec $::PROG test.db test2.db]
+  sqlite3 db test.db
+  set rc [catch {db eval $patch} msg]
+  db close
+  if {$rc} {
+    puts "PATCH: [list $patch]"
+  }
+  do_test $tn.1 [list list $rc $msg] {0 {}}
+  do_test $tn.2 {exec $::PROG test.db test2.db} {}
+}
+
+forcedelete test.db test2.db
+sqlite3 db test.db
+do_execsql_test sqldiff-3.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b REAL);
+}
+db backup test2.db
+db close
+sqlite3 db test2.db
+do_execsql_test sqldiff-3.1 {
+  INSERT INTO t1 VALUES(1, 0.1+0.2);
+  INSERT INTO t1 VALUES(2, 1.0/3.0);
+  INSERT INTO t1 VALUES(3, 1.7976931348623157e308);
+  INSERT INTO t1 VALUES(4, -1.7976931348623157e308);
+  INSERT INTO t1 VALUES(5, 4.9406564584124654e-324);
+  INSERT INTO t1 VALUES(6, 123456789.12345678);
+}
+db close
+sqldiff_apply_test sqldiff-3.2
+sqlite3 db test.db
+do_execsql_test sqldiff-3.3 {
+  ATTACH 'test2.db' AS x2;
+  SELECT a FROM t1 WHERE b IS NOT (SELECT b FROM x2.t1 AS y WHERE y.a=t1.a);
+} {}
+db close
+
+forcedelete test.db test2.db
+sqlite3 db test.db
+do_execsql_test sqldiff-4.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b REAL);
+}
+db backup test2.db
+db close
+sqlite3 db test2.db
+do_execsql_test sqldiff-4.1 {
+  INSERT INTO t1 VALUES(1, 9e999);
+  INSERT INTO t1 VALUES(2, -9e999);
+}
+db close
+sqldiff_apply_test sqldiff-4.2
+sqlite3 db test.db
+do_execsql_test sqldiff-4.3 {
+  SELECT a, b>1e308, b<-1e308 FROM t1 ORDER BY a;
+} {1 1 0 2 0 1}
+db close
+
+# The following test cases demonstrate that if the source table contains
+# an AUTOINCREMENT table but there is no corresponding entry in the
+# sqlite_sequence table, then the sqlite_sequence table is not updated
+# correctly.  This is a long-standing deficiency in sqldiff, though the
+# issue is contrived and does not appear in practice.  If the issue is
+# ever fixed, then simply uncomment the following test sequence to verify
+# the fix.
+#
+if 0 {
+  forcedelete test.db test2.db
+  sqlite3 db test.db
+  do_execsql_test sqldiff-5.0 {
+    CREATE TABLE a1(id INTEGER PRIMARY KEY AUTOINCREMENT, x);
+  }
+  db backup test2.db
+  db close
+  sqlite3 db test2.db
+  do_execsql_test sqldiff-5.1 {
+    INSERT INTO a1(x) VALUES('one'),('two'),('three');
+    DELETE FROM a1 WHERE id=3;
+    SELECT seq FROM sqlite_sequence WHERE name='a1';
+  } {3}
+  db close
+  sqldiff_apply_test sqldiff-5.2
+  sqlite3 db test.db
+  do_execsql_test sqldiff-5.3 {
+    SELECT seq FROM sqlite_sequence WHERE name='a1';
+  } {3}
+  do_execsql_test sqldiff-5.4 {
+    INSERT INTO a1(x) VALUES('four');
+    SELECT id FROM a1 WHERE x='four';
+  } {4}
+}
+
 finish_test

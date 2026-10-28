@@ -344,5 +344,69 @@ foreach {tn detail} {
 }
 
 
+#-------------------------------------------------------------------------
+# Secure-delete of an entry that is itself a delete marker with content
+# (an INSERT OR REPLACE of an existing rowid). In detail=none mode this
+# used to corrupt the leaf page.
+#
+foreach {tn detail} {
+  1 full
+  2 column
+  3 none
+} {
+  reset_db
+  do_execsql_test 7.$tn.0 "
+    CREATE VIRTUAL TABLE t1 USING fts5(x, detail=$detail);
+  "
+  do_execsql_test 7.$tn.1 {
+    INSERT INTO t1(rowid, x) VALUES(1, 'a');
+    INSERT OR REPLACE INTO t1(rowid, x) VALUES(1, 'a');
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+    DELETE FROM t1 WHERE rowid=1;
+  }
+  do_execsql_test 7.$tn.2 {
+    SELECT count(*) FROM t1;
+    SELECT rowid FROM t1('a');
+  } {0}
+  do_execsql_test 7.$tn.3 {
+    INSERT INTO t1(t1) VALUES('integrity-check');
+  }
+}
+
+foreach_detail_mode $::testprefix-8 {
+  reset_db
+  do_execsql_test 1 {
+    CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL%);
+    INSERT INTO t1(t1, rank) VALUES ('pgsz', 32);
+    INSERT INTO t1(t1, rank) VALUES ('usermerge', 2);
+    INSERT INTO t1(rowid, x) VALUES (1, 'c');
+    INSERT INTO t1(rowid, x) VALUES (2, 'a b d e f g h');
+    INSERT INTO t1(t1) VALUES ('optimize');
+  }
+
+  do_execsql_test 2 {
+    DELETE FROM t1 WHERE rowid = 1;
+    INSERT INTO t1(t1, rank) VALUES ('secure-delete', 1);
+    INSERT INTO t1(rowid, x) VALUES (1, 'c');
+    INSERT INTO t1(t1, rank) VALUES ('merge', 1);
+  }
+
+  do_execsql_test 3 {
+    DELETE FROM t1 WHERE rowid = 1;
+  }
+
+  do_execsql_test 4 {
+    SELECT count(*) FROM t1;
+  } {1}
+
+  do_execsql_test 5 {
+    SELECT rowid FROM t1 WHERE t1 MATCH 'c';
+  }
+
+  do_execsql_test 6 {
+    PRAGMA integrity_check;
+  } {ok}
+}
+
 finish_test
 

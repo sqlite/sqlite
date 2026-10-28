@@ -745,7 +745,8 @@ static MemFile *memdbFromDbSchema(sqlite3 *db, const char *zSchema){
 }
 
 /*
-** Return the serialization of a database
+** Return the serialization of a database.  Or return NULL if there
+** is an OOM or I/O error.
 */
 unsigned char *sqlite3_serialize(
   sqlite3 *db,              /* The database connection */
@@ -821,8 +822,12 @@ unsigned char *sqlite3_serialize(
           rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pPage, 0);
           if( rc==SQLITE_OK ){
             memcpy(pTo, sqlite3PagerGetData(pPage), szPage);
-          }else{
+          }else if( pgno==PENDING_BYTE/szPage+1 ){
             memset(pTo, 0, szPage);
+          }else{
+            sqlite3_free(pOut);
+            pOut = 0;
+            nPage = 0;            
           }
           sqlite3PagerUnref(pPage);       
         }

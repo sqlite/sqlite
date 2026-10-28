@@ -816,6 +816,7 @@ TESTSRC += \
   $(TOP)/ext/misc/stmtrand.c \
   $(TOP)/ext/misc/strdup.c \
   $(TOP)/ext/misc/totype.c \
+  $(TOP)/ext/misc/tryeval.c \
   $(TOP)/ext/misc/unionvtab.c \
   $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/ext/misc/zipfile.c \

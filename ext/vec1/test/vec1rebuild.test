@@ -1,0 +1,330 @@
+# 2026-10-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for 'rebuild' commands issued within a transaction that has
+# already written to the vec1 table. 
+#
+
+source [file join [file dirname [info script]] vec1_common.tcl]
+set testprefix vec1rebuild
+
+set lModel {
+  flat    { '{index:"flat"}' }
+  trained { (SELECT vec1_train(v, '{codesize:8}') FROM v1) }
+  ivf     { (SELECT vec1_train(v, '{codesize:8, nbucket:8}') FROM v1) }
+  none    { '{index:"none"}' }
+  same    { NULL }
+}
+
+proc rebuild_sql {zModel} {
+  set arg [dict get $::lModel $zModel]
+  return "INSERT INTO v1(cmd, arg) VALUES('rebuild', $arg)"
+}
+
+# Set up table v1 containing 1000 rows (rowids 1 to 1000) and model
+# $zInit. Table "base" contains a copy of the same 1000 vectors.
+#
+proc setup_table {zInit} {
+  reset_db
+  vec1_load db
+  execsql {
+    CREATE TABLE base(id INTEGER PRIMARY KEY, v BLOB);
+    CREATE VIRTUAL TABLE v1 USING vec1(v);
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+    )
+    INSERT INTO base(id, v) SELECT i, random_vector(32) FROM s;
+    INSERT INTO v1(rowid, v) SELECT id, v FROM base;
+  }
+  execsql [rebuild_sql $zInit]
+}
+
+#-------------------------------------------------------------------------
+# Write to the table within a transaction, then issue a single 'rebuild'
+# command before COMMIT.
+#
+set tn 0
+foreach zInit {flat trained ivf} {
+  foreach zRebuild {same flat trained ivf none} {
+    incr tn
+    setup_table $zInit
+
+    do_execsql_test 1.$tn.$zInit.$zRebuild.1 {
+      PRAGMA integrity_check
+    } {ok}
+
+    do_execsql_test 1.$tn.$zInit.$zRebuild.2 {
+      BEGIN;
+        DELETE FROM v1 WHERE rowid BETWEEN 1 AND 50;
+        UPDATE v1 SET v = random_vector(32) WHERE rowid BETWEEN 51 AND 60;
+        WITH s(i) AS (
+          SELECT 1001 UNION ALL SELECT i+1 FROM s WHERE i<1100
+        )
+        INSERT INTO v1(rowid, v) SELECT i, random_vector(32) FROM s;
+        INSERT INTO v1(rowid, v) VALUES(1101, random_vector(32));
+        UPDATE v1 SET v = random_vector(32) WHERE rowid=61;
+    }
+
+    do_execsql_test 1.$tn.$zInit.$zRebuild.3 [rebuild_sql $zRebuild]
+
+    do_execsql_test 1.$tn.$zInit.$zRebuild.4 {
+        PRAGMA integrity_check;
+      COMMIT;
+    } {ok}
+
+    do_execsql_test 1.$tn.$zInit.$zRebuild.5 {
+      PRAGMA integrity_check;
+    } {ok}
+
+    do_execsql_test 1.$tn.$zInit.$zRebuild.6 {
+      SELECT count(*), min(rowid), max(rowid) FROM v1;
+    } {1051 51 1101}
+
+    do_execsql_test 1.$tn.$zInit.$zRebuild.7 {
+      SELECT count(*) FROM v1( random_vector(32), '{K:2000, nprobe:1000}' );
+    } {1051}
+
+    # Write some more and check the table is still consistent.
+    do_execsql_test 1.$tn.$zInit.$zRebuild.8 {
+      BEGIN;
+        INSERT INTO v1(rowid, v) VALUES(2000, random_vector(32));
+        DELETE FROM v1 WHERE rowid BETWEEN 51 AND 60;
+      COMMIT;
+      PRAGMA integrity_check;
+    } {ok}
+
+    do_execsql_test 1.$tn.$zInit.$zRebuild.9 {
+      SELECT count(*) FROM v1( random_vector(32), '{K:2000, nprobe:1000}' );
+    } {1042}
+  }
+}
+
+#-------------------------------------------------------------------------
+# As in the previous block, except that the only write before the
+# 'rebuild' is a single-row UPDATE.
+#
+set tn 0
+foreach zInit {flat trained ivf} {
+  foreach zRebuild {same flat trained ivf none} {
+    incr tn
+    setup_table $zInit
+
+    do_execsql_test 2.$tn.$zInit.$zRebuild.1 {
+      BEGIN;
+        UPDATE v1 SET v = random_vector(32) WHERE rowid=51;
+    }
+
+    do_execsql_test 2.$tn.$zInit.$zRebuild.2 [rebuild_sql $zRebuild]
+
+    do_execsql_test 2.$tn.$zInit.$zRebuild.3 {
+        PRAGMA integrity_check;
+      COMMIT;
+    } {ok}
+
+    do_execsql_test 2.$tn.$zInit.$zRebuild.4 {
+      PRAGMA integrity_check;
+    } {ok}
+
+    do_execsql_test 2.$tn.$zInit.$zRebuild.5 {
+      SELECT count(*) FROM v1( random_vector(32), '{K:2000, nprobe:1000}' );
+    } {1000}
+  }
+}
+
+#-------------------------------------------------------------------------
+# Two 'rebuild' commands issued within the same transaction, with writes
+# before and between them.
+#
+set tn 0
+foreach zInit {flat trained ivf} {
+  foreach {zR1 zR2} {
+    same    same
+    flat    flat
+    trained trained
+    ivf     ivf
+    flat    trained
+    trained flat
+    ivf     flat
+    flat    ivf
+    trained ivf
+    none    flat
+    flat    none
+  } {
+    incr tn
+    setup_table $zInit
+
+    do_execsql_test 3.$tn.$zInit.$zR1.$zR2.1 {
+      BEGIN;
+        DELETE FROM v1 WHERE rowid BETWEEN 1 AND 50;
+        WITH s(i) AS (
+          SELECT 1001 UNION ALL SELECT i+1 FROM s WHERE i<1100
+        )
+        INSERT INTO v1(rowid, v) SELECT i, random_vector(32) FROM s;
+        INSERT INTO v1(rowid, v) VALUES(1101, random_vector(32));
+    }
+
+    do_execsql_test 3.$tn.$zInit.$zR1.$zR2.2 [rebuild_sql $zR1]
+
+    do_execsql_test 3.$tn.$zInit.$zR1.$zR2.3 {
+        DELETE FROM v1 WHERE rowid BETWEEN 51 AND 60;
+        UPDATE v1 SET v = random_vector(32) WHERE rowid BETWEEN 61 AND 70;
+        INSERT INTO v1(rowid, v) VALUES(1102, random_vector(32));
+        UPDATE v1 SET v = random_vector(32) WHERE rowid=71;
+    }
+
+    do_execsql_test 3.$tn.$zInit.$zR1.$zR2.4 [rebuild_sql $zR2]
+
+    do_execsql_test 3.$tn.$zInit.$zR1.$zR2.5 {
+        PRAGMA integrity_check;
+      COMMIT;
+    } {ok}
+
+    do_execsql_test 3.$tn.$zInit.$zR1.$zR2.6 {
+      PRAGMA integrity_check;
+    } {ok}
+
+    do_execsql_test 3.$tn.$zInit.$zR1.$zR2.7 {
+      SELECT count(*), min(rowid), max(rowid) FROM v1;
+    } {1042 61 1102}
+
+    do_execsql_test 3.$tn.$zInit.$zR1.$zR2.8 {
+      SELECT count(*) FROM v1( random_vector(32), '{K:2000, nprobe:1000}' );
+    } {1042}
+  }
+}
+
+#-------------------------------------------------------------------------
+# Two 'rebuild' commands issued back-to-back within a transaction, after
+# a write.
+#
+set tn 0
+foreach zInit {flat trained ivf} {
+  foreach zRebuild {same flat trained ivf none} {
+    incr tn
+    setup_table $zInit
+
+    do_execsql_test 4.$tn.$zInit.$zRebuild.1 {
+      BEGIN;
+        INSERT INTO v1(rowid, v) VALUES(1001, random_vector(32));
+    }
+
+    do_execsql_test 4.$tn.$zInit.$zRebuild.2 [rebuild_sql $zRebuild]
+    do_execsql_test 4.$tn.$zInit.$zRebuild.3 [rebuild_sql $zRebuild]
+
+    do_execsql_test 4.$tn.$zInit.$zRebuild.4 {
+        PRAGMA integrity_check;
+      COMMIT;
+    } {ok}
+
+    do_execsql_test 4.$tn.$zInit.$zRebuild.5 {
+      PRAGMA integrity_check;
+    } {ok}
+
+    do_execsql_test 4.$tn.$zInit.$zRebuild.6 {
+      SELECT count(*) FROM v1( random_vector(32), '{K:2000, nprobe:1000}' );
+    } {1001}
+  }
+}
+
+#-------------------------------------------------------------------------
+# Check that the results of a query on a flat index match those of a
+# brute-force search after a transaction containing writes and two
+# 'rebuild' commands is committed.
+#
+setup_table flat
+set rnd [db one {SELECT random_vector(32)}]
+set v1001 [db one {SELECT random_vector(32)}]
+set v1002 [db one {SELECT random_vector(32)}]
+
+do_execsql_test 5.0 {
+  BEGIN;
+    DELETE FROM base WHERE id=5;
+    DELETE FROM v1 WHERE rowid=5;
+    INSERT INTO base(id, v) VALUES(1001, $v1001);
+    INSERT INTO v1(rowid, v) VALUES(1001, $v1001);
+    INSERT INTO v1(cmd) VALUES('rebuild');
+    INSERT INTO base(id, v) VALUES(1002, $v1002);
+    INSERT INTO v1(rowid, v) VALUES(1002, $v1002);
+    INSERT INTO v1(cmd) VALUES('rebuild');
+  COMMIT;
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 5.1 {
+  SELECT count(*) FROM v1($rnd, '{K:2000}');
+} {1001}
+
+set expect [db eval {
+  SELECT id FROM base ORDER BY vec1_l2_distance(v, $rnd) LIMIT 20
+}]
+do_execsql_test 5.2 {
+  SELECT rowid FROM v1($rnd, '{K:20}');
+} $expect
+
+#-------------------------------------------------------------------------
+# Check that KNN queries issued within a transaction see rows written by
+# earlier single-row INSERT and UPDATE statements in the same transaction,
+# the index entries for which are still held in memory.
+#
+set tn 0
+foreach zInit {flat trained ivf none} {
+  incr tn
+  setup_table $zInit
+  set v1001 [db one {SELECT random_vector(32)}]
+  set v7 [db one {SELECT random_vector(32)}]
+
+  do_execsql_test 6.$tn.$zInit.1 {
+    BEGIN;
+      INSERT INTO v1(rowid, v) VALUES(1001, $v1001);
+  }
+
+  do_execsql_test 6.$tn.$zInit.2 {
+      SELECT count(*) FROM v1($v1001, '{K:5}') WHERE rowid=1001;
+  } {1}
+
+  do_execsql_test 6.$tn.$zInit.3 {
+      SELECT count(*), sum(rowid=1001)
+      FROM v1($v1001, '{K:2000, nprobe:1000}');
+  } {1001 1}
+
+  do_execsql_test 6.$tn.$zInit.4 {
+      UPDATE v1 SET v = $v7 WHERE rowid=7;
+      SELECT count(*) FROM v1($v7, '{K:5}') WHERE rowid=7;
+  } {1}
+
+  do_execsql_test 6.$tn.$zInit.5 {
+      SELECT count(*), sum(rowid=7) FROM v1($v7, '{K:2000, nprobe:1000}');
+  } {1001 1}
+
+  do_execsql_test 6.$tn.$zInit.6 {
+      DELETE FROM v1 WHERE rowid=1001;
+      SELECT count(*), sum(rowid=1001)
+      FROM v1($v1001, '{K:2000, nprobe:1000}');
+  } {1000 0}
+
+  do_execsql_test 6.$tn.$zInit.7 {
+      INSERT INTO v1(rowid, v) VALUES(1002, $v1001);
+      SELECT count(*) FROM v1($v1001, '{K:5}') WHERE rowid=1002;
+  } {1}
+
+  do_execsql_test 6.$tn.$zInit.8 {
+    COMMIT;
+    PRAGMA integrity_check;
+  } {ok}
+
+  do_execsql_test 6.$tn.$zInit.9 {
+    SELECT count(*) FROM v1($v1001, '{K:5}') WHERE rowid=1002;
+    SELECT count(*) FROM v1($v7, '{K:5}') WHERE rowid=7;
+    SELECT count(*) FROM v1($v7, '{K:2000, nprobe:1000}');
+  } {1 1 1001}
+}
+
+finish_test

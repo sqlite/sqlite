@@ -65,9 +65,40 @@ const toExportForESM =
     ? (...args)=>console.warn('sqlite3.debugModule:',...args)
     : ()=>{};
 
-  if(sIMS.urlParams.has('sqlite3.dir')){
-    sIMS.sqlite3Dir = sIMS.urlParams.get('sqlite3.dir') +'/';
-  }else if(sIMS.moduleScript){
+  /**
+     Fetchs sIMS.urlParams.get(key). If that looks like it might
+     be a remote path value then null is returned and a console
+     warning may be emitted. If it looks like it's a local path,
+     it is returned.
+
+     [bugs:74f052d3d2]: do not allow URL arguments which are used for
+     determining file locations to be anything other than what appears
+     to be a local file reference. That is the only documented use for
+     these args and allowing URLs as values leads to chaos. This is
+     believed to resolve that report but is also considered a stopgap
+     measure.  TODO is only allow query parameters from the same origin
+     as this script.
+  */
+  sIMS.getPathArgument = (key)=>{
+    const s = sIMS.urlParams.get(key);
+    //console.warn("sIMS.getPathArgument(",key,")",s);
+    if( !s ) return s;
+    if( s.indexOf(':')>=0 || s.indexOf('//')>=0 ){
+      console.warn(
+        "Rejecting path string",key," because it does not look",
+        "like a local path:",s
+      );
+      return null;
+    }
+    return s;
+  };
+
+  if( sIMS.urlParams.has('sqlite3.dir') ){
+    const s = sIMS.getPathArgument('sqlite3.dir');
+    if( s ){
+      sIMS.sqlite3Dir = s + (s[s.length-1]==='/' ? '' : '/');
+    }
+  }else if( sIMS.moduleScript ){
     const li = sIMS.moduleScript.src.split('/');
     li.pop();
     sIMS.sqlite3Dir = li.join('/') + '/';

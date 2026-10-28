@@ -341,7 +341,7 @@ static void printQuoted(FILE *out, sqlite3_value *X){
       double r1;
       char zBuf[50];
       r1 = sqlite3_value_double(X);
-      sqlite3_snprintf(sizeof(zBuf), zBuf, "%!.15g", r1);
+      sqlite3_snprintf(sizeof(zBuf), zBuf, "%!0.17g", r1);
       sqlite3_fprintf(out, "%s", zBuf);
       break;
     }

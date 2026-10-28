@@ -54,8 +54,55 @@ do_test 2.0 {
 } {1 SQLITE_ERROR}
 
 do_test 2.1 {
-  set I2 [R rebase $I]
+  list [catch { set I2 [R rebase $I] } msg] $msg
+} {1 SQLITE_CORRUPT}
+do_test 2.2 {
   R delete
 } {}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+
+proc get_changeset {sql} {
+  execsql BEGIN
+  set cs [changeset_from_sql $sql]
+  execsql ROLLBACK
+  return $cs
+}
+
+proc xConflict {args} {
+  set res [lindex $::lConflict 0]
+  set ::lConflict [lrange $::lConflict 1 end]
+  return $res
+}
+
+
+proc rebased {blobs cs} {
+  sqlite3rebaser_create R
+  foreach b $blobs { R configure $b }
+  set out [R rebase $cs]
+  R delete
+  changeset_to_list $out
+}
+
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 'x');
+}
+
+
+set c_peer1 [get_changeset {DELETE FROM t1 WHERE a=1}]
+set c_peer2 [get_changeset {UPDATE t1 SET b='peer2' WHERE a=1}]
+set c_local [changeset_from_sql {UPDATE t1 SET b='local' WHERE a=1}]
+
+set ::lConflict REPLACE
+set b1 [sqlite3changeset_apply_v2 db $c_peer1 xConflict]
+set ::lConflict OMIT
+set b2 [sqlite3changeset_apply_v2 db $c_peer2 xConflict]
+
+do_test 3.1 { rebased [list $b1] $c_local } {}
+do_test 3.2 { rebased [list $b2 $b1] $c_local } {}
+do_test 3.3 { rebased [list $b1 $b2] $c_local } {}
 
 finish_test

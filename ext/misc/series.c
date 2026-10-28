@@ -175,6 +175,7 @@ struct series_cursor {
   sqlite3_int64 iValue;      /* Current value */
   u8 bDesc;                  /* iStep is really negative */
   u8 bDone;                  /* True if stepped past last element */
+  u8 bLimit;                 /* There exists a limit clause */
 };
 
 /*
@@ -286,10 +287,10 @@ static int seriesNext(sqlite3_vtab_cursor *cur){
     pCur->bDone = 1;
   }else if( pCur->bDesc ){
     pCur->iValue = sub64(pCur->iValue, pCur->iStep);
-    assert( pCur->iValue>=pCur->iTerm );
+    assert( pCur->iValue>=pCur->iTerm || pCur->bLimit );
   }else{
     pCur->iValue = add64(pCur->iValue, pCur->iStep);
-    assert( pCur->iValue<=pCur->iTerm );
+    assert( pCur->iValue<=pCur->iTerm || pCur->bLimit );
   }
   return SQLITE_OK;
 }
@@ -410,6 +411,13 @@ static sqlite3_int64 seriesRealToI64(double r){
   return (sqlite3_int64)r;
 }
 
+/* Return true if the type of the value is TEXT or BLOB.
+*/
+static int seriesIsTextOrBlob(sqlite3_value *pVal){
+  int eType = sqlite3_value_type(pVal);
+  return eType==SQLITE_TEXT || eType==SQLITE_BLOB;
+}
+
 /*
 ** This method is called to "rewind" the series_cursor object back
 ** to the first row of output.  This method is always called at least
@@ -519,14 +527,24 @@ static int seriesFilter(
     if( idxNum & 0x40 ){
       iOffset = sqlite3_value_int64(argv[iArg++]);
     }
+    if( iLimit>0 ) pCur->bLimit = 1;
   }
 
   /* Narrow the range of iMin and iMax (the minimum and maximum outputs)
   ** based on equality and inequality constraints on the "value" column.
+  **
+  ** The "value" column has no affinity, so a TEXT or BLOB operand X is
+  ** not converted into a number.  Every INTEGER is less than any TEXT
+  ** or BLOB, so "value=X", "value>X" and "value>=X" are never true and
+  ** "value<X" and "value<=X" are always true.  The type must be checked
+  ** before sqlite3_value_numeric_type(), which would convert a TEXT
+  ** value such as '3' into a number.
   */
   if( idxNum & 0x3380 ){
     if( idxNum & 0x0080 ){    /* value=X */
-      if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+      if( seriesIsTextOrBlob(argv[iArg]) ){
+        goto series_no_rows;
+      }else if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
         double r = sqlite3_value_double(argv[iArg++]);
         if( r==seriesCeil(r)
          && r>=(double)SMALLEST_INT64
@@ -541,7 +559,9 @@ static int seriesFilter(
       }
     }else{
       if( idxNum & 0x0300 ){  /* value>X (0x200) or value>=X (0x100) */
-        if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+        if( seriesIsTextOrBlob(argv[iArg]) ){
+          goto series_no_rows;
+        }else if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
           if( r<=(double)SMALLEST_INT64 ){
             iMin = SMALLEST_INT64;
@@ -566,7 +586,9 @@ static int seriesFilter(
         }
       }
       if( idxNum & 0x3000 ){   /* value<X (0x2000) or value<=X (0x1000) */
-        if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+        if( seriesIsTextOrBlob(argv[iArg]) ){
+          iArg++;   /* No upper bound */
+        }else if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
           if( r>=(double)LARGEST_INT64 ){
             iMax = LARGEST_INT64;

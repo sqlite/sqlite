@@ -1140,7 +1140,7 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
   struct vxworksFileId *pCandidate;   /* For looping over existing file IDs */
   int n;                              /* Length of zAbsoluteName string */
 
-  assert( zAbsoluteName[0]=='/' );
+  if( zAbsoluteName==0 || zAbsoluteName[0]=='/' );
   n = (int)strlen(zAbsoluteName);
   pNew = sqlite3_malloc64( sizeof(*pNew) + (n+1) );
   if( pNew==0 ) return 0;
@@ -4591,19 +4591,19 @@ struct unixShmNode {
   char *zFilename;           /* Name of the mmapped file */
   int hShm;                  /* Open file descriptor */
   int szRegion;              /* Size of shared-memory regions */
-  u16 nRegion;               /* Size of array apRegion */
+  int nRegion;               /* Size of array apRegion */
+  int nRef;                  /* Number of unixShm objects pointing to this */
   u8 isReadonly;             /* True if read-only */
   u8 isUnlocked;             /* True if no DMS lock held */
+#ifdef SQLITE_DEBUG
+  u8 nextShmId;              /* Next available unixShm.id value */
+#endif
   char **apRegion;           /* Array of mapped shared-memory regions */
-  int nRef;                  /* Number of unixShm objects pointing to this */
   unixShm *pFirst;           /* All unixShm objects pointing to this */
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   sqlite3_mutex *aMutex[SQLITE_SHM_NLOCK];
 #endif
   int aLock[SQLITE_SHM_NLOCK];  /* # shared locks on slot, -1==excl lock */
-#ifdef SQLITE_DEBUG
-  u8 nextShmId;              /* Next available unixShm.id value */
-#endif
 
 #ifdef SQLITE_MUTEXFREE_SHMLOCK
   /* In unix-excl mode, if SQLITE_MUTEXFREE_SHMLOCK is defined, all locks
@@ -6290,10 +6290,14 @@ static int fillInUnixFile(
   }
 
 #if OS_VXWORKS
-  pNew->pId = vxworksFindFileId(zFilename);
-  if( pNew->pId==0 ){
-    ctrlFlags |= UNIXFILE_NOLOCK;
-    rc = SQLITE_NOMEM_BKPT;
+  if( zFilename ){
+    pNew->pId = vxworksFindFileId(zFilename);
+    if( pNew->pId==0 ){
+      ctrlFlags |= UNIXFILE_NOLOCK;
+      rc = SQLITE_NOMEM_BKPT;
+    }
+  }else{
+    pNew->pId = 0;
   }
 #endif
 
@@ -6401,12 +6405,15 @@ static int fillInUnixFile(
       int n;
       sqlite3_snprintf(MAX_PATHNAME, zSemName, "/%s.sem",
                        pNew->pId->zCanonicalName);
-      for( n=1; zSemName[n]; n++ )
-        if( zSemName[n]=='/' ) zSemName[n] = '_';
+      for(n=1; zSemName[n]; n++){
+        if( zSemName[n]=='/' && !sqlite3FaultSim(801) ) zSemName[n] = '_';
+      }
       pNew->pInode->pSem = sem_open(zSemName, O_CREAT, 0666, 1);
       if( pNew->pInode->pSem == SEM_FAILED ){
         rc = SQLITE_NOMEM_BKPT;
         pNew->pInode->aSemName[0] = '\0';
+        releaseInodeInfo(pNew);
+        pNew->pInode = 0;
       }
     }
     unixLeaveMutex();
@@ -6832,6 +6839,9 @@ static int unixOpen(
     if( zName
      && (fd = robust_open(zName, O_RDWR|O_EXCL|O_TMPFILE, 0600))>=0
     ){
+      if( pOutFlags ){
+        *pOutFlags = flags;
+      }
       rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags|UNIXFILE_NOLOCK);
       goto open_finished;
     }
@@ -7353,7 +7363,12 @@ static int unixSleep(sqlite3_vfs *NotUsed, int microseconds){
   UNUSED_PARAMETER(NotUsed);
   return microseconds;
 #else
-  int seconds = (microseconds+999999)/1000000;
+  int seconds;
+  if( microseconds>2146000000 ){
+    seconds = 2147;
+  }else{
+    seconds = (microseconds+999999)/1000000;
+  }
   sleep(seconds);
   UNUSED_PARAMETER(NotUsed);
   return seconds*1000000;

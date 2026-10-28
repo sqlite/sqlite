@@ -411,7 +411,7 @@ static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p, int N){
 **    pB->isNull==0
 */
 static int decimal_cmp(Decimal *pA, Decimal *pB){
-  int nASig, nBSig, rc, n;
+  int nASig, nBSig, rc, n, iA, iB;
   while( pA->nFrac>0 && pA->a[pA->nDigit-1]==0 ){
     pA->nDigit--;
     pA->nFrac--;
@@ -428,16 +428,18 @@ static int decimal_cmp(Decimal *pA, Decimal *pB){
     pA = pB;
     pB = pTemp;
   }
-  nASig = pA->nDigit - pA->nFrac;
-  nBSig = pB->nDigit - pB->nFrac;
+  for(iA=0; iA<pA->nDigit-pA->nFrac && pA->a[iA]==0; iA++){}
+  for(iB=0; iB<pB->nDigit-pB->nFrac && pB->a[iB]==0; iB++){}
+  nASig = pA->nDigit - pA->nFrac - iA;
+  nBSig = pB->nDigit - pB->nFrac - iB;
   if( nASig!=nBSig ){
     return nASig - nBSig;
   }
-  n = pA->nDigit;
-  if( n>pB->nDigit ) n = pB->nDigit;
-  rc = memcmp(pA->a, pB->a, n);
+  n = pA->nDigit - iA;
+  if( n>pB->nDigit - iB ) n = pB->nDigit - iB;
+  rc = memcmp(pA->a+iA, pB->a+iB, n);
   if( rc==0 ){
-    rc = pA->nDigit - pB->nDigit;
+    rc = (pA->nDigit - iA) - (pB->nDigit - iB);
   }
   return rc;
 }
@@ -723,17 +725,17 @@ static int decimalSafeInt(
   sqlite3_value *pVal,
   int *pResult
 ){
-  sqlite3_int64 i64 = sqlite3_value_int64(pVal);
-  if( i64<-2147483648LL || i64>2147483647LL ){
+  sqlite3_int64 ii = sqlite3_value_int64(pVal);
+  if( ii<-2147483648LL || ii>2147483647LL ){
     char *zMsg = sqlite3_mprintf(
       "value %lld is too large: range limit -2147483648..+2147483647",
-      i64);
+      ii);
     sqlite3_result_error(context, zMsg, -1);
     sqlite3_free(zMsg);
     *pResult = 0;
     return 1;
   }else{
-    *pResult = (int)i64;
+    *pResult = (int)ii;
     return 0;
   }
 }
@@ -817,8 +819,10 @@ static void decimalAddFunc(
   Decimal *pA = decimal_new(context, argv[0], 1);
   Decimal *pB = decimal_new(context, argv[1], 1);
   UNUSED_PARAMETER(argc);
-  decimal_add(pA, pB);
-  decimal_result(context, pA);
+  if( pA && pB ){
+    decimal_add(pA, pB);
+    decimal_result(context, pA);
+  }
   decimal_free(pA);
   decimal_free(pB);
 }
@@ -830,7 +834,7 @@ static void decimalSubFunc(
   Decimal *pA = decimal_new(context, argv[0], 1);
   Decimal *pB = decimal_new(context, argv[1], 1);
   UNUSED_PARAMETER(argc);
-  if( pB ){
+  if( pA && pB ){
     pB->sign = !pB->sign;
     decimal_add(pA, pB);
     decimal_result(context, pA);
@@ -940,8 +944,9 @@ static void decimalPow2Func(
   UNUSED_PARAMETER(argc);
   if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
     int N;
+    Decimal *pA;
     if( decimalSafeInt(context, argv[0], &N) ) return;
-    Decimal *pA = decimalPow2(N);
+    pA = decimalPow2(N);
     if( pA ){
       decimal_result_sci(context, pA, 0);
       decimal_free(pA);

@@ -13,6 +13,8 @@
   typedef unsigned char u8;
 #endif
 
+#include "sqliteInt.h"
+
 extern const char *sqlite3ErrName(int);
 
 typedef struct TestSession TestSession;
@@ -102,7 +104,9 @@ int sql_exec_changeset(
 static int sqlite3_test_changeset(int, void *, char **);
 static void assert_changeset_is_ok(int n, void *p){
   char *z = 0;
+  sqlite3BeginBenignMalloc();
   (void)sqlite3_test_changeset(n, p, &z);
+  sqlite3EndBenignMalloc();
   assert( z==0 );
 }
 #else

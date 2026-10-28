@@ -798,8 +798,28 @@ int sqlite3VdbeBooleanValue(Mem *pMem, int ifNull){
 /*
 ** The MEM structure is already a MEM_Real or MEM_IntReal. Try to 
 ** make it a MEM_Int if we can.
+**
+** This routine only converts REAL values into INTEGER if the REAL
+** has no fractional part and if the value can be exactly expressed
+** as a signed 64-bit integer.
+**
+** The bFromText parameter is true if the MEM was originally text.
+** If the value was originally text then this routine will not convert
+** -9223372036854775808.0 into -9223372036854775808 because if the value
+** was originally text, it would have been converted into an integer
+** already, and since it was not, that means that the original text
+** content had the last four significant digits greater than "5808"
+** and the hence the text value was not really -9223372036854775808.0
+** but rather some nearby value that happens to have the same IEEE 754
+** representation. We don't want text '-9223372036854775900.0' to get
+** converted into -9223372036854775808.
+**
+** But if bFromText is false, then the value started out as REAL and
+** so it is ok to convert -9223372036854775808.0 into -9223372036854775808
+** in that case, because -9223372036854775808.0 is the exact value of
+** the underlying IEEE 754 representation.
 */
-void sqlite3VdbeIntegerAffinity(Mem *pMem){
+void sqlite3VdbeIntegerAffinity(Mem *pMem, int bFromText){
   assert( pMem!=0 );
   assert( pMem->flags & (MEM_Real|MEM_IntReal) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
@@ -821,7 +841,9 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
     ** the second condition under the assumption that addition overflow causes
     ** values to wrap around.
     */
-    if( pMem->u.r==ix && ix>SMALLEST_INT64 && ix<LARGEST_INT64 ){
+    if( pMem->u.r==ix && ix<LARGEST_INT64
+     && (!bFromText || ix>SMALLEST_INT64)
+    ){
       pMem->u.i = ix;
       MemSetTypeFlag(pMem, MEM_Int);
     }
@@ -1264,11 +1286,16 @@ void sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
 ** either case, SQLITE_TOOBIG is returned.
 **
 ** The "enc" parameter is the text encoding for the string, or zero
-** to store a blob.
+** to store a blob.  If enc not 0 or SQLITE_UTF8 and the string
+** begins with a BOM, the BOM is removed.  To retain the BOM on a UTF16
+** string, use a non-negative "n" and set enc to SQLITE_UTF8, and
+** separately set pMem->enc to the correct encoding after this function
+** returns.
 **
-** If n is negative, then the string consists of all bytes up to but
-** excluding the first zero character.  The n parameter must be
-** non-negative for blobs.
+** If n is negative and enc is not zero and is set correctly, then the
+** string consists of all bytes up to but excluding the first zero
+** character.  The n parameter must be non-negative for blobs or if
+** enc is not set accurately.
 */
 int sqlite3VdbeMemSetStr(
   Mem *pMem,          /* Memory cell to set to string value */
@@ -1280,11 +1307,13 @@ int sqlite3VdbeMemSetStr(
   i64 nByte = n;      /* New value for pMem->n */
   int iLimit;         /* Maximum allowed string or blob size */
   u16 flags;          /* New value for pMem->flags */
+  u8 xenc;            /* Encoding without the ENC_KEEPBOM bit */
 
   assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
-  assert( enc!=0 || n>=0 );
+  xenc = enc & ENC_MASK;
+  assert( xenc!=0 || n>=0 );
 
   /* If z is a NULL pointer, set pMem to contain an SQL NULL. */
   if( !z ){
@@ -1298,16 +1327,16 @@ int sqlite3VdbeMemSetStr(
     iLimit = SQLITE_MAX_LENGTH;
   }
   if( nByte<0 ){
-    assert( enc!=0 );
-    if( enc==SQLITE_UTF8 ){
+    assert( xenc!=0 );
+    if( xenc==SQLITE_UTF8 ){
       nByte = strlen(z);
     }else{
       for(nByte=0; nByte<=iLimit && (z[nByte] | z[nByte+1]); nByte+=2){}
     }
     flags= MEM_Str|MEM_Term;
-  }else if( enc==0 ){
+  }else if( xenc==0 ){
     flags = MEM_Blob;
-    enc = SQLITE_UTF8;
+    xenc = SQLITE_UTF8;
   }else{
     flags = MEM_Str;
   }
@@ -1330,7 +1359,7 @@ int sqlite3VdbeMemSetStr(
   if( xDel==SQLITE_TRANSIENT ){
     i64 nAlloc = nByte;
     if( flags&MEM_Term ){
-      nAlloc += (enc==SQLITE_UTF8?1:2);
+      nAlloc += (xenc==SQLITE_UTF8?1:2);
     }
     testcase( nAlloc==0 );
     testcase( nAlloc==31 );
@@ -1354,10 +1383,13 @@ int sqlite3VdbeMemSetStr(
 
   pMem->n = (int)(nByte & 0x7fffffff);
   pMem->flags = flags;
-  pMem->enc = enc;
+  pMem->enc = xenc;
 
 #ifndef SQLITE_OMIT_UTF16
-  if( enc>SQLITE_UTF8 && sqlite3VdbeMemHandleBom(pMem) ){
+  if( xenc>SQLITE_UTF8
+   && (enc & ENC_KEEPBOM)==0
+   && sqlite3VdbeMemHandleBom(pMem)
+  ){
     return SQLITE_NOMEM_BKPT;
   }
 #endif
@@ -1475,10 +1507,10 @@ int sqlite3VdbeMemFromBtree(
   if( (u64)amt + (u64)offset > (u64)sqlite3BtreeMaxRecordSize(pCur) ){
     return SQLITE_CORRUPT_BKPT;
   }
-  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+1)) ){
+  if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+8)) ){
     rc = sqlite3BtreePayload(pCur, offset, amt, pMem->z);
     if( rc==SQLITE_OK ){
-      pMem->z[amt] = 0;   /* Overrun area used when reading malformed records */
+      memset(pMem->z+amt,0,8);  /* Overrun area for malformed records */
       pMem->flags = MEM_Blob;
       pMem->n = (int)amt;
     }else{
@@ -1867,14 +1899,15 @@ static int valueFromExpr(
         zVal = sqlite3MPrintf(db, "%s%s", zNeg, pExpr->u.zToken);
         if( zVal==0 ) goto no_mem;
         sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
+        if( op==TK_FLOAT ){
+          assert( pVal && pVal->z && pVal->flags==(MEM_Str|MEM_Term) );
+          sqlite3AtoF(pVal->z, &pVal->u.r);
+          pVal->flags = MEM_Real;
+        }
       }
     }
     if( affinity==SQLITE_AFF_BLOB ){
-      if( op==TK_FLOAT ){
-        assert( pVal && pVal->z && pVal->flags==(MEM_Str|MEM_Term) );
-        sqlite3AtoF(pVal->z, &pVal->u.r);
-        pVal->flags = MEM_Real;
-      }else if( op==TK_INTEGER ){
+      if( op==TK_INTEGER ){
         /* This case is required by -9223372036854775808 and other strings
         ** that look like integers but cannot be handled by the
         ** sqlite3DecOrHexToI64() call above.  */

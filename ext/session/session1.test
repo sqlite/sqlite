@@ -801,6 +801,29 @@ do_test $tn.15.3 {
 } {1 data 1 {} {} First 2 data 2 {} {} Second}
 
 db2 close
+
+do_execsql_test $tn.16.4 {
+  PRAGMA foreign_keys = ON;
+  CREATE TABLE x2(a INTEGER PRIMARY KEY, b)%WR%;
+  CREATE TABLE x3(c REFERENCES x2(a) ON DELETE RESTRICT);
+}
+do_test $tn.16.5 {
+  execsql BEGIN
+  set C [changeset_from_sql { INSERT INTO x2 VALUES(1, 'new'); }]
+  execsql ROLLBACK
+  execsql {
+    INSERT INTO x2 VALUES(1, 'old');
+    INSERT INTO x3 VALUES(1);
+  }
+  set CONFLICT_HANDLERS [list REPLACE]
+  set rc [catch { sqlite3changeset_apply_v2 -nosavepoint db $C xConflict } msg]
+  list $rc $msg [sqlite3_get_autocommit db]
+} {1 SQLITE_CONSTRAINT 1}
+do_execsql_test $tn.16.6 {
+  SELECT * FROM x2;
+  PRAGMA foreign_keys = OFF;
+} {1 old}
+
 }]
 }
 

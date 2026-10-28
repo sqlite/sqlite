@@ -421,5 +421,15 @@ do_catchsql_test 13.15 {
   SELECT t1.c FROM t0 JOIN (t1 INDEXED BY t1x JOIN t2 ON true) ON true;
 } {1 {no such index: t1x}}
 
+# Bug 2026-10-21T17:47:47Z
+reset_db
+do_execsql_test 14.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b UNIQUE) WITHOUT ROWID;
+  INSERT INTO t1 VALUES(1,2),('a','b');
+  SELECT * FROM t1 NOT INDEXED WHERE b = 'b';
+} {a b}
+do_eqp_test 14.1 {
+  SELECT * FROM t1 NOT INDEXED WHERE b = 'b';
+} {{SCAN t1}}
 
 finish_test

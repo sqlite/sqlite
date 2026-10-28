@@ -362,5 +362,103 @@ do_test 12.2 {
   sqlite3_fts5_tokenize db trigram ""
 } {}
 
-finish_test
+#-------------------------------------------------------------------------
+# LIKE and GLOB constraints on UNINDEXED columns must not be passed to
+# the trigram index, as UNINDEXED columns have no entries in the index.
+# Bug be50ab5692c334fd.
+#
+reset_db
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b UNINDEXED, tokenize=trigram);
+  INSERT INTO t1 VALUES('xyz', 'abcdef');
+  INSERT INTO t1 VALUES('abcdef', 'xyz');
+  CREATE VIRTUAL TABLE t2 USING fts5(
+    a, b UNINDEXED, tokenize="trigram case_sensitive 1"
+  );
+  INSERT INTO t2 SELECT a, b FROM t1;
+}
 
+do_execsql_test 13.1 {
+  SELECT rowid FROM t1 WHERE b LIKE '%bcd%';
+} {1}
+do_execsql_test 13.2 {
+  SELECT rowid FROM t1 WHERE b GLOB '*bcd*';
+} {1}
+do_execsql_test 13.3 {
+  SELECT rowid FROM t1 WHERE +b LIKE '%bcd%';
+} {1}
+do_execsql_test 13.4 {
+  SELECT rowid FROM t1 WHERE a LIKE '%bcd%';
+} {2}
+do_execsql_test 13.5 {
+  SELECT rowid FROM t1 WHERE a LIKE '%bcd%' AND b LIKE '%yz%';
+} {2}
+do_execsql_test 13.6 {
+  SELECT rowid FROM t2 WHERE b GLOB '*bcd*';
+} {1}
+do_execsql_test 13.7 {
+  SELECT rowid FROM t2 WHERE b LIKE '%BCD%';
+} {1}
+
+do_eqp_test 13.8 {
+  SELECT * FROM t1 WHERE b LIKE ?
+} {{SCAN t1 VIRTUAL TABLE INDEX 0:}}
+do_eqp_test 13.9 {
+  SELECT * FROM t1 WHERE b GLOB ?
+} {{SCAN t1 VIRTUAL TABLE INDEX 0:}}
+do_eqp_test 13.10 {
+  SELECT * FROM t2 WHERE b GLOB ?
+} {{SCAN t2 VIRTUAL TABLE INDEX 0:}}
+do_eqp_test 13.11 {
+  SELECT * FROM t1 WHERE a LIKE ? AND b LIKE ?
+} {VIRTUAL TABLE INDEX 0:L0}
+
+#-------------------------------------------------------------------------
+# Bug 402c7177cb4d53f4. A LIKE pattern pushed down to FTS5 made
+# sqlite3Fts5ExprPattern() read one byte past the end of the pattern,
+# because for LIKE aSpec[2] is 0, which matches the nul terminator.
+# The query result was correct; the over-read only showed up under a
+# sanitizer. These tests exercise the affected path and confirm the
+# results are as expected.
+#
+reset_db
+do_execsql_test 14.0 {
+  CREATE VIRTUAL TABLE t USING fts5(a, tokenize=trigram);
+  INSERT INTO t VALUES('abcdefg');     -- rowid 1
+  INSERT INTO t VALUES('xabcdefgy');   -- rowid 2
+  INSERT INTO t VALUES('abcXefg');     -- rowid 3
+  INSERT INTO t VALUES('zzz');         -- rowid 4
+}
+
+# The repro from the bug report: a LIKE with no wildcards, 3+ characters,
+# ending at the terminator (the case that triggered the over-read).
+do_execsql_test 14.1 {
+  SELECT rowid FROM t WHERE a LIKE 'abcdefg';
+} {1}
+do_execsql_test 14.2 {
+  SELECT rowid FROM t WHERE a LIKE '%abcdefg%';
+} {1 2}
+
+# A bound parameter follows the same path.
+do_test 14.3 {
+  set pat abcdefg
+  execsql { SELECT rowid FROM t WHERE a LIKE $pat }
+} {1}
+
+# GLOB, including a trailing bracket expression, still works.
+do_execsql_test 14.4 {
+  SELECT rowid FROM t WHERE a GLOB '*abc*';
+} {1 2 3}
+do_execsql_test 14.5 {
+  SELECT rowid FROM t WHERE a GLOB 'abc[d]efg';
+} {1}
+do_execsql_test 14.6 {
+  SELECT rowid FROM t WHERE a GLOB 'abc[X-Z]efg';
+} {3}
+
+# Short patterns (fewer than 3 trigram characters) are not pushed down
+# but must still return the right rows.
+do_execsql_test 14.7 {
+  SELECT rowid FROM t WHERE a LIKE '%ab%';
+} {1 2 3}
+finish_test

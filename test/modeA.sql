@@ -265,6 +265,33 @@ abc:-hi-:The quick fox jumps over the la
 END
 # 23456789 123456789 123456789 123456789
 
+# line mode when a column name is wider than the screen width.  The value
+# must still be shown, two characters per line, rather than looping.
+# https://sqlite.org/bugs/info/f8dda85c2edf5565
+#
+.testcase 560
+.mode line --sw 10 --titlelimit 0
+SELECT 'abc' AS averyveryverylongcolumnname;
+.check <<END
+averyveryverylongcolumnname: ab
+                             c
+END
+.testcase 561
+.mode line --sw 10 --linelimit 4 --titlelimit 0
+SELECT 'abc' AS averyveryverylongcolumnname;
+.check <<END
+averyveryverylongcolumnname: ab
+                             c
+END
+# A double-width character with a screen width too narrow to hold it.
+.testcase 562
+.mode line --sw 4
+SELECT unistr('中文') AS a;
+.check <<END
+a: 中
+   文
+END
+
 # https://sqlite.org/forum/forumpost/2025-12-31T19:14:24z
 #
 # For legacy compatibility, ".header" settings are not changed
@@ -281,7 +308,7 @@ SELECT * FROM t1;
 
 .testcase 601
 SELECT 'abc',char(0x05,0x18,0x33),'xyz';
-.check --glob abc,"*3",xyz
+.check --glob abc,"??3",xyz
 
 .testcase 610
 .mode csv -reset
@@ -640,7 +667,7 @@ SELECT 1.25e+12, 0x1234;
 .testcase 1200
 .mode jobject --fpfmt auto
 SELECT 1 AS a, +9.0e+999 AS b, -9.0e+999 AS c, 0.0 AS d;
-.check {"a":1,"b":9e+999,"c":-9e+999,"d":0}
+.check {"a":1,"b":9.0e+999,"c":-9.0e+999,"d":0.0}
 .open :memory:
 .testcase 1210
 CREATE TABLE t1(a);
@@ -651,9 +678,152 @@ PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE t1(a);
 INSERT INTO t1 VALUES(123);
-INSERT INTO t1 VALUES(9e+999);
+INSERT INTO t1 VALUES(9.0e+999);
 INSERT INTO t1 VALUES('hello');
-INSERT INTO t1 VALUES(-9e+999);
+INSERT INTO t1 VALUES(-9.0e+999);
 INSERT INTO t1 VALUES(x'313233');
 COMMIT;
+END
+
+# Bug 2026-10-17T09:26:21Z
+#
+.testcase 1300
+.mode box --title html --limits on
+SELECT '' AS '';
+.check <<END
+╭──╮
+│  │
+╞══╡
+│  │
+╰──╯
+END
+
+# Bug 2026-10-18T20:39:22Z
+#
+# .dump should not be affected by the --fpfmt, --ifmt, and --textjsonb
+# settings of .mode
+#
+.open :memory:
+.testcase 1400
+CREATE TABLE t1(a,b,c);
+INSERT INTO t1 VALUES(1234.5678, 16, jsonb('{"a":1}'));
+INSERT INTO t1 VALUES(0.5, 1234567, x'0102');
+.mode list --fpfmt %.2f --ifmt %x --textjsonb on
+.dump
+.check <<END
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(a,b,c);
+INSERT INTO t1 VALUES(1234.5678,16,x'4c17611331');
+INSERT INTO t1 VALUES(0.5,1234567,x'0102');
+COMMIT;
+END
+.testcase 1410
+.mode list --ifmt %,d
+.dump
+.check <<END
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(a,b,c);
+INSERT INTO t1 VALUES(1234.5678,16,x'4c17611331');
+INSERT INTO t1 VALUES(0.5,1234567,x'0102');
+COMMIT;
+END
+.testcase 1420
+SELECT a, b FROM t1;
+.check <<END
+1234.57|16
+0.50|1,234,567
+END
+.testcase 1430
+.mode
+.check ".mode list --fpfmt %.2f --ifmt %,d --limits on --textjsonb on"
+
+# Bug 2026-10-18T20:37:23Z
+#
+# Preserve full double precision for .dump and .mode insert.
+#
+.open :memory:
+.testcase 1500
+CREATE TABLE t(x REAL);
+INSERT INTO t VALUES(1.7976931348623157e308),(0.1+0.2),(123456789.123456789);
+.dump
+.check <<END
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t(x REAL);
+INSERT INTO t VALUES(1.7976931348623157e+308);
+INSERT INTO t VALUES(0.30000000000000004);
+INSERT INTO t VALUES(123456789.12345679);
+COMMIT;
+END
+
+# Bug 2026-10-24T04:41:27Z
+#
+# Relaxed quoting must quote text values that look like real literals
+# with no digits before the "." and text values that look like
+# hexadecimal integer literals.
+#
+.open :memory:
+.mode tty
+.testcase 1600
+SELECT '.5' AS a, '0.5' AS b, 0.5 AS c, '-.5' AS d, '0x10' AS e, 0x10 AS f;
+.check <<END
+╭──────┬───────┬─────┬───────┬────────┬────╮
+│  a   │   b   │  c  │   d   │   e    │ f  │
+╞══════╪═══════╪═════╪═══════╪════════╪════╡
+│ '.5' │ '0.5' │ 0.5 │ '-.5' │ '0x10' │ 16 │
+╰──────┴───────┴─────┴───────┴────────┴────╯
+END
+.testcase 1610
+CREATE TABLE t2(a,b);
+INSERT INTO t2(a,b) VALUES
+  (1,'.5'),
+  (1,'-.5'),
+  (1,'+.5'),
+  (1,'.5e3'),
+  (1,'.5E-3'),
+  (1,'5.'),
+  (0,'.'),
+  (0,'-.'),
+  (0,'.e5'),
+  (0,'.5.5'),
+  (0,'.5x'),
+  (0,'.5e'),
+  (1,'0x1F'),
+  (1,'0X1f'),
+  (1,'-0x10'),
+  (1,'+0xabcdef'),
+  (0,'0x'),
+  (0,'0x1G'),
+  (0,'0x1.5'),
+  (0,'x10'),
+  (0,'1x10');
+SELECT if(a,'yes','') AS 'quoted?', b AS string FROM t2 ORDER BY rowid;
+.check <<END
+╭─────────┬─────────────╮
+│ quoted? │   string    │
+╞═════════╪═════════════╡
+│ yes     │ '.5'        │
+│ yes     │ '-.5'       │
+│ yes     │ '+.5'       │
+│ yes     │ '.5e3'      │
+│ yes     │ '.5E-3'     │
+│ yes     │ '5.'        │
+│         │ .           │
+│         │ -.          │
+│         │ .e5         │
+│         │ .5.5        │
+│         │ .5x         │
+│         │ .5e         │
+│ yes     │ '0x1F'      │
+│ yes     │ '0X1f'      │
+│ yes     │ '-0x10'     │
+│ yes     │ '+0xabcdef' │
+│         │ 0x          │
+│         │ 0x1G        │
+│         │ 0x1.5       │
+│         │ x10         │
+│         │ 1x10        │
+╰─────────┴─────────────╯
 END

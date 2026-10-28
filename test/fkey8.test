@@ -288,6 +288,299 @@ do_execsql_test 7.4 {
   SELECT * FROM aux.c1;
 } {11 100 12 100 21 200 22 200}
 
+#-------------------------------------------------------------------------
+# Bug report: https://sqlite.org/bugs/forumpost/89bb27c659
+#
+reset_db
+
+do_execsql_test 8.0 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE parent(id INTEGER PRIMARY KEY, code TEXT UNIQUE);
+
+  CREATE TABLE child(
+      id INTEGER PRIMARY KEY, 
+      k REFERENCES parent(code) ON DELETE CASCADE
+  );
+  INSERT INTO parent VALUES(1, '1001'), (2, '1002');
+
+  INSERT INTO child VALUES(10, 1001), (11, 1002);
+}
+
+do_catchsql_test 8.1 {
+  INSERT INTO child VALUES(12, 1003);
+} {1 {FOREIGN KEY constraint failed}}
+
+do_execsql_test 8.2 {
+  DELETE FROM parent WHERE code = '1001';
+  SELECT id, quote(k) FROM child;
+} {
+  11 1002
+}
+
+do_execsql_test 8.3 { PRAGMA foreign_key_check }
+
+# Parent columns with numeric affinity, child columns with BLOB affinity.
+# The child keys are text values that only match the parent keys once
+# the parent column affinity has been applied.
+#
+do_execsql_test 8.4 {
+  CREATE TABLE p2(id INTEGER PRIMARY KEY, n INTEGER UNIQUE, r REAL UNIQUE);
+  CREATE TABLE c1(k REFERENCES p2(n) ON DELETE CASCADE);
+  CREATE TABLE c2(k REFERENCES p2(n) ON UPDATE CASCADE);
+  CREATE TABLE c3(k REFERENCES p2(r) ON DELETE SET NULL);
+  CREATE TABLE c4(k REFERENCES p2(id) ON DELETE CASCADE);
+  INSERT INTO p2 VALUES(1, 5, 1.5), (2, 6, 2.5), (3, 7, 3.5), (4, 8, 4.5);
+  INSERT INTO c1 VALUES('5');
+  INSERT INTO c2 VALUES('6');
+  INSERT INTO c3 VALUES('3.5');
+  INSERT INTO c4 VALUES('4');
+}
+
+do_execsql_test 8.5 {
+  DELETE FROM p2 WHERE n=5;
+  SELECT count(*) FROM c1;
+} {0}
+
+do_execsql_test 8.6 {
+  UPDATE p2 SET n=60 WHERE n=6;
+  SELECT quote(k) FROM c2;
+} {60}
+
+do_execsql_test 8.7 {
+  DELETE FROM p2 WHERE n=7;
+  SELECT quote(k) FROM c3;
+} {NULL}
+
+do_execsql_test 8.8 {
+  DELETE FROM p2 WHERE n=8;
+  SELECT count(*) FROM c4;
+} {0}
+
+do_execsql_test 8.9 { PRAGMA foreign_key_check }
+
+#-------------------------------------------------------------------------
+# More cases where (parent_key = child_key) does not naturally use the
+# affinity of the parent key. Each is tested both with and without an
+# index on the child key.
+#
+foreach {tn idx} {1 0 2 1} {
+  reset_db
+  execsql { PRAGMA foreign_keys=ON }
+
+  # TEXT parent, INTEGER child. Child value 1001 matches '1001' but
+  # not '01001'.
+  do_execsql_test 9.$tn.1 {
+    CREATE TABLE p1(code TEXT PRIMARY KEY);
+    CREATE TABLE c1(k INTEGER REFERENCES p1 ON DELETE CASCADE);
+    INSERT INTO p1 VALUES('01001'), ('1001');
+    INSERT INTO c1 VALUES(1001);
+  }
+  if {$idx} { execsql { CREATE INDEX c1k ON c1(k) } }
+  do_execsql_test 9.$tn.2 {
+    DELETE FROM p1 WHERE code='01001';
+    SELECT quote(k) FROM c1;
+  } {1001}
+  do_execsql_test 9.$tn.3 {
+    DELETE FROM p1 WHERE code='1001';
+    SELECT quote(k) FROM c1;
+  } {}
+
+  # TEXT parent, REAL child. Child value 1001.0 matches '1001.0' but
+  # not '1001'.
+  do_execsql_test 9.$tn.4 {
+    CREATE TABLE p2(code TEXT PRIMARY KEY);
+    CREATE TABLE c2(k REAL REFERENCES p2 ON DELETE SET NULL);
+    INSERT INTO p2 VALUES('1001'), ('1001.0');
+    INSERT INTO c2 VALUES(1001);
+  }
+  if {$idx} { execsql { CREATE INDEX c2k ON c2(k) } }
+  do_execsql_test 9.$tn.5 {
+    DELETE FROM p2 WHERE code='1001';
+    SELECT quote(k) FROM c2;
+  } {1001.0}
+  do_execsql_test 9.$tn.6 {
+    DELETE FROM p2 WHERE code='1001.0';
+    SELECT quote(k) FROM c2;
+  } {NULL}
+
+  # BLOB parent, INTEGER child. Child value 5 matches 5 but not '5'.
+  do_execsql_test 9.$tn.7 {
+    CREATE TABLE p3(code UNIQUE);
+    CREATE TABLE c3(k INTEGER REFERENCES p3(code) ON DELETE CASCADE);
+    INSERT INTO p3 VALUES('5'), (5);
+    INSERT INTO c3 VALUES(5);
+  }
+  if {$idx} { execsql { CREATE INDEX c3k ON c3(k) } }
+  do_execsql_test 9.$tn.8 {
+    DELETE FROM p3 WHERE code='5';
+    SELECT quote(k) FROM c3;
+  } {5}
+  do_execsql_test 9.$tn.9 {
+    DELETE FROM p3 WHERE code=5;
+    SELECT quote(k) FROM c3;
+  } {}
+
+  # TEXT parent, BLOB child, ON UPDATE CASCADE.
+  do_execsql_test 9.$tn.10 {
+    CREATE TABLE p4(code TEXT PRIMARY KEY);
+    CREATE TABLE c4(k REFERENCES p4 ON UPDATE CASCADE);
+    INSERT INTO p4 VALUES('7'), ('07');
+    INSERT INTO c4 VALUES(7), ('07');
+  }
+  if {$idx} { execsql { CREATE INDEX c4k ON c4(k) } }
+  do_execsql_test 9.$tn.11 {
+    UPDATE p4 SET code='8' WHERE code='7';
+    SELECT quote(k) FROM c4 ORDER BY 1;
+  } {'07' '8'}
+
+  # TEXT parent with NOCASE collation, BLOB child.
+  do_execsql_test 9.$tn.12 {
+    CREATE TABLE p5(code TEXT COLLATE nocase PRIMARY KEY);
+    CREATE TABLE c5(k REFERENCES p5 ON DELETE CASCADE);
+    INSERT INTO p5 VALUES('abc'), ('10');
+    INSERT INTO c5 VALUES('ABC'), (10);
+  }
+  if {$idx} { execsql { CREATE INDEX c5k ON c5(k COLLATE nocase) } }
+  do_execsql_test 9.$tn.13 {
+    DELETE FROM p5;
+    SELECT count(*) FROM c5;
+  } {0}
+
+  # Immediate constraint (no action) on a TEXT parent with a BLOB child.
+  do_execsql_test 9.$tn.14 {
+    CREATE TABLE p6(code TEXT PRIMARY KEY);
+    CREATE TABLE c6(k REFERENCES p6);
+    INSERT INTO p6 VALUES('1'), ('01');
+    INSERT INTO c6 VALUES(1);
+  }
+  if {$idx} { execsql { CREATE INDEX c6k ON c6(k) } }
+  do_execsql_test 9.$tn.15 {
+    DELETE FROM p6 WHERE code='01';
+  } {}
+  do_catchsql_test 9.$tn.16 {
+    DELETE FROM p6 WHERE code='1';
+  } {1 {FOREIGN KEY constraint failed}}
+
+  do_execsql_test 9.$tn.17 { PRAGMA foreign_key_check }
+}
+
+#-------------------------------------------------------------------------
+# Check that an index on the child key can still be used when the
+# comparison does not naturally use the affinity of the parent key.
+#
+reset_db
+do_execsql_test 10.0 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE parent(id INTEGER PRIMARY KEY, code TEXT UNIQUE);
+  CREATE TABLE c1(id INTEGER PRIMARY KEY, k REFERENCES parent(code));
+  CREATE INDEX c1k ON c1(k);
+  CREATE TABLE c2(id INTEGER PRIMARY KEY,
+    k REFERENCES parent(code) ON DELETE CASCADE
+  );
+  CREATE INDEX c2k ON c2(k);
+  CREATE TABLE c3(k INTEGER PRIMARY KEY REFERENCES parent(code)
+    ON UPDATE CASCADE
+  );
+}
+
+do_eqp_test 10.1 {
+  DELETE FROM parent WHERE id=1;
+} {
+  QUERY PLAN
+  |--SEARCH parent USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH c3 USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH c2 USING COVERING INDEX c2k (k=?)
+  `--SEARCH c1 USING COVERING INDEX c1k (k=?)
+}
+
+do_eqp_test 10.2 {
+  UPDATE parent SET code='x' WHERE id=1;
+} {
+  QUERY PLAN
+  |--SEARCH parent USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH c3 USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH c2 USING COVERING INDEX c2k (k=?)
+  |--SEARCH c1 USING COVERING INDEX c1k (k=?)
+  |--SEARCH c3 USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH c2 USING COVERING INDEX c2k (k=?)
+  `--SEARCH c1 USING COVERING INDEX c1k (k=?)
+}
+
+#-------------------------------------------------------------------------
+# The extra IN term used to drive an index lookup on the child key is
+# only generated if there is a suitable index on the child key. In
+# this test the IN term, if present, would use an ephemeral table. So
+# check for an OP_OpenEphemeral in the program that implements the
+# no-action foreign key checks.
+#
+proc has_ephemeral {sql} {
+  expr {[lsearch [db eval "EXPLAIN $sql" ] OpenEphemeral]>=0}
+}
+reset_db
+do_execsql_test 11.0 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE parent(id INTEGER PRIMARY KEY, code TEXT UNIQUE);
+  CREATE TABLE c1(id INTEGER PRIMARY KEY, k REFERENCES parent(code));
+}
+do_test 11.1 { has_ephemeral {DELETE FROM parent WHERE id=1} } 0
+
+# An index with the wrong collation sequence is not suitable.
+do_execsql_test 11.2 { CREATE INDEX c1k1 ON c1(k COLLATE nocase) }
+do_test 11.3 { has_ephemeral {DELETE FROM parent WHERE id=1} } 0
+
+# Nor is a partial index, or one on which k is not the left-most column.
+do_execsql_test 11.4 {
+  CREATE INDEX c1k2 ON c1(k) WHERE id>10;
+  CREATE INDEX c1k3 ON c1(id, k);
+}
+do_test 11.5 { has_ephemeral {DELETE FROM parent WHERE id=1} } 0
+
+do_execsql_test 11.6 { CREATE INDEX c1k4 ON c1(k) }
+do_test 11.7 { has_ephemeral {DELETE FROM parent WHERE id=1} } 1
+
+#-------------------------------------------------------------------------
+# Check that an index on a composite child key can be used for all
+# columns of the key, not just the left-most, when the comparisons do
+# not naturally use the affinity of the parent key.
+#
+reset_db
+do_execsql_test 12.0 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE parent(id INTEGER PRIMARY KEY, x TEXT, y TEXT, UNIQUE(x, y));
+  CREATE TABLE c1(a, b, FOREIGN KEY(a, b) REFERENCES parent(x, y));
+  CREATE INDEX c1ab ON c1(a, b);
+  CREATE TABLE c2(a, b, FOREIGN KEY(a, b) REFERENCES parent(x, y));
+  CREATE INDEX c2ba ON c2(b, a);
+}
+
+do_eqp_test 12.1 {
+  DELETE FROM parent WHERE id=1;
+} {
+  QUERY PLAN
+  |--SEARCH parent USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH c2 USING COVERING INDEX c2ba (b=? AND a=?)
+  `--SEARCH c1 USING COVERING INDEX c1ab (a=? AND b=?)
+}
+
+# Bug 2026-10-22T05:11:21Z
+# FK delete/update scan misses child rows again when parent key
+# is TEXT and child stores ±Inf.
+#
+# Fixed by teaching sqlite3AtoF() to understand ±Inf.
+#
+reset_db
+do_execsql_test 13.1 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE p(x TEXT PRIMARY KEY);
+  CREATE TABLE c(y BLOB REFERENCES p(x));
+  INSERT INTO p VALUES('Inf');
+  INSERT INTO c VALUES(9e999);      -- insert-side check passes
+  PRAGMA foreign_key_check;
+} {}
+do_catchsql_test 13.2 {
+  DELETE FROM p WHERE x='Inf';      -- SUCCEEDS, but must fail
+} {1 {FOREIGN KEY constraint failed}}
+
 
 
 finish_test

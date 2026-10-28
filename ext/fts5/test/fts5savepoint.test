@@ -81,5 +81,19 @@ ifcapable fts3 {
   }
 }
 
-finish_test
+# Bug 2026-10-20T20:37:14Z
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a);
+  BEGIN;
+  INSERT INTO t1 VALUES (1);
+  SAVEPOINT s0;
+  CREATE VIRTUAL TABLE t2 USING fts5(x);
+  INSERT INTO t2 VALUES ('apple');
+  ROLLBACK TO s0;
+  SAVEPOINT s1;
+  COMMIT;
+  SELECT count(*) FROM t1;
+} 1
 
+finish_test

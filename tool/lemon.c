@@ -88,7 +88,6 @@ static MemChunk *memChunkList = 0;
 */
 static void *lemon_malloc(size_t nByte){
   MemChunk *p;
-  if( nByte<0 ) return 0;
   p = malloc( nByte + sizeof(MemChunk) );
   if( p==0 ){
     fprintf(stderr, "Out of memory.  Failed to allocate %lld bytes.\n",

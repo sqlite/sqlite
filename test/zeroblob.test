@@ -339,5 +339,86 @@ do_execsql_test 13.100 {
   SELECT a, quote(b), length(b), c FROM t1;
 } {1 X'0000000000000000' 8 3}
 
+# 2026-10-23 https://sqlite.org/bugs/info/420911fdac2d68af
+#
+# In a non-UTF-8 database, a zeroblob() used as text was formerly
+# converted from UTF-8, so each zero byte became one character of the
+# database encoding.  A zeroblob value must read back as text identically
+# to the same bytes supplied as a BLOB literal or stored in a table.
+#
+foreach {tn enc} {14 UTF-16le 15 UTF-16be} {
+  reset_db
+  db eval "PRAGMA encoding='$enc'"
+  do_execsql_test $tn.1 {
+    CREATE TABLE t1(b);
+    INSERT INTO t1 VALUES(zeroblob(4));
+    CREATE TABLE t2(c);
+    INSERT INTO t2 VALUES('ab'),('abc');
+  }
+
+  # zeroblob(4) cast to text is the same 4 bytes as the literal, the
+  # stored value, and the value from a materialized CTE.
+  do_execsql_test $tn.2 {
+    SELECT hex(CAST(zeroblob(4) AS TEXT));
+  } {00000000}
+  do_execsql_test $tn.3 {
+    SELECT hex(CAST(x'00000000' AS TEXT));
+  } {00000000}
+  do_execsql_test $tn.4 {
+    SELECT hex(CAST(b AS TEXT)) FROM t1;
+  } {00000000}
+  do_execsql_test $tn.5 {
+    WITH x AS MATERIALIZED (SELECT zeroblob(4) AS b FROM t1)
+      SELECT hex(CAST(b AS TEXT)) FROM x;
+  } {00000000}
+
+  # The value compares equal, and has the same length, either way.
+  do_execsql_test $tn.6 {
+    SELECT CAST(zeroblob(4) AS TEXT)=CAST(x'00000000' AS TEXT);
+  } {1}
+  do_execsql_test $tn.7 {
+    SELECT octet_length(CAST(zeroblob(4) AS TEXT)),
+           octet_length(CAST(x'00000000' AS TEXT));
+  } {4 4}
+
+  # upper()/lower() see the value as the database encoding, not UTF-8.
+  do_execsql_test $tn.8 {
+    SELECT hex(upper(zeroblob(4))), hex(upper(x'00000000'));
+  } {00000000 00000000}
+  do_execsql_test $tn.9 {
+    SELECT hex(lower(zeroblob(4))), hex(lower(x'00000000'));
+  } {00000000 00000000}
+
+  # The plan no longer changes the result: inlined and materialized agree.
+  do_execsql_test $tn.10 {
+    WITH x AS (SELECT zeroblob(length(c)) AS z FROM t2)
+      SELECT count(*) FROM (SELECT 1 FROM x GROUP BY upper(z));
+  } {1}
+  do_execsql_test $tn.11 {
+    WITH x AS MATERIALIZED (SELECT zeroblob(length(c)) AS z FROM t2)
+      SELECT count(*) FROM (SELECT 1 FROM x GROUP BY upper(z));
+  } {1}
+
+  # sqlite3_bind_zeroblob() and sqlite3_bind_zeroblob64() behave like a
+  # bound BLOB of the same zero bytes.
+  set stmt [sqlite3_prepare db {SELECT hex(CAST(?1 AS TEXT))} -1 dummy]
+  do_test $tn.12 {
+    sqlite3_bind_zeroblob $stmt 1 4
+    sqlite3_step $stmt
+    set ret [sqlite3_column_text $stmt 0]
+    sqlite3_reset $stmt
+    set ret
+  } {00000000}
+  do_test $tn.13 {
+    sqlite3_bind_zeroblob64 $stmt 1 4
+    sqlite3_step $stmt
+    set ret [sqlite3_column_text $stmt 0]
+    sqlite3_reset $stmt
+    set ret
+  } {00000000}
+  sqlite3_finalize $stmt
+}
+reset_db
+
 test_restore_config_pagecache
 finish_test
