@@ -26,18 +26,22 @@
 //#@ policy off
 */
 //#savepoint begin
-//#if defined target:es6-module
-//#  // The sqlite3 wasm build. We need vanilla mode for the time being
-//#  define esm 0
-//#  define no-export-default
-//#/if
-//#define -? {esm -> 0}
-//#if esm
-//#  if amalgamation
-export const Jaccwabyt =
-//#  elif not defined no-export-default
-export default
+//#define ? esm 0
+//#define ? no-export 0
+//#define ? lexical-scoped 0
+//#if defined canonical-sqlite3
+//#  // The sqlite3 wasm build.
+//#  define no-export 1
+//#  define lexical-scoped 1
+//#  if defined target:es6-module
+//#    define esm 1
 //#  /if
+//#/if
+//#if esm
+//#  define lexical-scoped 1
+//#/if
+//#if lexical-scoped
+const Jaccwabyt =
 //#else
 'use strict';
 globalThis.Jaccwabyt =
@@ -1216,4 +1220,11 @@ function StructBinderFactory(config){
   }
   return StructBinder;
 }/*StructBinderFactory*/;
+//#if esm and not no-export
+//#  if amalgamation
+export Jaccwabyt;
+//#  else
+export default Jaccwabyt;
+//#  /if
+//#/if
 //#savepoint rollback

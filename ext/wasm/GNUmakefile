@@ -216,7 +216,7 @@ b.cp = $(call b.mkdir@); \
 # of the @sqlite3.wasm@ placeholders in JS files, which trigger an
 # error before we get to handle that filename juggling. Most JS files
 # defensively set a file-local @policy.
-D.common =
+D.common = -Dcanonical-sqlite3
 
 #
 # $(call b.c-pp.shcmd,LOGTAG,src,dest,-Dx=y...)

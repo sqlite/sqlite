@@ -33,12 +33,20 @@
 //#@ pop policy
 */
 //#savepoint begin
-//#if defined target:es6-module
-//#  // The sqlite3 wasm build. We need vanilla mode for the time being
-//#  define esm 0
-//#  define no-export-default
+//#define ? esm 0
+//#define ? no-export 0
+//#define ? lexical-scoped 0
+//#if defined canonical-sqlite3
+//#  // The sqlite3 wasm build.
+//#  define no-export 1
+//#  define lexical-scoped 1
+//#  if defined target:es6-module
+//#    define esm 1
+//#  /if
 //#/if
-//#define -? {esm -> 0}
+//#if esm
+//#  define lexical-scoped 1
+//#/if
 /**
    The primary goal of this function is to provide JS/WASM utility
    code similar to some of that provided by Emscripten-generated
@@ -239,8 +247,8 @@
      newly-created (or config-provided) target. The current approach
      seemed better at the time.
 */
-//#if esm
-const toExportForESM =
+//#if lexical-scoped
+const WhWasmUtilInstaller =
 //#else
 'use strict';
 globalThis.WhWasmUtilInstaller =
@@ -2516,12 +2524,7 @@ function WhWasmUtilInstaller(target){
    Error handling is up to the caller, who may attach a `catch()` call
    to the promise.
 */
-//#if esm
-toExportForESM
-//#else
-globalThis.WhWasmUtilInstaller
-//#/if
-.yawl = function yawl(config){
+WhWasmUtilInstaller.yawl = function yawl(config){
 //#if not esm
   'use strict';
 //#/if
@@ -2568,18 +2571,12 @@ globalThis.WhWasmUtilInstaller
         .then(finalThen)
   ;
   return loadWasm;
-}.bind(
-//#if esm
-toExportForESM
-//#else
-globalThis.WhWasmUtilInstaller
-//#/if
-)/*yawl()*/;
-//#if esm
-//#if amalgamation
-export { toExportForESM as WhWasmUtilInstaller };
-//#elif not defined no-export-default
-export default toExportForESM;
-//#/if
+}.bind(WhWasmUtilInstaller)/*yawl()*/;
+//#if esm and not no-export
+//#  if amalgamation
+export WhWasmUtilInstaller;
+//#  elif not defined no-export-default
+export default WhWasmUtilInstaller;
+//#  /if
 //#/if
 //#savepoint rollback
