@@ -124,6 +124,27 @@ do_execsql_test 1.23 {
   SELECT next_char('ab','vocab2','w',null,'binary');
 } {c}
 
+# Bug 2026-10-29T11:59:57Z: next_char() looped forever under NOCASE
+# when one of the next characters was "Z", as the characters between
+# "Z" and "a" sort before "a" in NOCASE order.
+#
+do_execsql_test 1.24 {
+  CREATE TABLE vocab3(w TEXT COLLATE NOCASE UNIQUE);
+  INSERT INTO vocab3 VALUES('Zebra'),('zoo'),('apple'),('[x');
+  SELECT next_char('','vocab3','w');
+} {{[aZ}}
+do_execsql_test 1.25 {
+  SELECT next_char('z','vocab3','w');
+} {eo}
+do_execsql_test 1.26 {
+  CREATE TABLE vocab4(w TEXT UNIQUE);
+  INSERT INTO vocab4 SELECT w FROM vocab3;
+  INSERT INTO vocab4 VALUES('q' || char(1114111)), ('q' || char(1114111) || 'x');
+  SELECT next_char('','vocab4','w',null,'nocase'),
+         next_char('','vocab4','w'),
+         next_char('q','vocab4','w') = char(1114111);
+} {{[aqZ} {Z[aqz} 1}
+
 do_execsql_test 1.30 {
   SELECT rowid FROM t1 WHERE word='rabbit';
 } {2}

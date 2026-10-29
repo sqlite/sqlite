@@ -198,7 +198,8 @@ void sqlite3BeginTrigger(
     assert( db->mallocFailed );
     goto trigger_cleanup;
   }
-  if( sqlite3CheckObjectName(pParse, zName, "trigger", pTab->zName) ){
+  if( sqlite3CheckObjectName(pParse, zName, "trigger", pTab->zName,
+                             db->aDb[iDb].zDbSName) ){
     goto trigger_cleanup;
   }
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
@@ -373,12 +374,15 @@ void sqlite3FinishTrigger(
 
     /* If this is a new CREATE TABLE statement, and if shadow tables
     ** are read-only, and the trigger makes a change to a shadow table,
-    ** then raise an error - do not allow the trigger to be created. */
+    ** then raise an error - do not allow the trigger to be created.
+    ** The targets of a TEMP trigger may be in any schema, so check all
+    ** of them in that case. */
     if( sqlite3ReadOnlyShadowTables(db) ){
       TriggerStep *pStep;
+      const char *zDb = iDb==1 ? 0 : db->aDb[iDb].zDbSName;
       for(pStep=pTrig->step_list; pStep; pStep=pStep->pNext){
         if( pStep->pSrc!=0
-         && sqlite3ShadowTableName(db, pStep->pSrc->a[0].zName)
+         && sqlite3ShadowTableName(db, pStep->pSrc->a[0].zName, zDb)
         ){
           sqlite3ErrorMsg(pParse, 
             "trigger \"%s\" may not write to shadow table \"%s\"",

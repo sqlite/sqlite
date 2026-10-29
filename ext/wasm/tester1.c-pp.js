@@ -4653,17 +4653,16 @@ T.g('Bug Reports')
         });
         db.exec([
           "create table t(a);",
-          "insert into t(a) values(1),(2),(1);",
+          "insert into t(a) values(1),(2),(-1),(-2);",
           "select auxtest(1,a), auxtest(1,a) from t order by a"
         ]);
       }finally{
         db.close();
         wasm.pstack.restore(stack);
       }
-      T.assert(nAuxSet>0).assert(nAuxReused>0)
-        .assert(6===nAuxReused+nAuxSet);
-      T.assert(pAuxDestructed>0);
-      T.assert(pAuxDtorDestructed);
+      T.assert(2==nAuxSet)
+        .assert(6===nAuxReused)
+        .assert(pAuxDestructed===nAuxSet);
     }
   })
 ;/*end of Bug Reports group*/;

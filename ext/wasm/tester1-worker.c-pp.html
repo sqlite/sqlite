@@ -76,8 +76,6 @@
       const workerArgs = [];
       const baseName = "64"==="@bitness@" ? 'tester1-64bit' : 'tester1';
       if(urlParams.has('esm')){
-        logHtml('warning',"Attempting to run an ES6 Worker Module, "+
-                "which is not supported by all browsers!.");
         workerArgs.push(baseName+'.mjs', {type:"module"});
         document.querySelectorAll('title,#color-target').forEach((e)=>{
           e.innerText =

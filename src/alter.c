@@ -167,7 +167,7 @@ void sqlite3AlterRenameTable(
   if( SQLITE_OK!=isAlterableTable(pParse, pTab) ){
     goto exit_rename_table;
   }
-  if( SQLITE_OK!=sqlite3CheckObjectName(pParse,zName,"table",zName) ){
+  if( SQLITE_OK!=sqlite3CheckObjectName(pParse,zName,"table",zName,zDb) ){
     goto exit_rename_table;
   }
 

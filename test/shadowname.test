@@ -1,0 +1,114 @@
+# 2026 October 29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests to verify that, in DEFENSIVE mode, ordinary objects may not be
+# created using the name of a shadow table of an existing virtual table.
+# Including when the schema has not yet been loaded, or when a TEMP
+# table or a table in some other schema has the same name as the
+# virtual table.
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix shadowname
+
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+# Create virtual table "v" in database file $file, then drop its
+# v_segments shadow table so that the name is available.
+#
+proc make_db {file} {
+  forcedelete $file
+  sqlite3 dbx $file
+  sqlite3_db_config dbx DEFENSIVE 0
+  dbx eval {
+    CREATE VIRTUAL TABLE v USING fts3;
+    DROP TABLE v_segments;
+  }
+  dbx close
+}
+
+#-------------------------------------------------------------------------
+# Schema not yet loaded when CREATE TABLE/VIEW is parsed.
+#
+foreach {tn sql} {
+  1 { CREATE TABLE v_segments(x) }
+  2 { CREATE VIEW v_segments AS SELECT 1 }
+} {
+  make_db test.db2
+  sqlite3 db2 test.db2
+  sqlite3_db_config db2 DEFENSIVE 1
+  do_test 1.$tn {
+    catchsql $sql db2
+  } {1 {object name reserved for internal use: v_segments}}
+  db2 close
+}
+
+#-------------------------------------------------------------------------
+# A TEMP table with the same name as the virtual table.
+#
+foreach {tn sql res} {
+  1 {
+    CREATE TABLE main.v_segments(x);
+  } {1 {object name reserved for internal use: v_segments}}
+
+  2 {
+    CREATE TABLE main.t(a);
+    CREATE INDEX main.v_segments ON t(a);
+  } {1 {object name reserved for internal use: v_segments}}
+
+  3 {
+    CREATE TEMP TABLE t2(x);
+    CREATE TEMP TRIGGER tr AFTER INSERT ON t2 BEGIN
+      DELETE FROM v_segments;
+    END;
+  } {1 {trigger "tr" may not write to shadow table "v_segments"}}
+
+  4 {
+    CREATE TEMP TABLE v_segments(x);
+  } {0 {}}
+} {
+  # Case 4: creating temp.v_segments is allowed, as there is no virtual
+  # table named "v" in the temp schema.
+  make_db test.db2
+  sqlite3 db2 test.db2
+  sqlite3_db_config db2 DEFENSIVE 1
+  do_test 2.$tn {
+    catchsql "CREATE TEMP TABLE v(a); $sql" db2
+  } $res
+  db2 close
+}
+
+#-------------------------------------------------------------------------
+# An ordinary table in "main" with the same name as a virtual table in
+# an attached database.
+#
+make_db test.db3
+forcedelete test.db2
+sqlite3 db2 test.db2
+sqlite3_db_config db2 DEFENSIVE 1
+do_test 3.1 {
+  catchsql {
+    ATTACH 'test.db3' AS aux;
+    CREATE TABLE main.v(a);
+    CREATE TABLE aux.v_segments(x);
+  } db2
+} {1 {object name reserved for internal use: v_segments}}
+
+# Creating main.v_segments is allowed - main.v is not a virtual table.
+do_test 3.2 {
+  catchsql { CREATE TABLE main.v_segments(x) } db2
+} {0 {}}
+db2 close
+
+finish_test

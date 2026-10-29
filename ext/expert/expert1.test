@@ -415,6 +415,34 @@ ifcapable fts5 {
   }
 }
 
+# Bug 2026-10-28T05:10:06Z: Identifiers that begin with a digit must
+# be quoted in candidate CREATE INDEX statements.
+#
+do_setup_rec_test $tn.21.1 {
+  CREATE TABLE t("2023" INT, "1abc" INT, x);
+} {
+  SELECT * FROM t WHERE "2023" = 5;
+} {
+  CREATE INDEX t_idx_0028bfa5 ON t('2023');
+  SEARCH t USING INDEX t_idx_0028bfa5 (2023=?)
+}
+do_setup_rec_test $tn.21.2 {
+  CREATE TABLE t("2023" INT, "1abc" INT, x);
+} {
+  SELECT * FROM t WHERE "1abc" = 5;
+} {
+  CREATE INDEX t_idx_0029426d ON t('1abc');
+  SEARCH t USING INDEX t_idx_0029426d (1abc=?)
+}
+do_setup_rec_test $tn.21.3 {
+  CREATE TABLE "9t"(a, b);
+} {
+  SELECT * FROM "9t" WHERE a=5;
+} {
+  CREATE INDEX "9t_idx_00000061" ON "9t"(a);
+  SEARCH 9t USING INDEX 9t_idx_00000061 (a=?)
+}
+
 }
 
 proc do_candidates_test {tn sql res} {
@@ -682,6 +710,20 @@ foreach {tn coll} {1 x 2 {}} {
     set res
   } {CREATE INDEX t1_idx_00000061 ON t1(a);}
 }
+
+# A collation sequence whose name begins with a digit.
+#
+reset_db
+db collate 1x {string compare}
+do_execsql_test 11.0 { CREATE TABLE t1(a, b) }
+do_test 11.1 {
+  set expert [sqlite3_expert_new db]
+  $expert sql { SELECT * FROM t1 WHERE a=? COLLATE "1x" }
+  $expert analyze
+  set res [string trim [$expert report 0 indexes]]
+  $expert destroy
+  set res
+} {CREATE INDEX t1_idx_960cf414 ON t1(a COLLATE '1x');}
 
 
 
