@@ -790,7 +790,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        [Known] Caveats of this approach:
 
-       - If the argument is a function, it is passed to
+       - If the argument is a function it may be passed to
        wasm.installFunction("v(p)",theArg), which may throw.  That
        differs from the vast majority of C/C-style bindings, in that
        they never throw. sqlite3_set_auxdata() has a void return, so
@@ -798,17 +798,39 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        would be a semantic difference from the C API, which we don't
        want in these bindings).
 
-       - If used improperly properly, e.g. called onced per row
-       instead of once per distinct context, then it may quickly
-       generate countless transient WASM function table entries.
+       - This impl reference-counts the conversion using the input
+       Function object as the key. The binding is uninstalled when
+       that refcount reaches 0. However, because it can, depending on
+       the query, reach zero after every row (see [^1]), it still
+       has the problem that...
+
+       - This can be exceedingly expensive, installing and
+       uninstalling a binding, potentially multiple times, for each
+       row of a query.
+
+       [^1]: https://sqlite.org/c3ref/get_auxdata.html
     */
+    let __auxDataDtor /* Map<Function, [wasmFuncPtr, refCount]> */;
     wasm.xWrap.argAdapter(
       'sqlite3_set_auxdata:dtor',
       function(v){
         if(!(v instanceof Function)) return v;
-        let fp;
+        __auxDataDtor ??= new Map;
+        const old = __auxDataDtor.get(v);
+        if( old ){
+          ++old[1];
+          //console.warn("reusing auxdata dtor binding",v, old);
+          return old[0];
+        }
         const f = (ptr)=>{
-          try{ wasm.uninstallFunction(fp) }
+          try{
+            const old = __auxDataDtor.get(v);
+            if( 0===--old[1] ){
+              //console.warn("unplugging auxdata dtor binding",v, old);
+              __auxDataDtor.delete(v);
+              wasm.uninstallFunction(old[0]);
+            }
+          }
           catch(e){
             sqlite3.config.warn?.(
               "sqlite3_set_auxdata() dtor deregistration threw:", e
@@ -819,7 +841,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             sqlite3.config.warn?.("sqlite3_set_auxdata() dtor threw:",e);
           }
         };
-        return fp = wasm.installFunction('v(p)', f);
+        const fp = wasm.installFunction('v(p)', f);
+        __auxDataDtor.set(v, [fp, 1]);
+        //console.warn("installed auxdata dtor binding",v, [fp, 1]);
+        return fp;
       }
     );
 
