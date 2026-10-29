@@ -3246,16 +3246,19 @@ static int generateOutputSubroutine(
     */
     case SRT_Fifo:
     case SRT_DistFifo:
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
     case SRT_Table:
+#endif
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
       int r2 = sqlite3GetTempReg(pParse);
       int iParm = pDest->iSDParm;
-      testcase( pDest->eDest==SRT_Table );
       testcase( pDest->eDest==SRT_EphemTab );
       testcase( pDest->eDest==SRT_Fifo );
       testcase( pDest->eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r1);
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+      testcase( pDest->eDest==SRT_Table );
 #if !defined(SQLITE_ENABLE_NULL_TRIM) && defined(SQLITE_DEBUG)
       /* A destination of SRT_Table and a non-zero iSDParm2 parameter means
       ** that this is an "UPDATE ... FROM" on a virtual table or view. In this
@@ -3265,7 +3268,8 @@ static int generateOutputSubroutine(
       if( pDest->eDest==SRT_Table && pDest->iSDParm2 ){
         sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG_MAGIC);
       }
-#endif
+#endif /* !ENABLE_NULL_TRIM && DEBUG */
+#endif /* UPDATE_DELETE_LIMIT */
 #ifndef SQLITE_OMIT_CTE
       if( pDest->eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
