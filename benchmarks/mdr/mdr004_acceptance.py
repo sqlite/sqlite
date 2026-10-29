@@ -323,7 +323,7 @@ def main():
     # GA6
     tamper = tamper_tests(os.path.join(OUT, "t.mdr"))
     ga6 = all(s != "FAIL-ACCEPTED" for _, s in tamper)
-    ga5 = {"peak_RSS_MB": round(rss_mb(), 1)}
+    ga5 = {"peak_RSS_MB": round(rss_mb() / 1024.0, 1)}  # ru_maxrss is KB on macOS
     ga8 = True  # claims in this report are from this fleet only
 
     # GA7 table
