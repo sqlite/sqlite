@@ -24,12 +24,21 @@
 
   This file is kept in sync between both of those trees.
 
+//#@ push policy error
   This build was generated using:
 
-  ./c-pp -o js/whwasmutil.js -@policy=error wasmutil/whwasmutil.c-pp.js
+  @c-pp::argv@
 
-  by libcmpp 2.x 2fc4afc31f6505c27b9c34988973a2bd9b157d559247cdd26868ae75632c3a5e @ 2025-11-16 23:03:27.352 UTC
+  by libcmpp @cmpp::version@
+//#@ pop policy
 */
+//#savepoint begin
+//#if defined target:es6-module
+//#  // The sqlite3 wasm build. We need vanilla mode for the time being
+//#  define esm 0
+//#  define no-export-default
+//#/if
+//#define -? {esm -> 0}
 /**
    The primary goal of this function is to provide JS/WASM utility
    code similar to some of that provided by Emscripten-generated
@@ -50,8 +59,13 @@
 
    ```
    const target = {}; // ... some object ...
+//#if esm
+   import {default as whw} from "./whwasmutil.mjs";
+   whw(target);
+//#else
    globalThis.WhWasmUtilInstaller(target);
    delete globalThis.WhWasmUtilInstaller;
+//#/if
    ```
 
    The `target` object then holds the APIs. The caller may set certain
@@ -225,10 +239,16 @@
      newly-created (or config-provided) target. The current approach
      seemed better at the time.
 */
+//#if esm
+const toExportForESM =
+//#else
 'use strict';
 globalThis.WhWasmUtilInstaller =
+//#/if
 function WhWasmUtilInstaller(target){
+//#if not esm
   'use strict';
+//#/if
   if(undefined===target.bigIntEnabled){
     target.bigIntEnabled = !!globalThis['BigInt64Array'];
   }
@@ -2496,9 +2516,15 @@ function WhWasmUtilInstaller(target){
    Error handling is up to the caller, who may attach a `catch()` call
    to the promise.
 */
+//#if esm
+toExportForESM
+//#else
 globalThis.WhWasmUtilInstaller
+//#/if
 .yawl = function yawl(config){
+//#if not esm
   'use strict';
+//#/if
   const wfetch = ()=>fetch(config.uri, {credentials: 'same-origin'});
   const wui = this;
   const finalThen = function(arg){
@@ -2543,5 +2569,17 @@ globalThis.WhWasmUtilInstaller
   ;
   return loadWasm;
 }.bind(
+//#if esm
+toExportForESM
+//#else
 globalThis.WhWasmUtilInstaller
+//#/if
 )/*yawl()*/;
+//#if esm
+//#if amalgamation
+export { toExportForESM as WhWasmUtilInstaller };
+//#elif not defined no-export-default
+export default toExportForESM;
+//#/if
+//#/if
+//#savepoint rollback

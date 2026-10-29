@@ -25,8 +25,8 @@ Module.runSQLite3PostLoadInit = async function(
 
      - post-js-header.js          => this file
        - sqlite3-api-prologue.js  => Bootstrapping bits for the following files
-       - common/whwasmutil.js     => Generic JS/WASM glue
-       - jaccwabyt/jaccwabyt.js   => C struct-binding glue
+       - common/whwasmutil.c-pp.js     => Generic JS/WASM glue
+       - jaccwabyt/jaccwabyt.c-pp.js   => C struct-binding glue
        - sqlite3-api-glue.js      => glues previous parts together
        - sqlite3-api-oo1.js       => SQLite3 OO API #1
        - sqlite3-api-worker1.js   => Worker-based API
