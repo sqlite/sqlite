@@ -4608,10 +4608,10 @@ T.g('Bug Reports')
       const db = new sqlite3.oo1.DB();
       const stack = wasm.pstack.pointer;
       const pAux = wasm.pstack.alloc(4);
-      let pAuxDestructed = 0;
+      let nAuxDestructed = 0;
       const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
         //log("freeing auxdata");
-        ++pAuxDestructed;
+        ++nAuxDestructed;
       });
       let pAuxDtorDestructed = false;
       db.onclose = {
@@ -4662,7 +4662,77 @@ T.g('Bug Reports')
       }
       T.assert(2==nAuxSet)
         .assert(6===nAuxReused)
-        .assert(pAuxDestructed===nAuxSet);
+        .assert(nAuxDestructed===nAuxSet);
+    }
+  })
+  .t({
+    name: 'sqlite3_set_auxdata() automated dtor conversion lifetime management',
+    test: function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      const pAux = db.pointer /* pointer to bind */;
+      const auxDtor = (ptr)=>{
+        //log("freeing auxdata");
+        T.assert( pAux === ptr );
+        ++nAuxDestructed;
+      };
+      let nAuxDestructed = 0 /* how many times auxDtor is called */;
+      let nAuxSet = 0 /* how many times we set aux data */;
+      let nAuxReused = 0 /* how many times we reused aux data */;
+      try{
+        db.createFunction("auxtest",{
+          xFunc: function(pCx, x, y){
+            T.assert(wasm.isPtr(pCx));
+            const localAux = capi.sqlite3_get_auxdata(pCx, 0);
+            if( !localAux ){
+              //log("setting auxdata");
+              /**
+                 This block is hit one time per invocation of this
+                 xFunc() in a given query. The pCx value is identical
+                 for each call at a given position in the query, but
+                 differs across positions. The automated conversion of
+                 the 4th argument to sqlite3_set_auxdata() happens
+                 precisely as often as we get new pCx values. Each
+                 such conversion creates an entry in the WASM indirect
+                 function table. Each call of that converted function
+                 will (because of how its binding is uniquely
+                 configured) remove its own entry from the WASM
+                 function table before proxying the original function
+                 (auxDtor()).
+
+                 Ergo, if auxDtor() is called as often as we expect,
+                 we know that the WASM function table entries for
+                 these conversions are being removed.
+
+                 Even so: this is creating N bindings for the same JS
+                 function. The way around that is to follow the
+                 pattern used in the variant of his text function
+                 above this one. It demonstrates how to manually
+                 manage these safely and efficiently. We currently
+                 have no good way to automate that level of
+                 efficiency, however.
+              */
+              ++nAuxSet;
+              capi.sqlite3_set_auxdata(pCx, 0, pAux, auxDtor);
+            }else{
+              //log("reusing auxdata",localAux);
+              T.assert(pAux===localAux);
+              ++nAuxReused;
+            }
+            return x;
+          }
+        });
+        db.exec([
+          "create table t(a);",
+          "insert into t(a) values(1),(2),(-1),(-2);",
+          "select auxtest(1,a) + auxtest(1,a), auxtest(1,a) ",
+          "from t order by a"
+        ]);
+      }finally{
+        db.close();
+      }
+      T.assert(3==nAuxSet)
+        .assert(9===nAuxReused)
+        .assert(nAuxDestructed===nAuxSet);
     }
   })
 ;/*end of Bug Reports group*/;

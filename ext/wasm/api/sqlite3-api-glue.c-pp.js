@@ -239,6 +239,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }),
         '*'
       ]],
+      /**
+         sqlite3_set_auxdata() notes regarding the converter for the
+         final argument:
+
+         - It passes the argument to wasm.installFunction("v(p)",theArg),
+         which may throw.
+
+         - If used improperly properly, e.g. called onced per row
+         instead of once per distinct context, then it may quickly
+         generate countless transient WASM function table entries.
+      */
       ["sqlite3_set_auxdata", undefined, [
         "sqlite3_context*", "int", "*", "sqlite3_set_auxdata:dtor"
       ]],
@@ -779,7 +790,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        argument. A non-Function argument is returned as-is. For a
        Function-type argument this creates a WASM wrapper function
        which uninstalls itself when called, then proxies the original
-       input function.
+       input function but ignores any exceptions (it may emit
+       a warning via sqlite3.config.warn()).
     */
     wasm.xWrap.argAdapter(
       'sqlite3_set_auxdata:dtor',
@@ -787,9 +799,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         if(!(v instanceof Function)) return v;
         let fp;
         const f = (ptr)=>{
-          try{wasm.uninstallFunction(fp);}
-          catch(e){/*ignore*/}
-          v(ptr);
+          try{ wasm.uninstallFunction(fp) }
+          catch(e){
+            sqlite3.config.warn?.(
+              "sqlite3_set_auxdata() dtor deregistration threw:", e
+            );
+          }
+          try{ v(ptr) }
+          catch(e){
+            sqlite3.config.warn?.("sqlite3_set_auxdata() dtor threw:",e);
+          }
         };
         return fp = wasm.installFunction('v(p)', f);
       }
@@ -1138,7 +1157,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       try{ capi[name](...closeArgs) }
       catch(e){
         /* This "cannot happen" unless something is well and truly sideways. */
-        sqlite3.config.warn("close-time call of",name+"(",closeArgs,") threw:",e);
+        sqlite3.config.warn?.("close-time call of",name+"(",closeArgs,") threw:",e);
       }
       //wasm.xWrap.debug = false;
     }
