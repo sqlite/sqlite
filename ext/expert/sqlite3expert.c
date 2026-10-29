@@ -823,6 +823,8 @@ static int idxIdentifierRequiresQuotes(const char *zId){
   int i;
   int nId = STRLEN(zId);
   
+  if( nId==0 ) return 1;
+  if( zId[0]>='0' && zId[0]<='9' ) return 1;
   if( sqlite3_keyword_check(zId, nId) ) return 1;
 
   for(i=0; zId[i]; i++){
@@ -1037,9 +1039,7 @@ static int idxCreateFromCons(
           rc = SQLITE_NOMEM;
         }else{
           rc = sqlite3_exec(dbm, zIdx, 0, 0, p->pzErrmsg);
-          if( rc!=SQLITE_OK ){
-            rc = SQLITE_BUSY_TIMEOUT;
-          }else{
+          if( rc==SQLITE_OK ){
             idxHashAdd(&rc, &p->hIdx, zName, zIdx);
           }
         }
@@ -2160,11 +2160,15 @@ int sqlite3_expert_analyze(sqlite3expert *p, char **pzErr){
 
   /* Create candidate indexes within the in-memory database file */
   if( rc==SQLITE_OK ){
+    p->pzErrmsg = pzErr;
     rc = idxCreateCandidates(p);
-  }else if ( rc==SQLITE_BUSY_TIMEOUT ){
-    if( pzErr )
-      *pzErr = sqlite3_mprintf("Cannot find a unique index name to propose.");
-    return rc;
+    p->pzErrmsg = 0;
+    if( rc==SQLITE_BUSY_TIMEOUT ){
+      if( pzErr ){
+        *pzErr = sqlite3_mprintf("Cannot find a unique index name to propose.");
+      }
+      return rc;
+    }
   }
 
   /* Generate the stat1 data */
