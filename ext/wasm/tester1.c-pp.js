@@ -971,12 +971,12 @@ T.g('C/WASM Utilities')
 
 
       { // 'string:static' argAdapter() sanity checks...
-        let argAd = w.xWrap.argAdapter('string:static');
-        let p0 = argAd('foo'), p1 = argAd('bar');
+        const argAd = w.xWrap.argAdapter('string:static');
+        const p0 = argAd('foo'), p1 = argAd('bar');
         T.assert(w.isPtr(p0) && w.isPtr(p1))
           .assert(p0 !== p1)
-          .assert(p0 === argAd('foo'))
-          .assert(p1 === argAd('bar'));
+          .assert(p0 === argAd(['f','o','o'].join('')))
+          .assert(p1 === argAd('bar'.split('').join('')));
       }
 
       // 'string:flexible' argAdapter() sanity checks...

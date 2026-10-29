@@ -787,8 +787,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        The 'string:static' argument adapter treats its argument as
        either...
 
-       - WASM pointer: assumed to be a long-lived C-string which gets
-         returned as-is.
+       - If wasm.isPtr(v) is true it is assumed to be a long-lived
+         C-string pointer which gets returned as-is.
 
        - Anything else: gets coerced to a JS string for use as a map
          key. If a matching entry is found (as described next), it is
@@ -810,8 +810,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       function(v){
         if(wasm.isPtr(v)) return v;
         v = ''+v;
-        let rc = this[v];
-        return rc || (this[v] = wasm.allocCString(v));
+        return this[v] ??= wasm.allocCString(v);
       }.bind(Object.create(null))
     );
 
