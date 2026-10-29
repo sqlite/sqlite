@@ -8,7 +8,15 @@
     <link rel="stylesheet" href="common/emscripten.css"/>
     <link rel="stylesheet" href="common/testing.css"/>
     <title>sqlite3 tester #1: @title@ (@bitness@-bit WASM)</title>
-    <style></style>
+    <style>
+//#if 1 /* dark(er) mode */
+      body { background: #313131; color: white; }
+      .green { color: lightgreen; }
+      a, a:visited { color: lightblue; }
+      .group-start { color: darkblue; }
+      .group-end.green { color: black; }
+//#/if
+    </style>
   </head>
   <body><h1 id='color-target'></h1>
     <div>Variants (32-bit):
