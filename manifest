@@ -1,5 +1,5 @@
-C CSS\stweaks\sto\sthe\smain\sJS\stest\sapps.
-D 2026-10-29T15:30:54.849
+C A\shypothetical\ssolution\sto\sthe\sJS\ssqlite3_set_auxdata()\slimitation\sof\sbeing\sunable\sto\sautomatically\sconvert\sdtor\sfunctions\sfrom\sJS\sto\sWASM\sdue\sto\slifetime-tracking\slimitations.\sCaveat:\sthis\sapproach\spotentially\s(TBD)\screates\sdataset-size-dependent\snumbers\sof\ssuch\sconversions\sbetween\scleanup\sopportunities.
+D 2026-10-29T19:33:44.801
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -668,7 +668,7 @@ F ext/wasm/api/opfs-common-shared.c-pp.js 51d86e01ec20438552d09d233dfad97e681364
 F ext/wasm/api/post-js-footer.js a50c1a2c4d008aede7b2aa1f18891a7ee71437c2f415b8aeb3db237ddce2935b
 F ext/wasm/api/post-js-header.js 7b8c9361cce83318a471295f58e7b10bd87291fa754de465085dd15ff77375a1
 F ext/wasm/api/pre-js.c-pp.js 145da76085bd31bbe9c9b2d52bc56106116745576699d03b8bd6eaaf78e1e537
-F ext/wasm/api/sqlite3-api-glue.c-pp.js c22e32c4007c42d515c8192d0b260dc6a1f9658e1231589f38d6a0a8e00b0225
+F ext/wasm/api/sqlite3-api-glue.c-pp.js 814042bc89dd13fbf7b039d39b9cd4fbf24322661d17c32f4851e2d822fe8608
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js 3c6b5327b870ed824abdc00a4f1abe9878b5b050af3ca6c454a802509dcb6ef8
 F ext/wasm/api/sqlite3-api-prologue.js 0084e15d66fbcd75cacbaa58e3b473d5e57082c30f3122be7fdadff5589cf6b6
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js eee70a9962c02d86d2332f2432e257ccdf5eb7a742f90d34bdc137346fbc97ae
@@ -2304,8 +2304,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b8be307feace20f1ce366856973ae5e7c281be415290cfc69a55b9d4fd2b64c9
-R 5d03c55a8209f4a650fca45fc8f3d88e
+P fd28dabb03f893f1efec78bfd28e64af1a2bf2dc9b77fafb5135cb72b27aa803
+R 3f3ecdaab5a4dc108f81f9e95ee4c33b
+T *branch * wasm-auxdata-dtor
+T *sym-wasm-auxdata-dtor *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z 83238a838559d6ac66f87c4a313f496e
+Z 3bc431e65953c062a6f1fc73f9a43404
 # Remove this line to create a well-formed Fossil manifest.

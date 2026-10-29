@@ -239,49 +239,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }),
         '*'
       ]],
-      /**
-         We do not have a way to automatically clean up destructors
-         which are automatically converted from JS functions via the
-         final argument to sqlite3_set_auxdata(). Because of that,
-         automatic function conversion is not supported for this
-         function.  Clients should use wasm.installFunction() to create
-         such callbacks, then pass that pointer to
-         sqlite3_set_auxdata(). Relying on automated conversions here
-         would lead to leaks of JS/WASM proxy functions because
-         sqlite3_set_auxdata() is frequently called in UDFs.
-
-         The sqlite3.oo1.DB class's onclose handlers can be used for this
-         purpose. For example:
-
-         const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
-           //free ptr
-         });
-         myDb.onclose = {
-           after: ()=>{
-             wasm.uninstallFunction(pAuxDtor);
-           }
-         };
-
-         Then pass pAuxDtor as the final argument to appropriate
-         sqlite3_set_auxdata() calls.
-
-         Prior to 3.49.0 this binding ostensibly had automatic
-         function conversion here but a typo prevented it from
-         working.  Rather than fix it, it was removed because testing
-         the fix brought the huge potential for memory leaks to the
-         forefront.
-      */
       ["sqlite3_set_auxdata", undefined, [
-        "sqlite3_context*", "int", "*",
-        true
-          ? "*"
-          : new wasm.xWrap.FuncPtrAdapter({
-            /* If we can find a way to automate their cleanup, JS functions can
-               be auto-converted with this. */
-            name: 'xDestroyAuxData',
-            signature: 'v(p)',
-            contextKey: (argv, argIndex)=>argv[0/* sqlite3_context* */]
-          })
+        "sqlite3_context*", "int", "*", "sqlite3_set_auxdata:dtor"
       ]],
       ['sqlite3_set_errmsg', 'int', 'sqlite3*', 'int', 'string'],
       ["sqlite3_shutdown", undefined],
@@ -813,6 +772,27 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         let rc = this[v];
         return rc || (this[v] = wasm.allocCString(v));
       }.bind(Object.create(null))
+    );
+
+    /**
+       This arg adapter is for sqlite3_set_auxdata()'s final
+       argument. A non-Function argument is returned as-is. For a
+       Function-type argument this creates a WASM wrapper function
+       which uninstalls itself when called, then proxies the original
+       input function.
+    */
+    wasm.xWrap.argAdapter(
+      'sqlite3_set_auxdata:dtor',
+      function(v){
+        if(!(v instanceof Function)) return v;
+        let fp;
+        const f = (ptr)=>{
+          try{wasm.uninstallFunction(fp);}
+          catch(e){/*ignore*/}
+          v(ptr);
+        };
+        return fp = wasm.installFunction('v(p)', f);
+      }
     );
 
     /**
