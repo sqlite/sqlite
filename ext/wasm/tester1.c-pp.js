@@ -4606,9 +4606,10 @@ T.g('Bug Reports')
     name: 'sqlite3_set_auxdata() binding signature',
     test: function(sqlite3){
       const db = new sqlite3.oo1.DB();
-      const stack = wasm.pstack.pointer;
-      const pAux = wasm.pstack.alloc(4);
-      let nAuxDestructed = 0;
+      const pAux = db.pointer /* any pointer will do for this test */;
+      let nAuxDestructed = 0 /* how many times auxDtor is called */;
+      let nAuxSet = 0 /* how many times we set aux data */;
+      let nAuxReused = 0 /* how many times we reused aux data */;
       const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
         //log("freeing auxdata");
         ++nAuxDestructed;
@@ -4620,8 +4621,6 @@ T.g('Bug Reports')
           wasm.uninstallFunction(pAuxDtor);
         }
       };
-      let nAuxSet = 0 /* how many times we set aux data */;
-      let nAuxReused = 0 /* how many times we reused aux data */;
       try{
         db.createFunction("auxtest",{
           xFunc: function(pCx, x, y){
@@ -4656,13 +4655,13 @@ T.g('Bug Reports')
           "insert into t(a) values(1),(2),(-1),(-2);",
           "select auxtest(1,a), auxtest(1,a) from t order by a"
         ]);
+        T.assert(2==nAuxSet)
+          .assert(6===nAuxReused)
+          .assert(nAuxDestructed===nAuxSet);
       }finally{
         db.close();
-        wasm.pstack.restore(stack);
       }
-      T.assert(2==nAuxSet)
-        .assert(6===nAuxReused)
-        .assert(nAuxDestructed===nAuxSet);
+      T.assert(pAuxDtorDestructed);
     }
   })
   .t({
@@ -4670,14 +4669,14 @@ T.g('Bug Reports')
     test: function(sqlite3){
       const db = new sqlite3.oo1.DB();
       const pAux = db.pointer /* pointer to bind */;
+      let nAuxDestructed = 0 /* how many times auxDtor is called */;
+      let nAuxSet = 0 /* how many times we set aux data */;
+      let nAuxReused = 0 /* how many times we reused aux data */;
       const auxDtor = (ptr)=>{
         //log("freeing auxdata");
         T.assert( pAux === ptr );
         ++nAuxDestructed;
       };
-      let nAuxDestructed = 0 /* how many times auxDtor is called */;
-      let nAuxSet = 0 /* how many times we set aux data */;
-      let nAuxReused = 0 /* how many times we reused aux data */;
       try{
         db.createFunction("auxtest",{
           xFunc: function(pCx, x, y){
@@ -4727,12 +4726,12 @@ T.g('Bug Reports')
           "select auxtest(1,a) + auxtest(1,a), auxtest(1,a) ",
           "from t order by a"
         ]);
+        T.assert(3==nAuxSet)
+          .assert(9===nAuxReused)
+          .assert(nAuxDestructed===nAuxSet);
       }finally{
         db.close();
       }
-      T.assert(3==nAuxSet)
-        .assert(9===nAuxReused)
-        .assert(nAuxDestructed===nAuxSet);
     }
   })
 ;/*end of Bug Reports group*/;
