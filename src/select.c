@@ -2969,6 +2969,17 @@ static int hasAnchor(Select *p){
 }
 
 /*
+** Return TRUE if every compound operator in the compound SELECT that
+** ends with p is UNION ALL.
+*/
+static int selectIsUnionAll(Select *p){
+  for(; p->pPrior; p=p->pPrior){
+    if( p->op!=TK_ALL ) return 0;
+  }
+  return 1;
+}
+
+/*
 ** Return TRUE if p is a UNION with a LIMIT of exactly 1 and no OFFSET
 ** clause.  This is a precondition for a couple of related optimizations.
 **
@@ -3079,7 +3090,7 @@ static int multiSelect(
     /* If the compound has an ORDER BY clause, then always use the merge
     ** algorithm. */
     return multiSelectByMerge(pParse, p, pDest);
-  }else if( p->op!=TK_ALL && !unionWithLimitOne(db,p) ){
+  }else if( !selectIsUnionAll(p) && !unionWithLimitOne(db,p) ){
     /* If the compound is EXCEPT, INTERSECT, or UNION (anything other than
     ** UNION ALL) then also always use the merge algorithm.  However, the
     ** multiSelectByMerge() routine requires that the compound have an
