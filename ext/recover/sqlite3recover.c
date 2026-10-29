@@ -81,6 +81,12 @@ typedef struct RecoverColumn RecoverColumn;
 **   KEY column, then the rowid value should be bound to the index associated
 **   with the column.
 **
+** zRowid:
+**   If iRowidBind>0, the name used to refer to the rowid in the INSERT
+**   statement. This is the first of "_rowid_", "rowid" and "oid" that is
+**   not also the name of a column. If all three are column names, the
+**   rowid cannot be written and iRowidBind is 0.
+**
 ** pNext:
 **   All RecoverTable objects used by the recovery operation are allocated
 **   and populated as part of creating the recovered database schema in
@@ -96,6 +102,7 @@ struct RecoverTable {
   RecoverColumn *aCol;            /* Array of columns */
   int bIntkey;                    /* True for intkey, false for without rowid */
   int iRowidBind;                 /* If >0, bind rowid to INSERT here */
+  const char *zRowid;             /* Name to use for rowid in INSERT */
   RecoverTable *pNext;
 };
 
@@ -1183,7 +1190,19 @@ static void recoverAddTable(
       if( iPk>=0 ){
         pNew->aCol[iPk].bIPK = 1;
       }else if( pNew->bIntkey ){
-        pNew->iRowidBind = iBind++;
+        /* Find a name for the rowid that is not also the name of a column */
+        static const char *azRowid[] = { "_rowid_", "rowid", "oid" };
+        int ii, jj;
+        for(ii=0; ii<(int)(sizeof(azRowid)/sizeof(azRowid[0])); ii++){
+          for(jj=0; jj<pNew->nCol; jj++){
+            if( sqlite3_stricmp(azRowid[ii], pNew->aCol[jj].zCol)==0 ) break;
+          }
+          if( jj==pNew->nCol ){
+            pNew->zRowid = azRowid[ii];
+            pNew->iRowidBind = iBind++;
+            break;
+          }
+        }
       }
     }
   }
@@ -1370,7 +1389,8 @@ static sqlite3_stmt *recoverInsertStmt(
 
   if( pTab->iRowidBind ){
     assert( pTab->bIntkey );
-    zSql = recoverMPrintf(p, "%z_rowid_", zSql);
+    assert( pTab->zRowid );
+    zSql = recoverMPrintf(p, "%z%s", zSql, pTab->zRowid);
     if( bSql ){
       zBind = recoverMPrintf(p, "%zquote(?%d)", zBind, pTab->iRowidBind);
     }else{

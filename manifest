@@ -1,5 +1,5 @@
-C A\smicro-optimization\sin\sthe\sJS\s'string:static'\sarg\sconverter\sand\simprove\sassociated\stests.
-D 2026-10-29T23:20:57.848
+C Enhance\sthe\srecover\sextension\sso\sthat\sit\suses\salternative\snames\sfor\nthe\srowid\sif\sits\sfirst\schoices\sare\sused\sfor\sordinary\scolumns.\n[bugs:/info/2026-10-27T07:28:08Z|Bug\s2026-10-27T07:28:08Z]
+D 2026-10-29T23:25:03.518
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -494,10 +494,10 @@ F ext/recover/recoverfault.test 9d9f88eeb222615a25e7514f234c950d46bee20d24cd8db4
 F ext/recover/recoverfault2.test 730e7371bcda769554d15460cb23126abba1be8eca9539ccabf63623e7bb7e09
 F ext/recover/recoverold.test 68db3d6f85dd2b98e785b6c4da4f5eea4bbe52ccf6674d9a94c7506dc92596aa
 F ext/recover/recoverpgsz.test 88766fcb810e52ee05335c456d4e5fb06d02b73d3ccb48c52bf293434305e2b1
-F ext/recover/recoverrowid.test f22c11e294d17d36330e9af9bbf65f8cd5e581956dbbabe1eec28a2a18452b6a
+F ext/recover/recoverrowid.test 8a28c8dc060199360025e1e25d71f3e775a8a600091db4905ffd21f5f26c031d
 F ext/recover/recoverslowidx.test c90d59c46bb8924a973ac6fbc38f3163cee38cc240256addcab1cf1a322c37dc
 F ext/recover/recoversql.test e66d01f95302a223bcd3fd42b5ee58dc2b53d70afa90b0d00e41e4b8eab20486
-F ext/recover/sqlite3recover.c 9ac0a8cb9098e9643d2d0ce7e67cbe9118c0dfa1ab1e86c599d4686c8471459e
+F ext/recover/sqlite3recover.c f57dbb410637c7bbca15eee955b7aedbc431280c1e3f98d402c5c47ee2188eda
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d8c729e0f51694286af1bc334d6d1e18668344c68fa182a4f3c4e7d369ce2825
-R 1f762cd3d438d9146da1e246b24ed8d5
-U stephan
-Z 3a4c63c40c589dc3444565d96e4c71f2
+P 1688100029ecea2226f766b34724994675f4fee1ae264fe553c1c976460b83c6
+R bbd05704db3c60cf7f58ea7e17b48874
+U drh
+Z fb9918b246592878bcfb085c0716e1d2
 # Remove this line to create a well-formed Fossil manifest.
