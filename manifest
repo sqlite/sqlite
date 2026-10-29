@@ -1,5 +1,5 @@
-C JS:\sremove\sall\sreferences\sto\sglobalThis\sfrom\sthe\sESM\sbuilds\sof\sworker1-promiser,\sas\sthey\sconfuse\sbundler\stools\sand\sare\sonly\snecessary\sin\sthe\snon-ESM\sbuilds.\sPer\srequest\sfrom\snpm\spackage\smaintainer\sJure\sRotar.
-D 2026-10-29T08:51:56.782
+C Apply\sthe\streatment\sfrom\s[8e1c88aa41]\sto\sanother\sJS\sfile.
+D 2026-10-29T10:04:23.122
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -653,7 +653,7 @@ F ext/wasm/SQLTester/index.html 64f3435084c7d6139b08d1f2a713828a73f68de2ae6a3112
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
 F ext/wasm/api/EXPORTED_FUNCTIONS.c-pp 0b0eee602791286ab18e07eadd38a531389285681bd3dbe92c5520ff81ca769a
 F ext/wasm/api/README.md a905d5c6bfc3e2df875bd391d6d6b7b48d41b43bdee02ad115b47244781a7e81
-F ext/wasm/api/extern-post-js.c-pp.js 22f9437272a44c385bac4ef66f632ab63ee662e31cbf7053a8961f276a28b6a4
+F ext/wasm/api/extern-post-js.c-pp.js 034463a81344218bb8f5d4400b8d0d4561dc1c3d2ccc2f40e4d10a31d235c721
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/opfs-common-inline.c-pp.js f84640e2b1e9c5903deb55ef3d7bf537587e31eb6f4f257b4a75827146d2b5a9
 F ext/wasm/api/opfs-common-shared.c-pp.js 51d86e01ec20438552d09d233dfad97e681364b3e432fc083e2b8cd88fdcc865
@@ -2289,8 +2289,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e1b09510df4860d3cd1fa4f996919ed68611a671446c24d821e89da8485cca17
-R 12dcc3e6c9ac5ec1b9937558b51c54b3
+P 8e1c88aa4115539767c34c90921ba28d0d53fb25a143aeb887a4d1f4b5e1f17d
+R 047f5fc7ab67278058e5fc1d6ecc9877
 U stephan
-Z fe0aa374fc91a06952a00bd7230f047d
+Z 3fb06712e8d0ddbc6ed17197d0c95642
 # Remove this line to create a well-formed Fossil manifest.
