@@ -1222,7 +1222,7 @@ function StructBinderFactory(config){
 }/*StructBinderFactory*/;
 //#if esm and not no-export
 //#  if amalgamation
-export Jaccwabyt;
+export {Jaccwabyt};
 //#  else
 export default Jaccwabyt;
 //#  /if

@@ -2574,7 +2574,7 @@ WhWasmUtilInstaller.yawl = function yawl(config){
 }.bind(WhWasmUtilInstaller)/*yawl()*/;
 //#if esm and not no-export
 //#  if amalgamation
-export WhWasmUtilInstaller;
+export {WhWasmUtilInstaller};
 //#  elif not defined no-export-default
 export default WhWasmUtilInstaller;
 //#  /if

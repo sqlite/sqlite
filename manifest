@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sdo\sparameter\sbinding\sbefore\srunning\sthe\sEXPLAIN\sspecified\nby\sthe\s".eqp\son"\ssetting,\snot\safterwards,\sas\sbinding\scan\schange\sthe\nbytecode.\s\sAlso,\sif\svdbe_trace\sis\sengaged,\sprint\sa\sline\sfor\seach\nparameter\sbound.
-D 2026-10-29T13:32:37.757
+C Correct\stwo\sJS\sexport\ssyntax\serrors\swhich\sare\snot\shit\sin\scurrent\sbuilds\sbut\swould\seventually\shave\sbeen.
+D 2026-10-29T14:04:09.310
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -686,7 +686,7 @@ F ext/wasm/api/sqlite3-worker1.c-pp.js d274d5eb7f43f4f3b35a4d1f9213a1e34aa5ae27d
 F ext/wasm/common/SqliteTestUtil.js dae753b95e72248c4395d8de8359e0d055cd9928488e8dd84aef89e46d23b32e
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.c-pp.js 5650dfda77695d5240ab810506cad52bafeef271d463354a93e8a88e7d317395
+F ext/wasm/common/whwasmutil.c-pp.js 322cbb234cff5a429b7578dd11a140a65db40be2e8a4a0391116dfdf09c5c737
 F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -703,7 +703,7 @@ F ext/wasm/fiddle/fiddle.js 2a0984cc4a35e6889c0d84ee9bf853317d5545ddb3966dfb995b
 F ext/wasm/fiddle/index.c-pp.html 5fd1f462864710d1b00d27fc4bc6190cb846cc865d7cc93b99644423f2c4cc84
 F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73607dc54d290
 F ext/wasm/index.html 7b27bb7518558c58c518ac3b47220226f635fa11331bac98f4aaf0d63fc4b283
-F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js 2cf9cb852d9b24251f4f68db581b1630fb65c556ec93d997e56030a3bed4f35d
+F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js dec02f38a8426e9d4d4ba97dc8d5c4a2b55f16bffb235e3aadd91f399e100b11
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
 F ext/wasm/libcmpp.c a5bec47a754206aac2ffb45ba4adaec6af3b4fcc24c705c61a6f47893b72aef5
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
@@ -2304,8 +2304,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 376184c7b05b07d1250f1be3ac66e1a93c219e528a1fdcb8a61cfba9d58374f7
-R c1073e60845616ecd381b5c4d63d38d1
-U drh
-Z 6f29bb77fba4aba04dd81a6687481503
+P a63cb048d4825191963275b6ca6b82a63276f57fa30e870b22a599cedf104437
+R 6e6dcc4fa77046cb16aebe8df5e84450
+U stephan
+Z 8a8410ce72206d08fdc59be07ffe876b
 # Remove this line to create a well-formed Fossil manifest.
