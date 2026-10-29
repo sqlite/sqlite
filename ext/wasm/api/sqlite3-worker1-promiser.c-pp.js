@@ -20,7 +20,8 @@
   Worker API does.
 
   In non-ESM builds this file necessarily exposes one global symbol,
-  but clients may freely `delete` that symbol after calling it.
+  but clients may freely `delete` that symbol after calling it (and
+  are encouraged to do so).
 */
 //#if not defined target:es6-module
 'use strict';
@@ -138,7 +139,12 @@
      developed. For use as an ESM module, see the "v2" interface later
      on in this file.
 */
-globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
+//#if defined target:es6-module
+const sqlite3Worker1Promiser =
+//#else
+globalThis.sqlite3Worker1Promiser =
+//#/if
+function callee(config = callee.defaultConfig){
   // Inspired by: https://stackoverflow.com/a/52439530
   if(1===arguments.length && 'function'===typeof arguments[0]){
     const f = config;
@@ -253,7 +259,7 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
   };
 }/*sqlite3Worker1Promiser()*/;
 
-globalThis.sqlite3Worker1Promiser.defaultConfig = {
+sqlite3Worker1Promiser.defaultConfig = {
   worker: function(){
 //#if target:es6-bundler-friendly
     return new Worker(new URL("sqlite3-worker1-bundler-friendly.mjs", import.meta.url),{
@@ -308,7 +314,7 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
    after calling the original function and will reject if that
    function throws.
 */
-globalThis.sqlite3Worker1Promiser.v2 = function callee(config = callee.defaultConfig){
+sqlite3Worker1Promiser.v2 = function callee(config = callee.defaultConfig){
   let oldFunc;
   if( 'function' == typeof config ){
     oldFunc = config;
@@ -343,8 +349,8 @@ globalThis.sqlite3Worker1Promiser.v2 = function callee(config = callee.defaultCo
   original: sqlite3Worker1Promiser
 });
 
-globalThis.sqlite3Worker1Promiser.v2.defaultConfig =
-  globalThis.sqlite3Worker1Promiser.defaultConfig;
+sqlite3Worker1Promiser.v2.defaultConfig =
+  sqlite3Worker1Promiser.defaultConfig;
 
 //#if target:es6-module
 /**
@@ -355,7 +361,6 @@ globalThis.sqlite3Worker1Promiser.v2.defaultConfig =
   incompatibility.
 */
 export default sqlite3Worker1Promiser.v2;
-delete globalThis.sqlite3Worker1Promiser;
 //#/if /* target:es6-module */
 //#else
 /* Built with the omit-oo1 flag. */
