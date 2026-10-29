@@ -5524,7 +5524,7 @@ Expr *sqlite3ExprSkipCollate(Expr*);
 Expr *sqlite3ExprSkipCollateAndLikely(Expr*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3WritableSchema(sqlite3*);
-int sqlite3CheckObjectName(Parse*, const char*,const char*,const char*);
+int sqlite3CheckObjectName(Parse*,const char*,const char*,const char*,const char*);
 void sqlite3VdbeSetChanges(sqlite3 *, i64);
 int sqlite3AddInt64(i64*,i64);
 int sqlite3SubInt64(i64*,i64);
@@ -5759,12 +5759,12 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #endif
 int sqlite3ReadOnlyShadowTables(sqlite3 *db);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  int sqlite3ShadowTableName(sqlite3 *db, const char *zName);
+  int sqlite3ShadowTableName(sqlite3 *db, const char *zName, const char *zDb);
   int sqlite3IsShadowTableOf(sqlite3*,Table*,const char*);
   void sqlite3MarkAllShadowTablesOf(sqlite3*, Table*);
   void sqlite3VtabEponymousTableClearAll(sqlite3*);
 #else
-# define sqlite3ShadowTableName(A,B) 0
+# define sqlite3ShadowTableName(A,B,C) 0
 # define sqlite3IsShadowTableOf(A,B,C) 0
 # define sqlite3MarkAllShadowTablesOf(A,B)
 # define sqlite3VtabEponymousTableClearAll(X)
