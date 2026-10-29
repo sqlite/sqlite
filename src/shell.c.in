@@ -3771,6 +3771,7 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
       sqlite3_snprintf(sizeof(zNum),zNum,"?%d",i);
       zVar = zNum;
     }
+    if( inTrace ) cli_printf(pArg->out, "BIND: %s\n", zVar);
     sqlite3_bind_text(pQ, 1, zVar, -1, SQLITE_STATIC);
     if( rc==SQLITE_OK && pQ && sqlite3_step(pQ)==SQLITE_ROW ){
       sqlite3_bind_value(pStmt, i, sqlite3_column_value(pQ, 0));
@@ -4054,6 +4055,7 @@ static int shell_exec(
       }
      
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
+      bind_prepared_stmt(pArg, pStmt);
       isExplain = sqlite3_stmt_isexplain(pStmt);
       if( pArg && pArg->mode.autoEQP && isExplain==0 && pArg->dot.nArg==0 ){
         int triggerEQP = 0;
@@ -4083,7 +4085,6 @@ static int shell_exec(
         pArg->enableTimer = savedEnableTimer;
       }
 
-      bind_prepared_stmt(pArg, pStmt);
       if( isExplain && pArg->mode.autoExplain ){
         spec.eStyle = isExplain==1 ? QRF_STYLE_Explain : QRF_STYLE_Eqp;
         rc = sqlite3_format_query_result(pStmt, &spec, pzErrMsg);
