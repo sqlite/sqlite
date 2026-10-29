@@ -860,5 +860,70 @@ foreach {tn sql} {
   do_execsql_test 34.2.$tn $sql 
 }
 
+#-------------------------------------------------------------------------
+# Rowid alias columns that are part of UNIQUE clauses.
+#
+# Report: https://sqlite.org/bugs/forumpost/b088eb5b02
+#
+reset_db
+do_execsql_test 35.0 {
+  CREATE TABLE t1(c INTEGER PRIMARY KEY, UNIQUE(c)) WITHOUT ROWID;
+  CREATE TABLE t2(c INTEGER, UNIQUE(c), PRIMARY KEY(c));
+}
+
+do_execsql_test 35.1 {
+  ALTER TABLE t1 RENAME COLUMN c TO z;
+}
+
+do_execsql_test 35.2 {
+  ALTER TABLE t2 RENAME COLUMN c TO z;
+}
+
+do_execsql_test 35.3 {
+  SELECT sql FROM sqlite_schema WHERE name='t1';
+} {
+  {CREATE TABLE t1(z INTEGER PRIMARY KEY, UNIQUE(z)) WITHOUT ROWID}
+}
+
+do_execsql_test 35.4 {
+  SELECT sql FROM sqlite_schema WHERE name='t2';
+} {
+  {CREATE TABLE t2(z INTEGER, UNIQUE(z), PRIMARY KEY(z))}
+}
+
+#-------------------------------------------------------------------------
+# Renaming a rowid alias column does not rename references to "rowid",
+# "oid" or "_rowid_".
+#
+reset_db
+do_execsql_test 36.0 {
+  CREATE TABLE t1(c INTEGER PRIMARY KEY, d, CHECK(rowid>0));
+  CREATE VIEW v1 AS SELECT rowid, oid, c FROM t1;
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    SELECT new.rowid, new.c;
+    UPDATE t1 SET d=rowid WHERE _rowid_=new.c;
+  END;
+}
+
+do_execsql_test 36.1 {
+  ALTER TABLE t1 RENAME COLUMN c TO z;
+}
+
+do_execsql_test 36.2 {
+  SELECT sql FROM sqlite_schema;
+} {
+  {CREATE TABLE t1(z INTEGER PRIMARY KEY, d, CHECK(rowid>0))}
+  {CREATE VIEW v1 AS SELECT rowid, oid, z FROM t1}
+  {CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    SELECT new.rowid, new.z;
+    UPDATE t1 SET d=rowid WHERE _rowid_=new.z;
+  END}
+}
+
+do_execsql_test 36.3 {
+  INSERT INTO t1(z) VALUES(5);
+  SELECT * FROM t1;
+  SELECT * FROM v1;
+} {5 5 5 5 5}
 
 finish_test
