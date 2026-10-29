@@ -4655,7 +4655,7 @@ T.g('Bug Reports')
           "insert into t(a) values(1),(2),(-1),(-2);",
           "select auxtest(1,a), auxtest(1,a) from t order by a"
         ]);
-        T.assert(2==nAuxSet)
+        T.assert(2===nAuxSet)
           .assert(6===nAuxReused)
           .assert(nAuxDestructed===nAuxSet);
       }finally{
@@ -4672,6 +4672,7 @@ T.g('Bug Reports')
       let nAuxDestructed = 0 /* how many times auxDtor is called */;
       let nAuxSet = 0 /* how many times we set aux data */;
       let nAuxReused = 0 /* how many times we reused aux data */;
+      let nPeakAux = 0 /* highest number bound at once */;
       const auxDtor = (ptr)=>{
         //log("freeing auxdata");
         T.assert( pAux === ptr );
@@ -4711,6 +4712,9 @@ T.g('Bug Reports')
                  efficiency, however.
               */
               ++nAuxSet;
+              if( nAuxSet - nAuxDestructed>nPeakAux ){
+                nPeakAux = nAuxSet - nAuxDestructed;
+              }
               capi.sqlite3_set_auxdata(pCx, 0, pAux, auxDtor);
             }else{
               //log("reusing auxdata",localAux);
@@ -4723,11 +4727,17 @@ T.g('Bug Reports')
         db.exec([
           "create table t(a);",
           "insert into t(a) values(1),(2),(-1),(-2);",
-          "select auxtest(1,a) + auxtest(1,a), auxtest(1,a) ",
-          "from t order by a"
+          "select auxtest(1,a) + auxtest(2,a), auxtest(3,a) ",
+          "from t order by a;"
         ]);
-        T.assert(3==nAuxSet)
+        T.assert(3===nAuxSet)
+          .assert(nAuxSet===nPeakAux)
           .assert(9===nAuxReused)
+          .assert(nAuxDestructed===nAuxSet);
+        db.exec("select auxtest(1,a), auxtest(2,a) from t order by a;");
+        T.assert(5===nAuxSet)
+          .assert(3===nPeakAux)
+          .assert(15===nAuxReused)
           .assert(nAuxDestructed===nAuxSet);
       }finally{
         db.close();

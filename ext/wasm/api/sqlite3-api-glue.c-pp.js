@@ -241,14 +241,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ]],
       /**
          sqlite3_set_auxdata() notes regarding the converter for the
-         final argument:
-
-         - It passes the argument to wasm.installFunction("v(p)",theArg),
-         which may throw.
-
-         - If used improperly properly, e.g. called onced per row
-         instead of once per distinct context, then it may quickly
-         generate countless transient WASM function table entries.
+         final argument: search this file for
+         "sqlite3_set_auxdata:dtor" for the docs.
       */
       ["sqlite3_set_auxdata", undefined, [
         "sqlite3_context*", "int", "*", "sqlite3_set_auxdata:dtor"
@@ -786,12 +780,27 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     );
 
     /**
-       This arg adapter is for sqlite3_set_auxdata()'s final
-       argument. A non-Function argument is returned as-is. For a
-       Function-type argument this creates a WASM wrapper function
-       which uninstalls itself when called, then proxies the original
-       input function but ignores any exceptions (it may emit
-       a warning via sqlite3.config.warn()).
+       This arg adapter is for sqlite3_set_auxdata()'s final argument,
+       a finalizer function. A non-Function argument is returned
+       as-is. For a Function-type argument this creates a WASM wrapper
+       function which uninstalls itself when called, then proxies the
+       original input function but ignores any exceptions (it may emit
+       a warning via sqlite3.config.warn()). SQLite3 always calls these
+       destructors when a statement is done executing
+
+       [Known] Caveats of this approach:
+
+       - If the argument is a function, it is passed to
+       wasm.installFunction("v(p)",theArg), which may throw.  That
+       differs from the vast majority of C/C-style bindings, in that
+       they never throw. sqlite3_set_auxdata() has a void return, so
+       an error code in place of an exception is not feasible (plus it
+       would be a semantic difference from the C API, which we don't
+       want in these bindings).
+
+       - If used improperly properly, e.g. called onced per row
+       instead of once per distinct context, then it may quickly
+       generate countless transient WASM function table entries.
     */
     wasm.xWrap.argAdapter(
       'sqlite3_set_auxdata:dtor',
