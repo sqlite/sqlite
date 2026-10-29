@@ -1167,6 +1167,18 @@ static void recoverAddTable(
     }
     recoverFinalize(p, pStmt);
 
+    /* A column declared as "INTEGER PRIMARY KEY DESC" is not an alias for
+    ** the rowid. Such a table has an automatic index with origin 'pk',
+    ** whereas a table with a true rowid alias does not.  */
+    if( iPk>=0 ){
+      pStmt = recoverPreparePrintf(p, p->dbOut,
+          "SELECT 1 FROM pragma_index_list(%Q, %Q) WHERE origin='pk'",
+          zName, p->zDb
+      );
+      if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ) iPk = -1;
+      recoverFinalize(p, pStmt);
+    }
+
     if( p->errCode==SQLITE_OK ){
       if( iPk>=0 ){
         pNew->aCol[iPk].bIPK = 1;

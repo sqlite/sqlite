@@ -44,6 +44,47 @@ do_test 1.2 {
 } {2 2 2 4 4 4}
 db2 close
 
+#-------------------------------------------------------------------------
+# Bug 2026-10-20T02:57:07Z: A column declared "INTEGER PRIMARY KEY DESC"
+# is not an alias for the rowid, and so must not be recovered as one.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE invoice(id INTEGER PRIMARY KEY DESC, customer TEXT);
+  INSERT INTO invoice VALUES(1001, 'alice'), (1002, 'bob'), (2001, 'carol');
+  CREATE TABLE w(v, id INTEGER PRIMARY KEY DESC);
+  INSERT INTO w VALUES('x', 42), ('y', 43);
+  DELETE FROM w WHERE v='x';
+
+  -- These are all rowid aliases, or are not rowid tables
+  CREATE TABLE a1(id INTEGER PRIMARY KEY, c);
+  INSERT INTO a1 VALUES(77, 'ipk');
+  CREATE TABLE a2(id INTEGER, c, PRIMARY KEY(id DESC));
+  INSERT INTO a2 VALUES(88, 'tblpk');
+  CREATE TABLE a3(id INTEGER PRIMARY KEY DESC, c) WITHOUT ROWID;
+  INSERT INTO a3 VALUES(99, 'wor');
+}
+
+foreach {tn bRowids wres} {
+  1 0 {1 y 43}
+  2 1 {2 y 43}
+} {
+  do_test 2.$tn {
+    recover db $bRowids test.db2
+    sqlite3 db2 test.db2
+    set res [execsql {
+      SELECT rowid, id, customer FROM invoice ORDER BY rowid;
+      SELECT rowid, v, id FROM w;
+      SELECT rowid, id, c FROM a1;
+      SELECT rowid, id, c FROM a2;
+      SELECT id, c FROM a3;
+    } db2]
+    db2 close
+    set res
+  } [list 1 1001 alice 2 1002 bob 3 2001 carol {*}$wres \
+          77 77 ipk 88 88 tblpk 99 wor]
+}
+
 
 
 
