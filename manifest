@@ -1,5 +1,5 @@
-C Do\snot\slet\sa\sTEMP\stable\sor\san\suninitialized\sschema\sprevent\sunauthorized\nwrites\sto\sa\sshadow\stable.\n[bugs:/info/2026-10-29T15:45:39Z|Bug\s2026-10-29T15:45:39Z]
-D 2026-10-29T19:34:49.920
+C Fix\sa\spossible\sinfinite\sloop\sassociated\swith\sthe\snocase\scollation\nin\sthe\s(disused)\sspellfix\sextension.\n[bugs:/info/2026-10-29T11:59:57Z|Bug\s2026-10-29T11:59:57Z]
+D 2026-10-29T19:56:52.041
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -387,7 +387,7 @@ F ext/misc/ieee754.c a4cac5236d3e538bf7e0161258b157f7e402d95564e6819b62c40f53d78
 F ext/misc/memstat.c 03ab52d2d841eb3f55118105c1964d5225f152b23bd708844c648b48d14ccbcf
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/mmapwarm.c a81af4aaec00f24f308e2f4c19bf1d88f3ac3ce848c36daa7a4cd38145c4080d
-F ext/misc/nextchar.c 6092d68a78042462827a304b8db3e009f11985d38e2ef3c598917dc3d0fb208c
+F ext/misc/nextchar.c b96f556b9b9c037454dfb1bf21dd0eebb67b5584eec8681f88fb780078893e0e
 F ext/misc/noop.c 9d13ea10abab57811cbf2b731fd39b0a7dab46eb34cb95d102a8436cb12f4ccc
 F ext/misc/normalize.c 2887c895f7c23b80cd0671af77acc57a88429d95d05ba2ce5c477e736c477a17
 F ext/misc/optname.c 69a903416ff9c6c0e714a1caafeb1bc2e09fff44e419148fdc36d678997f5541
@@ -1769,7 +1769,7 @@ F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d
 F test/speedtest.md ea0c85ebe0ecff8b45ba6cdb26e694871f469009a5a29dcfe634b055f05ab241
 F test/speedtest.tcl f3d6c71b28969e02f60dd1de597da0551a2b335e4b49f3b753f0d57a1871e31f x
 F test/speedtest1.c 9397561fd7879e327d705763872ad6bca378238ff9c9ca7a72514452652c1d30
-F test/spellfix.test 09c4b3aecb6754dd9fd4a01ae3a712935c3a8456bc70d81480926f55d1e5af2f
+F test/spellfix.test d702f9b3ac16799021db62a1f7088f352abbdacd4398d8667949f5133ad2a575
 F test/spellfix2.test e1581e4f9b2bbccaaa5a0b2fb79bf19461c945cd57abef923cfd7dcf428cf2e6
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 7c56a09de68b95051ef0627fe235e514efbba2aa816dc2a9c5c670d98877e632
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P fd28dabb03f893f1efec78bfd28e64af1a2bf2dc9b77fafb5135cb72b27aa803
-R 214d05eb089dbb25d0c0f3d81c05f926
+P ffec289af9da0d0da1ee22104c6b3781874e8781bfb67dacf6a7b13af20ecc31
+R f03b7531e1ee694067e9ff4641810a54
 U drh
-Z e025f06130d3f7d1b2041271f782296f
+Z 5a9ca8625f9ea4a786715cba1efa25f6
 # Remove this line to create a well-formed Fossil manifest.
