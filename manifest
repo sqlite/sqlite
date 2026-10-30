@@ -1,5 +1,5 @@
-C When\sthe\szipfile\sextension\swrites\sa\sfile\swith\sa\stimestamp\sbefore\n1980-01-01T00:00:01,\sset\sthe\sDOS\stimestamp\sto\sthat\sminimum\svalue\nso\sthat\scan\sbe\sdisplayed\son\sWindows11,\swhich\sappears\sto\signore\nthe\s0x5455\sextended\stimestamp.\n[bugs:/info/2026-10-27T07:28:08Z|Bug\s2026-10-27T07:28:08Z]
-D 2026-10-30T23:08:34.062
+C In\sthe\sext/misc/csv.c\sextension,\sif\sthe\slast\srow\sof\sCSV\sinput\sis\sincomplete,\nfill\sit\sout\swith\sempty\sstrings\srather\sthan\sNULLs.\n[bugs:/info/2026-10-28T05:07:03Z|Bug\s2026-10-28T05:07:03Z]
+D 2026-10-30T23:32:32.299
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -374,7 +374,7 @@ F ext/misc/cksumvfs.c 83414e220e6cdfb29929f3154a24f32ff219d9794690bcb1b2db48f668
 F ext/misc/closure.c e1f115c369790512634db8d19ef4f1e45b6c1658c8fe8a9c362aa65805c8a900
 F ext/misc/completion.c 3f5db28e88c3313103b2dd86d910a2944fd500c46754e473493968ce81e994a4
 F ext/misc/compress.c c4597f0e3c63a5f89af55486490f9d69896b0482898f2ddb8a46aa11e4d13016
-F ext/misc/csv.c 5ca451b9ce77322c4ce8476766e7ed18160e5c8b19e7cab76e13006d631b9e8f
+F ext/misc/csv.c f4f3f6418a37d1d20fe62870b06413d48e6095c8deb9a1d5828db14c1cd96ae6
 F ext/misc/dbdump.c 3e525a5b37b70db81e9fa03d825b79c5648c2ae2400f8ec1c5b3b64bfa508b44
 F ext/misc/decimal.c 68e987966e4772efdb8df03e2bf253d02bae3254af29fd4a99d34fc6e6f3e2f9
 F ext/misc/diskused.c 92c09e9d181c339428b7b3797ae3d09d9e36a6a8542b2e2f4dc358b22e708908
@@ -1108,7 +1108,7 @@ F test/crashM.test d95f59046fa749b0d0822edf18a717788c8f318d
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 4983b8ee20788404c440444cbe16760162806676e799d97c45d8415245b456ff
 F test/cse.test 00b3aea44b16828833c94fbe92475fd6977583fcb064ae0bc590986812b38d0c
-F test/csv01.test 96bc1634961682363a7b4ad5c0e38450e6e9743b38ac626422e1b56cbdc06cd8
+F test/csv01.test 3976047abca29b5fab2099672bc5edbd23e809c656980062fadde7176ff850e1
 F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c4773
 F test/cursorhint.test d8b93ac48dfdb2cf4284142710d63e860b6497afff2e9c525daf752a229e5b97
 F test/cursorhint2.test a10f29c0c52d4d73c19cf639f3c33cccbf5024bcf950fa48f2a8cdc14628b985
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3c038169f7db16829c0f50f1808719de0e4d93ba971b49ffc0760eabba40cfd9
-R 7d250212c1858642ae8f81fbc1349268
+P 8c3db885869c54e20e2c85bdce0294e5347bf3c0f5ed319dfc65fbb553c27a11
+R 7f4f5ab34cbd21f878db65c9486a2b1e
 U drh
-Z d36c583958a0ef04f1bc52078609b815
+Z 35c5a3c216c1a8e5c9dfa7898092a10c
 # Remove this line to create a well-formed Fossil manifest.

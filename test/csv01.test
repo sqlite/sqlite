@@ -286,4 +286,15 @@ do_catchsql_test 8.1 {
   );
 } {1 {column= value too big, max 2000}}
 
+# Bug 2026-10-28T05:07:03Z
+#
+db null NULL
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE temp.t1 USING csv(
+    data=
+'1,2,
+5,6,');
+  SELECT * FROM temp.t1;
+} {1 2 {} 5 6 {}}
+
 finish_test
