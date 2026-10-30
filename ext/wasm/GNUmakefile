@@ -959,12 +959,10 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 	} > $@
 
 #
-# Inputs/outputs for the sqlite3-api.js family.
-#
-# sqlite3-api.jses = the list of JS files which make up
+# $(sqlite3-api.jses) = the list of JS files which make up
 # sqlite3-api.js, in the order they need to be assembled.
 sqlite3-api.jses = $(sqlite3-license-version.js)
-sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
+sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.c-pp.js
 sqlite3-api.jses += $(sqlite3-api-build-version.js)
 sqlite3-api.jses += $(dir.common)/whwasmutil.c-pp.js
 sqlite3-api.jses += $(dir.jacc)/jaccwabyt.c-pp.js
