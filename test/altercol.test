@@ -959,4 +959,107 @@ do_catchsql_test 24.1 {
   ALTER TABLE t2 ADD COLUMN d REFERENCES t1 DEFAULT 123;
 } {1 {Cannot add a REFERENCES column with non-NULL default value}}
 
+
+#-------------------------------------------------------------------------
+# ALTER TABLE RENAME COLUMN and RENAME TO on triggers that contain
+# INSERT statements with more than one ON CONFLICT clause. Every clause
+# in the chain must be rewritten, not just the first.
+#
+reset_db
+do_execsql_test 25.0 {
+  CREATE TABLE t(a UNIQUE, b UNIQUE, c);
+  CREATE TRIGGER tr AFTER UPDATE ON t BEGIN
+    INSERT INTO t VALUES(1,2,3)
+      ON CONFLICT(a) DO UPDATE SET c=old.c
+      ON CONFLICT(b) DO UPDATE SET c=old.c;
+  END;
+}
+do_execsql_test 25.1 {
+  ALTER TABLE t RENAME COLUMN c TO x;
+  SELECT sql FROM sqlite_schema WHERE name='tr';
+} {{CREATE TRIGGER tr AFTER UPDATE ON t BEGIN
+    INSERT INTO t VALUES(1,2,3)
+      ON CONFLICT(a) DO UPDATE SET x=old.x
+      ON CONFLICT(b) DO UPDATE SET x=old.x;
+  END}}
+do_execsql_test 25.2 {
+  INSERT INTO t VALUES(5,6,7);
+  UPDATE t SET x=8;
+  SELECT * FROM t ORDER BY a;
+} {1 2 3 5 6 8}
+
+# Renamed column in the conflict target, the SET list and the DO UPDATE
+# WHERE clause of the second and third ON CONFLICT clauses. The inserts
+# in 25.13 cause each of the three clauses to fire once.
+#
+reset_db
+do_execsql_test 25.10 {
+  CREATE TABLE t1(a UNIQUE, b UNIQUE, c UNIQUE, d);
+  CREATE TABLE log(x, y, z);
+  INSERT INTO t1 VALUES(1, 10, 100, 0);
+  CREATE TRIGGER tr1 AFTER INSERT ON log BEGIN
+    INSERT INTO t1 VALUES(new.x, new.y, new.z, 1)
+      ON CONFLICT(a) DO UPDATE SET d=d+1 WHERE b>5
+      ON CONFLICT(b) DO UPDATE SET d=d+10 WHERE b>0
+      ON CONFLICT(c) DO UPDATE SET d=d+excluded.d*100 WHERE excluded.b=0;
+  END;
+}
+do_execsql_test 25.11 {
+  ALTER TABLE t1 RENAME COLUMN b TO bbb;
+  SELECT sql FROM sqlite_schema WHERE name='tr1';
+} {{CREATE TRIGGER tr1 AFTER INSERT ON log BEGIN
+    INSERT INTO t1 VALUES(new.x, new.y, new.z, 1)
+      ON CONFLICT(a) DO UPDATE SET d=d+1 WHERE bbb>5
+      ON CONFLICT(bbb) DO UPDATE SET d=d+10 WHERE bbb>0
+      ON CONFLICT(c) DO UPDATE SET d=d+excluded.d*100 WHERE excluded.bbb=0;
+  END}}
+do_execsql_test 25.12 {
+  ALTER TABLE t1 RENAME COLUMN d TO ddd;
+  SELECT sql FROM sqlite_schema WHERE name='tr1';
+} {{CREATE TRIGGER tr1 AFTER INSERT ON log BEGIN
+    INSERT INTO t1 VALUES(new.x, new.y, new.z, 1)
+      ON CONFLICT(a) DO UPDATE SET ddd=ddd+1 WHERE bbb>5
+      ON CONFLICT(bbb) DO UPDATE SET ddd=ddd+10 WHERE bbb>0
+      ON CONFLICT(c) DO UPDATE SET ddd=ddd+excluded.ddd*100 WHERE excluded.bbb=0;
+  END}}
+do_execsql_test 25.13 {
+  INSERT INTO log VALUES(1, 0, 0), (0, 10, 0), (0, 0, 100);
+  SELECT * FROM t1;
+} {1 10 100 111}
+
+# RENAME TO for a table referenced only from the second ON CONFLICT clause.
+#
+reset_db
+do_execsql_test 25.20 {
+  CREATE TABLE t1(a UNIQUE, b UNIQUE, c);
+  CREATE TABLE t2(v);
+  INSERT INTO t2 VALUES(42);
+  CREATE TRIGGER tr1 AFTER UPDATE ON t1 BEGIN
+    INSERT INTO t1 VALUES(1,2,3)
+      ON CONFLICT(a) DO NOTHING
+      ON CONFLICT(b) DO UPDATE SET c=(SELECT v FROM t2);
+  END;
+}
+do_execsql_test 25.21 {
+  ALTER TABLE t2 RENAME TO t3;
+  SELECT sql FROM sqlite_schema WHERE name='tr1';
+} {{CREATE TRIGGER tr1 AFTER UPDATE ON t1 BEGIN
+    INSERT INTO t1 VALUES(1,2,3)
+      ON CONFLICT(a) DO NOTHING
+      ON CONFLICT(b) DO UPDATE SET c=(SELECT v FROM "t3");
+  END}}
+do_execsql_test 25.22 {
+  INSERT INTO t1 VALUES(0,2,0);
+  UPDATE t1 SET c=1;
+  SELECT * FROM t1;
+} {0 2 42}
+do_execsql_test 25.23 {
+  ALTER TABLE t3 RENAME COLUMN v TO vvv;
+  SELECT sql FROM sqlite_schema WHERE name='tr1';
+} {{CREATE TRIGGER tr1 AFTER UPDATE ON t1 BEGIN
+    INSERT INTO t1 VALUES(1,2,3)
+      ON CONFLICT(a) DO NOTHING
+      ON CONFLICT(b) DO UPDATE SET c=(SELECT vvv FROM "t3");
+  END}}
+
 finish_test
