@@ -4278,9 +4278,16 @@ static int whereLoopAddBtree(
           }
         }
         pNew->wsFlags = WHERE_INDEXED;
-        if( m==TOPBIT
-         || (pProbe->bHasExpr && !pProbe->bHasVCol && m!=0)
-         || (pPartWC && m!=0)
+        if( m==0 ){
+          if( HasRowid(pTab) || pWInfo->pSelect!=0 || sqlite3FaultSim(700) ){
+            WHERETRACE(0x200,
+               ("-> %s is a covering index according to bitmasks\n",
+               pProbe->zName, m==0 ? "is" : "is not"));
+            pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
+          }
+        }else if( m==TOPBIT
+               || (pProbe->bHasExpr && !pProbe->bHasVCol)
+               || pPartWC
         ){
           u32 isCov = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor,
                                            pPartWC);
@@ -4303,13 +4310,6 @@ static int whereLoopAddBtree(
                   " according to whereIsCoveringIndex()\n", pProbe->zName));
             }
           }
-        }else if( m==0 
-           && (HasRowid(pTab) || pWInfo->pSelect!=0 || sqlite3FaultSim(700))
-        ){
-          WHERETRACE(0x200,
-             ("-> %s is a covering index according to bitmasks\n",
-             pProbe->zName, m==0 ? "is" : "is not"));
-          pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         }
       }
 
