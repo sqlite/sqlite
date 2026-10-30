@@ -23,7 +23,7 @@
 
   Documentation home page: https://sqlite.org/wasm
 */
-
+//#define canonical-sqlite3
 /**
    sqlite3ApiBootstrap() is the only global symbol persistently
    exposed by this API. It is intended to be called one time at the
