@@ -882,11 +882,11 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 #
 
 #
-# b.call.patch-export-default is used by mkwasmbuilds.c and the
-# wasmfs build. $1 is 1 if the build mode needs this workaround
-# (modes: esm, bundler-friendly, node) and 0 if not (vanilla). $2 must
-# be 0 for all builds except sqlite3-wasmfs.mjs, in which case it must
-# be 1. $(3) is an optional log prefix, defaulting to $(logtag.@)
+# b.call.patch-export-default is used by mkwasmbuilds.c. $1 is 1 if
+# the build mode needs this workaround (modes: esm, bundler-friendly,
+# node) and 0 if not (vanilla). $2 must be 0 for all builds except
+# sqlite3-wasmfs.mjs, in which case it must be 1. $(3) is an optional
+# log prefix, defaulting to $(logtag.@)
 #
 # Reminder for ESM builds: even if we use -sEXPORT_ES6=0, emcc _still_
 # adds:

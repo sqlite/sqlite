@@ -27,9 +27,9 @@
 //#define canonical-sqlite3
 /**
    sqlite3ApiBootstrap() is intended to be called one time at the end
-   of the API amalgamation process and passed configuration details
-   for the current WASM environment. It sets up and returns the
-   sqlite3 namespace object.
+   of the API amalgamation process, after the WASM file is loaded, and
+   passed configuration details for the current WASM environment. It
+   sets up and returns the sqlite3 namespace object.
 
    This function is not intended for client-level use. It is intended
    for use in creating bundles configured for specific WASM

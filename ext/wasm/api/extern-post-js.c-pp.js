@@ -9,9 +9,11 @@
    associated JS code, runs outside of the Emscripten-generated module
    init scope, in the current global scope.
 
-   At the time this is run, the global-scope sqlite3InitModule
-   function will have just been defined. This file conditionally
-   overwrites it with a custom one.
+   At the time this is run, the sqlite3InitModule function will have
+   just been defined via a `var` decl. This file overwrites it with a
+   custom one and then (in ESM builds) exports it. Getting ESM to work
+   here requires a build-time kludge of stripping the 'export default'
+   which Emscripten forcibly injects into its glue.
 */
 //#if target:es6-module
 const toExportForESM =
@@ -43,12 +45,7 @@ const toExportForESM =
      This state is consumed by pre-js.c-pp.js. That file lives above
      this one in the built JS module but it's executed after this one.
   */
-  const sIMS =
-//#if not target:es6-bundler-friendly and not target:node
-//#// ^^^ mirrored in pre-js.c-pp.js
-        globalThis.sqlite3InitModuleState =
-//#/if
-        Object.assign(Object.create(null),{
+  const sIMS = Object.assign(Object.create(null),{
     moduleScript: globalThis?.document?.currentScript,
     isWorker: ('undefined' !== typeof WorkerGlobalScope),
     location: globalThis.location,
@@ -73,6 +70,10 @@ const toExportForESM =
 //#@ pop policy delimiter
 //#/if
   });
+//#if not target:es6-bundler-friendly and not target:node
+//#// ^^^ mirrored in pre-js.c-pp.js
+  globalThis.sqlite3InitModuleState = sIMS;
+//#/if
   sIMS.debugModule =
     sIMS.urlParams.has('sqlite3.debugModule')
     ? (...args)=>console.warn('sqlite3.debugModule:',...args)
@@ -92,7 +93,7 @@ const toExportForESM =
      measure. Potential TODO is only allow query parameters from the
      same origin as this script.
   */
-  sIMS.getPathArgument = (key)=>{
+  const getPathArgument = (key)=>{
     const s = sIMS.urlParams.get(key);
     //console.warn("sIMS.getPathArgument(",key,")",s);
     if( !s ) return s;
@@ -105,18 +106,21 @@ const toExportForESM =
     }
     return s;
   };
-
+//#if not target:es6-module /* needed for non-ESM in pre-js.c-pp.js */
+  sIMS.getPathArgument = getPathArgument;
+//#/if
   if( sIMS.urlParams.has('sqlite3.dir') ){
-    const s = sIMS.getPathArgument('sqlite3.dir');
+    const s = getPathArgument('sqlite3.dir');
     if( s ){
       sIMS.sqlite3Dir = s + (s[s.length-1]==='/' ? '' : '/');
     }
-  }else if( sIMS.moduleScript ){
+  }else if( sIMS.moduleScript?.src ){
     const li = sIMS.moduleScript.src.split('/');
     li.pop();
     sIMS.sqlite3Dir = li.join('/') + '/';
   }
 
+  /* Replace the Emscripten-generated sqlite3InitModule()... */
   const sIM = sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     /**
@@ -160,28 +164,31 @@ const toExportForESM =
     });
   };
 
-  if(sIMS.moduleScript){
-    let src = sIMS.moduleScript.src.split('/');
+  if( sIMS.moduleScript?.src ){
+    /* Record this script's directory part */
+    const src = sIMS.moduleScript.src.split('/');
     src.pop();
     sIMS.scriptDir = src.join('/') + '/';
   }
   sIMS.debugModule('extern-post-js.c-pp.js sqlite3InitModuleState =',sIMS);
 //#if not target:es6-module
-// Emscripten does not inject these module-loader bits in ES6 module
-// builds and including them here breaks JS bundlers, so elide them
-// from ESM builds.
+//#if 0
+ /* Emscripten does not inject these module-loader bits in ES6 module
+    builds and including them here breaks JS bundlers, so elide them
+    from ESM builds. */
+//#/if
   /* Replace the various module exports performed by the Emscripten
-     glue... */
+     glue so that they link to our overwritten copy... */
   if( typeof exports === 'object' && typeof module === 'object' ){
     module.exports = sIM;
-    module.exports.default = sIM;
-  }else if( 'function'===typeof define && define.amd ){
+    module.exports.default = sIM /* allows TS to import this commonjs style */;
+  }else if( 'function'===typeof define && define['amd'] ){
     define([], ()=>sIM);
   }else if( typeof exports === 'object' ){
+    /* 2026-10-30: Emscripten no longer emits this one, so we can probably
+       remove it. */
     exports["sqlite3InitModule"] = sIM;
   }
-  /* AMD modules get injected in a way we cannot override,
-     so we can't handle those here. */
 //#/if // !target:es6-module
   return sIM;
 })();
