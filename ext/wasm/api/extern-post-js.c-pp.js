@@ -16,7 +16,7 @@
    which Emscripten forcibly injects into its glue.
 */
 //#if target:es6-module
-const toExportForESM =
+export default
 //#/if
 (function(){
   //console.warn("this is extern-post-js");
@@ -32,6 +32,8 @@ const toExportForESM =
     throw new Error("Expecting sqlite3InitModule to be defined by the Emscripten build.");
   }
   /**
+     sIMS => sqlite3InitModuleState
+
      We need to add some state which our custom Module.locateFile()
      can see, but an Emscripten limitation currently prevents us from
      attaching it to the sqlite3InitModule function object:
@@ -192,6 +194,3 @@ const toExportForESM =
 //#/if // !target:es6-module
   return sIM;
 })();
-//#if target:es6-module
-export default sqlite3InitModule;
-//#/if

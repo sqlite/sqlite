@@ -1,5 +1,5 @@
-C Update\sJS\sREADME.md\sto\smore\sclosely\sreflect\scurrent\sreality.
-D 2026-10-30T19:14:27.134
+C Simplify\san\sESM\sexport\sconstruct.
+D 2026-10-30T19:22:19.236
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -661,7 +661,7 @@ F ext/wasm/SQLTester/index.html 64f3435084c7d6139b08d1f2a713828a73f68de2ae6a3112
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
 F ext/wasm/api/EXPORTED_FUNCTIONS.c-pp 0b0eee602791286ab18e07eadd38a531389285681bd3dbe92c5520ff81ca769a
 F ext/wasm/api/README.md 9ef12ed0ca5c3e731809f6b99308efc996ef46ece709e04348a1240d7aa59072
-F ext/wasm/api/extern-post-js.c-pp.js 19f69310b94463634b82b6bba850282105cec855766f293d43db609f7eb59098
+F ext/wasm/api/extern-post-js.c-pp.js 5f4aed9865eb855f7c83186aa41e533fcc896e8282f54c492e84cd6ed152be73
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/opfs-common-inline.c-pp.js f84640e2b1e9c5903deb55ef3d7bf537587e31eb6f4f257b4a75827146d2b5a9
 F ext/wasm/api/opfs-common-shared.c-pp.js da5f7d4083ec20c28faa02d29228ed2a73a41da856006a414850abde7f93258b
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 02a05ed7f0fd3ec6ea15fdede65db7905beff568c2f57d59764d3a8a6658242c
-R 2809cde2332e72761e8a54713ef36a12
+P 244db4ef9b066170c8f1bebfc2b12809e1fbe889ca6cf45ea2923f51948db2b0
+R 6454b1ae13d2c0131d3120e13a9138cb
 U stephan
-Z 4c767538191008995666ff8fab7f17aa
+Z a3afdb1fc8b8aace558ac700a1d7c9c1
 # Remove this line to create a well-formed Fossil manifest.
