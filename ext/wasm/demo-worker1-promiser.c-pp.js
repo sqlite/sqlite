@@ -17,8 +17,7 @@
 import {default as promiserFactory} from "./jswasm/sqlite3-worker1-promiser.mjs";
 //#else
 "use strict";
-const promiserFactory = globalThis.sqlite3Worker1Promiser.v2;
-delete globalThis.sqlite3Worker1Promiser;
+const promiserFactory = sqlite3Worker1Promiser.v2;
 //#/if
 (async function(){
   const T = globalThis.SqliteTestUtil;

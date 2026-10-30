@@ -1,5 +1,5 @@
-C JS:\srework\ssqlite3APIBootstrap()\sto\savoid\sattaching\sit\sto\sthe\sglobalThis\sobject.
-D 2026-10-30T15:09:43.839
+C Rework\ssqlite3Worker1Promiser()\sto\snot\sneed\sthe\sglobalThis\sbinding.\sWe\sstill\sadd\sthat\sbinding\sin\snon-ESM\sbuilds\sbecause\sdocs\shave\shistorically\sreferred\sto\sit,\sbut\sESM\sbuilds\shave\snever\sliked\sthat.
+D 2026-10-30T15:46:07.165
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -681,7 +681,7 @@ F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js e423549c0e0d3c1f4527487809cab2bc7a3c9
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js c554f6ce5f79a362d4ea31ced5983f4f044141e8d4c64c55a17452c4a3d33379
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 094a01171d1ddea9d408fc49aedbe6b42654536ff1cb7c2af856f4b364c00452
 F ext/wasm/api/sqlite3-wasm.c 5ac22d03231318615112fdea462ea6abbee6cadf964f22b6dfcc813dd6b37b85
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 3b551b4c4434d96c5daa21fe849c2f3f9ed1356d931b231975c32828efaa3c86
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 301b0cbffeaed21c4f60c7bd0d2b5e965172e55ca9eb35f2902cd4e08d90ca04
 F ext/wasm/api/sqlite3-worker1.c-pp.js d274d5eb7f43f4f3b35a4d1f9213a1e34aa5ae27df7af9e74df9f89a50ee7bda
 F ext/wasm/common/SqliteTestUtil.js dae753b95e72248c4395d8de8359e0d055cd9928488e8dd84aef89e46d23b32e
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
@@ -694,7 +694,7 @@ F ext/wasm/demo-123.js c7b3cca50c55841c381a9ca4f9396e5bbdc6114273d0b10a43e378e32
 F ext/wasm/demo-jsstorage.html 409c4be4af5f207fb2877160724b91b33ea36a3cd8c204e8da1acb828ffe588e
 F ext/wasm/demo-jsstorage.js 467cb4126ff679ebcdb112d100d073af26b9808d0a0b52d66a40e28f59c5099b
 F ext/wasm/demo-worker1-promiser.c-pp.html 38e917d4dafa75b4aa0e9e1663abe734c1f701f6da141318bd01ffe3f6e47a77
-F ext/wasm/demo-worker1-promiser.c-pp.js d210aa1e8a74ea6244fe2290de5710bb55b3a9ed681aaba04e38ceb66550f417
+F ext/wasm/demo-worker1-promiser.c-pp.js dd6df620772d12cb5489d669eb4a8d1eb22355bacc0c9f9694d8bf465d54d258
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js fdfa90aa9d6b402bfed802cf1595fe4da6cc834ac38c8ff854bf1ee01f5ff9bb
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P afa137dbeb020fae20b5cb9694081d04f4724cc83e31fc1a51042a2db32c9e22
-R 937cacd9db08638d8bfc9573ed109960
+P acc2425a6c67e65640b91bcaa24235688b989c7c0d7775d9fde351f876ffede9
+R 5ef1d978c47116739c8d329e4010e433
 U stephan
-Z a5352ea3ddbfb1b9514e1c0170286d5f
+Z b0f750d818e7b9ee9f2276490aba4da7
 # Remove this line to create a well-formed Fossil manifest.
