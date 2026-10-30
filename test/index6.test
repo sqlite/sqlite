@@ -364,28 +364,28 @@ do_execsql_test index6-10.1 {
 do_execsql_test index6-10.1eqp {
   EXPLAIN QUERY PLAN
   SELECT e FROM t10 WHERE a=1 AND b=2 AND c=3 ORDER BY d;
-} {/USING INDEX t10x/}
+} {/USING COVERING INDEX t10x/}
 do_execsql_test index6-10.2 {
   SELECT e FROM t10 WHERE c=3 AND 2=b AND a=1 ORDER BY d DESC;
 } {9 5}
 do_execsql_test index6-10.2eqp {
   EXPLAIN QUERY PLAN
   SELECT e FROM t10 WHERE c=3 AND 2=b AND a=1 ORDER BY d DESC;
-} {/USING INDEX t10x/}
+} {/USING COVERING INDEX t10x/}
 do_execsql_test index6-10.3 {
   SELECT e FROM t10 WHERE a=1 AND b=2 ORDER BY d DESC;
 } {9 5}
 do_execsql_test index6-10.3eqp {
   EXPLAIN QUERY PLAN
   SELECT e FROM t10 WHERE a=1 AND b=2 ORDER BY d DESC;
-} {~/USING INDEX t10x/}
+} {~/INDEX t10x/}
 
 # A partial index will be used for a full table scan, where possible
 do_execsql_test index6-11.1 {
   CREATE TABLE t11(a,b,c);
   CREATE INDEX t11x ON t11(a) WHERE b<>99;
   EXPLAIN QUERY PLAN SELECT a FROM t11 WHERE b<>99;
-} {/USING INDEX t11x/}
+} {/USING COVERING INDEX t11x/}
 do_execsql_test index6-11.2 {
   EXPLAIN QUERY PLAN SELECT a FROM t11 WHERE b<>99 AND c<>98;
 } {/USING INDEX t11x/}
@@ -527,5 +527,68 @@ do_execsql_test index6-19.1 {
 do_execsql_test index6-19.2 {
   SELECT * FROM t2 RIGHT JOIN t3 ON d<>0 LEFT JOIN t1 ON c=3 WHERE t1.a<>0;
 } {}
+
+# 2026-10-30 https://sqlite.org/bugs/forumpost/7e14136a88
+# A partial index can be a covering index even if it does not contain
+# columns used only by WHERE clause terms that are implied by the WHERE
+# clause of the partial index.  Column "b" below has no declared type,
+# so it cannot be replaced by the constant in the partial index WHERE.
+#
+reset_db
+do_execsql_test index6-20.1 {
+  CREATE TABLE t1(a,b,c,d,e,f,g,h,i);
+  CREATE INDEX t1cdgi ON t1(c,d,g,i) WHERE b=1;
+  CREATE INDEX t1cda ON t1(c,d,a) WHERE b=1;
+  CREATE INDEX t1cdfh ON t1(c,d,f,h) WHERE b=1;
+  INSERT INTO t1(a,b,c,d) VALUES
+     ('one',1,2,3), ('real',1.0,2,3), ('two',2,2,3), ('text','1',2,3);
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(2), (5);
+}
+do_eqp_test index6-20.2 {
+  SELECT a FROM t1 WHERE c=2 AND d=3 AND b=1;
+} {SEARCH t1 USING COVERING INDEX t1cda (c=? AND d=?)}
+do_execsql_test index6-20.3 {
+  SELECT a FROM t1 WHERE c=2 AND d=3 AND b=1 ORDER BY a;
+} {one real}
+
+# Not covering if column "b" is used anywhere other than in a WHERE
+# clause term implied by the partial index.
+do_eqp_test index6-20.4 {
+  SELECT a, b FROM t1 WHERE c=2 AND d=3 AND b=1;
+} {SEARCH t1 USING INDEX t1cdfh (c=? AND d=?)}
+do_execsql_test index6-20.5 {
+  SELECT a, b, typeof(b) FROM t1 WHERE c=2 AND d=3 AND b=1 ORDER BY a;
+} {one 1 integer real 1.0 real}
+do_eqp_test index6-20.6 {
+  SELECT a, b=1 FROM t1 WHERE c=2 AND d=3 AND b=1;
+} {SEARCH t1 USING INDEX t1cdfh (c=? AND d=?)}
+do_eqp_test index6-20.7 {
+  SELECT a FROM t1 WHERE c=2 AND d=3 AND b=1 ORDER BY b;
+} {SEARCH t1 USING INDEX t1cdfh (c=? AND d=?)}
+
+# Joins.  The optimization does not apply to the right table of a
+# LEFT JOIN, as WHERE clause terms implied by the partial index are
+# not omitted in that case.
+do_eqp_test index6-20.8 {
+  SELECT a FROM t2, t1 WHERE c=x AND d=3 AND b=1;
+} {
+  QUERY PLAN
+  |--SCAN t2
+  `--SEARCH t1 USING COVERING INDEX t1cda (c=? AND d=?)
+}
+do_execsql_test index6-20.9 {
+  SELECT x, a FROM t2, t1 WHERE c=x AND d=3 AND b=1 ORDER BY x, a;
+} {2 one 2 real}
+do_eqp_test index6-20.10 {
+  SELECT a FROM t2 LEFT JOIN t1 ON c=x AND d=3 AND b=1;
+} {
+  QUERY PLAN
+  |--SCAN t2
+  `--SEARCH t1 USING INDEX t1cdfh (c=? AND d=?) LEFT-JOIN
+}
+do_execsql_test index6-20.11 {
+  SELECT x, a FROM t2 LEFT JOIN t1 ON c=x AND d=3 AND b=1 ORDER BY x, a;
+} {2 one 2 real 5 {}}
 
 finish_test

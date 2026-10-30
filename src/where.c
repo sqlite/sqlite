@@ -3764,9 +3764,39 @@ typedef struct CoveringIndexCheck CoveringIndexCheck;
 struct CoveringIndexCheck {
   Index *pIdx;       /* The index */
   int iTabCur;       /* Cursor number for the corresponding table */
+  WhereClause *pWC;  /* Ignore terms of this WHERE implied by pIdx, or NULL */
   u8 bExpr;          /* Uses an indexed expression */
   u8 bUnidx;         /* Uses an unindexed column not within an indexed expr */
 };
+
+/*
+** Return true if pExpr is a term of the WHERE clause pCk->pWC (not merely
+** a copy of such a term) and is identical to one of the AND-connected
+** terms of the WHERE clause of partial index pCk->pIdx.  Such a term is
+** never evaluated when pCk->pIdx drives the loop, because the
+** whereApplyPartialIndexConstraints() routine marks it as already coded.
+** Hence any columns used by the term do not need to be in the index.
+*/
+static int whereTermImpliedByPartialIndex(
+  CoveringIndexCheck *pCk,
+  const Expr *pExpr
+){
+  WhereClause *pWC = pCk->pWC;
+  Expr *pPart;
+  int i;
+  for(i=0; i<pWC->nTerm; i++){
+    if( pWC->a[i].pExpr==pExpr ) break;
+  }
+  if( i>=pWC->nTerm ) return 0;
+  pPart = pCk->pIdx->pPartIdxWhere;
+  while( pPart->op==TK_AND ){
+    if( sqlite3ExprCompare(0, pExpr, pPart->pRight, pCk->iTabCur)==0 ){
+      return 1;
+    }
+    pPart = pPart->pLeft;
+  }
+  return sqlite3ExprCompare(0, pExpr, pPart, pCk->iTabCur)==0;
+}
 
 /*
 ** Information passed in is pWalk->u.pCovIdxCk.  Call it pCk.
@@ -3794,6 +3824,9 @@ static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
 
   pCk = pWalk->u.pCovIdxCk;
   pIdx = pCk->pIdx;
+  if( pCk->pWC && whereTermImpliedByPartialIndex(pCk, pExpr) ){
+    return WRC_Prune;
+  }
   if( (pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN) ){
     /* if( pExpr->iColumn<(BMS-1) && pIdx->bHasExpr==0 ) return WRC_Continue;*/
     if( pExpr->iTable!=pCk->iTabCur ) return WRC_Continue;
@@ -3821,6 +3854,12 @@ static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
 ** a covering index by using the colUsed bitmasks.  We have to do a search
 ** to see if the index is covering.  This routine does that search.
 **
+** If pWC is not NULL, then pIdx is a partial index and terms of the
+** WHERE clause pWC that are implied by the WHERE clause of pIdx are
+** ignored, as they will never be evaluated when pIdx drives the loop.
+** In this case pIdx might not cover all low-numbered columns used by
+** pWInfo->pSelect.
+**
 ** The return value is one of these:
 **
 **      0                The index is definitely not a covering index
@@ -3840,7 +3879,8 @@ static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
 static SQLITE_NOINLINE u32 whereIsCoveringIndex(
   WhereInfo *pWInfo,     /* The WHERE clause context */
   Index *pIdx,           /* Index that is being tested */
-  int iTabCur            /* Cursor for the table being indexed */
+  int iTabCur,           /* Cursor for the table being indexed */
+  WhereClause *pWC       /* Ignore terms implied by pIdx, or NULL */
 ){
   int i, rc;
   struct CoveringIndexCheck ck;
@@ -3850,7 +3890,7 @@ static SQLITE_NOINLINE u32 whereIsCoveringIndex(
     ** if pIdx is covering.  Assume it is not. */
     return 0;
   }
-  if( pIdx->bHasExpr==0 ){
+  if( pIdx->bHasExpr==0 && pWC==0 ){
     for(i=0; i<pIdx->nColumn; i++){
       if( pIdx->aiColumn[i]>=BMS-1 ) break;
     }
@@ -3863,6 +3903,7 @@ static SQLITE_NOINLINE u32 whereIsCoveringIndex(
   }
   ck.pIdx = pIdx;
   ck.iTabCur = iTabCur;
+  ck.pWC = pWC;
   ck.bExpr = 0;
   ck.bUnidx = 0;
   memset(&w, 0, sizeof(w));
@@ -4214,6 +4255,7 @@ static int whereLoopAddBtree(
       if( rc ) break;
     }else{
       Bitmask m;
+      WhereClause *pPartWC = 0;  /* WHERE terms that pProbe might imply */
       if( pProbe->isCovering ){
         m = 0;
         pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
@@ -4225,10 +4267,23 @@ static int whereLoopAddBtree(
           wherePartIdxExpr(
               pWInfo->pParse, pProbe, pProbe->pPartIdxWhere, &m, 0, 0
           );
+          /* WHERE clause terms implied by the partial index WHERE clause
+          ** are not evaluated, so the columns they use need not be in the
+          ** index.  But this does not apply to outer joins.  See the
+          ** call to whereApplyPartialIndexConstraints() in wherecode.c. */
+          if( (pSrc->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))==0
+           && pWC==&pWInfo->sWC
+          ){
+            pPartWC = pWC;
+          }
         }
         pNew->wsFlags = WHERE_INDEXED;
-        if( m==TOPBIT || (pProbe->bHasExpr && !pProbe->bHasVCol && m!=0) ){
-          u32 isCov = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
+        if( m==TOPBIT
+         || (pProbe->bHasExpr && !pProbe->bHasVCol && m!=0)
+         || (pPartWC && m!=0)
+        ){
+          u32 isCov = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor,
+                                           pPartWC);
           if( isCov==0 ){
             WHERETRACE(0x200,
                ("-> %s is not a covering index"
