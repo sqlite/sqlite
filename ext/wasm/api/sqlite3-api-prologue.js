@@ -23,6 +23,7 @@
 
   Documentation home page: https://sqlite.org/wasm
 */
+//#// -Dcanonical-sqlite3 configures WhWasmUtil and Jaccwabyt for us.
 //#define canonical-sqlite3
 /**
    sqlite3ApiBootstrap() is the only global symbol persistently

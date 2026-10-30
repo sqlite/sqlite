@@ -44,7 +44,7 @@ try{
            : EmscriptenModule['asm']/* emscripten <=3.1.43 */)
     },
     sqlite3ApiBootstrap.defaultConfig, // default options
-    globalThis.sqlite3ApiConfig || {} // optional client-provided options
+    globalThis.sqlite3ApiConfig ?? {} // optional client-provided options
   );
 
   sqlite3InitScriptInfo.debugModule("Bootstrapping lib config", bootstrapConfig);

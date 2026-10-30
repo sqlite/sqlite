@@ -38,6 +38,9 @@ const toExportForESM =
      The only(?) current workaround is to temporarily stash this state
      into the global scope and delete it when sqlite3InitModule()
      is called.
+
+     This state is consumed by pre-js.c-pp.js. That file lives above
+     this one in the built JS module but it's executed after this one.
   */
   const sIMS = globalThis.sqlite3InitModuleState = Object.assign(Object.create(null),{
     moduleScript: globalThis?.document?.currentScript,
@@ -57,11 +60,11 @@ const toExportForESM =
       Module.instantiateWasm() is found in pre-js.c-pp.js.
     */
 //#if defined sqlite3.wasm
-//#@ push delimiter "<<<" ">>>"
+//#@ push policy error delimiter "<<<" ">>>"
 //#/if
     wasmFilename: '<<<sqlite3.wasm>>>' /* replaced by the build process */
 //#if defined sqlite3.wasm
-//#@ pop delimiter
+//#@ pop policy delimiter
 //#/if
   });
   sIMS.debugModule =
@@ -108,7 +111,7 @@ const toExportForESM =
     sIMS.sqlite3Dir = li.join('/') + '/';
   }
 
-  const sIM = globalThis.sqlite3InitModule = function ff(...args){
+  const sIM = sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     sIMS.emscriptenLocateFile = args[0]?.locateFile /* see pre-js.c-pp.js [tag:locateFile] */;
     sIMS.emscriptenInstantiateWasm = args[0]?.instantiateWasm /* see pre-js.c-pp.js [tag:locateFile] */;
@@ -168,6 +171,5 @@ const toExportForESM =
   return sIM;
 })();
 //#if target:es6-module
-sqlite3InitModule = toExportForESM;
 export default sqlite3InitModule;
 //#/if
