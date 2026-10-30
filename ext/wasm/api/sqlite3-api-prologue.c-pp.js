@@ -26,10 +26,10 @@
 //#// -Dcanonical-sqlite3 configures WhWasmUtil and Jaccwabyt for us.
 //#define canonical-sqlite3
 /**
-   sqlite3ApiBootstrap() is the only global symbol persistently
-   exposed by this API. It is intended to be called one time at the
-   end of the API amalgamation process and passed configuration details
-   for the current environment.
+   sqlite3ApiBootstrap() is intended to be called one time at the end
+   of the API amalgamation process and passed configuration details
+   for the current WASM environment. It sets up and returns the
+   sqlite3 namespace object.
 
    This function is not intended for client-level use. It is intended
    for use in creating bundles configured for specific WASM
@@ -41,8 +41,8 @@
    away details specific to any given WASM environment, primarily so
    that it can be used without any direct dependency on
    Emscripten. (Note the default values for the config object!) The
-   config object is only honored the first time this is
-   called. Subsequent calls ignore the argument and return the same
+   config object is only honored the first time this is called.
+   Subsequent calls ignore the argument and return the same
    (configured) object which gets initialized by the first call.  This
    function will throw if any of the required config options are
    missing.
@@ -65,11 +65,12 @@
      to be in `exports.__indirect_function_table`.
 
    - `bigIntEnabled`: true if BigInt support is enabled. Defaults to
-     true if `globalThis.BigInt64Array` is available, else false. Some APIs
-     will throw exceptions if called without BigInt support, as BigInt
-     is required for marshalling C-side int64 into and out of JS.
-     (Sidebar: it is technically possible to add int64 support via
-     marshalling of int32 pairs, but doing so is unduly invasive.)
+     true if `globalThis.BigInt64Array` is available, else false. Some
+     APIs are unavailable or may throw exceptions if called without
+     BigInt support, as BigInt is required for marshalling C-side
+     int64 into and out of JS.  (Sidebar: it is technically possible
+     to add int64 support via marshalling of int32 pairs, but doing so
+     is unduly invasive.)
 
    - `allocExportName`: the name of the function, in `exports`, of the
      `malloc(3)`-compatible routine for the WASM environment. Defaults
@@ -133,10 +134,9 @@
    module, though.
 
    Both sqlite3ApiBootstrap.defaultConfig and
-   globalThis.sqlite3ApiConfig get deleted by sqlite3ApiBootstrap()
-   because any changes to them made after that point would have no
-   useful effect. This function also deletes itself from globalThis
-   when it's called.
+   globalThis.sqlite3ApiConfig get deleted during a successful call to
+   to this function because any changes to them made after that point
+   would have no useful effect.
 
    This function returns a Promise to the sqlite3 namespace object,
    which resolves after the async pieces of the library init are

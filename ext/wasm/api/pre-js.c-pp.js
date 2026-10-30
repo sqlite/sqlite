@@ -80,7 +80,10 @@
          this but offer it as a back-door which will go away the
          moment either Emscripten changes that interface or we manage
          to get non-Emscripten builds working.
-         https://sqlite.org/forum/forumpost/1eec339854c935bd */
+         https://sqlite.org/forum/forumpost/1eec339854c935bd
+
+         See extern-post-js.c-pp.js [tag:locateFile].
+      */
       return this.emscriptenLocateFile(path, prefix);
     }
 //#if target:es6-module

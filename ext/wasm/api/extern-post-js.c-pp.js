@@ -10,7 +10,8 @@
    init scope, in the current global scope.
 
    At the time this is run, the global-scope sqlite3InitModule
-   function will have just been defined.
+   function will have just been defined. This file conditionally
+   overwrites it with a custom one.
 */
 //#if target:es6-module
 const toExportForESM =
@@ -42,7 +43,12 @@ const toExportForESM =
      This state is consumed by pre-js.c-pp.js. That file lives above
      this one in the built JS module but it's executed after this one.
   */
-  const sIMS = globalThis.sqlite3InitModuleState = Object.assign(Object.create(null),{
+  const sIMS =
+//#if not target:es6-bundler-friendly and not target:node
+//#// ^^^ mirrored in pre-js.c-pp.js
+        globalThis.sqlite3InitModuleState =
+//#/if
+        Object.assign(Object.create(null),{
     moduleScript: globalThis?.document?.currentScript,
     isWorker: ('undefined' !== typeof WorkerGlobalScope),
     location: globalThis.location,
@@ -73,7 +79,7 @@ const toExportForESM =
     : ()=>{};
 
   /**
-     Fetchs sIMS.urlParams.get(key). If that looks like it might
+     Fetches sIMS.urlParams.get(key). If that looks like it might
      be a remote path value then null is returned and a console
      warning may be emitted. If it looks like it's a local path,
      it is returned.
@@ -83,8 +89,8 @@ const toExportForESM =
      to be a local file reference. That is the only documented use for
      these args and allowing URLs as values leads to chaos. This is
      believed to resolve that report but is also considered a stopgap
-     measure.  TODO is only allow query parameters from the same origin
-     as this script.
+     measure. Potential TODO is only allow query parameters from the
+     same origin as this script.
   */
   sIMS.getPathArgument = (key)=>{
     const s = sIMS.urlParams.get(key);
@@ -113,8 +119,19 @@ const toExportForESM =
 
   const sIM = sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
-    sIMS.emscriptenLocateFile = args[0]?.locateFile /* see pre-js.c-pp.js [tag:locateFile] */;
-    sIMS.emscriptenInstantiateWasm = args[0]?.instantiateWasm /* see pre-js.c-pp.js [tag:locateFile] */;
+    /**
+       Conventionally, the first argument to an Emscripten-generated
+       module init function is a client-provided Object which
+       overrides the Module object. Because we cannot offer any sort
+       of API stability for that, we have historically not processed
+       or accepted any arguments. As a "back door" we offer selective
+       overrides of some options, as handled below via args[0].
+
+       See pre-js.c-pp.js [tag:locateFile] for the details and a link
+       to the relevant discussion.
+    */
+    sIMS.emscriptenLocateFile = args[0]?.locateFile;
+    sIMS.emscriptenInstantiateWasm = args[0]?.instantiateWasm;
     return originalInit(...args).then((EmscriptenModule)=>{
       sIMS.debugModule("sqlite3InitModule() sIMS =",sIMS);
       sIMS.debugModule("sqlite3InitModule() EmscriptenModule =",EmscriptenModule);
@@ -124,8 +141,6 @@ const toExportForESM =
         !!ff.__isUnderTest
       );
       sIMS.debugModule("sqlite3InitModule() sqlite3 =",s);
-      //const rv = s.asyncPostInit();
-      //delete s.asyncPostInit;
 //#if wasmfs
       if('undefined'!==typeof WorkerGlobalScope &&
          EmscriptenModule['ENVIRONMENT_IS_PTHREAD']){
@@ -157,12 +172,12 @@ const toExportForESM =
 // from ESM builds.
   /* Replace the various module exports performed by the Emscripten
      glue... */
-  if (typeof exports === 'object' && typeof module === 'object'){
+  if( typeof exports === 'object' && typeof module === 'object' ){
     module.exports = sIM;
     module.exports.default = sIM;
   }else if( 'function'===typeof define && define.amd ){
     define([], ()=>sIM);
-  }else if (typeof exports === 'object'){
+  }else if( typeof exports === 'object' ){
     exports["sqlite3InitModule"] = sIM;
   }
   /* AMD modules get injected in a way we cannot override,
