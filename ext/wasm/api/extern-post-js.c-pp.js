@@ -56,9 +56,13 @@ const toExportForESM =
 
       Module.instantiateWasm() is found in pre-js.c-pp.js.
     */
+//#if defined sqlite3.wasm
 //#@ push delimiter "<<<" ">>>"
+//#/if
     wasmFilename: '<<<sqlite3.wasm>>>' /* replaced by the build process */
+//#if defined sqlite3.wasm
 //#@ pop delimiter
+//#/if
   });
   sIMS.debugModule =
     sIMS.urlParams.has('sqlite3.debugModule')
@@ -137,7 +141,6 @@ const toExportForESM =
       throw e;
     });
   };
-  sIM.ready = originalInit.ready;
 
   if(sIMS.moduleScript){
     let src = sIMS.moduleScript.src.split('/');

@@ -19,7 +19,7 @@
   after sqlite3-api-oo1.js.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   if( !sqlite3.opfs || sqlite3.config.disable?.vfs?.opfs ){
     return;
   }
@@ -171,7 +171,7 @@ const installOpfsVfs = async function(options){
     }/*extend sqlite3.oo1*/
   })/*bindVfs()*/;
 }/*installOpfsVfs()*/;
-globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
+sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   return installOpfsVfs().catch((e)=>{
     sqlite3.config.warn("Ignoring inability to install 'opfs' sqlite3_vfs:",e);
   })

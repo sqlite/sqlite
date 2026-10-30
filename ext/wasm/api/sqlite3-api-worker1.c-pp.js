@@ -367,7 +367,7 @@
   ```
 
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 const util = sqlite3.util;
 sqlite3.initWorker1API = function(){
   'use strict';

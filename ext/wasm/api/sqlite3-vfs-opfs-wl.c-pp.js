@@ -28,7 +28,7 @@
   deliverable somewhere after opfs-common-shared.c-pp.js.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   if( !sqlite3.opfs || sqlite3.config.disable?.vfs?.['opfs-wl'] ){
     return;
   }
@@ -119,7 +119,7 @@ const installOpfsWlVfs = async function(options){
     }
   })/*bindVfs()*/;
 }/*installOpfsWlVfs()*/;
-globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
+sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   return installOpfsWlVfs().catch((e)=>{
     sqlite3.config.warn("Ignoring inability to install the",vfsName,"sqlite3_vfs:",e);
   });

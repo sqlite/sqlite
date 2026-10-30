@@ -211,12 +211,7 @@ b.cp = $(call b.mkdir@); \
 # D.common = flags to use for all $(bin.c-pp) invocations. These must
 # be passed before any input file names because c-pp's args are
 # processed in their given order.
-#
-# Maintenance reminder: we cannot include -@policy=error here because
-# of the @sqlite3.wasm@ placeholders in JS files, which trigger an
-# error before we get to handle that filename juggling. Most JS files
-# defensively set a file-local @policy.
-D.common = -Dcanonical-sqlite3
+D.common = -@policy=error
 
 #
 # $(call b.c-pp.shcmd,LOGTAG,src,dest,-Dx=y...)
@@ -956,7 +951,7 @@ sqlite3-api-build-version.js = $(dir.tmp)/sqlite3-api-build-version.js
 $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 	@echo '$(logtag.@) $(emo.disk)'; { \
 		$(call b.mkdir@); \
-		echo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
+		echo 'sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
 		echo -n '  sqlite3.version = '; \
 		$(bin.version-info) --json; \
 		echo ';'; \

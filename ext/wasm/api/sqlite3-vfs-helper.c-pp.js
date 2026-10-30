@@ -14,7 +14,7 @@
    the creation of JavaScript implementations of sqlite3_vfs.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const wasm = sqlite3.wasm, capi = sqlite3.capi, toss = sqlite3.util.toss3;
   const vfs = Object.create(null);
   sqlite3.vfs = vfs;

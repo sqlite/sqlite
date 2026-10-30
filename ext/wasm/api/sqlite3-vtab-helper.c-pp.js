@@ -16,7 +16,7 @@
    without virtual table support then this function does nothing.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   if( !sqlite3.wasm.exports.sqlite3_declare_vtab ){
     return;
   }

@@ -142,7 +142,7 @@
    complete.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
+const sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   apiConfig = (globalThis.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
 ){
   if(sqlite3ApiBootstrap.sqlite3){ /* already initialized */
@@ -2172,7 +2172,6 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
      objects...
   */
   delete globalThis.sqlite3ApiConfig;
-  delete globalThis.sqlite3ApiBootstrap;
   delete sqlite3ApiBootstrap.defaultConfig;
   return sqlite3.asyncPostInit().then((s)=>{
     if( 'undefined'!==typeof sqlite3InitScriptInfo/* from post-js-header.js */ ){
@@ -2188,7 +2187,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
 }/*sqlite3ApiBootstrap()*/;
 
 /**
-  globalThis.sqlite3ApiBootstrap.initializers is an internal detail
+  sqlite3ApiBootstrap.initializers is an internal detail
   used by the various pieces of the sqlite3 API's amalgamation
   process. It must not be modified by client code except when plugging
   such code into the amalgamation process.
@@ -2204,15 +2203,15 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   utilized until the whwasmutil.js part is plugged in via
   sqlite3-api-glue.js.
 */
-globalThis.sqlite3ApiBootstrap.initializers = [];
+sqlite3ApiBootstrap.initializers = [];
 
 /**
-  globalThis.sqlite3ApiBootstrap.initializersAsync is an internal detail
+  sqlite3ApiBootstrap.initializersAsync is an internal detail
   used by the sqlite3 API's amalgamation process. It must not be
   modified by client code except when plugging such code into the
   amalgamation process.
 
-  The counterpart of globalThis.sqlite3ApiBootstrap.initializers,
+  The counterpart of sqlite3ApiBootstrap.initializers,
   specifically for initializers which are asynchronous. All entries in
   this list must be either async functions, non-async functions which
   return a Promise, or a Promise. Each function in the list is called
@@ -2224,10 +2223,10 @@ globalThis.sqlite3ApiBootstrap.initializers = [];
 
   This list is not processed until the client calls
   sqlite3.asyncPostInit(). This means, for example, that intializers
-  added to globalThis.sqlite3ApiBootstrap.initializers may push entries to
+  added to sqlite3ApiBootstrap.initializers may push entries to
   this list.
 */
-globalThis.sqlite3ApiBootstrap.initializersAsync = [];
+sqlite3ApiBootstrap.initializersAsync = [];
 
 /**
    Client code may assign sqlite3ApiBootstrap.defaultConfig an
@@ -2238,13 +2237,13 @@ globalThis.sqlite3ApiBootstrap.initializersAsync = [];
    an environment-suitable configuration without having to define a new
    global-scope symbol.
 */
-globalThis.sqlite3ApiBootstrap.defaultConfig = Object.create(null);
+sqlite3ApiBootstrap.defaultConfig = Object.create(null);
 
 /**
    Placeholder: gets installed by the first call to
-   globalThis.sqlite3ApiBootstrap(). However, it is recommended that the
+   sqlite3ApiBootstrap(). However, it is recommended that the
    caller of sqlite3ApiBootstrap() capture its return value and delete
-   globalThis.sqlite3ApiBootstrap after calling it. It returns the same
+   sqlite3ApiBootstrap after calling it. It returns the same
    value which will be stored here.
 */
-globalThis.sqlite3ApiBootstrap.sqlite3 = undefined;
+sqlite3ApiBootstrap.sqlite3 = undefined;

@@ -19,7 +19,7 @@
   Documentation home page: https://sqlite.org/wasm
 */
 //#if target:node or omit-kvvfs
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /* These are JS plumbing, not part of the public API */
   delete sqlite3.capi.sqlite3_kvvfs_methods;
   delete sqlite3.capi.KVVfsFile;
@@ -85,7 +85,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
    e.g. asynchronously post updates to db pages to some back-end for
    backups.
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   if( sqlite3.config.disable?.vfs?.kvvfs ){
     return;
   }
@@ -2162,7 +2162,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*KvvfsListener*/;
 //#/if nope
 
-})/*globalThis.sqlite3ApiBootstrap.initializers*/;
+})/*sqlite3ApiBootstrap.initializers*/;
 //#savepoint rollback
 //#@ pop policy
 //#/if kvvfs disabled

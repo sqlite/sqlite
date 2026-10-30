@@ -14,6 +14,8 @@
    itself. i.e. try to keep file-local symbol names obnoxiously
    collision-resistant.
 */
+//#@ policy error
+//#define canonical-sqlite3
 /**
    This file was preprocessed using:
 

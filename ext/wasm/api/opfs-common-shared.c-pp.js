@@ -19,7 +19,7 @@
   testing purposes only) using an undocumented and unsupported
   mechanism.
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   if( sqlite3.config.disable?.vfs?.opfs &&
       sqlite3.config.disable.vfs['opfs-vfs'] ){
