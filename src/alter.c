@@ -327,6 +327,51 @@ static int isRowidAlias(
 
 
 /*
+** Buffer pFrag, which is nFrag bytes in size, contains a fragment of
+** SQL that will be inserted into a CREATE TABLE statement. If successful, this
+** function returns the size of the buffer in bytes not including any trailing
+** whitespace, semicolons, "--" style comments or unterminated C-style
+** comments. Or, if an OOM occurs, it returns 0 and sets db->mallocFailed to
+** true.
+**
+** Terminated C-style comments at the end are preserved.  "--" style
+** comments and unterminated C-style comments are removed because otherwise
+** inserting pFrag[] into the middle of a larger SQL statement without a 
+** comment terminator will mess up its syntax.
+*/
+static int alterRtrimFragment(
+  sqlite3 *db,                    /* used to record OOM error */
+  const char *pFrag,              /* Buffer containing SQL fragment */
+  int nFrag                       /* Size of pFrag in bytes */
+){
+  u8 *zTmp = (u8*)sqlite3MPrintf(db, "%.*s", nFrag, pFrag);
+  int iOff = 0;
+  int iEnd = 0;
+
+  if( zTmp==0 ) return 0;
+
+  while( 1 ){
+    int t = 0;
+    int nToken = sqlite3GetToken(&zTmp[iOff], &t);
+    if( t==TK_ILLEGAL ) break;
+    if( t==TK_COMMENT ){
+      /* Ignore all but properly terminated C-style comments */
+      if( zTmp[iOff]=='/' && nToken>=4
+       && zTmp[iOff+nToken-2]=='*' && zTmp[iOff+nToken-1]=='/'
+      ){
+        iEnd = iOff+nToken;
+      }
+    }else if( t!=TK_SPACE && t!=TK_SEMI ){
+      iEnd = iOff+nToken;
+    }
+    iOff += nToken;
+  }
+
+  sqlite3DbFree(db, zTmp);
+  return iEnd;
+}
+
+/*
 ** This function is called after an "ALTER TABLE ... ADD" statement
 ** has been parsed. Argument pColDef contains the text of the new
 ** column definition.
@@ -341,6 +386,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   const char *zDb;          /* Database name */
   const char *zTab;         /* Table name */
   char *zCol;               /* Null-terminated column definition */
+  int nCol;                 /* Size of zCol in bytes */
   Column *pCol;             /* The new column */
   Expr *pDflt;              /* Default value for the new column */
   sqlite3 *db;              /* The database connection; */
@@ -429,12 +475,9 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
 
 
   /* Modify the CREATE TABLE statement. */
-  zCol = sqlite3DbStrNDup(db, (char*)pColDef->z, pColDef->n);
+  nCol = alterRtrimFragment(db, (char*)pColDef->z, pColDef->n);
+  zCol = sqlite3DbStrNDup(db, (char*)pColDef->z, nCol);
   if( zCol ){
-    char *zEnd = &zCol[pColDef->n-1];
-    while( zEnd>zCol && (*zEnd==';' || sqlite3Isspace(*zEnd)) ){
-      *zEnd-- = '\0';
-    }
     /* substr() operations on characters, but addColOffset is in bytes. So we
     ** have to use printf() to translate between these units: */
     assert( IsOrdinaryTable(pTab) );
@@ -2923,50 +2966,6 @@ static void failConstraintFunc(
 }
 
 /*
-** Buffer pCons, which is nCons bytes in size, contains a fragment of
-** SQL that will be inserted into a CREATE TABLE statement. If successful, this
-** function returns the size of the buffer in bytes not including any trailing
-** whitespace, "--" style comments or unterminated C-style comments. Or, if an
-** OOM occurs, it returns 0 and sets db->mallocFailed to true.
-**
-** Terminated C-style comments at the end are preserved.  "--" style
-** comments and unterminated C-style comments are removed because otherwise
-** inserting pCons[] into the middle of a larger SQL statement without a 
-** comment terminator will mess up its syntax.
-*/
-static int alterRtrimConstraint(
-  sqlite3 *db,                    /* used to record OOM error */
-  const char *pCons,              /* Buffer containing constraint */
-  int nCons                       /* Size of pCons in bytes */
-){
-  u8 *zTmp = (u8*)sqlite3MPrintf(db, "%.*s", nCons, pCons);
-  int iOff = 0;
-  int iEnd = 0;
-
-  if( zTmp==0 ) return 0;
-
-  while( 1 ){
-    int t = 0;
-    int nToken = sqlite3GetToken(&zTmp[iOff], &t);
-    if( t==TK_ILLEGAL ) break;
-    if( t==TK_COMMENT ){
-      /* Ignore all but properly terminated C-style comments */
-      if( zTmp[iOff]=='/' && nToken>=4
-       && zTmp[iOff+nToken-2]=='*' && zTmp[iOff+nToken-1]=='/'
-      ){
-        iEnd = iOff+nToken;
-      }
-    }else if( t!=TK_SPACE ){
-      iEnd = iOff+nToken;
-    }
-    iOff += nToken;
-  }
-
-  sqlite3DbFree(db, zTmp);
-  return iEnd;
-}
-
-/*
 ** Prepare a statement of the form:
 **
 **   ALTER TABLE pSrc ALTER pCol SET NOT NULL
@@ -2996,7 +2995,7 @@ void sqlite3AlterSetNotNull(
 
   /* Find the length in bytes of the constraint definition */
   pCons = pFirst->z;
-  nCons = alterRtrimConstraint(pParse->db, pCons, pParse->sLastToken.z - pCons);
+  nCons = alterRtrimFragment(pParse->db, pCons, pParse->sLastToken.z - pCons);
 
   /* Search for a constraint violation. Throw an exception if one is found. */
   sqlite3NestedParse(pParse,
@@ -3128,7 +3127,7 @@ void sqlite3AlterAddConstraint(
 
   /* Edit the SQL for the named table. */
   pCons = pFirst->z;
-  nCons = alterRtrimConstraint(pParse->db, pCons, pParse->sLastToken.z - pCons);
+  nCons = alterRtrimFragment(pParse->db, pCons, pParse->sLastToken.z - pCons);
 
   sqlite3NestedParse(pParse,
       "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
