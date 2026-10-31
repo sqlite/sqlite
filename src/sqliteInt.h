@@ -1960,7 +1960,7 @@ struct sqlite3 {
 #define SQLITE_SeekScan       18 /* The OP_SeekScan optimization */
 #define SQLITE_OmitOrderBy    19 /* Omit pointless ORDER BY */
 #define SQLITE_BloomFilter    20 /* Use a Bloom filters */
-                          /*  21 -- Available for reuse */
+#define SQLITE_DevTest        21 /* Temporary development testing use */
 #define SQLITE_BalancedMerge  22 /* Balance multi-way merges */
 #define SQLITE_ReleaseReg     23 /* Use OP_ReleaseReg for testing */
 #define SQLITE_FlttnUnionAll  24 /* Disable the UNION ALL flattener */

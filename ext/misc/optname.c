@@ -59,7 +59,7 @@ static const struct OptName {
     { OPT_MASK(18),          "SeekScan" },
     { OPT_MASK(19),          "OmitOrderBy" },
     { OPT_MASK(20),          "BloomFilter" },
-    /* 21 currently unused */
+    { OPT_MASK(21),          "DevTest" },
     { OPT_MASK(22),          "BalancedMerge" },
     { OPT_MASK(23),          "ReleaseReg" },
     { OPT_MASK(24),          "FlttnUnionAll" },
