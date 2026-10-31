@@ -1,4 +1,5 @@
 
+//#if 0
 /* ^^^^ ACHTUNG: blank line at the start is necessary because
    Emscripten will not add a newline in some cases and we need
    a blank line for a sed-based kludge for the ES6 build.
@@ -15,6 +16,7 @@
    here requires a build-time kludge of stripping the 'export default'
    which Emscripten forcibly injects into its glue.
 */
+//#/if
 //#if target:es6-module
 export default
 //#/if
@@ -50,7 +52,7 @@ export default
   const sIMS = Object.assign(Object.create(null),{
     moduleScript: globalThis?.document?.currentScript,
     isWorker: ('undefined' !== typeof WorkerGlobalScope),
-    location: globalThis.location,
+    location: globalThis?.location,
     urlParams:  globalThis?.location?.href
       ? new URL(globalThis.location.href).searchParams
       : new URLSearchParams(),
@@ -122,7 +124,7 @@ export default
     sIMS.sqlite3Dir = li.join('/') + '/';
   }
 
-  /* Replace the Emscripten-generated sqlite3InitModule()... */
+  /** The replacement for Emscripten-generated sqlite3InitModule(). */
   const sIM = sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     /**
@@ -165,7 +167,6 @@ export default
       throw e;
     });
   };
-
   if( sIMS.moduleScript?.src ){
     /* Record this script's directory part */
     const src = sIMS.moduleScript.src.split('/');
@@ -175,9 +176,9 @@ export default
   sIMS.debugModule('extern-post-js.c-pp.js sqlite3InitModuleState =',sIMS);
 //#if not target:es6-module
 //#if 0
- /* Emscripten does not inject these module-loader bits in ES6 module
-    builds and including them here breaks JS bundlers, so elide them
-    from ESM builds. */
+  /* Emscripten does not inject these module-loader bits in ES6 module
+     builds and including them here breaks JS bundlers, so elide them
+     from ESM builds. */
 //#/if
   /* Replace the various module exports performed by the Emscripten
      glue so that they link to our overwritten copy... */

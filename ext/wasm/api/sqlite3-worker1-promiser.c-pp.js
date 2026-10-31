@@ -20,7 +20,8 @@
   Worker API does.
 
   In non-ESM builds this file necessarily exposes one global symbol,
-  but clients may freely `delete` that symbol after calling it.
+  but clients may freely `delete` that symbol after calling it (and
+  are encouraged to do so).
 */
 //#if not defined target:es6-module
 'use strict';
@@ -358,7 +359,7 @@ globalThis.sqlite3Worker1Promiser =
      works too, so we now define it as such.  However, documentation
      has historically referred to this function as
      globalThis.sqlite3Worker1Promiser, so we retain that mapping here
-     for non-esm builds for backwards compatibility.
+     in non-esm builds for backwards compatibility.
   */ sqlite3Worker1Promiser;
 //#/if /* target:es6-module */
 //#else
