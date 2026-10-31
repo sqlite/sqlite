@@ -242,6 +242,34 @@
 #define KVRECORD_KEY_SZ 128
 #endif
 
+#if 1
+/**
+   Hook for notification of pending finalization of various
+   memory types.
+
+   typeId specifies the type of p: 1=sqlite3*, 2=sqlite3_stmt*,
+   3=sqlite3_context*.
+*/
+static void sqlite3__wasm_disposal(int typeId,void const *p);
+/* A level of indirection for the disposal hook so that we can
+   redirect it from JS once the module is loaded. */
+struct WasmDisposalNotifier {
+  void (*callback)(int typeId,void const *p);
+};
+typedef struct WasmDisposalNotifier WasmDisposalNotifier;
+static WasmDisposalNotifier sqlite3WasmDisposalNotifier = {0};
+SQLITE_WASM_EXPORT2(WasmDisposalNotifier *,
+                    sqlite3__wasm_disposal_notifier,(void)){
+  return &sqlite3WasmDisposalNotifier;
+}
+void sqlite3__wasm_disposal(int typeId,void const *p){
+  if( sqlite3WasmDisposalNotifier.callback ){
+    sqlite3WasmDisposalNotifier.callback(typeId, p);
+  }
+}
+#define SQLITE_DISPOSAL_NOTIFIER sqlite3__wasm_disposal
+#endif
+
 /*
 ** Which sqlite3.c we're using needs to be configurable to enable
 ** building against a custom copy, e.g. the SEE variant. We #include
@@ -394,7 +422,7 @@ SQLITE_WASM_EXPORT2(void,sqlite3__wasm_test_struct,(WasmTestStruct * s)){
 ** us where it's happening.
 */
 SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_enum_json,(void)){
-  static char aBuffer[1024 * 20] =
+  static char aBuffer[1024 * 24] =
     {0} /* where the JSON goes. 2025-09-19: output size=19295, but
            that can vary slightly from build to build, so a little
            leeway is needed here. */;
@@ -1133,6 +1161,14 @@ SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_enum_json,(void)){
       M(xIntegrity,     "i(pppip)");
     } _StructBinder;
 #undef CurrentStruct
+
+#if defined(SQLITE_DISPOSAL_NOTIFIER)
+#define CurrentStruct WasmDisposalNotifier
+    StructBinder {
+      M(callback,       "v(ip)");
+    } _StructBinder;
+#undef CurrentStruct
+#endif
 
     /**
      ** Workaround: in order to map the various inner structs from
