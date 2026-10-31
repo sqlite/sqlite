@@ -134,6 +134,70 @@ foreach {tn alter update final} {
   } {
     UPDATE t1 SET a=1 FROM t3 NATURAL JOIN "abc" WHERE "abc".e=a
   }
+
+  9 {
+    ALTER TABLE t4 RENAME e TO abc
+  } {
+    UPDATE t1 SET a=1 FROM t3 JOIN t4 ON t4.e=t3.e
+  } {
+    UPDATE t1 SET a=1 FROM t3 JOIN t4 ON t4.abc=t3.e
+  }
+
+  10 {
+    ALTER TABLE t4 RENAME e TO abc
+  } {
+    UPDATE t1 SET a=1 FROM t3 LEFT JOIN t4 ON t4.e=t3.e
+  } {
+    UPDATE t1 SET a=1 FROM t3 LEFT JOIN t4 ON t4.abc=t3.e
+  }
+
+  11 {
+    ALTER TABLE t4 RENAME e TO abc
+  } {
+    UPDATE t1 SET a=1 FROM t3 JOIN t4 AS x ON x.e=t3.e
+  } {
+    UPDATE t1 SET a=1 FROM t3 JOIN t4 AS x ON x.abc=t3.e
+  }
+
+  12 {
+    ALTER TABLE t1 RENAME a TO abc
+  } {
+    UPDATE t1 SET b=1 FROM t3 JOIN t1 AS x ON x.a=t3.e
+  } {
+    UPDATE t1 SET b=1 FROM t3 JOIN t1 AS x ON x.abc=t3.e
+  }
+
+  13 {
+    ALTER TABLE t1 RENAME a TO abc
+  } {
+    UPDATE t1 SET b=1 FROM t3 JOIN t4 ON t1.a=t4.e
+  } {
+    UPDATE t1 SET b=1 FROM t3 JOIN t4 ON t1.abc=t4.e
+  }
+
+  14 {
+    ALTER TABLE t4 RENAME TO abc
+  } {
+    UPDATE t1 SET a=1 FROM t3 JOIN t4 ON t4.e=t3.e
+  } {
+    UPDATE t1 SET a=1 FROM t3 JOIN "abc" ON "abc".e=t3.e
+  }
+
+  15 {
+    ALTER TABLE t4 RENAME TO abc
+  } {
+    UPDATE t1 SET a=1 FROM t3 LEFT JOIN t4 ON t4.e=t3.e
+  } {
+    UPDATE t1 SET a=1 FROM t3 LEFT JOIN "abc" ON "abc".e=t3.e
+  }
+
+  16 {
+    ALTER TABLE t4 RENAME e TO abc
+  } {
+    UPDATE t1 SET a=1 FROM t3 JOIN t4 ON t4.e=t3.e JOIN t2 ON t2.c=t4.e
+  } {
+    UPDATE t1 SET a=1 FROM t3 JOIN t4 ON t4.abc=t3.e JOIN t2 ON t2.c=t4.abc
+  }
  
 } {
   reset_db
@@ -158,5 +222,76 @@ foreach {tn alter update final} {
     END
   }"
 }
+
+#-------------------------------------------------------------------------
+# Test that RENAME COLUMN updates column references in the ON clause of
+# a join in the FROM clause of an UPDATE statement within a trigger. The
+# case below is from a bug report: previously the ALTER TABLE failed with
+# "error in trigger tr after rename: no such column: t2.a".
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t(a,b);
+  CREATE TABLE s(x);
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE t SET b=1 FROM s JOIN t AS t2 ON t2.a=s.x;
+  END;
+}
+
+do_execsql_test 3.1 {
+  ALTER TABLE t RENAME COLUMN a TO aa;
+  SELECT name FROM pragma_table_info('t');
+} {aa b}
+
+do_whitespace_sql_test 3.2 {
+  SELECT sql FROM sqlite_schema WHERE name='tr';
+} {{
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE t SET b=1 FROM s JOIN t AS t2 ON t2.aa=s.x;
+  END
+}}
+
+do_execsql_test 3.3 {
+  INSERT INTO t VALUES(1, 0), (2, 0);
+  INSERT INTO s VALUES(1);
+  SELECT * FROM t;
+} {1 1 2 1}
+
+# The same with the condition in the WHERE clause. This always worked.
+reset_db
+do_execsql_test 3.4 {
+  CREATE TABLE t(a,b);
+  CREATE TABLE s(x);
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE t SET b=1 FROM s JOIN t AS t2 WHERE t2.a=s.x;
+  END;
+  ALTER TABLE t RENAME COLUMN a TO aa;
+}
+do_whitespace_sql_test 3.5 {
+  SELECT sql FROM sqlite_schema WHERE name='tr';
+} {{
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE t SET b=1 FROM s JOIN t AS t2 WHERE t2.aa=s.x;
+  END
+}}
+
+# RENAME TO with the ON clause qualifying a column with the table name.
+reset_db
+do_execsql_test 3.6 {
+  CREATE TABLE t(a,b);
+  CREATE TABLE s(x);
+  CREATE TABLE u(y);
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE u SET y=1 FROM s LEFT JOIN t ON t.a=s.x;
+  END;
+  ALTER TABLE t RENAME TO t3;
+}
+do_whitespace_sql_test 3.7 {
+  SELECT sql FROM sqlite_schema WHERE name='tr';
+} {{
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE u SET y=1 FROM s LEFT JOIN "t3" ON "t3".a=s.x;
+  END
+}}
 
 finish_test

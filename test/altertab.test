@@ -994,7 +994,7 @@ do_execsql_test 33.0 {
 }
 do_catchsql_test 33.1 {
   ALTER TABLE t1 RENAME COLUMN a TO b;
-} {1 {error in trigger r3 after rename: no such column: a}}
+} {1 {error in trigger r3 after rename: ambiguous column name: b}}
 do_execsql_test 33.2 {
   SELECT quote(a) FROM t1 ORDER BY +a;
 } {NULL 'abc' 'def'}
