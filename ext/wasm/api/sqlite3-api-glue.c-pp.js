@@ -995,7 +995,6 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const notThese = Object.assign(Object.create(null),{
       // For each struct to NOT register, map its name to true:
       WasmTestStruct: true,
-      WasmDisposalNotifier: true,
       /* sqlite3_index_info and friends require int64: */
       sqlite3_index_info: !wasm.bigIntEnabled,
       sqlite3_index_constraint: !wasm.bigIntEnabled,
@@ -1025,28 +1024,40 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }/* end vtab-related setup */
   }/*end C constant and struct imports*/
 
-//#if 1
-  if( wasm.exports.sqlite3__wasm_disposal_notifier ){
-    /* Redirect the SQLITE_DISPOSAL_NOTIFIER callback to JS. */
+//#if 1 /* the [disposal-notification] branch */
+  if( capi.WasmDisposalNotifier ){
+    /* Redirect the SQLITE_DISPOSAL_NOTIFIER callback to JS by
+       creating a JS/C struct proxy which wraps the C-side singleton
+       instance of WasmDisposalNotifier and connecting our own
+       function to WasmDisposalNotifier::callback. */
     sqlite3.config.warn("WARNING: installing WasmDisposalNotifier");
-    const wdns = wasm.ctype.structs.find((v)=>"WasmDisposalNotifier"==v.name);
-    const wdn = sqlite3.StructBinder(wdns);
-    const w = new wdn(wasm.exports.sqlite3__wasm_disposal_notifier());
-    w.$callback = wasm.installFunction("v(ip)", (tid,ptr)=>{
-      switch(tid){
-        case 2: /* sqlite3_stmt. oo1.Stmt.finalize() has some cleanup
-                   which could be hooked into here. */
-        case 1: /* sqlite3_db. This is where what is currently in
-                   __dbCleanupMap, and part of oo1.DB.close(), could
-                   be done. */
-          sqlite3.config.debug("WasmDisposalNotifier:",tid,ptr);
-          break;
-        default:
-          toss("Internal bug: invalid disposal type ID.");
-      }
-    });
+    const ctor = capi.WasmDisposalNotifier;
+    delete capi.WasmDisposalNotifier;
+    const w = new ctor(
+      wasm.exports.sqlite3__wasm_disposal_notifier()
+      /* ^^^ ptr to the singleton WasmDisposalNotifier instance */
+    );
+    try {
+      w.$callback = wasm.installFunction("v(ip)", (tid,ptr)=>{
+        sqlite3.config.debug("WasmDisposalNotifier:",tid,ptr);
+        if( 2===tid /* (sqlite3_stmt*) */ ){
+          /* oo1.Stmt.finalize() has some cleanup which could be hooked
+             into here. */
+          return;
+        }
+        if( 1===tid /* (sqlite3_db*) */ ){
+          /* What is currently in __dbCleanupMap, and part of
+             oo1.DB.close(), could be done here. */
+          return;
+        }
+        toss("Internal bug: invalid disposal type ID.");
+      });
+    }finally{
+      w.dispose(/*only needed for the $callback assignment*/);
+    }
   }
 //#/if
+
   /**
      Internal helper to assist in validating call argument counts in
      the hand-written sqlite3_xyz() wrappers. We do this only for
