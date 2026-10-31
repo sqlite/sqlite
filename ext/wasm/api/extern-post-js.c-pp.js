@@ -55,7 +55,8 @@ export default
     location: globalThis?.location,
     urlParams:  globalThis?.location?.href
       ? new URL(globalThis.location.href).searchParams
-      : new URLSearchParams(),
+      : new URLSearchParams()
+//#if defined Module.instantiateWasm
     /*
       It is literally impossible to reliably get the name of _this_ script
       at runtime, so impossible to reliably derive X.wasm from script name
@@ -64,15 +65,22 @@ export default
       the name of the WASM file which our custom instantiateWasm() should to
       load. The build process populates this.
 
+      The primary reason we do this is because disparate builds
+      usually result in different JS but identical WASM files. To
+      avoid, e.g., that we have to ship two separate WASM files for
+      vanilla and ESM builds, we rewire all builds which produce
+      identical binaries to use a single copy of those binaries.
+
       Module.instantiateWasm() is found in pre-js.c-pp.js.
     */
 //#if defined sqlite3.wasm
 //#@ push policy error delimiter "<<<" ">>>"
 //#/if
-    wasmFilename: '<<<sqlite3.wasm>>>' /* replaced by the build process */
+    ,wasmFilename: '<<<sqlite3.wasm>>>' /* replaced by the build process */
 //#if defined sqlite3.wasm
 //#@ pop policy delimiter
 //#/if
+//#/if defined Module.instantiateWasm
   });
 //#if not target:es6-bundler-friendly and not target:node
 //#// ^^^ mirrored in pre-js.c-pp.js

@@ -136,8 +136,8 @@
     };
 //#if 0
 /*
-  The following block uses //% as a directive delimiter and is
-  replaced in a second preprocessor pass after compilation of
+  The following block uses //% as a preprocessor directive delimiter
+  and is replaced in a second preprocessor pass after compilation of
   sqlite3.js.  It implements two ways to reach the WASM file:
   embedding it inline as a base64 blob or via a URL. The base64
   approach results in massive memory spikes when the module loads, as

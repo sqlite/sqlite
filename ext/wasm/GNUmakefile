@@ -536,8 +536,13 @@ endif
 # WASM file is in use.
 #
 # If $(WASM_CUSTOM_INSTANTIATE) is 1 then mkwasmbuilds will add
-# -Dcustom-Module.instantiateWasm to some of the builds. This is
-# experimental but works on all browsers tested by its developer.
+# -Dcustom-Module.instantiateWasm to some of the builds. This problem
+# this solves is that various JS builds usually result in different JS
+# but identical binary WASM files. A custom loader allows us to define
+# the WASM filename used by the JS, enabling us to consolidate
+# identical binaries by redirecting the JS to use a single
+# copy. Without this we would need to distribute all JS/WASM files in
+# pairs, and most of the WASM files in that set would be identical.
 #
 # Changing this may require a clean rebuild. It also might not work.
 #
