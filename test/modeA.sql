@@ -216,6 +216,14 @@ SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;
 abcdefghijklmnopq...: The quick fox jumps over the lazy brown dog
                    b: 2
 END
+.testcase 501
+SELECT a AS 'a		bc', b AS 'b
+c
+d' FROM t2 WHERE c=3;
+.check <<END
+a  bc: The quick fox jumps over the lazy brown dog
+b c d: 2
+END
 .testcase 510
 .mode line --titlelimit 10
 SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;

@@ -1326,7 +1326,8 @@ static void qrfRTrim(sqlite3_str *pOut){
 ** Store string zUtf to pOut as w characters.  If w is negative,
 ** then right-justify the text.  W is the width in display characters, not
 ** in bytes.  Double-width unicode characters count as two characters.
-** VT100 escape sequences count as zero.  And so forth.
+** VT100 escape sequences and other control characters count as zero.
+** And so forth.
 */
 static void qrfWidthPrint(Qrf *p, sqlite3_str *pOut, int w, const char *zUtf){
   const unsigned char *a = (const unsigned char*)zUtf;
@@ -1356,6 +1357,10 @@ static void qrfWidthPrint(Qrf *p, sqlite3_str *pOut, int w, const char *zUtf){
       n += x;
     }else if( c==0x1b && (k = qrfIsVt100(&a[i]))>0 ){
       i += k;       
+    }else if( c<0x20 ){
+      /* Other control characters are zero-width, as in
+      ** sqlite3_qrf_wcswidth() */
+      i++;
     }else if( n>=aw ){
       break;
     }else{
