@@ -250,7 +250,6 @@
    typeId specifies the type of p: 1=sqlite3*, 2=sqlite3_stmt*,
    3=sqlite3_context*.
 */
-static void sqlite3__wasm_disposal(int typeId,void const *p);
 /* A level of indirection for the disposal hook so that we can
    redirect it from JS once the module is loaded. */
 struct WasmDisposalNotifier {
@@ -262,12 +261,9 @@ SQLITE_WASM_EXPORT2(WasmDisposalNotifier *,
                     sqlite3__wasm_disposal_notifier,(void)){
   return &sqlite3WasmDisposalNotifier;
 }
-void sqlite3__wasm_disposal(int typeId,void const *p){
-  if( sqlite3WasmDisposalNotifier.callback ){
-    sqlite3WasmDisposalNotifier.callback(typeId, p);
-  }
-}
-#define SQLITE_DISPOSAL_NOTIFIER sqlite3__wasm_disposal
+#define SQLITE_DISPOSAL_NOTIFIER \
+  if( sqlite3WasmDisposalNotifier.callback ) \
+    sqlite3WasmDisposalNotifier.callback
 #endif
 
 /*

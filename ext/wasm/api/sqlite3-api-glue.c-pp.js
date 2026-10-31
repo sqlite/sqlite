@@ -1026,16 +1026,25 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*end C constant and struct imports*/
 
 //#if 1
-  {
-    if( wasm.exports.sqlite3__wasm_disposal_notifier ){
-      const wdns = wasm.ctype.structs.find((v)=>"WasmDisposalNotifier"==v.name);
-      const wdn = sqlite3.StructBinder(wdns);
-      sqlite3.config.warn("WARNING: installing WasmDisposalNotifier");
-      const w = new wdn(wasm.exports.sqlite3__wasm_disposal_notifier());
-      w.$callback = wasm.installFunction("v(ip)", function(tid,ptr){
-        sqlite3.config.debug("WasmDisposalNotifier:",tid,ptr);
-      });
-    }
+  if( wasm.exports.sqlite3__wasm_disposal_notifier ){
+    /* Redirect the SQLITE_DISPOSAL_NOTIFIER callback to JS. */
+    sqlite3.config.warn("WARNING: installing WasmDisposalNotifier");
+    const wdns = wasm.ctype.structs.find((v)=>"WasmDisposalNotifier"==v.name);
+    const wdn = sqlite3.StructBinder(wdns);
+    const w = new wdn(wasm.exports.sqlite3__wasm_disposal_notifier());
+    w.$callback = wasm.installFunction("v(ip)", (tid,ptr)=>{
+      switch(tid){
+        case 2: /* sqlite3_stmt. oo1.Stmt.finalize() has some cleanup
+                   which could be hooked into here. */
+        case 1: /* sqlite3_db. This is where what is currently in
+                   __dbCleanupMap, and part of oo1.DB.close(), could
+                   be done. */
+          sqlite3.config.debug("WasmDisposalNotifier:",tid,ptr);
+          break;
+        default:
+          toss("Internal bug: invalid disposal type ID.");
+      }
+    });
   }
 //#/if
   /**
@@ -1064,7 +1073,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      UDFs and collations so that sqlite3_close_v2() can clean up any
      automated JS-to-WASM function conversions installed by those.
   */
-  const __argPDb = (pDb)=>wasm.xWrap.argAdapter('sqlite3*')(pDb);
+  const __argPDb = wasm.xWrap.argAdapter('sqlite3*');
   const __argStr = (str)=>wasm.isPtr(str) ? wasm.cstrToJs(str) : str;
   const __dbCleanupMap = function(
     pDb, mode/*0=remove, >0=create if needed, <0=do not create if missing*/
