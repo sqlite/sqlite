@@ -114,10 +114,9 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ]],
       ["sqlite3_busy_timeout","int", "sqlite3*", "int"],
       /* sqlite3_cancel_auto_extension() has a hand-written binding. */
-      /* sqlite3_close_v2() is implemented by hand to perform some
-         extra work. */
       ["sqlite3_changes", "int", "sqlite3*"],
       ["sqlite3_clear_bindings","int", "sqlite3_stmt*"],
+      ["sqlite3_close_v2", "int", "sqlite3*"],
       ["sqlite3_collation_needed", "int", "sqlite3*", "*", "*"/*=>v(ppis)*/],
       ["sqlite3_column_blob","*", "sqlite3_stmt*", "int"],
       ["sqlite3_column_bytes","int", "sqlite3_stmt*", "int"],
@@ -1037,23 +1036,40 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       wasm.exports.sqlite3__wasm_disposal_notifier()
       /* ^^^ ptr to the singleton WasmDisposalNotifier instance */
     );
+    util.disposers = Object.assign(Object.create(null),{
+      /* Lists of disposer callbacks which receive the C pointer of an
+         object which is currently being finalized from C. These are
+         triggered via the SQLITE_DISPOSAL_NOTIFIER callback which
+         sqlite3-wasm.c installs. The C side of this ensures that
+         these callbacks are never passed NULL. */
+      db: [], stmt: []
+    });
     try {
       w.$callback = wasm.installFunction("v(ip)", (tid,ptr)=>{
-        sqlite3.config.debug("WasmDisposalNotifier:",tid,ptr);
+        //sqlite3.config.debug("WasmDisposalNotifier:",tid,ptr);
+        let li;
         if( 2===tid /* (sqlite3_stmt*) */ ){
           /* oo1.Stmt.finalize() has some cleanup which could be hooked
              into here. */
-          return;
-        }
-        if( 1===tid /* (sqlite3_db*) */ ){
+          li = util.disposers.stmt;
+        }else if( 1===tid /* (sqlite3_db*) */ ){
           /* What is currently in __dbCleanupMap, and part of
              oo1.DB.close(), could be done here. */
-          return;
+          li = util.disposers.db;
+        }else{
+          toss("Internal bug: invalid disposal type ID",tid);
         }
-        toss("Internal bug: invalid disposal type ID.");
+        for(const d of li){
+          try{d(ptr)}catch(e){
+            sqlite3.config.error("on-dispose handler type",tid,"threw:",e);
+          }
+        }
       });
     }finally{
       w.dispose(/*only needed for the $callback assignment*/);
+    }
+    if( 0 ){
+      util.disposers.stmt.push((p)=>sqlite3.config.warn("disposing stmt",p));
     }
   }
 //#/if
@@ -1153,6 +1169,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   __dbCleanupMap.cleanup = function(pDb){
     pDb = __argPDb(pDb);
+    sqlite3.config.warn("disposing pDb",pDb);
     //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
     /**
        Installing NULL functions in the C API will remove those
@@ -1232,16 +1249,11 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     delete m.wudf;
   }/*__dbCleanupMap.cleanup()*/;
 
-  {/* Binding of sqlite3_close_v2() */
-    const __sqlite3CloseV2 = wasm.xWrap("sqlite3_close_v2", "int", "sqlite3*");
-    capi.sqlite3_close_v2 = function(pDb){
-      if(1!==arguments.length) return __dbArgcMismatch(pDb, 'sqlite3_close_v2', 1);
-      if(pDb){
-        try{__dbCleanupMap.cleanup(pDb)} catch(e){/*ignored*/}
-      }
-      return __sqlite3CloseV2(pDb);
-    };
-  }/*sqlite3_close_v2()*/
+  util.disposers.db.push(
+    /* When a db is disposed from C, this will clean up the
+       various state we've bound in __dbCleanupMap */
+    __dbCleanupMap.cleanup
+  );
 
   if(capi.sqlite3session_create){
     const __sqlite3SessionDelete = wasm.xWrap(

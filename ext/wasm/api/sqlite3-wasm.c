@@ -243,27 +243,51 @@
 #endif
 
 #if 1
-/**
-   Hook for notification of pending finalization of various
-   memory types.
-
-   typeId specifies the type of p: 1=sqlite3*, 2=sqlite3_stmt*,
-   3=sqlite3_context*.
+/*
+** A hook for notification of pending finalization of various memory
+** types. We use this in JS to trigger cleanup of JS-side mappings to
+** data for that pointer.
 */
-/* A level of indirection for the disposal hook so that we can
-   redirect it from JS once the module is loaded. */
+/*
+** A level of indirection for the disposal hook so that we can
+** redirect it from JS once the module is loaded. We cannot(?)
+** reassign a function from JS but we can reassign a function pointer
+** member of a struct.
+*/
 struct WasmDisposalNotifier {
+  /* See SQLITE_DISPOSAL_NOTIFIER, below. */
   void (*callback)(int typeId,void const *p);
 };
 typedef struct WasmDisposalNotifier WasmDisposalNotifier;
+/*
+** Singleton disposal notifier instance. Gets hooked up
+** by JS.
+*/
 static WasmDisposalNotifier sqlite3WasmDisposalNotifier = {0};
+/*
+** Called by the JS layer to get the pointer to
+** sqlite3WasmDisposalNotifier.
+*/
 SQLITE_WASM_EXPORT2(WasmDisposalNotifier *,
                     sqlite3__wasm_disposal_notifier,(void)){
   return &sqlite3WasmDisposalNotifier;
 }
-#define SQLITE_DISPOSAL_NOTIFIER \
-  if( sqlite3WasmDisposalNotifier.callback ) \
-    sqlite3WasmDisposalNotifier.callback
+/*
+** If SQLITE_DISPOSAL_NOTIFIER is defined, the core calls it as
+** SQLITE_DISPOSAL_NOTIFIER(T,P), where T is an integer literal type
+** and P is the ptr being disposed of.
+**
+** T specifies the type of P: 1=sqlite3*, 2=sqlite3_stmt*,
+** 3=sqlite3_context* (TODO).
+**
+** Because this happens during finalization, code must be careful
+** about how it uses P. e.g. a finalizing database must not be
+** close()d again or results are undefined. A finalizing statement
+** must not be step()d. etc.
+*/
+#define SQLITE_DISPOSAL_NOTIFIER(T,P) \
+  if( (P) && sqlite3WasmDisposalNotifier.callback ) \
+    sqlite3WasmDisposalNotifier.callback(T, P)
 #endif
 
 /*
