@@ -56,7 +56,6 @@ export default
     urlParams:  globalThis?.location?.href
       ? new URL(globalThis.location.href).searchParams
       : new URLSearchParams()
-//#if defined Module.instantiateWasm
     /*
       It is literally impossible to reliably get the name of _this_ script
       at runtime, so impossible to reliably derive X.wasm from script name
@@ -80,7 +79,6 @@ export default
 //#if defined sqlite3.wasm
 //#@ pop policy delimiter
 //#/if
-//#/if defined Module.instantiateWasm
   });
 //#if not target:es6-bundler-friendly and not target:node
 //#// ^^^ mirrored in pre-js.c-pp.js
