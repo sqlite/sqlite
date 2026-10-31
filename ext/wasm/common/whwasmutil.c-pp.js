@@ -43,6 +43,7 @@
 //#  if defined target:es6-module
 //#    define esm 1
 //#  /if
+//#  define omit-yawl
 //#/if
 //#if esm
 //#  define lexical-scoped 1
@@ -2470,6 +2471,7 @@ function WhWasmUtilInstaller(target){
   return target;
 };
 
+//#if not defined omit-yawl
 /**
    yawl (Yet Another Wasm Loader) provides very basic wasm loader.
    It requires a config object:
@@ -2572,6 +2574,7 @@ WhWasmUtilInstaller.yawl = function yawl(config){
   ;
   return loadWasm;
 }.bind(WhWasmUtilInstaller)/*yawl()*/;
+//#/if not defined omit-yawl
 //#if esm and not no-export
 //#  if amalgamation
 export {WhWasmUtilInstaller};

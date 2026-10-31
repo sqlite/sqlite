@@ -1,5 +1,5 @@
-C JS:\sadd\ssome\sdocs\sexplaining\sthe\sproblem\sthe\sModule.instantiateWasm()\soverride\ssolves.
-D 2026-10-31T10:31:50.995
+C Preprocessor-strip\sapproximately\s4k\sof\sJS\swe\sdon't\sneed\sclient-side.
+D 2026-10-31T10:45:18.273
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -686,7 +686,7 @@ F ext/wasm/api/sqlite3-worker1.c-pp.js d274d5eb7f43f4f3b35a4d1f9213a1e34aa5ae27d
 F ext/wasm/common/SqliteTestUtil.js dae753b95e72248c4395d8de8359e0d055cd9928488e8dd84aef89e46d23b32e
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.c-pp.js 322cbb234cff5a429b7578dd11a140a65db40be2e8a4a0391116dfdf09c5c737
+F ext/wasm/common/whwasmutil.c-pp.js 99079be5108c83102063e4e036eaa18a6b1381d7109705b7d889f1bbed45b6c3
 F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 65091cea03b9a664acb0aa569ba1f9d1a46e5b1698b59f52b936db097c30814f
-R 1a47f2ce37e87ebda2759eec14d68078
+P a7f314264fc98f50b9d47642ad735f4bb62669ad2845f9dad0dea38e810346cf
+R e2123f698e1c68fa3b71bb9729405dcb
 U stephan
-Z d3a70382152e951fe012e901a48e96b5
+Z 3d03b6cd4c63e6bc6b413b63156a18af
 # Remove this line to create a well-formed Fossil manifest.
