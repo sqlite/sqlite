@@ -6372,6 +6372,22 @@ case OP_Rowid: {                 /* out2, ncycle */
   break;
 }
 
+/* Opcode: Stale   P1 * * * *
+**
+** Mark the row cache for cursor P1 as stale.  This opcode is used
+** on pseudo-cursors right before the content of the register that
+** holds their record is modified.
+*/
+case OP_Stale: {
+  VdbeCursor *pC;
+
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  assert( pC->eCurType==CURTYPE_PSEUDO );
+  pC->cacheStatus = CACHE_STALE;
+  break;
+}
+
 /* Opcode: NullRow P1 P2 * * *
 **
 ** Move the cursor P1 to a null row if P2 is 0.  Any OP_Column operations
@@ -6386,6 +6402,7 @@ case OP_Rowid: {                 /* out2, ncycle */
 */
 case OP_NullRow: {
   VdbeCursor *pC;
+  Mem *pMem;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -6404,6 +6421,14 @@ case OP_NullRow: {
   if( pC->eCurType==CURTYPE_BTREE ){
     assert( pC->uc.pCursor!=0 );
     sqlite3BtreeClearCursor(pC->uc.pCursor);
+  }else if( pC->eCurType==CURTYPE_PSEUDO && pC->seekResult>0 ){
+    static char nullRecord[] = { 0x02, 0x00 };
+    pMem = &aMem[pC->seekResult];
+    assert( !VdbeMemDynamic(pMem) );
+    pC->nullRow = 1;
+    pMem->z = nullRecord;
+    pMem->n = 2;
+    pMem->flags = MEM_Blob|MEM_Ephem;
   }
 #ifdef SQLITE_DEBUG
   if( pC->seekOp==0 ) pC->seekOp = OP_NullRow;
