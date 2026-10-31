@@ -2923,17 +2923,16 @@ static void failConstraintFunc(
 }
 
 /*
-** Buffer pCons, which is nCons bytes in size, contains the text of a 
-** NOT NULL or CHECK constraint that will be inserted into a CREATE TABLE
-** statement. If successful, this function returns the size of the buffer in
-** bytes not including any trailing whitespace or "--" style comments. Or,
-** if an OOM occurs, it returns 0 and sets db->mallocFailed to true.
+** Buffer pCons, which is nCons bytes in size, contains a fragment of
+** SQL that will be inserted into a CREATE TABLE statement. If successful, this
+** function returns the size of the buffer in bytes not including any trailing
+** whitespace, "--" style comments or unterminated C-style comments. Or, if an
+** OOM occurs, it returns 0 and sets db->mallocFailed to true.
 **
-** C-style comments at the end are preserved.  "--" style comments are
-** removed because the comment terminator might be \000, and we are about
-** to insert the pCons[] text into the middle of a larger string, and that
-** will have the effect of removing the comment terminator and messing up
-** the syntax.
+** Terminated C-style comments at the end are preserved.  "--" style
+** comments and unterminated C-style comments are removed because otherwise
+** inserting pCons[] into the middle of a larger SQL statement without a 
+** comment terminator will mess up its syntax.
 */
 static int alterRtrimConstraint(
   sqlite3 *db,                    /* used to record OOM error */
@@ -2950,7 +2949,14 @@ static int alterRtrimConstraint(
     int t = 0;
     int nToken = sqlite3GetToken(&zTmp[iOff], &t);
     if( t==TK_ILLEGAL ) break;
-    if( t!=TK_SPACE && (t!=TK_COMMENT || zTmp[iOff]!='-') ){
+    if( t==TK_COMMENT ){
+      /* Ignore all but properly terminated C-style comments */
+      if( zTmp[iOff]=='/' && nToken>=4
+       && zTmp[iOff+nToken-2]=='*' && zTmp[iOff+nToken-1]=='/'
+      ){
+        iEnd = iOff+nToken;
+      }
+    }else if( t!=TK_SPACE ){
       iEnd = iOff+nToken;
     }
     iOff += nToken;
