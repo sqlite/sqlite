@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sdatabase\sschema\shas\sbeen\sread\sprior\sto\sgenerating\sa\shex\ndump\sof\sa\sdatabase\sfile\susing\s".dbtotxt"\sin\sthe\sCLI.
-D 2026-11-01T11:38:35.235
+C Improved\shandling\sof\sempty\sfilenames\sin\sthe\swritefile()\sfunction\sthat\nis\spart\sof\sthe\sfileio.c\sextension.
+D 2026-11-01T16:01:30.879
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -380,7 +380,7 @@ F ext/misc/decimal.c 68e987966e4772efdb8df03e2bf253d02bae3254af29fd4a99d34fc6e6f
 F ext/misc/diskused.c 92c09e9d181c339428b7b3797ae3d09d9e36a6a8542b2e2f4dc358b22e708908
 F ext/misc/eval.c d4ea2d9898fbe4d30d38ff675ee51958d3bb0601a145bade56dee8b8f438cc5b
 F ext/misc/explain.c 04c9270fd8cf93a9bceb12d2f5f67e3f09a4e58b3e0efe14d24531444d2fffdf
-F ext/misc/fileio.c 04a2ba5c4a1dc985315c302d7123dda0209860a5bfe4a5541d0faeac137196e8
+F ext/misc/fileio.c 63d7ce947be0c29bbae6bd7053926b333b96b261c0cb63c7bdc42b9a82dc82d2
 F ext/misc/fossildelta.c 0af6a5ef3db6bba299271c29b604489e4a5d9e75395c6b83460405a9ccf05c2a
 F ext/misc/fuzzer.c 32cef9a29864a1bc1329ccb6dfa613f197bb83491a7612c2ca2c83ee26cd8f14
 F ext/misc/ieee754.c a4cac5236d3e538bf7e0161258b157f7e402d95564e6819b62c40f53d789c82b
@@ -2304,8 +2304,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4cac619f0088a5107e899dc5b1f17c7973c6a46494ae626110011dfd7f88bbe5
-R edd0a13bcf506b4407bc434334b86d8f
+P 7bed0b36e45d76f83ba1351e9f09ac004b4409d8e49fe740a437c652457705fe
+R 01770bc90bd93b4149af71e31cef583c
 U drh
-Z 3403b4edccc1178d498c118d4012a74b
+Z 7ce818d5fde34c7e45ed67029f6ac28c
 # Remove this line to create a well-formed Fossil manifest.
