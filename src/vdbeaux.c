@@ -2369,6 +2369,8 @@ int sqlite3VdbeNextOpcode(
       if( pOp->opcode==OP_OpenRead ) break;
       if( pOp->opcode==OP_OpenWrite && (pOp->p5 & OPFLAG_P2ISREG)==0 ) break;
       if( pOp->opcode==OP_ReopenIdx ) break;     
+      if( pOp->opcode==OP_Clear ) break;
+      if( pOp->opcode==OP_Destroy ) break;
     }else
 #endif
     {

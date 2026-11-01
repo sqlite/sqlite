@@ -4489,7 +4489,10 @@ case OP_SetCookie: {
 **
 ** Open a read/write cursor named P1 on the table or index whose root
 ** page is P2 (or whose root page is held in register P2 if the
-** OPFLAG_P2ISREG bit is set in P5 - see below).
+** OPFLAG_P2ISREG bit is set in P5 - see below). The database file is
+** determined by P3.  P3==0 means the main database, P3==1 means the
+** database used for temporary tables, and P3>1 means used the
+** corresponding attached database.
 **
 ** The P4 value may be either an integer (P4_INT32) or a pointer to
 ** a KeyInfo structure (P4_KEYINFO). If it is a pointer to a KeyInfo
