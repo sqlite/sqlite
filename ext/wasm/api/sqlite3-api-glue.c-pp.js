@@ -1459,7 +1459,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 callback(pCtx, ...capi.sqlite3_values_to_js(argc, pArgv))
               );
             }catch(e){
-              //console.error('xFunc() caught:',e);
+              //sqlite3.config.error('xFunc() caught:',e);
               capi.sqlite3_result_error_js(pCtx, e);
             }
           };
@@ -1471,7 +1471,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         callProxy: (callback)=>{
           return (pVoid)=>{
             try{ callback(pVoid) }
-            catch(e){ console.error("UDF xDestroy method threw:",e) }
+            catch(e){ sqlite3.config.error("UDF xDestroy(",pVoid,") threw:",e) }
           };
         }
       }
@@ -1529,7 +1529,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         return rc;
       }catch(e){
-        console.error("sqlite3_create_function_v2() setup threw:",e);
+        sqlite3.config.error("sqlite3_create_function_v2() setup threw:",e);
         return util.sqlite3__wasm_db_error(pDb, e, "Creation of UDF threw: "+e);
       }
     };
@@ -1575,7 +1575,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
           return rc;
         }catch(e){
-          console.error("sqlite3_create_window_function() setup threw:",e);
+          sqlite3.config.error("sqlite3_create_window_function() setup threw:",e);
           return util.sqlite3__wasm_db_error(pDb, e, "Creation of UDF threw: "+e);
         }
       };
@@ -1982,7 +1982,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        ```
 
        For single-call cases, e.g. when passing a newly-initialized db
-       or statement, a function literal perfectly fine. Within
+       or statement, a function literal is perfectly fine. Within
        user-defined SQL functions, in particular, function literals
        will cause grief in the form of potentially registering (C x R)
        callbacks, where C is the number of distinct contexts in the
@@ -2002,7 +2002,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        finalization process, it must observe certain limitations:
 
        - It absolutely must not finalize the object, or results are
-       well and truly undefined (best case, a WASM crash).
+       well and truly undefined. Best case, a WASM crash.
 
        - Because multiple on-dispose listeners may be installed for
        any given pointer, the callback must not leave the object in an
@@ -2042,7 +2042,6 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          from JS-space into C-space and back.
     */
     capi.sqlite3_js_on_pointer_dispose = function(typeName, ptr, callback){
-//#if 1
       if( !ptr || !wasm.isPtr(ptr) ) return null;
       else if( !(callback instanceof Function)
                && !(callback = wasm.functionEntry(callback)) ){
@@ -2052,22 +2051,10 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return false;
       }
       const di = __jsOnDisposeTypes[typeName] ??= new Map;
-//#else
-      // throw-on-error variant
-      if( !ptr || !wasm.isPtr(ptr) ) toss("Expecting a WASM pointer for arg[1]");
-      if( !(callback instanceof Function)
-          && !wasm.functionEntry(callback) ){
-        toss("Expecting a Function-type callback");
-      }
-      const di = Object.prototype.hasOwnProperty.call(__jsOnDisposeTypes, typeName)
-            ? (__jsOnDisposeTypes[typeName] ??= new Map)
-            : toss("Expecting a typeName of 'sqlite3*',",
-                   "'sqlite3_stmt*', or 'sqlite3_context*'");
-//#/if
       if( !di.get(ptr)?.add?.(callback) ){
         di.set(ptr, new Set([callback]));
       }
-      //console.debug("jopd di",di);
+      //sqlite3.config.debug("jopd di",di);
       // Potential TODO: return the Set.size (number of callbacks)
       return true;
     };
@@ -2177,7 +2164,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }else{
       const pFunc = wasm.installFunction(fProxy, sigN);
       tgt[memKey] = pFunc;
-      if(!tgt.ondispose || !tgt.ondispose.__removeFuncList){
+      if( !tgt.ondispose?.__removeFuncList ){
         tgt.addOnDispose('ondispose.__removeFuncList handler',
                          callee.removeFuncList);
         tgt.ondispose.__removeFuncList = [];
