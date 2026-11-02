@@ -4527,7 +4527,8 @@ T.g('Misc. APIs')
       wOnDispose = null
     }) );
     try{
-      T.assert( jopd('sqlite3*', db.pointer, onDispose) )
+      T.assert( wOnDispose )
+        .assert( jopd('sqlite3*', db.pointer, onDispose) )
         .assert( jopd('sqlite3*', db.pointer, onDispose2) )
       /* jopd returns "an unespecified falsy value" for arg validation
          errors, but for the sake of testing we can differentiate
@@ -4545,16 +4546,21 @@ T.g('Misc. APIs')
       T.assert( jopd('sqlite3_stmt*', q.pointer, onDispose) )
         .assert( jopd('sqlite3_stmt*', db.pointer, onDispose2) )
       while( q.step() );
+      T.assert( db.isOpen() );
       /**
          Do not q.finalize(), for test purposes. q will be cleaned up
          via a jopd registration made when it was prepared, and we
          assert that below.
       */
-      T.assert( wOnDispose );
     }finally{
-      db.close();
+      sqlite3.capi.sqlite3_close_v2(
+        /* As of 3.55.0 this will cleanly disconnect the oo1 db object
+           instead of leaving it pointing to a stale pointer. */
+        db
+      );
     }
-    T.assert( !wOnDispose, "Lingering wasm func installation")
+    T.assert( !db.isOpen() )
+      .assert( !wOnDispose, "Lingering wasm func installation")
       .assert( seenD.size  === 2, "db + stmt" )
       .assert( udf.nCall   === 6, "2 UDF call points, 3 rows" )
       .assert( onDispose.nCall  === seenD.size, "db + stmt" )
