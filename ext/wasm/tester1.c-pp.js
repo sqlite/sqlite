@@ -4520,7 +4520,7 @@ T.g('Misc. APIs')
       seenD.add(p);
     };
     onDispose2.nCall = 0;
-    const wOnDispose = wasm.installFunction("v(p)", onDispose2);
+    let wOnDispose = wasm.installFunction("v(p)", onDispose2);
     const udf = function callee(pCx,a){
       T.assert( jopd('sqlite3_context*', pCx, onDispose) );
       T.assert( jopd('sqlite3_context*', pCx, wOnDispose) );
@@ -4529,6 +4529,10 @@ T.g('Misc. APIs')
     };
     udf.nCall = 0;
     const db = new sqlite3.oo1.DB();
+    T.assert( jopd('sqlite3*', db.pointer, ()=>{
+      wasm.uninstallFunction(wOnDispose);
+      wOnDispose = null
+    }) );
     try{
       T.assert( jopd('sqlite3*', db.pointer, onDispose) )
       /* jopd returns "an unespecified falsy value" for arg validation
@@ -4551,15 +4555,16 @@ T.g('Misc. APIs')
          via a jopd registration made when it was prepared, and we
          assert that below.
       */
+      T.assert( wOnDispose );
     }finally{
-      wasm.uninstallFunction(wOnDispose);
       db.close();
     }
-    T.assert(  6 === udf.nCall, "2 UDF call points, 3 rows" )
-      .assert( 4 === onDispose.nCall, "(2x cx) + db + stmt" )
-      .assert( 2 === onDispose2.nCall, "2x cx" )
-      .assert( 2 === seenCx.size, "One cx per UDF call point" )
-      .assert( seenCx.size + 2 === seenD.size, "(2x cx) + db + stmt" );
+    T.assert( !wOnDispose, "Lingering wasm func installation")
+      .assert( seenCx.size === 2, "One cx per UDF call point" )
+      .assert( seenD.size  === seenCx.size + 2, "(2x cx) + db + stmt" )
+      .assert( udf.nCall   === seenCx.size * 3, "2 UDF call points, 3 rows" )
+      .assert( onDispose.nCall  === seenCx.size + 2, "(2x cx) + db + stmt" )
+      .assert( onDispose2.nCall === seenCx.size, "2x cx" );
   })
 
 ////////////////////////////////////////////////////////////////////
