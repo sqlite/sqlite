@@ -1907,7 +1907,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   {/* sqlite3_js_on_pointer_dispose() */
     const __jsOnDisposeTypes = Object.assign(Object.create(null),{
-      /* Lazily populated with Map(ptr, Set<function>) */
+      /* Lazily populated with Map(ptr, Set<Function>) */
       "sqlite3*": null,
       "sqlite3_stmt*": null,
       "sqlite3_context*": null
@@ -1918,8 +1918,9 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       util.disposers[disposerKey].push((ptr)=>{
         const di = __jsOnDisposeTypes[typeName];
         const set = di?.get?.(ptr);
-        if( !set ) return;
-        //sqlite3.config.warn("jopd",ptr,di,set);
+        if( !set /* pointers for _all_ disposals come through here but
+                    we only act on the ones in our map. */ ) return;
+        //sqlite3.config.debug("jopd",ptr,di,set);
         di.delete(ptr);
         for(const f of set){
           try{f(ptr)} catch(e){
@@ -1937,23 +1938,27 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /**
        Sets up the given callback to be called when the given WASM
-       pointer is finalized by the library. The purposes of this
-       is to provide JS code with a way to map state to native
+       pointer is finalized by the library. The purposes of this is to
+       provide client code with a way to map JS state to native
        pointers in such a way that the state can be cleaned up
-       regardless of how the natives get finalized.
+       regardless of how the natives are finalized.
 
        typeName describes what data type ptr is. It must be one of:
 
        "sqlite3*", "sqlite3_stmt*", "sqlite3_context*"
 
-       and the ptr argument must be a non-0 pointer to that type.
+       and the ptr argument must be a non-null pointer to that type.
 
-       It is legal to call this multiple times for a given pointer.
-       Each callback will be added to the queue, but only once for
-       each distinct callback reference. That is, calling it N times
-       with the same ptr/callback combination will only install the
-       callback once, but N calls with N distinct callbacks will
-       install all N.
+       The callback must be either a Function or a WASM function
+       pointer[^1].
+
+       It is legal to call this multiple times for a given combination
+       of pointer and callback. Each callback will be added to the
+       queue only once for each distinct callback reference, with the
+       caveat noted below regarding callback references. That is,
+       calling it N times with the same ptr/callback combination will
+       only install the callback once, but N calls with N distinct
+       callbacks will install all N.
 
        When used in loops, user-defined SQL functions, or client
        functions which may see the same pointer multiple times, it is
@@ -1968,15 +1973,20 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        sqlite3_js_on_pointer_dispose(..., (x)=>...);
        // YES:
        const myFunc = (x)=>...;
+       ...
        sqlite3_js_on_pointer_dispose(..., myFunc);
+       // Also YES:
+       let myFunc;
+       ...
+       sqlite3_js_on_pointer_dispose(..., (myFunc ??= (x)=>...));
        ```
 
-       For one-call cases, e.g. when passing a newly-initialized db or
-       statement, a function literal is fine. Within user-defined SQL
-       functions, in particular, function literals will cause grief in
-       the form of potentially registering (C x R) callbacks, where C
-       is the number of distinct contexts in the query and R the
-       number of rows.
+       For single-call cases, e.g. when passing a newly-initialized db
+       or statement, a function literal perfectly fine. Within
+       user-defined SQL functions, in particular, function literals
+       will cause grief in the form of potentially registering (C x R)
+       callbacks, where C is the number of distinct contexts in the
+       query and R the number of rows it ends up stepping.
 
        On success it returns an unspecified truthy value. On error
        (argument validation issues) it returns an unspecified falsy
@@ -1994,7 +2004,9 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - It absolutely must not finalize the object, or results are
        well and truly undefined (best case, a WASM crash).
 
-       - Any exceptions are ignored.
+       - Because multiple on-dispose listeners may be installed for
+       any given pointer, the callback must not leave the object in an
+       unusable state.
 
        - It should not perform "real work" with the pointer. e.g. a
        finalizing statement must not be stepped nor its columns
@@ -2008,24 +2020,45 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        use of the other types similarly, though they are not quite so
        strict in that regard.
 
+       - Any exceptions are ignored but may trigger an alert via
+       sqlite3.config.error().
+
        Ideally, such callbacks do nothing more than remove any state
        which they have mapped to the given pointer value, without
        actually trying to use the object referred to by that pointer.
-       That's not always a realistic goal, however.
+       Sometimes, however, cleanup work may be necessary which
+       involves judicious use of that type's methods.
 
        Added in 3.55.0.
+
+
+       [^1]: Though callback may be a WASM function pointer, that is
+         actually less efficient than passing a JS function. The
+         on-dispose dispatching is called from native code, invoking a
+         JS function which the library connects to it during
+         bootstrapping.  sqlite3_js_on_pointer_dispose() receives the
+         notifications "second hand" through that mechanism.  If
+         callback is a WASM function, invoking it adds one more step
+         from JS-space into C-space and back.
     */
     capi.sqlite3_js_on_pointer_dispose = function(typeName, ptr, callback){
 //#if 1
       if( !ptr || !wasm.isPtr(ptr) ) return null;
-      else if( !(callback instanceof Function) ) return undefined;
+      else if( !(callback instanceof Function)
+               && !(callback = wasm.functionEntry(callback)) ){
+        return undefined;
+      }
       else if( !Object.prototype.hasOwnProperty.call(__jsOnDisposeTypes, typeName) ){
         return false;
       }
       const di = __jsOnDisposeTypes[typeName] ??= new Map;
 //#else
+      // throw-on-error variant
       if( !ptr || !wasm.isPtr(ptr) ) toss("Expecting a WASM pointer for arg[1]");
-      if( !(callback instanceof Function) ) toss("Expecting a Function-type callback");
+      if( !(callback instanceof Function)
+          && !wasm.functionEntry(callback) ){
+        toss("Expecting a Function-type callback");
+      }
       const di = Object.prototype.hasOwnProperty.call(__jsOnDisposeTypes, typeName)
             ? (__jsOnDisposeTypes[typeName] ??= new Map)
             : toss("Expecting a typeName of 'sqlite3*',",
@@ -2089,7 +2122,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   ){
     if(!(tgt instanceof StructBinder.StructType)){
       toss("Usage error: target object is-not-a StructType.");
-    }else if(!(func instanceof Function) && !wasm.isPtr(func)){
+    }else if(!(func instanceof Function) && !wasm.functionEntry(func)){
       toss("Usage error: expecting a Function or WASM pointer to one.");
     }
     if(1===arguments.length){

@@ -4504,22 +4504,36 @@ T.g('Misc. APIs')
     const jopd = sqlite3.capi.sqlite3_js_on_pointer_dispose;
     const seenD = new Set() /* distinct pointers passed to onDispose() */;
     const seenCx = new Set() /* distinct sqlite3_context* */;
-    const onDispose = function(p){
-      //sqlite3.config.debug("onDispose",p);
+    const onDispose = function callee(p){
+      ++callee.nCall;
+      //sqlite3.config.debug("onDispose",p,'#',callee.nCall);
       seenD.add(p);
     };
-    const db = new sqlite3.oo1.DB();
+    onDispose.nCall = 0;
+    /* A second onDispose which we manually convert to wasm to
+       test jopd's handling of these. We "could" just install
+       a wasm wrapper for onDispose but we want a separate
+       call counter for test purposes. */
+    const onDispose2 = function callee(p){
+      ++callee.nCall;
+      //sqlite3.config.debug("onDispose2",p,'#',callee.nCall);
+      seenD.add(p);
+    };
+    onDispose2.nCall = 0;
+    const wOnDispose = wasm.installFunction("v(p)", onDispose2);
     const udf = function callee(pCx,a){
       T.assert( jopd('sqlite3_context*', pCx, onDispose) );
+      T.assert( jopd('sqlite3_context*', pCx, wOnDispose) );
       seenCx.add(pCx);
       ++callee.nCall;
     };
-    udf.nCall = 0 /* number of times udf is called */;
+    udf.nCall = 0;
+    const db = new sqlite3.oo1.DB();
     try{
       T.assert( jopd('sqlite3*', db.pointer, onDispose) )
-      /* jopd returns "an unespecified falsy value" on error, but for
-         the sake of testing we can differentiate the possible
-         validation errors... */
+      /* jopd returns "an unespecified falsy value" for arg validation
+         errors, but for the sake of testing we can differentiate
+         them... */
         .assert( false===jopd('nope', db.pointer, onDispose),
                  "Type ID validation failed." )
         .assert( null===jopd('sqlite3*', 'nope', onDispose),
@@ -4532,12 +4546,19 @@ T.g('Misc. APIs')
       const q = db.prepare("select foo(1), foo(a) from t");
       T.assert( jopd('sqlite3_stmt*', q.pointer, onDispose) );
       while( q.step() );
-      // do not q.finalize(), for test purposes
+      /**
+         Do not q.finalize(), for test purposes. q will be cleaned up
+         via a jopd registration made when it was prepared, and we
+         assert that below.
+      */
     }finally{
+      wasm.uninstallFunction(wOnDispose);
       db.close();
     }
-    T.assert( 6===udf.nCall, "2 UDF call points times 3 rows" )
-      .assert( 2===seenCx.size, "One cx per UDF call point" )
+    T.assert(  6 === udf.nCall, "2 UDF call points, 3 rows" )
+      .assert( 4 === onDispose.nCall, "(2x cx) + db + stmt" )
+      .assert( 2 === onDispose2.nCall, "2x cx" )
+      .assert( 2 === seenCx.size, "One cx per UDF call point" )
       .assert( seenCx.size + 2 === seenD.size, "(2x cx) + db + stmt" );
   })
 
