@@ -183,7 +183,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       keytype = 'key';
       key = opt.key;
       if('string'===typeof key){
-        key = new TextEncoder('utf-8').encode(key);
+        key = new TextEncoder().encode(key);
       }
       if((key instanceof ArrayBuffer) || (key instanceof Uint8Array)){
         key = byteArrayToHex(key);

@@ -397,7 +397,7 @@ function WhWasmUtilInstaller(target){
   };
 
   cache.utf8Decoder = new TextDecoder();
-  cache.utf8Encoder = new TextEncoder('utf-8');
+  cache.utf8Encoder = new TextEncoder();
 
   /**
      For the given IR-like string in the set ('i8', 'i16', 'i32',

@@ -540,7 +540,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               ev.data[1] = wcache[args[0]];
               continue;
             }
-            u8enc ??= new TextEncoder('utf-8');
+            u8enc ??= new TextEncoder();
             z0 ??= cache.memBuffer(10);
             z1 ??= cache.memBuffer(11);
             const u = u8enc.encode(args[1]);
