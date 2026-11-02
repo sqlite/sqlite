@@ -7187,6 +7187,21 @@ case OP_Destroy: {     /* out2 */
   break;
 }
 
+/*
+** Opcode: DbLock
+**
+** Raise an SQLITE_LOCKED error if there are any other reader statements
+** currently active.
+*/
+case OP_DbLock: {
+  if( db->nVdbeRead>1 ){
+    rc = SQLITE_LOCKED;
+    p->errorAction = OE_Abort;
+    goto abort_due_to_error;
+  }
+  break;
+};
+
 /* Opcode: Clear P1 P2 P3
 **
 ** Delete all contents of the database table or index whose root page
