@@ -983,7 +983,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             try{d(ptr)}
             catch(e){
               sqlite3.config.error("on-dispose handler type",
-                                   tid,"threw:",e);
+                                   tid,"threw:",e,d);
             }
           }
         });
@@ -1844,16 +1844,15 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         "sqlite3*": null,
         "sqlite3_stmt*": null
       });
-      const d2t = [['db','sqlite3*'], ['stmt','sqlite3_stmt*']];
-      for( const e of d2t ){
-        const disposerKey = e[0], typeName = e[1];
-        /* Call all callbacks queued for the given ptr/typeName
-           combination and clear that queue. */
+      for( const e of [['db','sqlite3*'], ['stmt','sqlite3_stmt*']] ){
+        const [disposerKey, typeName] = e;
         util.disposers[disposerKey].push((ptr)=>{
+          /* Call all callbacks queued for the given ptr/typeName
+             combination and clear that queue. */
           const di = jodt[typeName];
           const set = di?.get?.(ptr);
-          if( !set /* pointers for _all_ disposals come through here but
-                      we only act on the ones in our map. */ ) return;
+          if( !set /* pointers for _all_ disposals come through here
+                      but we only act on the ones in our Set. */ ) return;
           //sqlite3.config.debug("jopd",ptr,di,set);
           di.delete(ptr);
           for(const f of set){
