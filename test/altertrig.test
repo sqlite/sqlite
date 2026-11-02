@@ -560,4 +560,432 @@ do_execsql_test 5.8 {
   SELECT v FROM log;
 } {table log log table t1 t1 trigger ttr m1 8}
 
+#-------------------------------------------------------------------------
+# Test that RENAME COLUMN updates column references in the ON clause of
+# a join in the FROM clause of an UPDATE statement within a trigger. The
+# case below is from a bug report: previously the ALTER TABLE failed with
+# "error in trigger tr after rename: no such column: t2.a".
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t(a,b);
+  CREATE TABLE s(x);
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE t SET b=1 FROM s JOIN t AS t2 ON t2.a=s.x;
+  END;
+}
+
+do_execsql_test 3.1 {
+  ALTER TABLE t RENAME COLUMN a TO aa;
+  SELECT name FROM pragma_table_info('t');
+} {aa b}
+
+do_whitespace_sql_test 3.2 {
+  SELECT sql FROM sqlite_schema WHERE name='tr';
+} {{
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE t SET b=1 FROM s JOIN t AS t2 ON t2.aa=s.x;
+  END
+}}
+
+do_execsql_test 3.3 {
+  INSERT INTO t VALUES(1, 0), (2, 0);
+  INSERT INTO s VALUES(1);
+  SELECT * FROM t;
+} {1 1 2 1}
+
+# The same with the condition in the WHERE clause. This always worked.
+reset_db
+do_execsql_test 3.4 {
+  CREATE TABLE t(a,b);
+  CREATE TABLE s(x);
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE t SET b=1 FROM s JOIN t AS t2 WHERE t2.a=s.x;
+  END;
+  ALTER TABLE t RENAME COLUMN a TO aa;
+}
+do_whitespace_sql_test 3.5 {
+  SELECT sql FROM sqlite_schema WHERE name='tr';
+} {{
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE t SET b=1 FROM s JOIN t AS t2 WHERE t2.aa=s.x;
+  END
+}}
+
+# RENAME TO with the ON clause qualifying a column with the table name.
+reset_db
+do_execsql_test 3.6 {
+  CREATE TABLE t(a,b);
+  CREATE TABLE s(x);
+  CREATE TABLE u(y);
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE u SET y=1 FROM s LEFT JOIN t ON t.a=s.x;
+  END;
+  ALTER TABLE t RENAME TO t3;
+}
+do_whitespace_sql_test 3.7 {
+  SELECT sql FROM sqlite_schema WHERE name='tr';
+} {{
+  CREATE TRIGGER tr AFTER INSERT ON s BEGIN
+    UPDATE u SET y=1 FROM s LEFT JOIN "t3" ON "t3".a=s.x;
+  END
+}}
+
+#-------------------------------------------------------------------------
+# ALTER TABLE main.t1 RENAME TO ... must not modify references within a
+# TEMP trigger to a table "t1" that resolves to temp.t1, not main.t1. This
+# applies to the target of INSERT, UPDATE and DELETE statements in the
+# trigger body and to tables in the FROM clause of an UPDATE ... FROM.
+# Previously, these were rewritten based on the table name alone.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a);
+  CREATE TEMP TABLE t1(a);
+  CREATE TABLE t2(x);
+  CREATE TEMP TRIGGER ttr AFTER INSERT ON main.t2 BEGIN
+    INSERT INTO t1 VALUES(new.x);
+  END;
+  CREATE TEMP VIEW tv AS SELECT a FROM t1;
+  INSERT INTO t2 VALUES(1);
+  SELECT 'main', a FROM main.t1;
+  SELECT 'temp', a FROM temp.t1;
+} {temp 1}
+
+do_execsql_test 4.1 {
+  ALTER TABLE main.t1 RENAME TO m1;
+}
+
+do_whitespace_sql_test 4.2 {
+  SELECT sql FROM sqlite_temp_schema WHERE name IN ('ttr','tv') ORDER BY name;
+} {{
+  CREATE TRIGGER ttr AFTER INSERT ON main.t2 BEGIN
+    INSERT INTO t1 VALUES(new.x);
+  END} {CREATE VIEW tv AS SELECT a FROM t1}
+}
+
+do_execsql_test 4.3 {
+  INSERT INTO t2 VALUES(2);
+  SELECT 'main', a FROM main.m1;
+  SELECT 'temp', a FROM temp.t1;
+} {temp 1 temp 2}
+
+# Same thing for UPDATE, DELETE and UPDATE ... FROM statements, and for
+# an INSERT that qualifies the table name as "temp.t1" (previously this
+# failed with "error in trigger ttr after rename: no such table: temp.m1").
+#
+foreach {tn stmt} {
+  1 { INSERT INTO t1 VALUES(new.x) }
+  2 { UPDATE t1 SET a=new.x }
+  3 { DELETE FROM t1 WHERE a=new.x }
+  4 { UPDATE t3 SET y=t1.a FROM t1 WHERE t1.a=new.x }
+  5 { UPDATE t3 SET y=1 FROM t3 AS z JOIN t1 ON (t1.a=z.y) }
+  6 { INSERT INTO temp.t1 VALUES(new.x) }
+  7 { UPDATE temp.t1 SET a=new.x }
+  8 { DELETE FROM temp.t1 WHERE a=new.x }
+  9 { UPDATE t3 SET y=t1.a FROM temp.t1 WHERE t1.a=new.x }
+} {
+  reset_db
+  set trig "CREATE TRIGGER ttr AFTER INSERT ON main.t2 BEGIN $stmt; END"
+  do_execsql_test 4.4.$tn.0 "
+    CREATE TABLE t1(a);
+    CREATE TEMP TABLE t1(a);
+    CREATE TABLE t2(x);
+    CREATE TABLE t3(y);
+    CREATE TEMP TRIGGER [string range $trig 15 end];
+  "
+  do_catchsql_test 4.4.$tn.1 {
+    ALTER TABLE main.t1 RENAME TO m1;
+  } {0 {}}
+  do_execsql_test 4.4.$tn.2 {
+    SELECT sql FROM sqlite_temp_schema WHERE name='ttr';
+  } [list $trig]
+  do_execsql_test 4.4.$tn.3 {
+    INSERT INTO t2 VALUES(5);
+    SELECT count(*) FROM main.m1;
+  } {0}
+}
+
+# Where there is no temp.t1, an unqualified "t1" in the TEMP trigger body
+# does refer to main.t1 and so is rewritten.
+#
+reset_db
+do_execsql_test 4.5.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(x);
+  CREATE TEMP TRIGGER ttr AFTER INSERT ON main.t2 BEGIN
+    INSERT INTO t1 VALUES(new.x);
+  END;
+  ALTER TABLE main.t1 RENAME TO m1;
+}
+do_whitespace_sql_test 4.5.1 {
+  SELECT sql FROM sqlite_temp_schema WHERE name='ttr';
+} {{
+  CREATE TRIGGER ttr AFTER INSERT ON main.t2 BEGIN
+    INSERT INTO "m1" VALUES(new.x);
+  END}
+}
+do_execsql_test 4.5.2 {
+  INSERT INTO t2 VALUES(3);
+  SELECT a FROM m1;
+} {3}
+
+# Renaming temp.t1 does rewrite the references in the TEMP trigger, but
+# not those in a main-schema trigger, which always refer to main.t1.
+#
+reset_db
+do_execsql_test 4.6.0 {
+  CREATE TABLE t1(a);
+  CREATE TEMP TABLE t1(a);
+  CREATE TABLE t2(x);
+  CREATE TEMP TRIGGER ttr AFTER INSERT ON main.t2 BEGIN
+    INSERT INTO t1 VALUES(new.x);
+  END;
+  CREATE TRIGGER mtr AFTER INSERT ON t2 BEGIN
+    INSERT INTO t1 VALUES(new.x*10);
+  END;
+  ALTER TABLE temp.t1 RENAME TO tt1;
+}
+do_whitespace_sql_test 4.6.1 {
+  SELECT sql FROM sqlite_temp_schema WHERE name='ttr';
+  SELECT sql FROM sqlite_schema WHERE name='mtr';
+} {{
+  CREATE TRIGGER ttr AFTER INSERT ON main.t2 BEGIN
+    INSERT INTO "tt1" VALUES(new.x);
+  END} {
+  CREATE TRIGGER mtr AFTER INSERT ON t2 BEGIN
+    INSERT INTO t1 VALUES(new.x*10);
+  END}
+}
+do_execsql_test 4.6.2 {
+  INSERT INTO t2 VALUES(4);
+  SELECT 'main', a FROM main.t1;
+  SELECT 'temp', a FROM temp.tt1;
+} {main 40 temp 4}
+
+#-------------------------------------------------------------------------
+# A TEMP trigger attached to a main (or attached) database table that
+# has the same name as a TEMP table. Renaming the TEMP table must not
+# relabel the trigger (sqlite_temp_schema.tbl_name), as the trigger is
+# not attached to the table being renamed.
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a);
+  CREATE TEMP TABLE t1(x);
+  CREATE TEMP TABLE log(v);
+  CREATE TEMP TRIGGER ttr AFTER INSERT ON main.t1 BEGIN
+    INSERT INTO log VALUES(new.a);
+  END;
+}
+do_execsql_test 5.1 {
+  ALTER TABLE temp.t1 RENAME TO tt;
+  SELECT type, name, tbl_name FROM sqlite_temp_schema ORDER BY name;
+} {table log log table tt tt trigger ttr t1}
+do_execsql_test 5.2 {
+  INSERT INTO main.t1 VALUES(1);
+  INSERT INTO temp.tt VALUES(2);
+  SELECT v FROM log;
+} {1}
+do_execsql_test 5.3 {
+  SELECT sql FROM sqlite_temp_schema WHERE name='ttr';
+} {{CREATE TRIGGER ttr AFTER INSERT ON main.t1 BEGIN
+    INSERT INTO log VALUES(new.a);
+  END}}
+
+# The trigger survives a schema reload and still fires on main.t1.
+db close
+sqlite3 db test.db
+do_execsql_test 5.4 {
+  CREATE TABLE t2(y);
+  CREATE TEMP TABLE t2(y);
+  CREATE TEMP TABLE log(v);
+  CREATE TEMP TRIGGER ttr AFTER INSERT ON main.t2 BEGIN
+    INSERT INTO log VALUES(new.y);
+  END;
+  ALTER TABLE temp.t2 RENAME TO tt2;
+  INSERT INTO main.t2 VALUES('x');
+  SELECT v FROM log;
+} {x}
+
+# Case differences between the ON clause and the table name.
+reset_db
+do_execsql_test 5.5 {
+  CREATE TABLE t1(a);
+  CREATE TEMP TABLE T1(x);
+  CREATE TEMP TABLE log(v);
+  CREATE TEMP TRIGGER ttr AFTER INSERT ON main.T1 BEGIN
+    INSERT INTO log VALUES(new.a);
+  END;
+  ALTER TABLE temp.t1 RENAME TO tt;
+  INSERT INTO main.t1 VALUES(5);
+  SELECT v FROM log;
+  SELECT name, tbl_name FROM sqlite_temp_schema WHERE type='trigger';
+} {5 ttr T1}
+
+# Two TEMP triggers - one on main.t1 and one on temp.t1. Only the
+# trigger on temp.t1 is relabelled.
+reset_db
+do_execsql_test 5.6.0 {
+  CREATE TABLE t1(a);
+  CREATE TEMP TABLE t1(x);
+  CREATE TEMP TABLE log(v);
+  CREATE TEMP TRIGGER tr_main AFTER INSERT ON main.t1 BEGIN
+    INSERT INTO log VALUES('main:' || new.a);
+  END;
+  CREATE TEMP TRIGGER tr_temp AFTER INSERT ON temp.t1 BEGIN
+    INSERT INTO log VALUES('temp:' || new.x);
+  END;
+}
+do_execsql_test 5.6.1 {
+  ALTER TABLE temp.t1 RENAME TO tt;
+  SELECT name, tbl_name FROM sqlite_temp_schema
+   WHERE type='trigger' ORDER BY name;
+} {tr_main t1 tr_temp tt}
+do_execsql_test 5.6.2 {
+  INSERT INTO main.t1 VALUES(1);
+  INSERT INTO temp.tt VALUES(2);
+  SELECT v FROM log ORDER BY v;
+} {main:1 temp:2}
+do_execsql_test 5.6.3 {
+  SELECT sql FROM sqlite_temp_schema WHERE name='tr_temp';
+} {{CREATE TRIGGER tr_temp AFTER INSERT ON temp."tt" BEGIN
+    INSERT INTO log VALUES('temp:' || new.x);
+  END}}
+
+# Same again, but with the trigger on a table in an attached database.
+reset_db
+forcedelete test.db2
+do_execsql_test 5.7.0 {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t1(a);
+  CREATE TEMP TABLE t1(x);
+  CREATE TEMP TABLE log(v);
+  CREATE TEMP TRIGGER ttr AFTER INSERT ON aux.t1 BEGIN
+    INSERT INTO log VALUES(new.a);
+  END;
+}
+do_execsql_test 5.7.1 {
+  ALTER TABLE temp.t1 RENAME TO tt;
+  INSERT INTO aux.t1 VALUES('aux');
+  INSERT INTO temp.tt VALUES('temp');
+  SELECT v FROM log;
+  SELECT name, tbl_name FROM sqlite_temp_schema WHERE type='trigger';
+} {aux ttr t1}
+
+# Renaming the attached table itself does relabel the TEMP trigger.
+do_execsql_test 5.7.2 {
+  ALTER TABLE aux.t1 RENAME TO a1;
+  SELECT name, tbl_name FROM sqlite_temp_schema WHERE type='trigger';
+  INSERT INTO aux.a1 VALUES('aux2');
+  SELECT v FROM log;
+} {ttr a1 aux aux2}
+
+# Renaming main.t1 (rather than temp.t1) relabels a TEMP trigger on
+# main.t1, and leaves the TEMP table alone.
+reset_db
+do_execsql_test 5.8 {
+  CREATE TABLE t1(a);
+  CREATE TEMP TABLE t1(x);
+  CREATE TEMP TABLE log(v);
+  CREATE TEMP TRIGGER ttr AFTER INSERT ON main.t1 BEGIN
+    INSERT INTO log VALUES(new.a);
+  END;
+  ALTER TABLE main.t1 RENAME TO m1;
+  SELECT type, name, tbl_name FROM sqlite_temp_schema ORDER BY name;
+  INSERT INTO main.m1 VALUES(8);
+  SELECT v FROM log;
+} {table log log table t1 t1 trigger ttr m1 8}
+
+#-------------------------------------------------------------------------
+# A main database table with a TEMP table of the same name. Check that
+# this does not cause confusion when rewriting CREATE TRIGGER and
+# CREATE INDEX statements.
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE main.t(a, b, c);
+  INSERT INTO t VALUES(1, 2, 3);
+  CREATE TRIGGER main.tr AFTER UPDATE ON t BEGIN SELECT new.c; END;
+  CREATE TEMP TABLE t(a, b, c);
+}
+do_execsql_test 6.1 {
+  ALTER TABLE main.t RENAME COLUMN c TO cc;
+  SELECT sql FROM main.sqlite_schema ORDER BY name;
+} {
+  {CREATE TABLE t(a, b, cc)}
+  {CREATE TRIGGER tr AFTER UPDATE ON t BEGIN SELECT new.cc; END}
+}
+do_execsql_test 6.2 {
+  UPDATE main.t SET a=5;
+  SELECT * FROM main.t;
+} {5 2 3}
+
+# In a new connection, without the TEMP table, the trigger still works.
+db close
+sqlite3 db test.db
+do_execsql_test 6.3 {
+  UPDATE t SET a=6;
+  SELECT * FROM t;
+  PRAGMA integrity_check;
+} {6 2 3 ok}
+
+# DROP COLUMN and RENAME TO on the main table, with a TEMP table
+# that does not have the column used by the main trigger.
+foreach {tn alter sql} {
+  1 "ALTER TABLE main.t DROP COLUMN b" {
+    {CREATE TABLE t(a, c)}
+    {CREATE TRIGGER tr AFTER UPDATE ON t BEGIN SELECT new.c; END}
+  }
+  2 "ALTER TABLE main.t RENAME TO t2" {
+    {CREATE TABLE "t2"(a, b, c)}
+    {CREATE TRIGGER tr AFTER UPDATE ON "t2" BEGIN SELECT new.c; END}
+  }
+} {
+  reset_db
+  do_execsql_test 6.4.$tn.0 {
+    CREATE TABLE main.t(a, b, c);
+    CREATE TRIGGER main.tr AFTER UPDATE ON t BEGIN SELECT new.c; END;
+    CREATE TEMP TABLE t(x, y);
+  }
+  do_execsql_test 6.4.$tn.1 "
+    $alter;
+    SELECT sql FROM main.sqlite_schema ORDER BY name;
+  " $sql
+  do_execsql_test 6.4.$tn.2 {
+    SELECT sql FROM temp.sqlite_schema;
+  } {{CREATE TABLE t(x, y)}}
+}
+
+# Same again for indexes.
+foreach {tn temptbl alter sql} {
+  1 "t(x, y)" "ALTER TABLE main.t DROP COLUMN b" {
+    {CREATE TABLE t(a, c)}
+    {CREATE INDEX ti ON t(c)}
+  }
+  2 "t(x, y)" "ALTER TABLE main.t RENAME TO t2" {
+    {CREATE TABLE "t2"(a, b, c)}
+    {CREATE INDEX ti ON "t2"(c)}
+  }
+  3 "t(a, b, c)" "ALTER TABLE main.t RENAME COLUMN c TO cc" {
+    {CREATE TABLE t(a, b, cc)}
+    {CREATE INDEX ti ON t(cc)}
+  }
+} {
+  reset_db
+  do_execsql_test 6.5.$tn.0 "
+    CREATE TABLE main.t(a, b, c);
+    INSERT INTO main.t VALUES(1, 2, 3);
+    CREATE INDEX main.ti ON t(c);
+    CREATE TEMP TABLE $temptbl;
+  "
+  do_execsql_test 6.5.$tn.1 "
+    $alter;
+    SELECT sql FROM main.sqlite_schema ORDER BY name;
+  " $sql
+  do_execsql_test 6.5.$tn.2 {
+    PRAGMA integrity_check;
+  } {ok}
+}
+
 finish_test
