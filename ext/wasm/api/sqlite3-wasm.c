@@ -315,6 +315,10 @@ SQLITE_WASM_EXPORT2(WasmDisposalNotifier *,
 #undef INC__STRINGIFY
 #undef SQLITE_C
 
+#if SQLITE_VERSION_NUMBER < 3055000
+#  error "This wasm build requires sqlite3.c internals added in 3.55.0"
+#endif
+
 /*
 ** State for the "pseudo-stack" allocator implemented in
 ** sqlite3__wasm_pstack_xyz(). In order to avoid colliding with
