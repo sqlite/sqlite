@@ -1958,6 +1958,13 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        Added in 3.55.0.
 
+       Design note: ideally we could support `sqlite3_context*`, as
+       that would neatly tie in cleanup for user-defined SQL
+       functions.  However, the C APIs do not guaranty stability of
+       those pointers across calls. It currently provides
+       _unguaranteed_ stability in two cases but does not for any
+       aggregate-specific cases, making it unsuitable for the problem
+       this API addresses (pun not intended).
 
        [^1]: Though callback may be a WASM function pointer, that is
          actually less efficient than passing a JS function. The
@@ -1986,9 +1993,9 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       /* Potential TODO: return the Set.size (number of callbacks). It
          does not provide any actionable info except possibly for
          detecting errant cases of the function-literal problem
-         described in the API docs. That, however, would require that
-         clients check the result, which they don't need to do if
-         they'll apply the suggestion from the docs. */
+         described in the API docs. Catching that would, however,
+         require that clients check the result code, which they don't
+         need to do if they'll apply the suggestion from the docs. */
 //#/if
       return true;
     };
@@ -2022,7 +2029,8 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      thing as this one, permitting calls to be chained.
 
      If called with only 1 arg, it has no side effects but returns a
-     func with the same signature as described above.
+     func proxying this one which takes (name,func) arguments and
+     curries the other two.
 
      ACHTUNG: because we cannot generically know how to transform JS
      exceptions into result codes, the installed functions do no
@@ -2041,13 +2049,13 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const installMethod = function callee(
     tgt, name, func, applyArgcCheck = callee.installMethodArgcCheck
   ){
+    if(1===arguments.length){
+      return (n,f)=>callee(tgt, n, f, applyArgcCheck);
+    }
     if(!(tgt instanceof StructBinder.StructType)){
       toss("Usage error: target object is-not-a StructType.");
     }else if(!(func instanceof Function) && !wasm.functionEntry(func)){
       toss("Usage error: expecting a Function or WASM pointer to one.");
-    }
-    if(1===arguments.length){
-      return (n,f)=>callee(tgt, n, f, applyArgcCheck);
     }
     if(!callee.argcProxy){
       callee.argcProxy = function(tgt, funcName, func,sig){
@@ -2060,8 +2068,9 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           return func.apply(this, args);
         }
       };
-      /* An ondispose() callback for use with
-         StructBinder-created types. */
+      /* An ondispose() callback for use with StructBinder-created
+         instances. It removes all WASM functions which were installed
+         as proxies into `this` by installMethod(). */
       callee.removeFuncList = function(){
         if(this.ondispose.__removeFuncList){
           this.ondispose.__removeFuncList.forEach(
@@ -2091,7 +2100,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           ? callee.argcProxy(tgt, memKey, func, sigN)
           : func;
     if(wasm.isPtr(fProxy)){
-      if(fProxy && !wasm.functionEntry(fProxy)){
+      if(!fProxy || !wasm.functionEntry(fProxy)){
         toss("Pointer",fProxy,"is not a WASM function table entry.");
       }
       tgt[memKey] = fProxy;
