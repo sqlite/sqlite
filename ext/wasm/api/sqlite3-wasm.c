@@ -271,10 +271,10 @@ SQLITE_WASM_EXPORT2(WasmDisposalNotifier *,
 **
 **   SQLITE_DISPOSAL_NOTIFIER(T,P);
 **
-** where T is a literal integer and P is the ptr being disposed of.
+** where T is a literal integer and P is the ptr being disposed of
+** (possibly in the form of &X).
 **
-** T specifies the type of P: 1==sqlite3*, 2==sqlite3_stmt*,
-** 3==sqlite3_context*
+** T specifies the type of P: 1==sqlite3*, 2==sqlite3_stmt*
 **
 ** Because this happens during finalization, code must be careful
 ** about how it uses P. e.g. a finalizing database must not be
@@ -290,7 +290,7 @@ SQLITE_WASM_EXPORT2(WasmDisposalNotifier *,
 ** DB instance pointing to a stale pointer. Ditto for oo1.DB.Stmt.
 */
 #define SQLITE_DISPOSAL_NOTIFIER(T,P) \
-  if( (P) && sqlite3WasmDisposalNotifier.callback ) \
+  if( (P) && sqlite3WasmDisposalNotifier.callback )\
     sqlite3WasmDisposalNotifier.callback(T, P)
 
 /*

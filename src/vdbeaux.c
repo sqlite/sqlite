@@ -1380,9 +1380,6 @@ static SQLITE_NOINLINE void freeP4Mem(sqlite3 *db, Mem *p){
 }
 static SQLITE_NOINLINE void freeP4FuncCtx(sqlite3 *db, sqlite3_context *p){
   assert( db!=0 );
-#if defined(SQLITE_DISPOSAL_NOTIFIER)
-  SQLITE_DISPOSAL_NOTIFIER(3,p);
-#endif
   freeEphemeralFunction(db, p->pFunc);
   sqlite3DbNNFreeNN(db, p);
 }
