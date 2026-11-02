@@ -1894,13 +1894,13 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        only install the callback once, but N calls with N distinct
        callbacks will install all N.
 
-       When used in loops, user-defined SQL functions, or client
-       functions which may see the same pointer multiple times, it is
-       generally important to **not pass function literals**, as each
-       such literal is a different instance, so an identical callback
-       may be added N times for a given pointer. Functions should be
-       assigned to symbols and those symbols should be passed in so
-       that callback deduplication works:
+       When used in loops or client functions which may see the same
+       pointer multiple times, it is generally important to **not pass
+       function literals**, as each such literal is a different
+       instance, so an identical callback may be added N times for a
+       given pointer. Functions should be assigned to symbols and
+       those symbols should be passed in so that callback
+       deduplication works:
 
        ```
        // NO:
@@ -1915,11 +1915,12 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        sqlite3_js_on_pointer_dispose(..., (myFunc ??= (x)=>...));
        ```
 
-       For single-call cases, e.g. when passing a newly-initialized db or
-       statement, a function literal is perfectly fine. Within user-defined
-       SQL functions, in particular, function literals will cause grief in
-       the form of potentially registering a separate callback for each
-       invocation of the SQL function.
+       For single-call cases, e.g. when passing a newly-initialized db
+       or statement, a function literal is perfectly fine. Within
+       loops and client-defined functions which are called more than
+       once per native instance, function literals will cause grief in
+       the form of potentially registering a separate callback for
+       each invocation of the SQL function.
 
        On success it returns an unspecified truthy value. On error
        (argument validation issues) it returns an unspecified falsy
