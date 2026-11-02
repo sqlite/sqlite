@@ -309,7 +309,8 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(run)         run.sh
     set TRG(runcmd)      "bash run.sh"
   }
-  *linux* - MSYS_NT* - MINGW64_NT* - MINGW32_NT* {
+  *linux* - MSYS_NT* - MINGW64_NT* - MINGW32_NT* -
+  *haiku* {
     set TRG(platform)    linux
     set TRG(make)        make.sh
     set TRG(makecmd)     "bash make.sh"
