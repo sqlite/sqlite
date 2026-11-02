@@ -513,10 +513,13 @@ SQLITE_API int sqlite3_carray_bind_v2(
       unsigned char *z = (unsigned char*)&p[nData];
       for(i=0; i<nData; i++){
         size_t n = ((struct iovec*)aData)[i].iov_len;
+        void *a = ((struct iovec*)aData)[i].iov_base;
         p[i].iov_len = n;
-        p[i].iov_base = z;
-        z += n;
-        memcpy(p[i].iov_base, ((struct iovec*)aData)[i].iov_base, n);
+        p[i].iov_base = a ? z : 0;
+        if( n ){
+          z += n;
+          memcpy(p[i].iov_base, a, n);
+        }
       }
     }else if( sz>0 ){
       memcpy(pNew->aData, aData, sz);
