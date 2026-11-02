@@ -4526,6 +4526,11 @@ T.g('Misc. APIs')
       wasm.uninstallFunction(wOnDispose);
       wOnDispose = null
     }) );
+    const db2 = sqlite3.oo1.DB.wrapHandle(
+      db.pointer
+      /* This object must also be disconnected when db is closed. */
+    );
+    let q2;
     try{
       T.assert( wOnDispose )
         .assert( jopd('sqlite3*', db.pointer, onDispose) )
@@ -4545,12 +4550,18 @@ T.g('Misc. APIs')
       const q = db.prepare("select foo(1), foo(a) from t");
       T.assert( jopd('sqlite3_stmt*', q.pointer, onDispose) )
         .assert( jopd('sqlite3_stmt*', db.pointer, onDispose2) )
-      while( q.step() );
-      T.assert( db.isOpen() );
-      /**
-         Do not q.finalize(), for test purposes. q will be cleaned up
-         via a jopd registration made when it was prepared, and we
-         assert that below.
+      q2 = sqlite3.oo1.Stmt.wrapHandle(
+        /* This object must also be disconnected when db is closed. */
+        db, q.pointer, false
+      );
+      while( q2.step() );
+      T.assert( db.isOpen() )
+        .assert( db2.isOpen() );
+      /*
+        Do not finalize() q or q2, for test purposes. q will be
+        cleaned up when a jopd event triggers for db (when it's
+        closed), and q2 will be unplugged when that happens. We assert
+        that below.
       */
     }finally{
       sqlite3.capi.sqlite3_close_v2(
@@ -4559,7 +4570,9 @@ T.g('Misc. APIs')
         db
       );
     }
-    T.assert( !db.isOpen() )
+    T.assert( !db.isOpen(), "Expecting db to be disconnected" )
+      .assert( !db2.isOpen(), "Expecting db2 to be disconnected" )
+      .assert( !q2.pointer, "Lingering q2.pointer" )
       .assert( !wOnDispose, "Lingering wasm func installation")
       .assert( seenD.size  === 2, "db + stmt" )
       .assert( udf.nCall   === 6, "2 UDF call points, 3 rows" )

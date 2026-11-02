@@ -817,18 +817,20 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     o ??= __disposerMap.get(ptr);
     //sqlite3.config.warn("__oo1NativeDisposerDB", ptr, o);
     if( !o ) return;
+    __doesNotOwnHandle.delete(o);
     if( o===__disposerMap.get(ptr) ){
+      /* The prime instance. */
       __disposerMap.delete(ptr);
+      __disposerUnowned('DB', ptr, __oo1NativeDisposerDB);
     }
-    __disposerUnowned('DB', ptr, __oo1NativeDisposerDB);
-    for(const s of Object.values(__stmtMap.get(o)) || []){
-      if(s?.pointer){
+    const st = __stmtMap.get(o);
+    __stmtMap.delete(o);
+    if( st ){
+      for(const s of Object.values(st)){
         try{s.finalize()}
         catch(ex){/*ignore*/}
       }
     }
-    __stmtMap.delete(o);
-    __doesNotOwnHandle.delete(o);
     __ptrMap.delete(o);
   };
 
@@ -838,13 +840,16 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     o ??= __disposerMap.get(ptr);
     //sqlite3.config.warn("__oo1NativeDisposerStmt", ptr, o);
     if( !o ) return;
-    __disposerMap.delete(ptr);
     delete  __stmtMap.get(o.db)?.[ptr];
     delete o.db;
     __execLock.delete(o);
     __stmtMayGet.delete(o);
-    __disposerUnowned('Stmt', ptr, __oo1NativeDisposerStmt);
     __doesNotOwnHandle.delete(o);
+    if( o===__disposerMap.get(ptr) ){
+      /* The prime instance. */
+      __disposerMap.delete(ptr);
+      __disposerUnowned('Stmt', ptr, __oo1NativeDisposerStmt);
+    }
     __ptrMap.delete(o);
   };
   util.disposers.db.push(__oo1NativeDisposerDB);
@@ -890,29 +895,34 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        (which are local to that instance) and disassociating this
        object from its native this.pointer.
 
-       As of version 3.55, DB objects are disassociated from their
+       As of version 3.55.0, DB objects are disassociated from their
        native counterpart if the native is passed to
        sqlite3_close_v2().  A side-effect of that is that this
        function becomes a no-op if a db handle is closed that way.
        i.e. onclose handlers will not be called. Prior to that change,
        passing such a pointer to sqlite3_close_v2() invoked undefined
-       behavior. Design note: we "could" do only a small amount of
-       acrobatics and call any onclose handlers even in that case, but
-       to do so we need to distinguish between a closed-here instance
-       and one which was closed externally, which would require some
-       flag state.
+       behavior. Design note: the onclose handlers are not called in
+       that case because they are feature of this method, not of the
+       db handle. We "could", with only a small amount of acrobatics,
+       call onclose handlers even in that case, but it does not seem
+       like the right thing to do. Clients wishing to apply the
+       callbacks regardless of how the handle is closed simply need to
+       bind the onclose handlers to the underlying db pointer using
+       sqlite3_js_on_pointer_dispose().
     */
     close: function(){
       const pDb = this.pointer;
       if(pDb){
-        if(this.onclose?.before instanceof Function){
-          try{this.onclose.before(this)}
+        const owns = !__doesNotOwnHandle.delete(this);
+        const onclose = this.onclose;
+        delete this.onclose/*avoid a recursion case*/;
+        if(onclose?.before instanceof Function){
+          try{onclose.before(this)}
           catch(e){/*ignore*/}
         }
-        const owns = !__doesNotOwnHandle.delete(this);
         __oo1NativeDisposerDB(pDb, this);
         if( owns ) capi.sqlite3_close_v2(pDb);
-        if(this.onclose?.after instanceof Function){
+        if(onclose?.after instanceof Function){
           try{this.onclose.after(this)}
           catch(e){/*ignore*/}
         }
@@ -1688,10 +1698,9 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /**
        Returns the number of currently-opened Stmt handles for this db
-       handle, or 0 if this DB instance is closed. Note that only
-       handles prepared via this.prepare() are counted, and not
-       handles prepared using capi.sqlite3_prepare_v3() (or
-       equivalent).
+       handle, or 0 if this DB instance is closed. Only handles
+       prepared via this.prepare() are counted, and not handles
+       prepared using capi.sqlite3_prepare_v3() (or equivalent).
     */
     openStatementCount: function(){
       return this.pointer ? Object.keys(__stmtMap.get(this)).length : 0;
