@@ -2026,11 +2026,18 @@ static int pager_truncate(Pager *pPager, Pgno nPage);
 **      file has been created already (via a spill on pagerStress()) and
 **      when the number of dirty pages in memory exceeds 25% of the total
 **      cache size.
+**
+**   *  Never sync a TEMP database if the current transaction has not
+**      modified the database (eState<PAGER_WRITER_CACHEMOD). In this case
+**      sqlite3PagerCommitPhaseOne() returns early without flushing any
+**      dirty pages left over from earlier transactions, so they must not
+**      be marked as clean by pager_end_transaction().
 */
 static int pagerFlushOnCommit(Pager *pPager, int bCommit){
   if( pPager->tempFile==0 ) return 1;
   if( !bCommit ) return 0;
   if( !isOpen(pPager->fd) ) return 0;
+  if( pPager->eState<PAGER_WRITER_CACHEMOD ) return 0;
   return (sqlite3PCachePercentDirty(pPager->pPCache)>=25);
 }
 

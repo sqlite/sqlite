@@ -95,4 +95,69 @@ do_test tempdb-2.3 {
   set sqlite_open_file_count
 } [expr 1 + (0==$jrnl_in_memory)]
 
+#-------------------------------------------------------------------------
+# Rolling back a transaction on a file-backed TEMP database, then
+# committing a write transaction that does not modify the database, must
+# not mark dirty pages left over from earlier transactions as clean
+# without writing them to the temp file.
+#
+foreach {tn temp_store} {1 FILE 2 MEMORY} {
+  reset_db
+  do_execsql_test tempdb-3.$tn.0 "
+    PRAGMA temp_store = $temp_store;
+    PRAGMA temp.page_size = 4096;
+    PRAGMA temp.cache_size = 10;
+    CREATE TEMP TABLE t1(a INTEGER PRIMARY KEY, b, c);
+    CREATE INDEX i1 ON t1(b);
+    CREATE TEMP TABLE t2(x, y);
+    WITH RECURSIVE c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<5)
+    INSERT INTO t1(b,c) SELECT (i*494)%1000, hex(zeroblob(1500)) || i FROM c;
+  "
+
+  do_catchsql_test tempdb-3.$tn.1 {
+    INSERT OR ABORT INTO t1(a,b,c) SELECT a+1, b, c FROM t1 ORDER BY a DESC;
+  } {1 {UNIQUE constraint failed: t1.a}}
+
+  do_execsql_test tempdb-3.$tn.2 {
+    PRAGMA temp.integrity_check;
+  } {ok}
+
+  do_execsql_test tempdb-3.$tn.3 {
+    UPDATE t1 SET c=hex(zeroblob(5))||a, b=b+1 WHERE a%7=0;
+    CREATE INDEX IF NOT EXISTS i2 ON t2(x);
+    PRAGMA temp.integrity_check;
+  } {ok}
+
+  do_execsql_test tempdb-3.$tn.4 {
+    SELECT a, b, substr(c, 3001) FROM t1 ORDER BY a;
+  } {1 494 1 2 988 2 3 482 3 4 976 4 5 470 5}
+}
+
+# Same again, but with an empty "BEGIN IMMEDIATE; COMMIT" as the
+# transaction that does not modify the database.
+#
+reset_db
+do_execsql_test tempdb-4.0 {
+  PRAGMA temp_store = FILE;
+  PRAGMA temp.page_size = 4096;
+  PRAGMA temp.cache_size = 10;
+  CREATE TEMP TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1 ON t1(b);
+  CREATE TEMP TABLE t2(x, y);
+  WITH RECURSIVE c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<5)
+  INSERT INTO t1(b,c) SELECT (i*494)%1000, hex(zeroblob(1500)) || i FROM c;
+}
+do_catchsql_test tempdb-4.1 {
+  INSERT OR ABORT INTO t1(a,b,c) SELECT a+1, b, c FROM t1 ORDER BY a DESC;
+} {1 {UNIQUE constraint failed: t1.a}}
+do_execsql_test tempdb-4.2 {
+  BEGIN IMMEDIATE;
+  COMMIT;
+  CREATE INDEX i2 ON t2(x);
+  PRAGMA temp.integrity_check;
+} {ok}
+do_execsql_test tempdb-4.3 {
+  SELECT a, b, substr(c, 3001) FROM t1 ORDER BY a;
+} {1 494 1 2 988 2 3 482 3 4 976 4 5 470 5}
+
 finish_test
