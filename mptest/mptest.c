@@ -1336,7 +1336,7 @@ int SQLITE_CDECL main(int argc, char **argv){
     g.pLog = stdout;
   }
   
-  sqlite3_config(SQLITE_CONFIG_LOG, sqlErrorCallback, 0);
+  sqlite3_config(SQLITE_CONFIG_LOG, sqlErrorCallback, (void*)0);
   if( zClient ){
     iClient = atoi(zClient);
     if( iClient<1 ) fatalError("illegal client number: %d\n", iClient);

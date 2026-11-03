@@ -14226,7 +14226,7 @@ static void main_init(ShellState *p) {
   memset(p, 0, sizeof(*p));
   p->pAuxDb = &p->aAuxDb[0];
   p->shellFlgs = SHFLG_Lookaside;
-  sqlite3_config(SQLITE_CONFIG_LOG, shellLog, p);
+  sqlite3_config(SQLITE_CONFIG_LOG, shellLog, (void*)p);
 #if !defined(SQLITE_SHELL_FIDDLE)
   verify_uninitialized();
 #endif

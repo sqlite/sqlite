@@ -694,7 +694,7 @@ int main(int argc, char **argv){
     showHelp(argv[0]);
   }
   if( verboseFlag ){
-    sqlite3_config(SQLITE_CONFIG_LOG, sqlLog);
+    sqlite3_config(SQLITE_CONFIG_LOG, sqlLog, (void*)0);
   }
   if( nHeap>0 ){
     void *pHeap = malloc( nHeap );
