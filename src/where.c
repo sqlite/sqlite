@@ -1011,6 +1011,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   WhereLoop *pLoop;           /* The Loop object */
   char *zNotUsed;             /* Extra space on the end of pIdx */
   Bitmask idxCols;            /* Bitmap of columns used for indexing */
+  Bitmask pkCols;             /* PK cols whose key collation keeps them unique */
   Bitmask extraCols;          /* Bitmap of additional columns */
   u8 sentWarning = 0;         /* True if a warning has been issued */
   u8 useBloomFilter = 1;      /* True to also add a Bloom filter */
@@ -1039,6 +1040,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   pWCEnd = &pWC->a[pWC->nTerm];
   pLoop = pLevel->pWLoop;
   idxCols = 0;
+  pkCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     Expr *pExpr = pTerm->pExpr;
     /* Make the automatic index a partial index if there are terms in the
@@ -1070,6 +1072,25 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
         }
         pLoop->aLTerm[nKeyCol++] = pTerm;
         idxCols |= cMask;
+
+        /* For a WITHOUT ROWID table, all PRIMARY KEY columns must be
+        ** present in the automatic index, sorted with either BINARY or
+        ** the same collation used by the PK index itself, to guarantee each
+        ** entry is unique. If the current field matches that criteria,
+        ** set the corresponding bit in pkCols.  */
+        if( !HasRowid(pTable) && iCol<BMS-1
+         && (pTable->aCol[iCol].colFlags & COLFLAG_PRIMKEY)
+        ){
+          Index *pPk = sqlite3PrimaryKeyIndex(pTable);
+          CollSeq *pX = sqlite3ExprCompareCollSeq(pParse, pExpr);
+          int iPk = sqlite3TableColumnToIndex(pPk, iCol);
+          assert( iPk>=0 && iPk<pPk->nKeyCol );
+          if( sqlite3IsBinary(pX)
+           || sqlite3StrICmp(pPk->azColl[iPk], pX->zName)==0
+          ){
+            pkCols |= cMask;
+          }
+        }
       }
     }
   }
@@ -1093,14 +1114,16 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   }
   if( !HasRowid(pTable) ){
     /* For WITHOUT ROWID tables, ensure that all PRIMARY KEY columns are
-    ** either in the idxCols mask or in the extraCols mask */
+    ** either in the pkCols mask or in the extraCols mask. A column that
+    ** is already an index key but is not in pkCols is added a second
+    ** time, using the BINARY collating sequence. */
     for(i=0; i<pTable->nCol; i++){
       if( (pTable->aCol[i].colFlags & COLFLAG_PRIMKEY)==0 ) continue;
       if( i>=BMS-1 ){
         extraCols |= MASKBIT(BMS-1);
         break;
       }
-      if( idxCols & MASKBIT(i) ) continue;
+      if( pkCols & MASKBIT(i) ) continue;
       extraCols |= MASKBIT(i);
     }
   }
@@ -1115,7 +1138,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   }
 
   /* Construct the Index object to describe this index */
-  assert( nKeyCol <= pTable->nCol + MAX(0, pTable->nCol - BMS + 1) );
+  assert( nKeyCol <= pTable->nCol + MIN(pTable->nCol, BMS) );
   /* ^-- This guarantees that the number of index columns will fit in the u16 */
   pIdx = sqlite3AllocateIndexObject(pParse->db, nKeyCol+HasRowid(pTable),
                                     0, &zNotUsed);

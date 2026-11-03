@@ -25,6 +25,7 @@ ifcapable {!autoindex} {
   finish_test
   return
 }
+set testprefix autoindex
 
 # Setup for logging 
 db close
@@ -590,5 +591,60 @@ do_execsql_test autoindex-1211 {
   EXPLAIN QUERY PLAN
   SELECT t1.*, t2.* FROM t2 LEFT OUTER JOIN t1 ON b=c ORDER BY +b;
 } {/SEARCH t1 USING AUTOMATIC COVERING INDEX/}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 1300 {
+  CREATE TABLE t2(x INT, y TEXT, PRIMARY KEY(x,y)) WITHOUT ROWID;
+  CREATE TABLE t3(c TEXT COLLATE NOCASE);
+  INSERT INTO t2 VALUES(2,'two'),(2,'TWO');
+  INSERT INTO t3 VALUES('two');
+}
+
+do_execsql_test 1310 {
+  SELECT t3.c, t2.x, t2.y FROM t3 CROSS JOIN t2 ON t3.c=t2.y ORDER BY t2.y;
+} {two 2 TWO two 2 two}
+
+do_execsql_test 1320 {
+  PRAGMA automatic_index=OFF;
+  SELECT t3.c, t2.x, t2.y FROM t3 CROSS JOIN t2 ON t3.c=t2.y ORDER BY t2.y;
+} {two 2 TWO two 2 two}
+
+# The PRIMARY KEY uses a different collation (BINARY) from the column's
+# declared collation (NOCASE). The comparison uses NOCASE, so the PK
+# column must still be added to the automatic index a second time.
+#
+reset_db
+do_execsql_test 1400 {
+  CREATE TABLE t2(x INT, y TEXT COLLATE NOCASE, PRIMARY KEY(x, y COLLATE BINARY))
+      WITHOUT ROWID;
+  CREATE TABLE t3(c TEXT);
+  INSERT INTO t2 VALUES(2,'two'),(2,'TWO');
+  INSERT INTO t3 VALUES('two');
+}
+do_execsql_test 1410 {
+  SELECT t3.c, t2.x, t2.y FROM t3 CROSS JOIN t2 ON t2.y=t3.c ORDER BY t2.y;
+} {two 2 TWO two 2 two}
+do_execsql_test 1420 {
+  PRAGMA automatic_index=OFF;
+  SELECT t3.c, t2.x, t2.y FROM t3 CROSS JOIN t2 ON t2.y=t3.c ORDER BY t2.y;
+} {two 2 TWO two 2 two}
+
+# The PRIMARY KEY and the comparison both use NOCASE. Values are unique
+# under NOCASE, so no extra column is required.
+#
+reset_db
+do_execsql_test 1500 {
+  CREATE TABLE t2(x INT, y TEXT, PRIMARY KEY(x, y COLLATE NOCASE)) WITHOUT ROWID;
+  CREATE TABLE t3(c TEXT COLLATE NOCASE);
+  INSERT INTO t2 VALUES(2,'two'),(3,'TWO');
+  INSERT INTO t3 VALUES('two');
+}
+do_execsql_test 1510 {
+  SELECT t3.c, t2.x, t2.y FROM t3 CROSS JOIN t2 ON t3.c=t2.y ORDER BY t2.x;
+} {two 2 two two 3 TWO}
+do_eqp_test 1520 {
+  SELECT t3.c, t2.x, t2.y FROM t3 CROSS JOIN t2 ON t3.c=t2.y;
+} {/SEARCH t2 USING AUTOMATIC COVERING INDEX/}
 
 finish_test
