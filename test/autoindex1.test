@@ -647,4 +647,46 @@ do_eqp_test 1520 {
   SELECT t3.c, t2.x, t2.y FROM t3 CROSS JOIN t2 ON t3.c=t2.y;
 } {/SEARCH t2 USING AUTOMATIC COVERING INDEX/}
 
+# 2026-11-03: A WITHOUT ROWID table with a PRIMARY KEY column whose index
+# is BMS-1 (63) or greater. The automatic index must include the PK
+# column(s) to keep entries unique, even if the query does not otherwise
+# reference any column >= 63. Otherwise rows with equal values in the
+# indexed column(s) are collapsed into a single index entry.
+#
+foreach {tn pk} {
+  1 {c65}
+  2 {c63}
+  3 {c64}
+  4 {c1, c65}
+  5 {c65, c1}
+  6 {c63, c64, c65}
+} {
+  reset_db
+  do_execsql_test 1600.$tn.0 "
+    CREATE TABLE w(c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,c35,c36,c37,c38,c39,c40,c41,c42,c43,c44,c45,c46,c47,c48,c49,c50,c51,c52,c53,c54,c55,c56,c57,c58,c59,c60,c61,c62,c63,c64,c65, PRIMARY KEY($pk)) WITHOUT ROWID;
+  "
+  do_execsql_test 1600.$tn.1 {
+    INSERT INTO w(c0, c1, c63, c64, c65) VALUES
+      (1, 1, 1, 1, 1), (1, 2, 2, 2, 2), (1, 3, 3, 3, 3);
+    CREATE TABLE t(a);
+    INSERT INTO t VALUES(1),(1);
+  }
+  do_eqp_test 1600.$tn.2 {
+    SELECT t.rowid, w.c0 FROM t CROSS JOIN w ON w.c0=t.a;
+  } {/SEARCH w USING AUTOMATIC COVERING INDEX/}
+  do_execsql_test 1600.$tn.3 {
+    SELECT t.rowid, w.c0 FROM t CROSS JOIN w ON w.c0=t.a;
+  } {1 1 1 1 1 1 2 1 2 1 2 1}
+  do_execsql_test 1600.$tn.4 {
+    SELECT count(*) FROM t CROSS JOIN w ON w.c0=t.a;
+  } {6}
+  do_execsql_test 1600.$tn.5 {
+    SELECT t.rowid, w.c65 FROM t CROSS JOIN w ON w.c0=t.a ORDER BY 1, 2;
+  } {1 1 1 2 1 3 2 1 2 2 2 3}
+  do_execsql_test 1600.$tn.6 {
+    PRAGMA automatic_index=OFF;
+    SELECT count(*) FROM t CROSS JOIN w ON w.c0=t.a;
+  } {6}
+}
+
 finish_test

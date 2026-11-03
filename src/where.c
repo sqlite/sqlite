@@ -1013,6 +1013,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   Bitmask idxCols;            /* Bitmap of columns used for indexing */
   Bitmask pkCols;             /* PK cols whose key collation keeps them unique */
   Bitmask extraCols;          /* Bitmap of additional columns */
+  int bHighCols;              /* True to add all columns >= BMS-1 */
   u8 sentWarning = 0;         /* True if a warning has been issued */
   u8 useBloomFilter = 1;      /* True to also add a Bloom filter */
   Expr *pPartial = 0;         /* Partial Index Expression */
@@ -1112,6 +1113,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   }else{
     extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
   }
+  bHighCols = (pSrc->colUsed & MASKBIT(BMS-1))!=0;
   if( !HasRowid(pTable) ){
     /* For WITHOUT ROWID tables, ensure that all PRIMARY KEY columns are
     ** either in the pkCols mask or in the extraCols mask. A column that
@@ -1120,7 +1122,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     for(i=0; i<pTable->nCol; i++){
       if( (pTable->aCol[i].colFlags & COLFLAG_PRIMKEY)==0 ) continue;
       if( i>=BMS-1 ){
-        extraCols |= MASKBIT(BMS-1);
+        bHighCols = 1;
         break;
       }
       if( pkCols & MASKBIT(i) ) continue;
@@ -1133,7 +1135,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   for(i=0; i<mxBitCol; i++){
     if( extraCols & MASKBIT(i) ) nKeyCol++;
   }
-  if( pSrc->colUsed & MASKBIT(BMS-1) ){
+  if( bHighCols ){
     nKeyCol += pTable->nCol - BMS + 1;
   }
 
@@ -1184,7 +1186,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
       n++;
     }
   }
-  if( pSrc->colUsed & MASKBIT(BMS-1) ){
+  if( bHighCols ){
     for(i=BMS-1; i<pTable->nCol; i++){
       pIdx->aiColumn[n] = i;
       pIdx->azColl[n] = sqlite3StrBINARY;
