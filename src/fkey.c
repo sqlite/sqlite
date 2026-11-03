@@ -398,7 +398,9 @@ static void fkLookupParent(
                sqlite3TableColumnToStorage(pFKey->pFrom, aiCol[i])+1+regData,
                regTemp+i);
       }
-  
+      sqlite3VdbeAddOp4(v, OP_Affinity, regTemp, nCol, 0,
+                        sqlite3IndexAffinityStr(pParse->db,pIdx), nCol);
+
       /* If the parent table is the same as the child table, and we are about
       ** to increment the constraint-counter (i.e. this is an INSERT operation),
       ** then check if the row being inserted matches itself. If so, do not
@@ -412,8 +414,8 @@ static void fkLookupParent(
       if( pTab==pFKey->pFrom && nIncr==1 ){
         int iJump = sqlite3VdbeCurrentAddr(v) + nCol + 1;
         for(i=0; i<nCol; i++){
-          int iChild = sqlite3TableColumnToStorage(pFKey->pFrom,aiCol[i])
-                              +1+regData;
+          CollSeq *pColl = sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
+          int iChild = regTemp+i;
           int iParent = 1+regData;
           iParent += sqlite3TableColumnToStorage(pIdx->pTable,
                                                  pIdx->aiColumn[i]);
@@ -423,14 +425,14 @@ static void fkLookupParent(
             /* The parent key is a composite key that includes the IPK column */
             iParent = regData;
           }
-          sqlite3VdbeAddOp3(v, OP_Ne, iChild, iJump, iParent); VdbeCoverage(v);
+          sqlite3VdbeAddOp4(v, OP_Ne, iChild, iJump, iParent,
+                            (char*)pColl, P4_COLLSEQ);
+          VdbeCoverage(v);
           sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
         }
         sqlite3VdbeGoto(v, iOk);
       }
 
-      sqlite3VdbeAddOp4(v, OP_Affinity, regTemp, nCol, 0,
-                        sqlite3IndexAffinityStr(pParse->db,pIdx), nCol);
       sqlite3VdbeAddOp4Int(v, OP_Found, iCur, iOk, regTemp, nCol);
       VdbeCoverage(v);
       sqlite3ReleaseTempRange(pParse, regTemp, nCol);

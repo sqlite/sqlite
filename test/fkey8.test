@@ -581,6 +581,116 @@ do_catchsql_test 13.2 {
   DELETE FROM p WHERE x='Inf';      -- SUCCEEDS, but must fail
 } {1 {FOREIGN KEY constraint failed}}
 
+#-------------------------------------------------------------------------
+# A row of a self-referencing table that refers to itself must be
+# accepted when its child key matches its own parent key only under the
+# parent key's collation sequence or after the parent key's affinity is
+# applied. Previously, the "row matches itself" check in fkLookupParent()
+# compared the raw registers using BINARY and no affinity.
+#
+reset_db
+do_execsql_test 14.1.0 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE t1(
+    id INTEGER PRIMARY KEY,
+    ref REFERENCES t1(name),
+    name TEXT COLLATE NOCASE UNIQUE
+  );
+}
+do_execsql_test 14.1.1 {
+  INSERT INTO t1 VALUES(1,'a','A');
+  SELECT * FROM t1;
+} {1 a A}
+do_execsql_test 14.1.2 {
+  INSERT INTO t1 VALUES(2,NULL,'B');
+  INSERT INTO t1 VALUES(3,'b',NULL);
+  PRAGMA foreign_key_check;
+} {}
+do_execsql_test 14.1.3 {
+  UPDATE t1 SET ref='b' WHERE id=2;
+  SELECT * FROM t1 WHERE id=2;
+} {2 b B}
+do_execsql_test 14.1.4 {
+  PRAGMA foreign_key_check;
+} {}
+do_catchsql_test 14.1.5 {
+  INSERT INTO t1 VALUES(4,'x','y');
+} {1 {FOREIGN KEY constraint failed}}
+
+# Affinity instead of collation.
+do_execsql_test 14.2.0 {
+  CREATE TABLE t2(id INTEGER PRIMARY KEY, ref TEXT REFERENCES t2(num),
+      num NUMERIC UNIQUE
+  );
+  INSERT INTO t2 VALUES(1,'7',7);
+  INSERT INTO t2 VALUES(2,NULL,8);
+  INSERT INTO t2 VALUES(3,'8',NULL);
+  SELECT id, quote(ref), quote(num) FROM t2;
+} {1 '7' 7 2 NULL 8 3 '8' NULL}
+do_execsql_test 14.2.1 {
+  UPDATE t2 SET ref='8' WHERE id=2;
+  SELECT quote(ref) FROM t2 WHERE id=2;
+  PRAGMA foreign_key_check;
+} {'8'}
+
+# Deferred constraint: the statement succeeded, but COMMIT failed.
+do_execsql_test 14.3.0 {
+  CREATE TABLE t3(
+    id INTEGER PRIMARY KEY,
+    ref REFERENCES t3(name) DEFERRABLE INITIALLY DEFERRED,
+    name TEXT COLLATE NOCASE UNIQUE
+  );
+  BEGIN;
+    INSERT INTO t3 VALUES(1,'a','A');
+    PRAGMA foreign_key_check;
+  COMMIT;
+  SELECT * FROM t3;
+} {1 a A}
+
+# WITHOUT ROWID table with a NOCASE PRIMARY KEY parent key.
+do_execsql_test 14.4.0 {
+  CREATE TABLE t4(
+    name TEXT COLLATE NOCASE PRIMARY KEY,
+    ref REFERENCES t4(name)
+  ) WITHOUT ROWID;
+  INSERT INTO t4 VALUES('A','a');
+  SELECT * FROM t4;
+} {A a}
+
+# Rowid table with a NUMERIC PRIMARY KEY parent key.
+do_execsql_test 14.5.0 {
+  CREATE TABLE t5(num NUMERIC PRIMARY KEY, ref TEXT REFERENCES t5(num));
+  INSERT INTO t5 VALUES(7,'7');
+  SELECT quote(num), quote(ref) FROM t5;
+} {7 '7'}
+
+# Child column declared COLLATE NOCASE as well.
+do_execsql_test 14.6.0 {
+  CREATE TABLE t6(
+    id INTEGER PRIMARY KEY,
+    ref COLLATE NOCASE REFERENCES t6(name),
+    name TEXT COLLATE NOCASE UNIQUE
+  );
+  INSERT INTO t6 VALUES(1,'a','A');
+  SELECT * FROM t6;
+} {1 a A}
+
+# Composite parent key with both a collation and an affinity.
+do_execsql_test 14.7.0 {
+  CREATE TABLE t7(
+    id INTEGER PRIMARY KEY,
+    r1 TEXT, r2 TEXT,
+    a TEXT COLLATE NOCASE, b NUMERIC,
+    UNIQUE(a, b),
+    FOREIGN KEY(r1, r2) REFERENCES t7(a, b)
+  );
+  INSERT INTO t7 VALUES(1, 'x', '5', 'X', 5);
+  SELECT id, r1, quote(r2), a, quote(b) FROM t7;
+} {1 x '5' X 5}
+do_catchsql_test 14.7.1 {
+  INSERT INTO t7 VALUES(2, 'y', '6', 'Y', 7);
+} {1 {FOREIGN KEY constraint failed}}
+
 
 
 finish_test
