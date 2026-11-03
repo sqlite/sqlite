@@ -852,9 +852,8 @@ xfullname(A) ::= nm(X) AS nm(Z).  {
   if( A ){
     if( IN_RENAME_OBJECT ){
       sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
-    }else{
-      A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
     }
+    A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
   }
 }
 xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z). {
@@ -862,9 +861,8 @@ xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z). {
   if( A ){
     if( IN_RENAME_OBJECT ){
       sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
-    }else{
-      A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
     }
+    A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
   }
 }
 

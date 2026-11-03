@@ -988,4 +988,99 @@ foreach {tn temptbl alter sql} {
   } {ok}
 }
 
+#-------------------------------------------------------------------------
+# Trigger programs that use an alias for the table modified by an UPDATE,
+# DELETE or INSERT (upsert) step. Such triggers used to cause all ALTER
+# TABLE commands - even those on unrelated tables - to fail with
+# "no such column: q.b", as the alias was ignored when the schema was
+# reparsed by ALTER TABLE.
+#
+foreach {tn trig} {
+  1 "UPDATE t2 AS q SET b=q.b+new.b WHERE q.a=new.a"
+  2 "DELETE FROM t2 AS q WHERE q.a=new.a AND q.b=new.b"
+  3 "INSERT INTO t2 AS q VALUES(new.a, new.b)
+       ON CONFLICT(a) DO UPDATE SET b=q.b+excluded.b"
+} {
+  foreach {tn2 alter} {
+    1 "ALTER TABLE t3 RENAME TO t4"
+    2 "ALTER TABLE t3 RENAME COLUMN x TO z"
+    3 "ALTER TABLE t3 DROP COLUMN y"
+    4 "ALTER TABLE t1 RENAME TO t4"
+    5 "ALTER TABLE t1 RENAME COLUMN a TO aa"
+    6 "ALTER TABLE t2 RENAME TO t4"
+    7 "ALTER TABLE t2 DROP COLUMN c"
+  } {
+    reset_db
+    do_execsql_test 7.$tn.$tn2.0 "
+      CREATE TABLE t1(a, b);
+      CREATE TABLE t2(a PRIMARY KEY, b, c);
+      CREATE TABLE t3(x, y);
+      CREATE TRIGGER tr AFTER INSERT ON t1 BEGIN
+        $trig;
+      END;
+    "
+    do_execsql_test 7.$tn.$tn2.1 $alter
+    do_execsql_test 7.$tn.$tn2.2 {
+      PRAGMA integrity_check;
+    } {ok}
+  }
+}
+
+# Check that the trigger SQL is rewritten correctly, including references
+# that use the alias.
+foreach {tn trig alter res} {
+  1 "UPDATE t2 AS q SET b=q.b+new.b WHERE q.a=new.a"
+    "ALTER TABLE t2 RENAME TO t4"
+    {UPDATE "t4" AS q SET b=q.b+new.b WHERE q.a=new.a}
+  2 "UPDATE t2 AS q SET b=q.b+new.b WHERE q.a=new.a"
+    "ALTER TABLE t2 RENAME COLUMN b TO bb"
+    {UPDATE t2 AS q SET bb=q.bb+new.b WHERE q.a=new.a}
+  3 "UPDATE t2 AS q SET b=q.b+new.b WHERE q.a=new.a"
+    "ALTER TABLE t1 RENAME COLUMN b TO bb"
+    {UPDATE t2 AS q SET b=q.b+new.bb WHERE q.a=new.a}
+  4 "DELETE FROM t2 AS q WHERE q.a=new.a"
+    "ALTER TABLE t2 RENAME COLUMN a TO aa"
+    {DELETE FROM t2 AS q WHERE q.aa=new.a}
+  5 "DELETE FROM t2 AS q WHERE q.a=new.a"
+    "ALTER TABLE t2 RENAME TO t4"
+    {DELETE FROM "t4" AS q WHERE q.a=new.a}
+  6 "INSERT INTO t2 AS q VALUES(new.a, new.b) ON CONFLICT(a) DO UPDATE SET b=q.b+excluded.b"
+    "ALTER TABLE t2 RENAME COLUMN b TO bb"
+    {INSERT INTO t2 AS q VALUES(new.a, new.b) ON CONFLICT(a) DO UPDATE SET bb=q.bb+excluded.bb}
+} {
+  reset_db
+  do_execsql_test 7.4.$tn.0 "
+    CREATE TABLE t1(a, b);
+    CREATE TABLE t2(a PRIMARY KEY, b, c);
+    CREATE TRIGGER tr AFTER INSERT ON t1 BEGIN $trig; END;
+  "
+  do_execsql_test 7.4.$tn.1 "
+    $alter;
+    SELECT sql FROM sqlite_schema WHERE name='tr';
+  " [list "CREATE TRIGGER tr AFTER INSERT ON t1 BEGIN $res; END"]
+}
+
+# Check that the trigger still works after the schema has been modified.
+reset_db
+do_execsql_test 7.5.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+  CREATE TABLE t3(x, y);
+  CREATE TRIGGER tr AFTER INSERT ON t1 BEGIN
+    UPDATE t2 AS q SET b=q.b+new.b WHERE q.a=new.a;
+  END;
+  INSERT INTO t2 VALUES(1, 100);
+  INSERT INTO t1 VALUES(1, 2);
+  SELECT * FROM t2;
+} {1 102}
+do_execsql_test 7.5.1 {
+  ALTER TABLE t3 RENAME TO t4;
+  ALTER TABLE t4 RENAME COLUMN x TO z;
+  ALTER TABLE t4 DROP COLUMN y;
+  ALTER TABLE t2 RENAME COLUMN b TO bb;
+  ALTER TABLE t2 RENAME TO t5;
+  INSERT INTO t1 VALUES(1, 3);
+  SELECT * FROM t5;
+} {1 105}
+
 finish_test
