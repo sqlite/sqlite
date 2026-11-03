@@ -3719,17 +3719,17 @@ static void bind_table_init(ShellState *p){
   int wrSchema = 0;
   int defensiveMode = 0;
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &defensiveMode);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, (int*)0);
   sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, -1, &wrSchema);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, (int*)0);
   sqlite3_exec(p->db,
     "CREATE TABLE IF NOT EXISTS temp.sqlite_parameters(\n"
     "  key TEXT PRIMARY KEY,\n"
     "  value\n"
     ") WITHOUT ROWID;",
     0, 0, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, 0);
-  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, defensiveMode, 0);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, wrSchema, (int*)0);
+  sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, defensiveMode, (int*)0);
 }
 
 /*
@@ -3754,7 +3754,7 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   nVar = sqlite3_bind_parameter_count(pStmt);
   if( nVar==0 ) return;  /* Nothing to do */
   sqlite3_db_config(pArg->db, SQLITE_DBCONFIG_VDBE_TRACE, -1, &inTrace);
-  sqlite3_db_config(pArg->db, SQLITE_DBCONFIG_VDBE_TRACE, 0, 0);
+  sqlite3_db_config(pArg->db, SQLITE_DBCONFIG_VDBE_TRACE, 0, (int*)0);
   if( sqlite3_table_column_metadata(pArg->db, "TEMP", "sqlite_parameters",
                                     "key", 0, 0, 0, 0, 0)!=SQLITE_OK ){
     rc = SQLITE_NOTFOUND;
@@ -3823,14 +3823,14 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
       }else{
         sqlite3_bind_null(pStmt, i);
       }
-#endif  
+#endif
     }else{
       sqlite3_bind_null(pStmt, i);
     }
     sqlite3_reset(pQ);
   }
   sqlite3_finalize(pQ);
-  sqlite3_db_config(pArg->db, SQLITE_DBCONFIG_VDBE_TRACE, inTrace, 0);
+  sqlite3_db_config(pArg->db, SQLITE_DBCONFIG_VDBE_TRACE, inTrace, (int*)0);
 }
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
@@ -4053,7 +4053,7 @@ static int shell_exec(
       if( pArg ){
         pArg->pStmt = pStmt;
       }
-     
+
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
       bind_prepared_stmt(pArg, pStmt);
       isExplain = sqlite3_stmt_isexplain(pStmt);
@@ -4064,7 +4064,7 @@ static int shell_exec(
         disable_debug_trace_modes();
         sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
         if( pArg->mode.autoEQP>=AUTOEQP_trigger ){
-          sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 1, 0);
+          sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 1, (int*)0);
         }
         sqlite3_reset(pStmt);
         spec.eStyle = QRF_STYLE_Auto;
@@ -4077,7 +4077,7 @@ static int shell_exec(
         }
 
         if( pArg->mode.autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
-          sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
+          sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, (int*)0);
         }
         sqlite3_reset(pStmt);
         sqlite3_stmt_explain(pStmt, 0);
@@ -5344,8 +5344,10 @@ static void open_db(ShellState *p, int openFlags){
     /* Reflect the use or absence of --unsafe-testing invocation. */
     {
       int testmode_on = ShellHasFlag(p,SHFLG_TestingMode);
-      sqlite3_db_config(p->db, SQLITE_DBCONFIG_TRUSTED_SCHEMA, testmode_on,0);
-      sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, !testmode_on,0);
+      sqlite3_db_config(p->db, SQLITE_DBCONFIG_TRUSTED_SCHEMA, testmode_on,
+                        (int*)0);
+      sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, !testmode_on,
+                        (int*)0);
     }
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
@@ -10543,9 +10545,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
       if( nArg>1 && cli_strcmp(azArg[1], aDbConfig[ii].zName)!=0 ) continue;
       if( nArg>=3 ){
         if( aDbConfig[ii].op==SQLITE_DBCONFIG_FP_DIGITS ){
-          sqlite3_db_config(p->db, aDbConfig[ii].op, atoi(azArg[2]), 0);
+          sqlite3_db_config(p->db, aDbConfig[ii].op, atoi(azArg[2]), (int*)0);
         }else{
-          sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
+          sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]),
+                            (int*)0);
         }
       }
       sqlite3_db_config(p->db, aDbConfig[ii].op, -1, &v);
@@ -10749,7 +10752,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
   if( c=='e' && cli_strncmp(azArg[0], "eqp", n)==0 ){
     if( nArg==2 ){
-      if( p->db ) sqlite3_db_config(p->db, SQLITE_DBCONFIG_VDBE_TRACE, 0, 0);
+      if( p->db ) sqlite3_db_config(p->db, SQLITE_DBCONFIG_VDBE_TRACE, 0,
+                                    (int*)0);
       if( cli_strcmp(azArg[1],"full")==0 ){
         p->mode.autoEQP = AUTOEQP_full;
       }else if( cli_strcmp(azArg[1],"trigger")==0 ){
@@ -10761,7 +10765,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
           open_db(p, 0);
           sqlite3_exec(p->db, "SELECT name FROM sqlite_schema LIMIT 1",0,0,0);
         }
-        sqlite3_db_config(p->db, SQLITE_DBCONFIG_VDBE_TRACE, 1, 0);
+        sqlite3_db_config(p->db, SQLITE_DBCONFIG_VDBE_TRACE, 1, (int*)0);
 #endif
       }else{
         p->mode.autoEQP = (u8)booleanValue(azArg[1]);
@@ -13522,7 +13526,7 @@ static int doAutoDetectRestore(ShellState *p, const char *zSql){
         }
         break;
       };
-  
+
       case 1: {
         int bIsDump = 0;
         const char *zExpect = "BEGIN TRANSACTION;";
@@ -13531,7 +13535,7 @@ static int doAutoDetectRestore(ShellState *p, const char *zSql){
           /* Now check if the database is empty. */
           const char *zQuery = "SELECT 1 FROM sqlite_schema LIMIT 1";
           sqlite3_stmt *pStmt = 0;
-  
+
           bIsDump = 1;
           shellPrepare(p->db, &rc, zQuery, &pStmt);
           if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -13544,22 +13548,22 @@ static int doAutoDetectRestore(ShellState *p, const char *zSql){
           int bDqsDdl = 0;
           sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, -1, &bDefense);
           sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, -1, &bDqsDdl);
-          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, 0);
-          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 1, 0);
+          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 0, (int*)0);
+          sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 1, (int*)0);
           p->eRestoreState = (bDefense ? 2 : 0) + (bDqsDdl ? 4 : 0);
         }else{
           p->eRestoreState = 7;
         }
         break;
       }
-  
+
       default: {
         if( sqlite3_get_autocommit(p->db) ){
           if( (p->eRestoreState & 2) ){
-            sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 1, 0);
+            sqlite3_db_config(p->db, SQLITE_DBCONFIG_DEFENSIVE, 1, (int*)0);
           }
           if( (p->eRestoreState & 4) ){
-            sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 0, 0);
+            sqlite3_db_config(p->db, SQLITE_DBCONFIG_DQS_DDL, 0, (int*)0);
           }
           p->eRestoreState = 7;
         }
@@ -15220,9 +15224,11 @@ void fiddle_reset_db(void){
       cli_puts("Rolling back in-progress transaction.\n", stdout);
       sqlite3_exec(globalDb,"ROLLBACK", 0, 0, 0);
     }
-    rc = sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
+    rc = sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 1,
+                           (int*)0);
     if( 0==rc ) sqlite3_exec(globalDb, "VACUUM", 0, 0, 0);
-    sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
+    sqlite3_db_config(globalDb, SQLITE_DBCONFIG_RESET_DATABASE, 0,
+                      (int*)0);
   }
 }
 
