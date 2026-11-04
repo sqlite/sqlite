@@ -1,5 +1,5 @@
-C Change\sthe\sway\sdemo\sfile\stest_delete.c\suses\sthe\sSQLITE_OS_WIN\smacro\sso\sthat\sit\scan\sbe\smore\seasily\sincluded\sin\sthe\samalgamation.
-D 2026-11-04T21:13:06.675
+C Enhance\sthe\sJSON\sinterface\sso\sthat\sit\swill\saccept\sinteger\sliterals\nlarger\sthan\swhat\swill\sfit\sin\sa\s64-bit\ssigned\sinteger.\s\sWhen\sasked\sto\nreturn\stheir\svalue,\sit\sreturns\sthe\snearest\sfloating-point\sequivalent.\n[bugs:/info/2026-11-04T00:53:57Z|Enhancement\s2026-11-04T00:53:57Z]\nand\s[bugs:/info/2026-11-04T00:56:16Z|2026-11-04T00:56:16Z].
+D 2026-11-04T21:37:50.409
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -771,7 +771,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 5cb15147c8583d0fc4748e1c12ea6f38c9deaeefa147a4d8d379fd9bc81fee9a
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 482d853c980f4765f045bbea3ab095067a52cd57f47e357f9f17aa7c7fff793f
-F src/json.c 832cc01f27ebaed265918e0715e24b6d7b05d71d382b1116c8ec9131635ffe21
+F src/json.c 6f349168b9f53db7dace8faa5c31c49cbe2c51e4783550115ac9523b5fd59769
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c c6c1cce7e0bff84544eb73fbedb2d04287779601594c1e13b04913d38596559e
 F src/main.c b6b19825675b04e297a67b293b111e60e6eb2da66c55f803f6f712193a53239b
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ad609aa905a95e6f776bb042a2765fdde1790b3788662d8b1514d30441f41e83
-R e3a0c104d7a454782966d43427ca3628
-U dan
-Z 181637bee3230da255d939d497c4c73b
+P 7451725df45f7260fc28ce26121b00acfc65c26aeb17c6ba6d7f2bcaed4752d8
+R 6175eff5ee40736c6b638776c237caf8
+U drh
+Z b83fc85d88d8ece84cf4cfdfd60e1bec
 # Remove this line to create a well-formed Fossil manifest.

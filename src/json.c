@@ -2359,6 +2359,94 @@ static SQLITE_INLINE u32 jsonbPayloadSizeSemiInline(
 #endif
 
 /*
+** Convert a JSONB integer literal into either an integer (if it is small
+** enough) or into a double.  Include the sign.  Return:
+**
+**     0     Value is an integer, results written into *pI.
+**     1     Value is a double, results written into *pR.
+**     2     Syntax error
+*/
+static int jsonConvertInteger(const char *zIn, u32 sz, i64 *pI, double *pR){
+  u32 k = 0;
+  int bNeg = 0;
+  sqlite3_uint64 u = 0;
+  double rOverflow = 1.0;
+  if( sz==0 ) return 2;
+  if( zIn[0]=='-' ){
+    bNeg = 1;
+    k = 1;
+  }else if( zIn[0]=='+' ){
+    k = 1;
+  }
+  if( k+2<sz && zIn[k]=='0' && (zIn[k+1]=='x' || zIn[k+1]=='X') ){
+    k += 2;
+    do{
+      if( !sqlite3Isxdigit(zIn[k]) ){
+        return 2;
+      }else if( (u>>60)!=0 ){
+        rOverflow *= 16.0;
+      }else{
+        u = u*16 + sqlite3HexToInt(zIn[k]);
+      }
+      k++;
+    }while( k<sz );
+  }else if( k>=sz ){
+    return 2;
+  }else{
+    do{
+      if( zIn[k]<'0' || zIn[k]>'9' ){
+        return 2;
+      }else if( (u>>60)!=0 ){
+        rOverflow *= 10.0;
+      }else{
+        u = u*10 + zIn[k] - '0';
+      }
+      k++;
+    }while( k<sz );
+  }
+  if( rOverflow>1.0
+   || (u>0x7fffffffffffffffULL && (!bNeg || u>0x8000000000000000ULL))
+  ){
+    *pR = rOverflow * (double)u;
+    if( bNeg ) *pR = -*pR;
+    return 1;
+  }else{
+    memcpy(pI, &u, sizeof(u));
+    if( bNeg ) *pI = -*pI;
+    return 0;
+  }
+}
+
+/*
+** Tail recursive code to implement the JSON_INT5 case of of
+** jsonTranslateBlobInt5ToText().  This is split out because
+** the resulting reduction in the stack frame size helps the
+** caller to run faster.
+*/
+static SQLITE_NOINLINE u32 jsonTranslateBlobInt5ToText(
+  JsonParse *pParse,             /* the complete parse of the JSON */
+  u32 i,                         /* Start rendering at this index */
+  JsonString *pOut,              /* Write JSON here */
+  u32 sz,                        /* Payload size */
+  u32 n                          /* Header size */
+){
+  int k;
+  const char *zIn = (const char*)&pParse->aBlob[i+n];
+  i64 ival;
+  double rval;
+  k = jsonConvertInteger(zIn, sz, &ival, &rval);
+  if( k==0 ){
+    jsonPrintf(100, pOut, "%lld", ival);
+  }else if( k==1 ){
+    jsonPrintf(100, pOut, "%!0.17g", rval);
+  }else{
+    pOut->eErr |= JSTRING_MALFORMED;
+  }
+  return i+n+sz;
+}
+
+
+/*
 ** Translate the binary JSONB representation of JSON beginning at
 ** pParse->aBlob[i] into a JSON text string.  Append the JSON
 ** text onto the end of pOut.  Return the index in pParse->aBlob[]
@@ -2403,29 +2491,7 @@ static u32 jsonTranslateBlobToText(
       break;
     }
     case JSONB_INT5: {  /* Integer literal in hexadecimal notation */
-      u32 k = 2;
-      sqlite3_uint64 u = 0;
-      const char *zIn = (const char*)&pParse->aBlob[i+n];
-      int bOverflow = 0;
-      if( sz==0 ) goto malformed_jsonb;
-      if( zIn[0]=='-' ){
-        jsonAppendChar(pOut, '-');
-        k++;
-      }else if( zIn[0]=='+' ){
-        k++;
-      }
-      for(; k<sz; k++){
-        if( !sqlite3Isxdigit(zIn[k]) ){
-          pOut->eErr |= JSTRING_MALFORMED;
-          break;
-        }else if( (u>>60)!=0 ){
-          bOverflow = 1;
-        }else{
-          u = u*16 + sqlite3HexToInt(zIn[k]);
-        }
-      }
-      jsonPrintf(100,pOut,bOverflow?"9.0e999":"%llu", u);
-      break;
+      return jsonTranslateBlobInt5ToText(pParse, i, pOut, sz, n);
     }
     case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
       u32 k = 0;
@@ -3441,43 +3507,16 @@ static void jsonReturnFromBlob(
     }
     case JSONB_INT5:
     case JSONB_INT: {
-      sqlite3_int64 iRes = 0;
-      char *z;
-      int bNeg = 0;
-      char x;
-      if( sz==0 ) goto returnfromblob_malformed;
-      x = (char)pParse->aBlob[i+n];
-      if( x=='-' ){
-        if( sz<2 ) goto returnfromblob_malformed;
-        n++;
-        sz--;
-        bNeg = 1;
-      }
-      z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
-      if( z==0 ) goto returnfromblob_oom;
-      rc = sqlite3DecOrHexToI64(z, &iRes);
-      sqlite3DbFree(db, z);
-      if( rc==0 ){
-        if( iRes<0 ){
-          /* A hexadecimal literal with 16 significant digits and with the
-          ** high-order bit set is a negative integer in SQLite (and hence
-          ** iRes comes back as negative) but should be interpreted as a
-          ** positive value if it occurs within JSON.  The value is too
-          ** large to appear as an SQLite integer so it must be converted
-          ** into floating point. */
-          double r;
-          r = (double)*(sqlite3_uint64*)&iRes;
-          sqlite3_result_double(pCtx, bNeg ? -r : r);
-        }else{
-          sqlite3_result_int64(pCtx, bNeg ? -iRes : iRes);
-        }
-      }else if( rc==3 && bNeg ){
-        sqlite3_result_int64(pCtx, SMALLEST_INT64);
-      }else if( rc==1 ){
-        goto returnfromblob_malformed;
+      sqlite3_int64 ival;
+      double rval;
+      int k;
+      k = jsonConvertInteger((const char*)&pParse->aBlob[i+n], sz,&ival,&rval);
+      if( k==0 ){
+        sqlite3_result_int64(pCtx, ival);
+      }else if( k==1 ){
+        sqlite3_result_double(pCtx, rval);
       }else{
-        if( bNeg ){ n--; sz++; }
-        goto to_double;
+        goto returnfromblob_malformed;
       }
       break;
     }
@@ -3486,7 +3525,6 @@ static void jsonReturnFromBlob(
       double r;
       char *z;
       if( sz==0 ) goto returnfromblob_malformed;
-    to_double:
       z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
       if( z==0 ) goto returnfromblob_oom;
       rc = sqlite3AtoF(z, &r);
