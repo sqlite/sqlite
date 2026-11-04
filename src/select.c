@@ -6461,6 +6461,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             }else{
               pX->zEName = sqlite3DbStrDup(db, zName);
               pX->fg.eEName = ENAME_NAME;
+              if( IN_RENAME_OBJECT ) pX->fg.bStarName = 1;
             }
           }
         }

@@ -3286,6 +3286,7 @@ struct ExprList {
       unsigned bNulls :1;     /* True if explicit "NULLS FIRST/LAST" */
       unsigned bUsed :1;      /* This column used in a SF_NestedFrom subquery */
       unsigned bUsingTerm:1;  /* Term from the USING clause of a NestedFrom */
+      unsigned bStarName:1;   /* RENAME only: zEName from expanding a "*" */
       unsigned bNoExpand: 1;  /* Term is an auxiliary in NestedFrom and should
                               ** not be expanded by "*" in parent queries */
     } fg;
