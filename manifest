@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sALTER\sTABLE\sin\scases\swhere\san\sidentifier\sin\sa\sview\sor\strigger's\sORDER\sBY\sclause\smatches\sa\scolumn\sbeing\srenamed\sand\san\salias\sgenerated\sby\sexpanding\sa\s"*"\swithin\sthe\squery.\sReport\s[bugs:/info/2026-11-03T01:27:10Z\s|\s2026-11-03T01:27:10Z].
-D 2026-11-04T16:24:42.711
+C JS:\sminor\sJaccwabyt\sinternal\stweaks.\sRewrite\sthe\sJaccwabyt\sdocs\sentirely.
+D 2026-11-04T17:06:43.695
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -703,8 +703,8 @@ F ext/wasm/fiddle/fiddle.js 2a0984cc4a35e6889c0d84ee9bf853317d5545ddb3966dfb995b
 F ext/wasm/fiddle/index.c-pp.html 5fd1f462864710d1b00d27fc4bc6190cb846cc865d7cc93b99644423f2c4cc84
 F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73607dc54d290
 F ext/wasm/index.html 7b27bb7518558c58c518ac3b47220226f635fa11331bac98f4aaf0d63fc4b283
-F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js dec02f38a8426e9d4d4ba97dc8d5c4a2b55f16bffb235e3aadd91f399e100b11
-F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
+F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js 8f842e83ad916fb66e057fddf518aebfded397cee552f34a45a836871b2af0b5
+F ext/wasm/jaccwabyt/jaccwabyt.md e545432ce3cb17f967bfbe6fa722baf653e82b830eb47e5586dd6ec9a1c59373
 F ext/wasm/libcmpp.c a5bec47a754206aac2ffb45ba4adaec6af3b4fcc24c705c61a6f47893b72aef5
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
 F ext/wasm/mkwasmbuilds.c a012ba85adc4dea9cc6a6ed6ffb1d127ceda6bcc8e18cd0a118bf4d6e9049caa
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c28afd7acdd78dc9d051edb699e6fb3f7891a22f4aff72bc7460740fb265fe38
-R c133011a52a98030ed64ec10513c1a84
-U dan
-Z 2dd6a374fff85d3dd5a6ba69595cdc61
+P 0c0b346b86b60dd3771351a33a8b6e82d5c20c94949aa5327c46bb80200b48b6
+R d99914ee7137e60f170f4e72f3bac83f
+U stephan
+Z 79965cfd3fc27b7f4cb9dc7e8d76ce75
 # Remove this line to create a well-formed Fossil manifest.

@@ -80,6 +80,7 @@ function StructBinderFactory(config){
   const heap = config.heap,
         alloc = config.alloc,
         dealloc = config.dealloc,
+//#if 0
         realloc = (config.realloc || function(){
           toss("This StructBinderFactory was configured without realloc()");
           /* We can't know the original memory's size from here unless
@@ -87,6 +88,7 @@ function StructBinderFactory(config){
              pointers (not going to happen), so we can't fall back to
              doing alloc()/copy/dealloc(). */
         }),
+//#/if
         log = config.log || console.debug.bind(console),
         memberPrefix = (config.memberPrefix || ""),
         memberSuffix = (config.memberSuffix || ""),
@@ -332,6 +334,11 @@ function StructBinderFactory(config){
     });
   };
 
+  const __objOwnsOwnMemory = (v)=>{
+    const ii = getInstanceHandle(v, false);
+    return !!(ii?.p && ii?.ownsPointer);
+  };
+
   /**
      Remove the getInstanceHandle() mapping for obj.
   */
@@ -403,7 +410,7 @@ function StructBinderFactory(config){
   /** Returns a skeleton for a read-only, non-iterable property
    * descriptor. */
   const rop0 = ()=>{return {configurable: false, writable: false,
-                            iterable: false}};
+                            iterable: true}};
 
   /** Returns a skeleton for a read-only property accessor wrapping
       value v. */
@@ -423,10 +430,10 @@ function StructBinderFactory(config){
         xm = opt?.wrap;
       }else{
         checkPtr(xm);
-        opt = {wrap: xm};
+        opt = Object.assign(Object.create(null),{wrap: xm});
       }
     }else{
-      opt = {}
+      opt = Object.create(null);
     }
 
     const fill = !xm /* true if we need to zero the memory */;
@@ -587,7 +594,7 @@ function StructBinderFactory(config){
     return a;
   });
 
-  const __utf8Decoder = new TextDecoder('utf-8');
+  const __utf8Decoder = new TextDecoder();
   const __utf8Encoder = new TextEncoder();
   /** Internal helper to use in operations which need to distinguish
       between SharedArrayBuffer heap memory and non-shared heap. */
@@ -777,6 +784,9 @@ function StructBinderFactory(config){
     addOnDispose: function(...v){
       __addOnDispose(this,...v);
       return this;
+    },
+    ownsOwnMemory: function(){
+      return __objOwnsOwnMemory(this);
     }
   });
 
@@ -786,10 +796,6 @@ function StructBinderFactory(config){
   Object.defineProperties(StructType, {
     allocCString: rop(__allocCString),
     isA: rop((v)=>v instanceof StructType),
-    hasExternalPointer: rop((v)=>{
-      const ii = getInstanceHandle(v, false);
-      return !!(ii?.p && !ii?.ownsPointer);
-    }),
     memberKey: __memberKeyProp
     //ptrAdd = rop(__ptrAdd) no b/c one might think that it adds based on this.pointer.
   });
@@ -1040,7 +1046,7 @@ function StructBinderFactory(config){
          zeroOnDispose: [bool=StructCtor.structInfo.zeroOnDispose]
 
          autoCalcSizeOffset: [bool=false] Automatically calculate
-         sizeof an offset. This is fine for pure-JS structs (which
+         sizeof and offset. This is fine for pure-JS structs (which
          probably aren't useful beyond testing of Jaccwabyt) but it's
          dangerous to use with actual WASM objects because we cannot
          be guaranteed to have the same memory layout as an ostensibly
