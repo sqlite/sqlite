@@ -10984,10 +10984,11 @@ static int do_meta_command(const char *zLine, ShellState *p){
     ShellState data;
     int doStats = 0;
     int hasStat[5];
-    int flgs = 0;
+    int bIndent = 0;
     char *zSql;
     if( nArg==2 && optionMatch(azArg[1], "indent") ){
       nArg = 1;
+      bIndent = 1;
     }
     if( nArg!=1 ){
       eputz("Usage: .fullschema ?--indent?\n");
@@ -11002,7 +11003,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
        "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_schema) "
        "WHERE type!='meta' AND sql NOTNULL"
        "  AND name NOT LIKE 'sqlite__%%' ESCAPE '_' "
-       "ORDER BY x", flgs);
+       "ORDER BY x", bIndent);
     memcpy(&data, p, sizeof(data));
     data.mode.spec.bTitles = QRF_No;
     data.mode.eMode = MODE_List;
