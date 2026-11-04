@@ -1,5 +1,5 @@
-C Reverse\sthe\sorder\sof\stwo\sconditions\sin\sa\ssingle\s"if()"\sto\shelp\smake\sit\nmore\seasily\stestable.\s\sNo\schange\sto\sfunctionality.
-D 2026-11-04T13:22:41.342
+C Use\sbox-drawing\scharacters\sto\shighlight\sthe\s"Expected"\sand\s"Got"\soutput\nfrom\sfailed\s".check"\slines\sin\sthe\sCLI,\sfor\simproved\sdebug\ssupport.
+D 2026-11-04T13:45:44.276
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -811,7 +811,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c e0eacbccc498c1cac76e73076c572dc76c4df1b5da8cdd325d50e5b343ac3db9
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 52d6aee4a4e3741b4c0f1435310c3a5e231fee68079584b821f1607759f574fc
-F src/shell.c.in 72d8aee9813235aca6fca9e35b2f7668020d7f17a27a86afcd3027c79a5d7756
+F src/shell.c.in 3d52d46b900ad3accbb4c046d32e433d2067945332521c977ea1825c764b7eca
 F src/sqlite.h.in 03ada74abdc4ab947f98c18c36bbf35076d5e334a8c33821a96959c98a404154
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5e113c4c0442f2f1b3345d44cbe4b82fad45f2fc0c35f0ed4eef27fb8f1cb394
@@ -2305,8 +2305,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8cddae53c7f8e7a1e12e7f2eea31de60e7e1f31e4c450bfc44cd850d5a918919
-R ab5ade0f858a8cb58a6d246a2fc4de04
+P 5cdecca19c1fa6124305ac8ece506d1318e711b099084198b66eb749e495dc87
+Q +09e1f16661e10639db6f114e26bfcad42d9de3acd4bed66e7c0ec4edd537b86a
+R 8192c51f2f40158e8e9e7802bd9322f2
 U drh
-Z 5e11b12d3c27e08415bbd04786b2e66f
+Z 99bebf58c69746faec81eeda1dcc5c5b
 # Remove this line to create a well-formed Fossil manifest.
