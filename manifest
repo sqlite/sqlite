@@ -1,5 +1,5 @@
-C Fix\s.fullschema\s--indent\sbeing\signored.\s[bugs:c759843743|Bug\sreport\s2026-11-04T20:35:51Z].
-D 2026-11-04T21:06:37.275
+C Change\sthe\sway\sdemo\sfile\stest_delete.c\suses\sthe\sSQLITE_OS_WIN\smacro\sso\sthat\sit\scan\sbe\smore\seasily\sincluded\sin\sthe\samalgamation.
+D 2026-11-04T21:13:06.675
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -835,7 +835,7 @@ F src/test_bestindex.c d75fad21369d80910238032bcf8d9ca1f2bffda13c1ceec63bfbb7f70
 F src/test_blob.c 3a946319c1b062a58d249c67be099c3bc1ec52f2e6ba23b1867699f0b8189ac2
 F src/test_btree.c 28283787d32b8fa953eb77412ad0de2c9895260e4e5bd5a94b3c7411664f90d5
 F src/test_config.c 45b83ce7981fd01c58e85b67955bc6a344da5abfb4db1c3f2ba6dcc7adc85d83
-F src/test_delete.c 4abfe8cb9da1f7faf725b18ae93391485e8d8c7df0bad9dcb68f6066add5b8c3
+F src/test_delete.c c854f15e8a23e35257d853a6af353134eea3bcb2967495b8c3fe1b4dcea809f3
 F src/test_demovfs.c 3efa2adf4f21e10d95521721687d5ca047aea91fa62dd8cc22ac9e5a9c942383
 F src/test_devsym.c 649434ed34d0b03fbd5a6b42df80f0f9a7e53f94dd1710aad5dd8831e91c4e86
 F src/test_fs.c a946408c81231feff4b6a2c18068f20aefe254dc82288687128af8b7520d32cb
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7a751f226c838c70a04cf55af816ecd6bed57133bce5c347da24fa5a58345afa
-R 0afbcdc807535efb883fae9eaec95ec2
-U stephan
-Z 3281a0a8f42ec0d61c26adc4484b54bc
+P ad609aa905a95e6f776bb042a2765fdde1790b3788662d8b1514d30441f41e83
+R e3a0c104d7a454782966d43427ca3628
+U dan
+Z 181637bee3230da255d939d497c4c73b
 # Remove this line to create a well-formed Fossil manifest.
