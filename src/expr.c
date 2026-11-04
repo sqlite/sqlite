@@ -5902,7 +5902,7 @@ expr_code_doover:
            || pExpr->affExpr==OE_Fail
            || pExpr->affExpr==OE_Ignore
       );
-      if( !pParse->pTriggerTab && !pParse->nested ){
+      if( !pParse->pTriggerTab ){
         sqlite3ErrorMsg(pParse,
                        "RAISE() may only be used within a trigger-program");
         return 0;
@@ -5916,8 +5916,7 @@ expr_code_doover:
         VdbeCoverage(v);
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-        sqlite3VdbeAddOp3(v, OP_Halt, 
-             pParse->pTriggerTab ? SQLITE_CONSTRAINT_TRIGGER : SQLITE_ERROR,
+        sqlite3VdbeAddOp3(v, OP_Halt, SQLITE_CONSTRAINT_TRIGGER, 
              pExpr->affExpr, r1);
       }
       break;

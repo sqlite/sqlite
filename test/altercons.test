@@ -566,4 +566,40 @@ do_execsql_test 12.3.4 {
   PRAGMA integrity_check;
 } {ok}
 
+#-------------------------------------------------------------------------
+# RAISE() is not allowed in an ADD CHECK expression.
+#
+ifcapable trigger {
+  reset_db
+  do_execsql_test 13.0 {
+    CREATE TABLE t1(a);
+    CREATE TABLE t2(a);
+    INSERT INTO t2 VALUES(5);
+  }
+  foreach {tn sql} {
+    1 "ALTER TABLE t1 ADD CHECK(RAISE(IGNORE))"
+    2 "ALTER TABLE t2 ADD CHECK(a>0 AND RAISE(IGNORE))"
+    3 "ALTER TABLE t1 ADD CHECK(a>0 AND RAISE(IGNORE))"
+    4 "ALTER TABLE t1 ADD CONSTRAINT c1 CHECK(RAISE(ABORT, 'x'))"
+  } {
+    do_catchsql_test 13.1.$tn $sql \
+        {1 {RAISE() may only be used within a trigger-program}}
+  }
+  do_execsql_test 13.2 {
+    SELECT sql FROM sqlite_schema;
+  } {{CREATE TABLE t1(a)} {CREATE TABLE t2(a)}}
+
+  # RAISE(ROLLBACK) must not roll back the user's open transaction.
+  do_execsql_test 13.3.1 {
+    BEGIN;
+    INSERT INTO t2 VALUES(6);
+  }
+  do_catchsql_test 13.3.2 {
+    ALTER TABLE t2 ADD CHECK(RAISE(ROLLBACK, 'x'));
+  } {1 {RAISE() may only be used within a trigger-program}}
+  do_test 13.3.3 { sqlite3_get_autocommit db } 0
+  do_catchsql_test 13.3.4 { COMMIT } {0 {}}
+  do_execsql_test 13.3.5 { SELECT a FROM t2 } {5 6}
+}
+
 finish_test

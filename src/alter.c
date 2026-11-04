@@ -297,7 +297,7 @@ static void sqlite3ErrorIfNotEmpty(
   const char *zErr      /* Error message text */
 ){
   sqlite3NestedParse(pParse,
-     "SELECT raise(ABORT,%Q) FROM \"%w\".\"%w\"",
+     "SELECT sqlite_fail(%Q, 1) FROM \"%w\".\"%w\"",
      zErr, zDb, zTab
   );
 }
@@ -516,10 +516,10 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       pParse->colNamesSet = 1;
       sqlite3NestedParse(pParse,
         "SELECT CASE WHEN quick_check GLOB 'CHECK*'"
-        " THEN raise(ABORT,'CHECK constraint failed')"
+        " THEN sqlite_fail('CHECK constraint failed', 1)"
         " WHEN quick_check GLOB 'non-* value in*'"
-        " THEN raise(ABORT,'type mismatch on DEFAULT')"
-        " ELSE raise(ABORT,'NOT NULL constraint failed')"
+        " THEN sqlite_fail('type mismatch on DEFAULT', 1)"
+        " ELSE sqlite_fail('NOT NULL constraint failed', 1)"
         " END"
         "  FROM pragma_quick_check(%Q,%Q)"
         " WHERE quick_check GLOB 'CHECK*'"
@@ -3180,7 +3180,7 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_drop_constraint,2, dropConstraintFunc),
     INTERNAL_FUNCTION(sqlite_fail,           2, failConstraintFunc),
     INTERNAL_FUNCTION(sqlite_add_constraint, 3, addConstraintFunc),
-    INTERNAL_FUNCTION(sqlite_find_constraint,2, findConstraintFunc),
+    INTERNAL_FUNCTION(sqlite_find_constraint,2, findConstraintFunc)
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
