@@ -691,6 +691,84 @@ do_catchsql_test 14.7.1 {
   INSERT INTO t7 VALUES(2, 'y', '6', 'Y', 7);
 } {1 {FOREIGN KEY constraint failed}}
 
+#-------------------------------------------------------------------------
+# UPDATE statements that assign to the parent key column, but not the child
+# key column, of a self-referencing table. 
+#
+# Report: https://sqlite.org/bugs/forumpost/4f3c5d1527
+#
+foreach {tn schema} {
+  1 { CREATE TABLE t1(a INT PRIMARY KEY, b INT REFERENCES t1(a)); }
+  2 { CREATE TABLE t1(a INT UNIQUE, b INT REFERENCES t1(a)); }
+  3 { CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT REFERENCES t1(a)); }
+  4 { CREATE TABLE t1(a INT PRIMARY KEY, b INT REFERENCES t1(a)) WITHOUT ROWID; }
+} {
+  reset_db
+  do_execsql_test 15.$tn.0 "
+    PRAGMA foreign_keys=ON;
+    $schema
+  "
+
+  do_execsql_test 15.$tn.1.0 {
+    INSERT INTO t1 VALUES(2,3),(3,2);
+  }
+  do_catchsql_test 15.$tn.1.1 {
+    UPDATE t1 SET a=a-1;
+  } {1 {FOREIGN KEY constraint failed}}
+  do_execsql_test 15.$tn.1.2 {
+    SELECT * FROM t1 ORDER BY a;
+    PRAGMA foreign_key_check;
+  } {2 3 3 2}
+
+  do_catchsql_test 15.$tn.2 {
+    UPDATE t1 SET a=a-1, b=b;
+  } {1 {FOREIGN KEY constraint failed}}
+
+  do_execsql_test 15.$tn.3.0 {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(6,6),(7,6);
+  }
+  do_execsql_test 15.$tn.3.1 {
+    UPDATE t1 SET a=a WHERE a=6;
+    SELECT * FROM t1 ORDER BY a;
+    PRAGMA foreign_key_check;
+  } {6 6 7 6}
+  do_execsql_test 15.$tn.3.2 {
+    UPDATE t1 SET a=a+0 WHERE a=6;
+    SELECT * FROM t1 ORDER BY a;
+  } {6 6 7 6}
+  do_execsql_test 15.$tn.3.3 {
+    UPDATE t1 SET a=a;
+    SELECT * FROM t1 ORDER BY a;
+  } {6 6 7 6}
+
+  do_catchsql_test 15.$tn.4.1 {
+    UPDATE t1 SET a=8 WHERE a=6;
+  } {1 {FOREIGN KEY constraint failed}}
+  do_execsql_test 15.$tn.4.2 {
+    SELECT * FROM t1 ORDER BY a;
+  } {6 6 7 6}
+
+  do_execsql_test 15.$tn.5.1 {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(6,6),(7,7);
+    UPDATE t1 SET a=a WHERE a=6;
+    SELECT * FROM t1 ORDER BY a;
+  } {6 6 7 7}
+  do_execsql_test 15.$tn.5.2 {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(6,7),(7,6);
+    UPDATE t1 SET a=a WHERE a=6;
+    SELECT * FROM t1 ORDER BY a;
+  } {6 7 7 6}
+  do_execsql_test 15.$tn.5.3 {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(6,7),(7,7);
+    UPDATE t1 SET a=5 WHERE a=6;
+    SELECT * FROM t1 ORDER BY a;
+    PRAGMA foreign_key_check;
+  } {5 7 7 7}
+}
 
 
 finish_test

@@ -1279,7 +1279,12 @@ u32 sqlite3FkOldmask(
 **     and any FK processing at all is required (even of a different FK), or
 **
 **   * the UPDATE modifies one or more parent keys for which the action is
-**     not "NO ACTION" (i.e. is CASCADE, SET DEFAULT or SET NULL).
+**     not "NO ACTION" (i.e. is CASCADE, SET DEFAULT or SET NULL), or
+**
+**   * the UPDATE modifies one or more parent keys of an FK for which pTab
+**     is also the child table. The old version of the row must be removed
+**     from the table before the FK checks run, as otherwise the scan for
+**     rows that refer to the new parent key may find it.
 **
 ** Or, assuming some other foreign key processing is required, 1.
 */
@@ -1318,6 +1323,7 @@ int sqlite3FkRequired(
           ){
             return 2;
           }
+          if( p->pFrom==pTab ) eRet = 2;
           bHaveFK = 1;
         }
       }
