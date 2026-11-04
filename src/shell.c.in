@@ -15021,7 +15021,7 @@ int SQLITE_CDECL main(int argc, char **argv){
         }
         data.in = inSaved;
         data.lineno = savedLineno;
-        if( res ) i = nCmd;
+        if( res && bail_on_error ) i = nCmd;
       }else if( azCmd[i][0]=='.' ){
         char *zErrCtx = malloc( 64 );
         shell_check_oom(zErrCtx);
