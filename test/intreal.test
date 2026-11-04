@@ -256,4 +256,76 @@ do_execsql_test 7.41 {
 
 } ;# endif capable vtab
 
+# Bug 2026-11-03T02:13:29Z
+# https://sqlite.org/bugs/info/9be9674491db1c7c
+#
+# A large integer that has no exact floating point representation must
+# not be converted to floating point when compared against a REAL value,
+# so that "=", "IN (list)", and "IN (SELECT ...)" all agree.
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE r(e REAL);
+  INSERT INTO r VALUES(9007199254740992.0);
+  SELECT 9007199254740993 = e, 9007199254740993 IN (SELECT e FROM r),
+         9007199254740993 IN (e) FROM r;
+} {0 0 0}
+do_execsql_test 8.1 {
+  SELECT 9007199254740992 = e, 9007199254740992 IN (SELECT e FROM r),
+         9007199254740992 IN (e) FROM r;
+} {1 1 1}
+do_execsql_test 8.2 {
+  SELECT e = 9007199254740993, e IN (SELECT 9007199254740993),
+         e IN (9007199254740993) FROM r;
+} {0 0 0}
+do_execsql_test 8.3 {
+  SELECT e = 9007199254740992, e IN (SELECT 9007199254740992),
+         e IN (SELECT '9007199254740992'), e IN (9007199254740992) FROM r;
+} {1 1 1 1}
+do_execsql_test 8.4 {
+  CREATE TABLE i(x INTEGER);
+  INSERT INTO i VALUES(9007199254740993);
+  SELECT x = (SELECT e FROM r), x IN (SELECT e FROM r),
+         (SELECT e FROM r) IN (SELECT x FROM i) FROM i;
+} {0 0 0}
+do_execsql_test 8.5 {
+  CREATE TABLE d(e DOUBLE);
+  CREATE INDEX dx ON d(e);
+  INSERT INTO d VALUES(9007199254740992.0),(2.0),(2.5);
+  SELECT count(*) FROM d WHERE e=9007199254740993;
+} {0}
+do_execsql_test 8.6 {
+  SELECT count(*) FROM d WHERE e IN (SELECT 9007199254740993);
+} {0}
+do_execsql_test 8.7 {
+  SELECT count(*) FROM d WHERE e IN (9007199254740993, 2);
+} {1}
+do_execsql_test 8.8 {
+  SELECT count(*) FROM d WHERE e>=9007199254740993;
+} {0}
+do_execsql_test 8.9 {
+  SELECT 2 IN (SELECT e FROM d), '2' IN (SELECT e FROM d),
+         3 IN (SELECT e FROM d), '2.5' IN (SELECT e FROM d);
+} {1 1 0 1}
+do_execsql_test 8.10 {
+  SELECT count(*) FROM d WHERE e IN (SELECT 2 UNION SELECT '2.5');
+} {2}
+ifcapable foreignkey {
+  do_execsql_test 8.11 {
+    PRAGMA foreign_keys=ON;
+    CREATE TABLE p(k REAL UNIQUE);
+    INSERT INTO p VALUES(9007199254740992.0);
+    CREATE TABLE c(x INTEGER REFERENCES p(k));
+    INSERT INTO c VALUES(9007199254740992);
+  } {}
+  do_catchsql_test 8.12 {
+    INSERT INTO c VALUES(9007199254740993);
+  } {1 {FOREIGN KEY constraint failed}}
+  do_execsql_test 8.13 {
+    PRAGMA foreign_keys=OFF;
+    INSERT INTO c VALUES(9007199254740993);
+    SELECT "table", rowid, parent FROM pragma_foreign_key_check;
+  } {c 2 p}
+}
+
 finish_test

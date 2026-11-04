@@ -3550,6 +3550,11 @@ int sqlite3FindInIndex(
 ** function allocates and returns a nul-terminated string containing
 ** the affinities to be used for each column of the comparison.
 **
+** NUMERIC affinity is used in place of REAL.  Within a comparison the
+** two are the same, except that REAL affinity (as applied by OP_Affinity
+** and OP_MakeRecord) converts integers into floating point, and that
+** might change the value of a large integer.
+**
 ** It is the responsibility of the caller to ensure that the returned
 ** string is eventually freed using sqlite3DbFree().
 */
@@ -3571,6 +3576,7 @@ static char *exprINAffinity(Parse *pParse, const Expr *pExpr){
       }else{
         zRet[i] = a;
       }
+      if( zRet[i]==SQLITE_AFF_REAL ) zRet[i] = SQLITE_AFF_NUMERIC;
     }
     zRet[nVal] = '\0';
   }
