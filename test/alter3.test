@@ -495,4 +495,28 @@ do_execsql_test alter3-10.6 {
   PRAGMA integrity_check;
 } {1 5 6 7 8 9 ok}
 
+#-------------------------------------------------------------------------
+# Test that a NOT NULL column may not be added to a non-empty table if its
+# default value is any expression that evaluates to NULL, not just the
+# literal NULL.
+#
+reset_db
+do_execsql_test alter3-11.0 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1);
+}
+foreach {tn dflt} {
+  1 {-NULL}
+  2 {(+NULL)}
+  3 {(CAST(NULL AS INT))}
+} {
+  do_catchsql_test alter3-11.$tn "
+    ALTER TABLE t1 ADD COLUMN c$tn NOT NULL DEFAULT $dflt;
+  " {1 {Cannot add a NOT NULL column with default value NULL}}
+}
+do_execsql_test alter3-11.4 {
+  SELECT * FROM t1;
+  PRAGMA integrity_check;
+} {1 ok}
+
 finish_test

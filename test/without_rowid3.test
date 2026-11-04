@@ -935,7 +935,7 @@ ifcapable altertable {
     catchsql { ALTER TABLE t2 ADD COLUMN f REFERENCES t1 DEFAULT 'text'}
   } {1 {Cannot add a REFERENCES column with non-NULL default value}}
   do_test without_rowid3-14.1.5 {
-    catchsql { ALTER TABLE t2 ADD COLUMN g DEFAULT CURRENT_TIME REFERENCES t1 }
+    catchsql { ALTER TABLE t2 ADD COLUMN g DEFAULT 'CURRENTTIME' REFERENCES t1 }
   } {1 {Cannot add a REFERENCES column with non-NULL default value}}
   do_test without_rowid3-14.1.6 {
     execsql { 
@@ -1030,7 +1030,7 @@ ifcapable altertable {
     catchsql { ALTER TABLE t2 ADD COLUMN f REFERENCES t1 DEFAULT 'text'}
   } {1 {Cannot add a REFERENCES column with non-NULL default value}}
   do_test without_rowid3-14.1tmp.5 {
-    catchsql { ALTER TABLE t2 ADD COLUMN g DEFAULT CURRENT_TIME REFERENCES t1 }
+    catchsql { ALTER TABLE t2 ADD COLUMN g DEFAULT 'CURRENTTIME' REFERENCES t1 }
   } {1 {Cannot add a REFERENCES column with non-NULL default value}}
   do_test without_rowid3-14.1tmp.6 {
     execsql { 
@@ -1118,7 +1118,7 @@ ifcapable altertable {
     catchsql { ALTER TABLE t2 ADD COLUMN f REFERENCES t1 DEFAULT 'text'}
   } {1 {Cannot add a REFERENCES column with non-NULL default value}}
   do_test without_rowid3-14.1aux.5 {
-    catchsql { ALTER TABLE t2 ADD COLUMN g DEFAULT CURRENT_TIME REFERENCES t1 }
+    catchsql { ALTER TABLE t2 ADD COLUMN g DEFAULT 'CURRENTTIME' REFERENCES t1 }
   } {1 {Cannot add a REFERENCES column with non-NULL default value}}
   do_test without_rowid3-14.1aux.6 {
     execsql { 
