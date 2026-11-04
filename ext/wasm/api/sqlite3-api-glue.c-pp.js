@@ -947,6 +947,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
            "static buffer size!");
     }
     const j = wasm.cstrToJs(cJson);
+    //sqlite3.config.error("cJson JSON length:",j.length);
     wasm.ctype = JSON.parse(j);
 
     const WSN = wasm.ctype.structs.find(v=>v.name==='WasmDisposalNotifier');
@@ -955,7 +956,6 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        sqlite3-wasm.c to JS by (A) creating a JS/C struct proxy which
        wraps the C-side singleton instance of WasmDisposalNotifier and
        (B) connecting our own function to its $callback method. */
-      //sqlite3.config.warn("WARNING: installing WasmDisposalNotifier");
       const ctor = sqlite3.StructBinder(WSN);
       const w = new ctor(
         wasm.exports.sqlite3__wasm_disposal_notifier()
@@ -1001,7 +1001,6 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       toss("Expecting WasmDisposalNotifier to have been exported.");
     }
 
-    //sqlite3.config.error("cJson JSON length:",j.length);
     // Groups of SQLITE_xyz macros...
     const defineGroups = ['access', 'authorizer',
                           'blobFinalizers', 'changeset',

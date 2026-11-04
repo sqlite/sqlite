@@ -21,21 +21,21 @@ Module.runSQLite3PostLoadInit = async function(
   'use strict';
   delete EmscriptenModule.runSQLite3PostLoadInit;
   //console.warn("This is the start of Module.runSQLite3PostLoadInit()");
-  /* This function will contain at least the following:
+  /* Post-build, this function will contain at least the following:
 
-     - post-js-header.js          => this file
-       - sqlite3-api-prologue.js  => Bootstrapping bits for the following files
+     - post-js-header.js               => this file
+       - sqlite3-api-prologue.c-pp.js  => Bootstrapping bits for the following files
        - common/whwasmutil.c-pp.js     => Generic JS/WASM glue
        - jaccwabyt/jaccwabyt.c-pp.js   => C struct-binding glue
-       - sqlite3-api-glue.js      => glues previous parts together
-       - sqlite3-api-oo1.js       => SQLite3 OO API #1
-       - sqlite3-api-worker1.js   => Worker-based API
-       - sqlite3-vfs-helper.c-pp.js  => Utilities for VFS impls
-       - sqlite3-vtab-helper.c-pp.js => Utilities for virtual table impls
-       - sqlite3-vfs-opfs.c-pp.js => OPFS VFS
-       - sqlite3-vfs-opfs-sahpool.c-pp.js => OPFS SAHPool VFS
-       - sqlite3-vfs-opfs-wl.c-pp.js => WebLock-using OPFS VFS
-     - post-js-footer.js          => this file's epilogue
+       - sqlite3-api-glue.js           => glues previous parts together and binds the C-style API
+       - sqlite3-api-oo1.js            => SQLite3 OO API #1
+       - sqlite3-api-worker1.js        => Worker1 API
+       - sqlite3-vfs-helper.c-pp.js    => Utilities for VFS impls
+       - sqlite3-vtab-helper.c-pp.js   => Utilities for virtual table impls
+       - sqlite3-vfs-opfs.c-pp.js      => "opfs" VFS
+       - sqlite3-vfs-opfs-sahpool.c-pp.js => "opfs-sahpool" VFS
+       - sqlite3-vfs-opfs-wl.c-pp.js   => "opfs-wl" VFS
+     - post-js-footer.js               => this file's epilogue
 
      And all of that gets sandwiched between extern-pre-js.js and
      extern-post-js.js.
