@@ -3371,7 +3371,7 @@ static char *shell_error_context(const char *zSql, sqlite3 *db){
     len = 78;
     while( len>0 && (zSql[len]&0xc0)==0x80 ) len--;
   }
-  zCode = sqlite3_mprintf("%.*s", len, zSql);
+  zCode = sqlite3_mprintf("%.*s", (int)len, zSql);
   shell_check_oom(zCode);
   for(i=0; zCode[i]; i++){ if( IsSpace(zSql[i]) ) zCode[i] = ' '; }
   if( iOffset<25 ){
