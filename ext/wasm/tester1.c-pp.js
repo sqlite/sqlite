@@ -848,8 +848,12 @@ T.g('C/WASM Utilities')
     {
       const scope = w.scopedAllocPush();
       try {
-        let cStr = w.scopedAllocCString("hello");
+        let cStr = w.scopedAllocCString("");
+        T.assert(0===w.cstrlen(cStr))
+          .assert(null===w.cstrlen(3.1));
+        cStr = w.scopedAllocCString("hello");
         const n = w.cstrlen(cStr);
+        T.assert( 5===n );
         const nPtr = w.ptr.coerce(n);
         let cpy = w.scopedAlloc(n+10);
         let rc = w.cstrncpy(cpy, cStr, n+10);

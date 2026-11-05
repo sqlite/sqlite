@@ -1055,14 +1055,14 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
      refers to a NUL-terminated C-style string encoded as UTF-8.
      Returns the length, in bytes, of the string, as for `strlen(3)`.
      As a special case, if !ptr or if it's not a pointer then it
-     returns `null`. Throws if ptr is out of range for
-     target.heap8u().
+     returns `null`. Results are undefined if no NUL is found. Throws
+     if ptr is out of range for target.heap8u().
   */
   target.cstrlen = function(ptr){
     if(!ptr || !target.isPtr(ptr)) return null;
     ptr = Number(ptr);
     const end = heapWrappers().HEAP8U.indexOf(0, ptr);
-    return end >= 0 ? end - ptr : 0;
+    return end < 0 ? null : end - ptr;
   };
 
   /** Internal helper to use in operations which need to distinguish
