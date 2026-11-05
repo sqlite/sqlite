@@ -931,7 +931,7 @@ static int deltaparsevtabNext(sqlite3_vtab_cursor *cur){
       z++;
       pCur->a2 = (unsigned int)(z - pCur->aDelta);
       pCur->eOp = DELTAPARSE_OP_INSERT;
-      pCur->iNext = PTR_DIFF(&z[1],pCur->aDelta);
+      pCur->iNext = PTR_DIFF(&z[pCur->a1],pCur->aDelta);
       break;
     }
     case ';': {
