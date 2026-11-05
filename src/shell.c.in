@@ -6869,8 +6869,11 @@ static int lintFkeyIndexes(
         }
 
         if( res==0 ){
+          if( strchr(zTarget,'\n') ) zTarget = "(REDACTED)";
           cli_printf(out, "%s%s --> %s\n", zIndent, zCI, zTarget);
         }else if( bVerbose ){
+          if( strstr(zFrom,"*/") ) zFrom = "(REDACTED)";
+          if( strstr(zTarget,"*/") ) zTarget = "(REDACTED)";
           cli_printf(out,
                 "%s/* no extra indexes required for %s -> %s */\n",
                 zIndent, zFrom, zTarget
