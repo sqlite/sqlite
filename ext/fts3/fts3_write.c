@@ -3780,9 +3780,9 @@ struct NodeReader {
 ** unmodified. Otherwise, if the allocation succeeds, update pBlob->nAlloc
 ** to reflect the new size of the pBlob->a[] buffer.
 */
-static void blobGrowBuffer(Blob *pBlob, int nMin, int *pRc){
+static void blobGrowBuffer(Blob *pBlob, i64 nMin, int *pRc){
   if( *pRc==SQLITE_OK && nMin>pBlob->nAlloc ){
-    int nAlloc = nMin;
+    i64 nAlloc = nMin;
     char *a = (char *)sqlite3_realloc64(pBlob->a, nAlloc);
     if( a ){
       pBlob->nAlloc = nAlloc;
@@ -4050,7 +4050,7 @@ static int fts3IncrmergeAppend(
   const char *aDoclist = pCsr->aDoclist;
   int nDoclist = pCsr->nDoclist;
   int rc = SQLITE_OK;           /* Return code */
-  int nSpace;                   /* Total space in bytes required on leaf */
+  i64 nSpace;                   /* Total space in bytes required on leaf */
   int nPrefix;                  /* Size of prefix shared with previous term */
   int nSuffix;                  /* Size of suffix (nTerm - nPrefix) */
   NodeWriter *pLeaf;            /* Object used to write leaf nodes */
@@ -4060,9 +4060,9 @@ static int fts3IncrmergeAppend(
   nSuffix = nTerm - nPrefix;
   if(nSuffix<=0 ) return FTS_CORRUPT_VTAB;
 
-  nSpace  = sqlite3Fts3VarintLen(nPrefix);
-  nSpace += sqlite3Fts3VarintLen(nSuffix) + nSuffix;
-  nSpace += sqlite3Fts3VarintLen(nDoclist) + nDoclist;
+  nSpace  = (i64)sqlite3Fts3VarintLen(nPrefix);
+  nSpace += (i64)sqlite3Fts3VarintLen(nSuffix) + nSuffix;
+  nSpace += (i64)sqlite3Fts3VarintLen(nDoclist) + nDoclist;
 
   /* If the current block is not empty, and if adding this term/doclist
   ** to the current block would make it larger than Fts3Table.nNodeSize bytes,
