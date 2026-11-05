@@ -2122,6 +2122,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** For DESC, NULL entries are scanned first.
     */
     if( (pLoop->wsFlags & (WHERE_TOP_LIMIT|WHERE_BTM_LIMIT))==0
+     && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)==0
      && (pLoop->wsFlags & WHERE_BIGNULL_SORT)!=0
     ){
       assert( bSeekPastNull==0 && nExtraReg==0 && nBtm==0 && nTop==0 );
