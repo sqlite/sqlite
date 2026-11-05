@@ -146,7 +146,7 @@ const reportFinalTestStatus = function(pass){
     let e = document.querySelector('#color-target');
     e.classList.add(pass ? 'tests-pass' : 'tests-fail');
     e = document.querySelector('title');
-    e.innerText = (pass ? 'PASS' : 'FAIL') + ': ' + e.innerText;
+    e.innerText = (pass ? '✅PASS' : '🔥FAIL') + ': ' + e.innerText;
   }else{
     postMessage({type:'test-result', payload:{pass}});
   }
