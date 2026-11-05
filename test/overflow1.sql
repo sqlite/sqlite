@@ -18,3 +18,10 @@ SELECT length(decimal(1.23456,10000));
 .testcase 120
 SELECT length(dtostr(3.14159, 100000));
 .check 357
+
+# Bug 2026-11-04T20:36:37Z
+# Do not return negative zero.
+#
+.testcase 200
+SELECT decimal_add('-1234','1234');
+.check 0
