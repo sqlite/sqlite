@@ -148,7 +148,7 @@
 /*
 ** If SQLITE_WASM_BARE_BONES is defined, undefine most of the ENABLE
 ** macros. This will, when using the canonical makefile, also elide
-** any C functions from the WASM exports: see
+** any associated C functions from the WASM exports: see
 ** ./EXPORTED_FUNCTIONS.c-pp.
 */
 #ifdef SQLITE_WASM_BARE_BONES

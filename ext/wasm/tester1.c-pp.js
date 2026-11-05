@@ -1147,7 +1147,7 @@ T.g('C/WASM Utilities')
         T.assert(Array.isArray(k1.ondispose)).
           assert(k1.ondispose[0] === k1.$cstr).
           assert(looksLikePtr(k1.$cstr)).
-          assert('A C-string.' === k1.memberToJsString('cstr'));
+          assert('A C-string.' === k1.memberToJsString('$cstr'));
         k1.$pP = k2;
         T.assert(k1.$pP === k2.pointer);
         k1.$pP = null/*null is special-cased to 0.*/;

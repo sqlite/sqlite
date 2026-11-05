@@ -248,13 +248,7 @@
      newly-created (or config-provided) target. The current approach
      seemed better at the time.
 */
-//#if lexical-scoped
-const WhWasmUtilInstaller =
-//#else
-'use strict';
-globalThis.WhWasmUtilInstaller =
-//#/if
-function WhWasmUtilInstaller(target){
+const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
 //#if not esm
   'use strict';
 //#/if
@@ -2576,11 +2570,15 @@ WhWasmUtilInstaller.yawl = function yawl(config){
   return loadWasm;
 }.bind(WhWasmUtilInstaller)/*yawl()*/;
 //#/if not defined omit-yawl
-//#if esm and not no-export
-//#  if amalgamation
+//#if esm
+//#  if not no-export
+//#    if amalgamation
 export {WhWasmUtilInstaller};
-//#  elif not defined no-export-default
+//#    elif not defined no-export-default
 export default WhWasmUtilInstaller;
+//#    /if
 //#  /if
+//#else if not lexical-scoped
+globalThis.WhWasmUtilInstaller = WhWasmUtilInstaller;
 //#/if
 //#savepoint rollback
