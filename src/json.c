@@ -5613,10 +5613,11 @@ static int jsonEachColumn(
       }
       if( p->eType==JSONB_OBJECT ){
         jsonReturnFromBlob(&p->sParse, p->i, ctx, 1);
-      }else{
-        assert( p->eType==JSONB_ARRAY );
+      }else if( p->eType==JSONB_ARRAY ){
         sqlite3_result_int64(ctx, p->aParent[p->nParent-1].iKey);
-      }
+      }else{
+        sqlite3_result_error(ctx, "malformed JSON", -1);
+      }    
       break;
     }
     case JEACH_VALUE: {
