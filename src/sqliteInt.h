@@ -4001,7 +4001,6 @@ struct Parse {
 
   int aTempReg[8];        /* Holding area for temporary registers */
   Parse *pOuterParse;     /* Outer Parse object when nested */
-  Token sNameToken;       /* Token with unqualified schema object name */
   u32 oldmask;            /* Mask of old.* columns referenced */
   u32 newmask;            /* Mask of new.* columns referenced */
   union {
@@ -4030,7 +4029,8 @@ struct Parse {
   ** first field in the recursive region.
   ************************************************************************/
 
-  Token sLastToken;       /* The last token parsed */
+  Token sLastToken;         /* The last token parsed */
+  Token sNameToken;         /* Token with unqualified schema object name */
   ynVar nVar;               /* Number of '?' variables seen in the SQL so far */
   u64 aVnbmc[SQLITE_VNBMC]; /* Varible Number Bitmap Cache */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
