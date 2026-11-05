@@ -881,7 +881,9 @@ proc sqlite-handle-debug {} {
   msg-checking "SQLITE_DEBUG build? "
   proj-if-opt-truthy debug {
     define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -O0 -Wall}
-    sqlite-add-feature-flag -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE
+    sqlite-add-feature-flag -DSQLITE_ENABLE_SELECTTRACE \
+                            -DSQLITE_ENABLE_WHERETRACE \
+                            -DSQLITE_ENABLE_BYTECODE_VTAB
     proj-opt-set memsys5
     msg-result yes
   } {
