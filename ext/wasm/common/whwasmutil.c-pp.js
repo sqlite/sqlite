@@ -2050,12 +2050,14 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
      passing in all remaining arguments, and returns the result.
      Throws if t is not mapped to an argument converter.
   */
-  cache.xWrap.convertArg = (t,...args)=>__xArgAdapterCheck(t)(...args);
+  cache.xWrap.convertArg =
+    (t, v, argv, argIndex)=> __xArgAdapterCheck(t)(v, argv, argIndex);
   /**
      Identical to convertArg() except that it does not perform
      an is-defined check on the mapping to t before invoking it.
   */
-  cache.xWrap.convertArgNoCheck = (t,...args)=>xArg.get(t)(...args);
+  cache.xWrap.convertArgNoCheck =
+    (t, v, argv, argIndex)=> xArg.get(t)(v, argv, argIndex);
 
   /**
      Fetches the xWrap() result adapter mapped to t, calls it, passing
@@ -2267,7 +2269,9 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
     /*Verify the arg type conversions are valid...*/;
     __xResultAdapterCheck(resultType);
     for(const t of argTypes){
-      if(t instanceof AbstractArgAdapter) xArg.set(t, (...args)=>t.convertArg(...args));
+      if(t instanceof AbstractArgAdapter){
+        xArg.set(t, (v, argv, argIndex)=> t.convertArg(v, argv, argIndex));
+      }
       else __xArgAdapterCheck(t);
     }
     const cxw = cache.xWrap;
@@ -2277,10 +2281,17 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
                          ? __argcMismatch(fArg, xf.length)
                          : cxw.convertResult(resultType, xf.call(null)));
     }
-    return function(...args){
-      if(args.length!==xf.length) __argcMismatch(fArg, xf.length);
+    const resConverter =
+          (null === resultType || 'null' === resultType)
+          ? null
+          : (resultType
+             ? __xResultAdapterCheck(resultType)
+             : undefined);
+
+    return function(...args) {
+      if( args.length !== xf.length ) __argcMismatch(fArg, xf.length);
       const scope = target.scopedAllocPush();
-      try{
+      try {
         /*
           Maintenance reminder re. arguments passed to convertArg():
           The public interface of argument adapters is that they take
@@ -2304,16 +2315,19 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
         */
         let i = 0;
         if( callee.debug ){
-          console.debug("xWrap() preparing: resultType ",resultType,
-                        'xf',xf,"argTypes",argTypes,"args",args);
+          console.debug('xWrap() preparing: resultType ', resultType,
+                        'xf', xf,
+                        'argTypes', argTypes, 'args', args);
         }
-        for(; i < args.length; ++i) args[i] = cxw.convertArgNoCheck(
-          argTypes[i], args[i], args, i
-        );
+        for(; i < args.length; ++i){
+          args[i] = cxw.convertArgNoCheck(argTypes[i], args[i], args, i);
+        }
         if( callee.debug ){
-          console.debug("xWrap() calling: resultType ",resultType, 'xf',xf,"argTypes",argTypes,"args",args);
+          console.debug('xWrap() calling: resultType ', resultType,
+                        'xf', xf,'argTypes', argTypes, 'args', args);
         }
-        return cxw.convertResultNoCheck(resultType, xf.apply(null,args));
+        const rawRes = xf.apply(null, args);
+        return resConverter ? resConverter(rawRes) : rawRes;
       }finally{
         target.scopedAllocPop(scope);
       }

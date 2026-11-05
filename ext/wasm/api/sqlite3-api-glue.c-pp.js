@@ -270,11 +270,11 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          working.  Rather than fix it, it was removed because testing
          the fix brought the huge potential for memory leaks to the
          forefront.
+
+
       */
       ["sqlite3_set_auxdata", undefined, [
-        "sqlite3_context*", "int", "*",
-        "*"
-      ]],
+        "sqlite3_context*", "int", "*","*"]],
       ['sqlite3_set_errmsg', 'int', 'sqlite3*', 'int', 'string'],
       ["sqlite3_shutdown", undefined],
       ["sqlite3_sourceid", "string"],
