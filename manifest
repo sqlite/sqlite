@@ -1,5 +1,5 @@
-C Include\sthe\ssNameToken\sfield\sof\sParse\sin\sthe\sreset-after-recursion\nsection\sin\sorder\sto\savoid\sa\sharmless\sUBSAN\swarning.
-D 2026-11-05T13:00:42.968
+C Add\stest\scases\sfor\swriting\sto\sfts3/4\sdocid\sand\srowid\scolumns.
+D 2026-11-05T14:38:27.149
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1298,7 +1298,7 @@ F test/fts3varint.test 0b84a3fd4eba8a39f3687523804d18f3b322e6d4539a55bf342079c36
 F test/fts4aa.test 0e6bfd6a81695a39b23e448dda25d864e63dda75bde6949c45ddc95426c6c3f5
 F test/fts4check.test f0ea5e5581951d8ef7a341eea14486daf6c5f516a2f3273b0d5e8cb8a6cd3bd2
 F test/fts4content.test 1bd518b1fed857d875ff2bda2c55971080878a29c18171eb43258d5758502d3a
-F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
+F test/fts4docid.test efc84f703c34bd4f9af401a7efe3ff4ae21f7ff6e91f005724a28281aa56f1ac
 F test/fts4growth.test 289833c34ad45a5e6e6133b53b6a71647231fb89d36ddcb8d9c87211b6721d7f
 F test/fts4growth2.test 13ad4e76451af6e6906c95cdc725d01b00044269
 F test/fts4incr.test 4e353a0bd886ea984e56fce9e77724fc923b8d0d
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6818f1bc8a7ca3a2f9cb3820bfbc171b103bd358df0a58f6008047c48e968e4b
-R aa289d8b419779e321e4205e13492e58
-U drh
-Z 4d1ba7882388360d0c84ff0094614545
+P 42c751c00127dad1d5a4d6c24890e111d9d993ce5050b5bb9818752de58d8ddf
+R dd27eeb6f74e3eb2e81b94abf917c831
+U dan
+Z 1f7b97a56ed8f23f229710f6cdb8a0eb
 # Remove this line to create a well-formed Fossil manifest.

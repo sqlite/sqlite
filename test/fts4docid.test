@@ -113,4 +113,81 @@ foreach {tn where result} {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test statements that explicitly assign to the rowid and/or docid columns.
+#
+foreach {tn module} {1 fts3 2 fts4} {
+  foreach {tn2 sql res rows} {
+    1 "INSERT INTO t2(rowid, x) VALUES(10, 'new')"
+      {0 {}} {1 one 2 two 10 new}
+    2 "INSERT INTO t2(docid, x) VALUES(10, 'new')"
+      {0 {}} {1 one 2 two 10 new}
+    3 "INSERT INTO t2(rowid, docid, x) VALUES(NULL, 10, 'new')"
+      {0 {}} {1 one 2 two 10 new}
+    4 "INSERT INTO t2(rowid, docid, x) VALUES(10, NULL, 'new')"
+      {0 {}} {1 one 2 two 10 new}
+    5 "INSERT INTO t2(rowid, docid, x) VALUES(10, 11, 'new')"
+      {1 {SQL logic error}} {1 one 2 two}
+    6 "INSERT INTO t2(rowid, docid, x) VALUES(10, 10, 'new')"
+      {1 {SQL logic error}} {1 one 2 two}
+    7 "INSERT INTO t2(rowid, x) VALUES(1, 'new')"
+      {1 {constraint failed}} {1 one 2 two}
+    8 "INSERT INTO t2(docid, x) VALUES(1, 'new')"
+      {1 {constraint failed}} {1 one 2 two}
+
+    9 "REPLACE INTO t2(rowid, x) VALUES(1, 'new')"
+      {0 {}} {1 new 2 two}
+   10 "REPLACE INTO t2(docid, x) VALUES(1, 'new')"
+      {0 {}} {1 new 2 two}
+   11 "REPLACE INTO t2(rowid, docid, x) VALUES(1, 2, 'new')"
+      {1 {SQL logic error}} {1 one 2 two}
+
+   12 "UPDATE t2 SET rowid=10 WHERE rowid=1"
+      {0 {}} {1 one 2 two}
+   13 "UPDATE t2 SET oid=10 WHERE rowid=1"
+      {0 {}} {1 one 2 two}
+   14 "UPDATE t2 SET rowid=10, x='new' WHERE rowid=1"
+      {0 {}} {1 new 2 two}
+   15 "UPDATE t2 SET rowid=2 WHERE rowid=1"
+      {0 {}} {1 one 2 two}
+   16 "UPDATE t2 SET docid=10 WHERE rowid=1"
+      {0 {}} {2 two 10 one}
+   17 "UPDATE t2 SET docid=2 WHERE rowid=1"
+      {1 {constraint failed}} {1 one 2 two}
+   18 "UPDATE OR REPLACE t2 SET docid=2 WHERE rowid=1"
+      {0 {}} {2 one}
+   19 "UPDATE t2 SET rowid=10, docid=11 WHERE rowid=1"
+      {0 {}} {2 two 11 one}
+   20 "UPDATE t2 SET rowid=10, docid=NULL WHERE rowid=1"
+      {0 {}} {2 two 10 one}
+  } {
+    execsql "
+      DROP TABLE IF EXISTS t2;
+      CREATE VIRTUAL TABLE t2 USING $module\(x);
+      INSERT INTO t2(docid, x) VALUES(1, 'one'), (2, 'two');
+    "
+    do_catchsql_test 4.$tn.$tn2.1 $sql $res
+    do_execsql_test 4.$tn.$tn2.2 {
+      INSERT INTO t2(t2) VALUES('integrity-check');
+      SELECT rowid, x FROM t2 WHERE t2 MATCH 'one OR two OR new' ORDER BY rowid;
+    } $rows
+  }
+}
+
+# A contentless or external content table does not report an error if an 
+# INSERT specifies non-NULL values for both rowid and docid. The docid 
+# value is used.
+#
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE t3 USING fts4(content='', x);
+  INSERT INTO t3(rowid, docid, x) VALUES(10, 11, 'new');
+  SELECT rowid FROM t3 WHERE t3 MATCH 'new';
+} {11}
+do_execsql_test 5.2 {
+  CREATE TABLE c4(x);
+  CREATE VIRTUAL TABLE t4 USING fts4(content='c4', x);
+  INSERT INTO t4(rowid, docid, x) VALUES(10, 11, 'new');
+  SELECT rowid FROM t4 WHERE t4 MATCH 'new';
+} {11}
+
 finish_test
