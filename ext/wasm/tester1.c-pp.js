@@ -904,36 +904,40 @@ T.g('C/WASM Utilities')
         .mustThrowMatching(()=>w.scopedAlloc(1), /^No scopedAllocPush/)
         .mustThrowMatching(()=>w.scopedAlloc.level=0, /read-only/);
       const asc = w.scopedAllocPush();
-      let asc2;
+      let asc2, reachedEnd = false;
       try {
         const p1 = w.scopedAlloc(16),
               p2 = w.scopedAlloc(16);
         T.assert(1===w.scopedAlloc.level)
           .assert(looksLikePtr(p1))
           .assert(looksLikePtr(p2))
-          .assert(asc[0] === p1)
-          .assert(asc[1]===p2);
+          .assert(asc.ptr[0] === p1/*API internals*/)
+          .assert(asc.ptr[1]===p2/*API internals*/);
         asc2 = w.scopedAllocPush();
         const p3 = w.scopedAlloc(16);
         T.assert(2===w.scopedAlloc.level)
           .assert(looksLikePtr(p3))
-          .assert(2===asc.length)
-          .assert(p3===asc2[0]);
+          .assert(2===asc.ptr.length/*API internals*/)
+          .assert(p3===asc2.ptr[0]/*API internals*/);
 
         const [z1, z2, z3] = w.scopedAllocPtr(3);
         T.assert(typeof w.ptr.null===typeof z1).assert(z2>z1).assert(z3>z2)
           .assert(w.ptr.null===w.peekPtr(z1), 'allocPtr() must zero the targets')
           .assert(w.ptr.null===w.peekPtr(z3));
+        reachedEnd = true;
       }finally{
         // Pop them in "incorrect" order to make sure they behave:
         w.scopedAllocPop(asc);
-        T.assert(0===asc.length);
+        T.assert(!asc.ptr/*API internals*/);
         T.mustThrowMatching(()=>w.scopedAllocPop(asc),
                             /^Invalid state object/);
         if(asc2){
-          T.assert(2===asc2.length,'Should be p3 and z1');
+          if( reachedEnd ){
+            T.assert(2===asc2.ptr.length/*API internals*/,
+                     'Should be p3 and z1');
+          }
           w.scopedAllocPop(asc2);
-          T.assert(0===asc2.length);
+          T.assert(!asc2.ptr/*API internals*/);
           T.mustThrowMatching(()=>w.scopedAllocPop(asc2),
                               /^Invalid state object/);
         }

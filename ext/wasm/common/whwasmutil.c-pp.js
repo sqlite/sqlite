@@ -329,6 +329,8 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
     return rc;
   };
 
+  const nu = (...args)=>Object.assign(Object.create(null),...args);
+
   /** Set up target.ptr... */
   {
     const __ptr = Object.create(null);
@@ -383,13 +385,23 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   */
   cache.scopedAlloc = [];
 
-  /** Push the pointer ptr to the current cache.scopedAlloc list
-      (which must already exist) and return ptr. */
-  cache.scopedAlloc.pushPtr = (ptr)=>{
-    cache.scopedAlloc[cache.scopedAlloc.length-1].push(ptr);
+  /** Push the non-function pointer ptr to the current
+      cache.scopedAlloc list (which must already exist) and return
+      ptr. */
+  cache.scopedAlloc.pushPtr = (ptr) => {
+    const top = cache.scopedAlloc[cache.scopedAlloc.length - 1];
+    if( top ) top.ptr.push(ptr);
     return ptr;
   };
 
+  /** Push the given indirect function table pointer to the current
+      cache.scopedAlloc object (which must already exist) and return
+      it. */
+  cache.scopedAlloc.pushFuncPtr = (indirectFuncPtr) => {
+    const top = cache.scopedAlloc[cache.scopedAlloc.length - 1];
+    if( top ) top.func.push(indirectFuncPtr);
+    return indirectFuncPtr;
+  };
   cache.utf8Decoder = new TextDecoder();
   cache.utf8Encoder = new TextEncoder();
 
@@ -719,7 +731,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
       /*this will only work if func is a WASM-exported function*/
       ft.set(ptr, func);
       if(scoped){
-        cache.scopedAlloc.pushPtr(ptr);
+        cache.scopedAlloc.pushFuncPtr(ptr);
       }
       return ptr;
     }catch(e){
@@ -733,7 +745,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
       const fptr = target.jsFuncToWasm(func, sig);
       ft.set(ptr, fptr);
       if(scoped){
-        cache.scopedAlloc.pushPtr(ptr);
+        cache.scopedAlloc.pushFuncPtr(ptr);
       }
     }catch(e){
       if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen);
@@ -1039,9 +1051,10 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
      target.heap8u().
   */
   target.cstrlen = function(ptr){
-    if(!ptr || !target.isPtr/*64*/(ptr)) return null;
-    ptr = Number(ptr) /*tag:64bit*/;
-    return heapWrappers().HEAP8U.indexOf(0, ptr) - ptr;
+    if(!ptr || !target.isPtr(ptr)) return null;
+    ptr = Number(ptr);
+    const end = heapWrappers().HEAP8U.indexOf(0, ptr);
+    return end >= 0 ? end - ptr : 0;
   };
 
   /** Internal helper to use in operations which need to distinguish
@@ -1338,7 +1351,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
    */
   target.scopedAllocPush = function(){
     __affirmAlloc(target, 'scopedAllocPush');
-    const a = [];
+    const a = nu({ptr:[], func:[]});
     cache.scopedAlloc.push(a);
     return a;
   };
@@ -1372,17 +1385,17 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
     const n = arguments.length
           ? cache.scopedAlloc.indexOf(state)
           : cache.scopedAlloc.length-1;
-    if(n<0) toss("Invalid state object for scopedAllocPop().");
-    if(0===arguments.length) state = cache.scopedAlloc[n];
-    cache.scopedAlloc.splice(n,1);
-    for(let p; (p = state.pop()); ){
-      if(target.functionEntry(p)){
-        //console.warn("scopedAllocPop() uninstalling function",p);
-        target.uninstallFunction(p);
-      }else{
-        target.dealloc(p);
-      }
+    if(n<0) toss('Invalid state object for scopedAllocPop().');
+    if(0 === arguments.length) state = cache.scopedAlloc[n];
+    cache.scopedAlloc.splice(n, 1);
+    let li = state.func;
+    while( li.length ){
+      try{target.uninstallFunction(li.pop())}
+      catch(e){/*ignored*/}
     }
+    li = state.ptr;
+    while( li.length ) target.dealloc(li.pop());
+    state.ptr = state.func = null;
   };
 
   /**
@@ -1970,7 +1983,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
                  function. We're relying very much here on xWrap()
                  having pushed an alloc scope.
               */
-              cache.scopedAlloc.pushPtr(pair[1]);
+              cache.scopedAlloc.pushFuncPtr(pair[1]);
             }
             catch(e){/*ignored*/}
           }
@@ -1985,7 +1998,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
             FuncPtrAdapter.debugOut("FuncPtrAdapter uninstalling", this,
                                     this.contextKey(argv,argIndex), '@'+pair[1], v);
           }
-          try{cache.scopedAlloc.pushPtr(pair[1]);/*see notes above*/}
+          try{cache.scopedAlloc.pushFuncPtr(pair[1]);/*see notes above*/}
           catch(e){/*ignored*/}
           pair[0] = pair[1] = (v || __NullPtr);
         }
@@ -2243,7 +2256,9 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
     const fIsFunc = (fArg instanceof Function);
     const xf = fIsFunc ? fArg : target.xGet(fArg);
     if(fIsFunc) fArg = xf.name || 'unnamed function';
-    if(argTypes.length!==xf.length) __argcMismatch(fArg, xf.length);
+    if(argTypes.length!==xf.length){
+      __argcMismatch(fArg, xf.length) /* throws */;
+    }
     if( 0===xf.length
         && (null===resultType || 'null'===resultType) ){
       /* Func taking no args with an as-is return. We don't need a wrapper. */
