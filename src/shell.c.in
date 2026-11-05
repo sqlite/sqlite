@@ -9071,9 +9071,11 @@ static int dotCmdMode(ShellState *p){
       }
       chng = 1;
     }else if( optionMatch(z,"reset") ){
-      int saved_eMode = p->mode.eMode;
-      modeFree(&p->mode);
+      int saved_eMode = p->mode.eMode;            /* Don't change the mode */
+      u8 saved_echo = p->mode.mFlags & MFLG_ECHO; /* Don't reset --echo */
+      modeFree(&p->mode);                         /* Reset everything else */
       modeChange(p, saved_eMode);
+      p->mode.mFlags = saved_echo;
     }else if( optionMatch(z,"rowcount") ){
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
