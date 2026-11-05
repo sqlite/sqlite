@@ -2748,7 +2748,6 @@ static u32 jsonTranslateBlobToPrettyText(
         if( pPretty->nIndent >= JSON_MAX_DEPTH ){
           jsonStringTooDeep(pOut);
         }
-        pParse->iDepth = pPretty->nIndent;
         while( pOut->eErr==0 ){
           jsonPrettyIndent(pPretty);
           j = jsonTranslateBlobToText(pParse, j, pOut);
