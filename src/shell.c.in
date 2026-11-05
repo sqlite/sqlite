@@ -5204,6 +5204,24 @@ static void shellUSleepFunc(
 }
 
 /*
+** SQL function:  dualrep(X)
+**
+** Return the value X.  But if X is in a numeric representation (an
+** integer or a float) then return a dual-representation where the
+** result is both numeric and text at the same time.  This has no
+** known practical application, but is useful in testing SQLite
+** internals.
+*/
+static void shellDualRepFunc(
+  sqlite3_context *context,
+  int argcUnused,
+  sqlite3_value **argv
+){
+  sqlite3_value_text(argv[0]);
+  sqlite3_result_value(context, argv[0]);
+}
+
+/*
 ** SQL function:  shell_module_schema(X)
 **
 ** For use internally and for debugging and testing only.  This function
@@ -5427,6 +5445,8 @@ static void open_db(ShellState *p, int openFlags){
                             shell_complete_sql, 0, 0);
     sqlite3_create_function(p->db, "usleep",1,SQLITE_UTF8,0,
                             shellUSleepFunc, 0, 0);
+    sqlite3_create_function(p->db, "dualrep",1,SQLITE_UTF8,0,
+                            shellDualRepFunc, 0, 0);
 #ifndef SQLITE_NOHAVE_SYSTEM
     sqlite3_create_function(p->db, "edit", 1, SQLITE_UTF8, 0,
                             editFunc, 0, 0);
