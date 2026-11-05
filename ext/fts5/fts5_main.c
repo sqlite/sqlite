@@ -1213,7 +1213,8 @@ static int fts5FindRankFunction(Fts5Cursor *pCsr){
     if( zSql ){
       sqlite3_stmt *pStmt = 0;
       rc = sqlite3_prepare_v3(pConfig->db, zSql, -1,
-                              SQLITE_PREPARE_PERSISTENT, &pStmt, 0);
+          SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_FROM_DDL, &pStmt, 0
+      );
       sqlite3_free(zSql);
       assert( rc==SQLITE_OK || pCsr->pRankArgStmt==0 );
       if( rc==SQLITE_OK ){
