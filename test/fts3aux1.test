@@ -541,4 +541,24 @@ do_execsql_test 9.1 {
   SELECT * FROM t1;
 } {x * 1 1 x 2 1 1}
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/forumpost/2647c44940
+#
+# A BLOB upper bound on term, combined with a TEXT lower bound, must not
+# be used as a text stop key. Blobs sort after all text values, so both
+# upper bounds below are greater than all terms.
+#
+reset_db
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE f4 USING fts4(c0);
+  INSERT INTO f4 VALUES('a ab abc b x');
+  CREATE VIRTUAL TABLE aux USING fts4aux(f4);
+} {}
+do_execsql_test 10.1 {
+  SELECT DISTINCT term FROM aux WHERE term >= 'b' AND term < x'00';
+} {b x}
+do_execsql_test 10.2 {
+  SELECT DISTINCT term FROM aux WHERE term BETWEEN 'b' AND x'61';
+} {b x}
+
 finish_test
