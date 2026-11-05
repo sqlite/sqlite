@@ -950,7 +950,7 @@ void sqlite3_str_vappendf(
           }
           if( width>len ){
             sqlite3_int64 sp = width-len;
-            assert( sp>0 && sp<0x7fffffff );
+            assert( sp>0 && sp<=0x7fffffff );
             sqlite3StrAppendchar64(pAccum, (int)sp, ' ');
             if( !flag_leftjustify
              && n>0
