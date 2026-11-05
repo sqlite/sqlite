@@ -8676,7 +8676,7 @@ static int dotCmdImport(ShellState *p){
   if( needCommit ) sqlite3_exec(p->db, "COMMIT", 0, 0, 0);
   if( eVerbose>0 ){
     cli_printf(p->out,
-          "Added %d rows with %d errors using %d lines of input\n",
+          "Added %d rows with %d errors using %lld lines of input\n",
           sCtx.nRow, sCtx.nErr, sCtx.nLine-1-iLineOffset);
   }
   return sCtx.nErr ? 1 : 0;
