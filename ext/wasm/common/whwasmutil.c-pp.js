@@ -323,11 +323,19 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
      addition/subtraction expressions (which we frequently need for
      calculating pointer offsets).
   */
-  const __ptrAdd = function(...args){
-    let rc = __asPtrType(0);
-    for(const v of args) rc += __asPtrType(v);
-    return rc;
-  };
+  const __ptrAdd = (4 === __ptrSize)
+        ? function(a, b){
+          if(2 === arguments.length) return (Number(a || 0) + Number(b || 0)) | 0;
+          let rc = 0;
+          for(let i = 0; i < arguments.length; ++i) rc += Number(arguments[i] || 0);
+          return rc | 0;
+        }
+        : function(a, b){
+          if(2 === arguments.length) return BigInt(a || 0) + BigInt(b || 0);
+          let rc = 0n;
+          for(let i = 0; i < arguments.length; ++i) rc += BigInt(arguments[i] || 0);
+          return rc;
+        };
 
   const nu = (...args)=>Object.assign(Object.create(null),...args);
 
