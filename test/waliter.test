@@ -66,8 +66,14 @@ do_execsql_test 1.1 {
 } {0}
 
 do_test 1.2 {
-  file size test.db-shm
-} [expr 32768 * 3]
+  expr {[file size test.db-shm] >= 32768*3}
+  # Forum thread 2026-10-11T08:31:48Z
+  # https://sqlite.org/forum/forumpost/471533c5f0
+  #
+  # On "normal" systems, the file size is exactly 98304 bytes.
+  # But apparently some (obscure) systems have page size of 65536
+  # which means that the file size will be larger.
+} 1
 
 do_execsql_test 1.3 {
   PRAGMA wal_checkpoint

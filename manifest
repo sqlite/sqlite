@@ -1,5 +1,5 @@
-C JS:\stester1\spass/fail\sreporting\stweak\sto\sreduce\seyeball\sstrain\sduring\sthe\stypical\sfour-tabs-in-parallel\stest\sruns.
-D 2026-11-05T15:12:26.038
+C Revise\sa\stest\scase\sso\sthat\sit\sworks\seven\son\ssystems\swith\svery\slarge\nfilesystem\spage\ssizes.\n[forum:/info/2026-10-11T08:31:48Z|Forum\sthread\s2026-10-11T08:31:48Z]
+D 2026-11-05T15:13:59.518
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2109,7 +2109,7 @@ F test/walcrash4.test 93d8825e9d0b1b183e3a73ee67e5c8fc9d86cdaf1f3a03bcc960c3aeed
 F test/walfault.test 09b8ad7e52d2f54bce50e31aa7ea51412bb9f70ac13c74e669ddcd8b48b0d98d
 F test/walfault2.test e039ac66c78d5561683cacde04097213cdad3b58e2b3f3fe1112862217bfd915
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
-F test/waliter.test 267cf947885e5075d0492a8dca703cf21cae551f91532de27834a6b7fd0f9ee9
+F test/waliter.test 9f28ec73c38148852558257d1bbe4c43f2ff49b9a651d860d09dac9067e5b0dd
 F test/walmode.test 2a5530972948948a17211e070263fcf25ef1ca4e06d742a32d81a470b91441dc
 F test/walnoshm.test 844b3eb7d8e8ee76c834ef723babec57b0be51fa52ef7e321c289ed0fe3cddc2
 F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 873591876f5fdf61ff55e81f680b9380312d0cfdfb2ba50f7b74fd560d6aba3b
-R 8cf6ac71a12af1b9825920f1db2fc290
-U stephan
-Z 6cc16db7f526c30d98900bfdfabd04a7
+P 32f5e8f06e965f4d8bfaa8d07f626d0b775be865633733e060721b7b3ddcba36
+R 8e98a95e1fc25491de60ea6125cedba6
+U drh
+Z 14ac68eaf9e4f75e999e607a5298ee4b
 # Remove this line to create a well-formed Fossil manifest.
