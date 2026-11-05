@@ -3640,6 +3640,11 @@ static void fts5ChunkIterate(
   /* This function does not work with detail=none databases. */
   assert( p->pConfig->eDetail!=FTS5_DETAIL_NONE );
 
+  if( nChunk<0 ){
+    FTS5_CORRUPT_IDX(p);
+    return;
+  }
+
   if( (pSeg->flags & FTS5_SEGITER_REVERSE)==0 ){
     pgnoSave = pgno+1;
   }
