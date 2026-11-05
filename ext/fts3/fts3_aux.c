@@ -47,7 +47,8 @@ struct Fts3auxCursor {
 ** Schema of the terms table.
 */
 #define FTS3_AUX_SCHEMA \
-  "CREATE TABLE x(term, col, documents, occurrences, languageid HIDDEN)"
+  "CREATE TABLE x(term, col, documents, occurrences, languageid HIDDEN, " \
+  "PRIMARY KEY(term, col, languageid)) WITHOUT ROWID"
 
 /*
 ** This function does all the work for both the xConnect and xCreate methods.

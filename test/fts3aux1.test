@@ -561,4 +561,37 @@ do_execsql_test 10.2 {
   SELECT DISTINCT term FROM aux WHERE term BETWEEN 'b' AND x'61';
 } {b x}
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/forumpost/3e1e0cb5b0
+#
+reset_db
+do_execsql_test 11.0 {
+  CREATE VIRTUAL TABLE f4 USING fts4(c0);
+  INSERT INTO f4 VALUES('a ab abc b x');
+  CREATE VIRTUAL TABLE aux USING fts4aux(f4);
+  CREATE TABLE t(k);
+  INSERT INTO t VALUES('a');
+} {}
+do_execsql_test 11.1 {
+  SELECT term, col FROM aux WHERE term IN ('a') OR term > 'w' ORDER BY 1, 2;
+} {a 0 a * x 0 x *}
+do_execsql_test 11.2 {
+  SELECT aux.term, aux.col, t.k FROM t RIGHT JOIN aux ON t.k = aux.term
+   WHERE aux.term IN ('a', 'x') ORDER BY 1, 2;
+} {a 0 a a * a x 0 {} x * {}}
+
+# The (term, col) pair is not unique across language ids, so the primary
+# key of an fts4aux table must include languageid. Otherwise DISTINCT may
+# be incorrectly optimized out of the query below.
+#
+do_execsql_test 11.3 {
+  CREATE VIRTUAL TABLE f5 USING fts4(c0, languageid=lid);
+  INSERT INTO f5(c0, lid) VALUES('a b', 0);
+  INSERT INTO f5(c0, lid) VALUES('a c a', 1);
+  CREATE VIRTUAL TABLE aux5 USING fts4aux(f5);
+}
+do_execsql_test 11.4 {
+  SELECT DISTINCT term, col FROM aux5 WHERE languageid IN (0,1);
+} {a * a 0 b * b 0 c * c 0}
+
 finish_test
