@@ -1041,10 +1041,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   target.cstrlen = function(ptr){
     if(!ptr || !target.isPtr/*64*/(ptr)) return null;
     ptr = Number(ptr) /*tag:64bit*/;
-    const h = heapWrappers().HEAP8U;
-    let pos = ptr;
-    for( ; h[pos] !== 0; ++pos ){}
-    return pos - ptr;
+    return heapWrappers().HEAP8U.indexOf(0, ptr) - ptr;
   };
 
   /** Internal helper to use in operations which need to distinguish
