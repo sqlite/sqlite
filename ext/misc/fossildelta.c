@@ -44,6 +44,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 
@@ -889,6 +890,11 @@ static int deltaparsevtabClose(sqlite3_vtab_cursor *cur){
   return SQLITE_OK;
 }
 
+/*
+** Compute the difference (in bytes) between two pointers.
+*/
+#define PTR_DIFF(A,B)  ((i64)(intptr_t)(A) - (i64)(intptr_t)(B))
+
 
 /*
 ** Advance a deltaparsevtab_cursor to its next row of output.
@@ -918,14 +924,14 @@ static int deltaparsevtabNext(sqlite3_vtab_cursor *cur){
       }
       pCur->a2 = deltaGetInt(&z, &i);
       pCur->eOp = DELTAPARSE_OP_COPY;
-      pCur->iNext = (i64)(&z[1] - pCur->aDelta);
+      pCur->iNext = PTR_DIFF(&z[1],pCur->aDelta);
       break;
     }
     case ':': {
       z++;
       pCur->a2 = (unsigned int)(z - pCur->aDelta);
       pCur->eOp = DELTAPARSE_OP_INSERT;
-      pCur->iNext = (i64)(&z[pCur->a1] - pCur->aDelta);
+      pCur->iNext = PTR_DIFF(&z[1],pCur->aDelta);
       break;
     }
     case ';': {
@@ -1047,7 +1053,7 @@ static int deltaparsevtabFilter(
     return SQLITE_OK;
   }
   a++;
-  pCur->iNext = (i64)(a - pCur->aDelta);
+  pCur->iNext =  PTR_DIFF(a,pCur->aDelta);
   return SQLITE_OK;
 }
 
