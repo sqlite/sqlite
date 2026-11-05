@@ -2978,7 +2978,7 @@ case OP_IfNullRow: {         /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   if( pC && pC->nullRow ){
-    sqlite3VdbeMemSetNull(aMem + pOp->p3);
+    if( pOp->p3>0 ) sqlite3VdbeMemSetNull(aMem + pOp->p3);
     goto jump_to_p2;
   }
   break;
