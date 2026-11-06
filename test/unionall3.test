@@ -78,4 +78,23 @@ do_execsql_test 1.8 {
   );
 } {15}
 
+do_execsql_test 2.0 {
+  CREATE TABLE t3(a INT);
+  INSERT INTO t3 VALUES(1),(2),(3);
+} {}
+do_execsql_test 2.1 {
+  SELECT q1.a, q0.x
+    FROM (SELECT a FROM t1 UNION ALL SELECT a FROM t2) AS q1,
+         (SELECT a AS x FROM t3) AS q0
+   ORDER BY 1, 2;
+} {1 1  1 1  1 2  1 2  1 3  1 3  2 1  2 2  2 3
+   3 1  3 2  3 3  5 1  5 2  5 3}
+do_execsql_test 2.2 {
+  SELECT q1.a, q0.x
+    FROM (SELECT 1 AS x UNION ALL SELECT 2 UNION ALL SELECT 3 LIMIT 3) AS q0,
+         (SELECT a FROM t1 UNION ALL SELECT a FROM t2) AS q1
+   ORDER BY 1, 2;
+} {1 1  1 1  1 2  1 2  1 3  1 3  2 1  2 2  2 3
+   3 1  3 2  3 3  5 1  5 2  5 3}
+
 finish_test
