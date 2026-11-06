@@ -101,3 +101,80 @@ CREATE TABLE t1(a,b,c);
 PRAGMA writable_schema = off;
 COMMIT;
 END
+
+# 959866cfe4ec0e16 2026-11-06T00:25:13Z 
+# Wrong result: c0 GLOB 'ab?' OR c0 GLOB 'ab*' on an indexed column
+# omits BLOB rows
+#
+.open :memory:
+.mode -reset qbox
+.testcase 500
+CREATE TABLE t0(c0, c1);
+INSERT INTO t0 VALUES('ab',1),('abc',2),('abd',3),(x'6162',4),
+                     (x'616263',5),('b',6);
+CREATE INDEX i0 ON t0(c0);
+.check ''
+
+.testcase 510
+SELECT c1, c0 FROM t0
+ WHERE c0 GLOB 'ab*'
+ ORDER BY c1;
+.check <<*END*
+╭────┬───────────╮
+│ c1 │    c0     │
+╞════╪═══════════╡
+│  1 │ 'ab'      │
+│  2 │ 'abc'     │
+│  3 │ 'abd'     │
+│  4 │ x'6162'   │
+│  5 │ x'616263' │
+╰────┴───────────╯
+*END*
+
+.testcase 520
+SELECT c1, c0 FROM t0
+ WHERE c0 GLOB 'ab?' OR c0 GLOB 'ab*'
+ ORDER BY c1;
+.check <<*END*
+╭────┬───────────╮
+│ c1 │    c0     │
+╞════╪═══════════╡
+│  1 │ 'ab'      │
+│  2 │ 'abc'     │
+│  3 │ 'abd'     │
+│  4 │ x'6162'   │
+│  5 │ x'616263' │
+╰────┴───────────╯
+*END*
+
+.testcase 530
+SELECT c1, c0 FROM t0
+ WHERE c0 GLOB 'ab*' OR c0 GLOB 'ab*'
+ ORDER BY c1;
+.check <<*END*
+╭────┬───────────╮
+│ c1 │    c0     │
+╞════╪═══════════╡
+│  1 │ 'ab'      │
+│  2 │ 'abc'     │
+│  3 │ 'abd'     │
+│  4 │ x'6162'   │
+│  5 │ x'616263' │
+╰────┴───────────╯
+*END*
+
+.testcase 540
+SELECT c1, c0 FROM t0 NOT INDEXED
+ WHERE c0 GLOB 'ab?' OR c0 GLOB 'ab*' 
+ ORDER BY c1;
+.check <<*END*
+╭────┬───────────╮
+│ c1 │    c0     │
+╞════╪═══════════╡
+│  1 │ 'ab'      │
+│  2 │ 'abc'     │
+│  3 │ 'abd'     │
+│  4 │ x'6162'   │
+│  5 │ x'616263' │
+╰────┴───────────╯
+*END*

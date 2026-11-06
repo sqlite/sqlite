@@ -606,7 +606,13 @@ static void whereCombineDisjuncts(
   int idxNew;            /* Index in pWC of the next virtual term */
   Expr *pA, *pB;         /* Expressions associated with pOne and pTwo */
 
-  if( (pOne->wtFlags | pTwo->wtFlags) & TERM_VNULL ) return;
+  if( (pOne->wtFlags | pTwo->wtFlags) & (TERM_VNULL|TERM_LIKEOPT) ){
+    testcase( pOne->wtFlags & TERM_VNULL );
+    testcase( pOne->wtFlags & TERM_LIKEOPT );
+    testcase( pTwo->wtFlags & TERM_VNULL );
+    testcase( pTwo->wtFlags & TERM_LIKEOPT );
+    return;
+  }
   if( (pOne->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE))==0 ) return;
   if( (pTwo->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE))==0 ) return;
   if( (eOp & (WO_EQ|WO_LT|WO_LE))!=eOp
