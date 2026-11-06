@@ -1,5 +1,5 @@
-C Ensure\sthat\sOOM\sconditions\sin\scalls\sto\ssqlite3changegroup_begin()\sor\ssqlite3changegroup_add_xxx()\sdo\snot\sleave\sthe\schangegroup\sobject\sin\sa\scorrupt\sstate.\sReport\s[bugs:/info/2026-10-28T10:49:09Z\s|\s2026-10-28T10:49:09Z].
-D 2026-11-06T16:53:43.630
+C Avoid\ssilently\sdropping\sindex\sentries\sfollowing\san\sOOM\swithin\san\sfts3\s\s'merge'\scommand.\sReport\s[bugs:/info/2026-10-28T11:00:38Z\s|\s2026-10-28T11:00:38Z].
+D 2026-11-06T17:21:17.765
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -98,7 +98,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c 386adac2dfcda727cd169f195db7f77e450295e100825f9038b11e7368a50031
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c e1b735b15e7140439a404639dd3fece2084dbcee5fa892f20edfb18beb3f189f
+F ext/fts3/fts3_write.c 3fe728d1980b9bdbdf4e197edeb940b0cd9e4e79bea4ebae611022253d5e036f
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 4fea96ea2c2d434acb50f30554c30de23eeed5847fe4656470e2ebe5113e4d58
@@ -1305,7 +1305,7 @@ F test/fts4intck1.test 54e7f28e34b72fb0c614d414bb1f568154d463c5a00b20944e893df85
 F test/fts4langid.test 1cc6fe045f094f1695d0b20e6b817a2ce22ec470cb7c6577470cd71ed0256e90
 F test/fts4lastrowid.test 185835895948d5325c7710649824042373b2203149abe8024a9319d25234dfd7
 F test/fts4merge.test 57d093660a5093ae6e9fbd2d17592a88b45bbd66db2703c4b640b28828dbe38b
-F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
+F test/fts4merge2.test 8c5e34ed4c22cfa9b3395536e644eb60095504eff370f67dc5c4d39213bf3626
 F test/fts4merge3.test 8d9ccb4a3d41c4c617a149d6c4b13ad02de797d0
 F test/fts4merge4.test 66fce89934cd9508cbdc67de486558c34912ffb2e8ffe5c9a1bbb9b8a4408ba7
 F test/fts4merge5.test 987af90c930e8555f74ab994f597431caec7f8defc52de7718655c32da07af9e
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f2ecc3000c414b2e08f8af91814dae9ad67468909c02060c36563660b18bd41d
-R ac847790834ef3f48ab3072279d33274
+P 9f8bf750d9a0eea4bf9e280008ad9163d84d8c28c2ad6839e0fcc3e64d29d468
+R bcff31aedc7f4c340f00833e4c8ecd6d
 U dan
-Z 8cdfcaeb56a9470778cad1fb46f2187a
+Z ad9255c0570409da705425a0add2bb67
 # Remove this line to create a well-formed Fossil manifest.

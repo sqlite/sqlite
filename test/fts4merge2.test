@@ -1,4 +1,14 @@
-
+# 2012-03-29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,7 +42,36 @@ do_faultsim_test 1.2 -faults oom-t* -prep {
   execsql { INSERT INTO t1(t1) VALUES('merge=1,2') }
   execsql { INSERT INTO t1(t1) VALUES('merge=1,2') }
 } -test {
-  faultsim_test_result {0 {}} 
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+# An OOM while determining the output index of an incremental merge must
+# not cause the merge to succeed having written its output over an
+# existing segment. The database contains segments (0,0), (0,1) and (1,0).
+# Merging the two level-0 segments must not overwrite segment (1,0), which
+# contains 16 of the 18 documents.
+#
+reset_db
+do_test 2.0 {
+  execsql { CREATE VIRTUAL TABLE t2 USING fts4(x) }
+  for {set i 0} {$i<18} {incr i} {
+    execsql { INSERT INTO t2 VALUES('w' || $i || ' common') }
+  }
+  execsql { SELECT level, idx FROM t2_segdir ORDER BY 1, 2 }
+} {0 0 0 1 1 0}
+faultsim_save_and_close
+
+do_faultsim_test 2.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  execsql { SELECT count(*) FROM t2 WHERE t2 MATCH 'nosuchterm' }
+} -body {
+  execsql { INSERT INTO t2(t2) VALUES('merge=2,2') }
+} -test {
+  faultsim_test_result {0 {}}
+  set n [db one { SELECT count(*) FROM t2 WHERE t2 MATCH 'common' }]
+  if {$n!=18} { error "merge rc=$testrc, $n of 18 documents remain" }
+  db eval { INSERT INTO t2(t2) VALUES('integrity-check') }
 }
 
 finish_test

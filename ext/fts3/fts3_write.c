@@ -5042,7 +5042,7 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     if( rc==SQLITE_OK ){
       rc = fts3IncrmergeOutputIdx(p, iAbsLevel, &iIdx);
       assert( bUseHint==1 || bUseHint==0 );
-      if( iIdx==0 || (bUseHint && iIdx==1) ){
+      if( rc==SQLITE_OK && (iIdx==0 || (bUseHint && iIdx==1)) ){
         int bIgnore = 0;
         rc = fts3SegmentIsMaxLevel(p, iAbsLevel+1, &bIgnore);
         if( bIgnore ){
