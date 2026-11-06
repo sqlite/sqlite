@@ -684,5 +684,25 @@ do_execsql_test 24.3 {
   SELECT b, typeof(b) FROM t WHERE b = 1;
 } {1.0 real}
 
+# Report https://sqlite.org/bugs/forumpost/9c7be5adb8
+#
+# An aggregate argument that matches a virtual generated column must not
+# be read from an index on that column if the column has a different
+# affinity from the expression.
+#
+do_execsql_test 25.0 {
+  CREATE TABLE t25(a INT, b INT, g TEXT AS (a+0));
+  CREATE INDEX i25 ON t25(b, g);
+  INSERT INTO t25(a,b) VALUES(9,1),(10,1);
+}
+do_execsql_test 25.1 {
+  SELECT b, max(a+0), min(a+0), group_concat(typeof(a+0))
+    FROM t25 NOT INDEXED GROUP BY b;
+} {1 10 9 integer,integer}
+do_execsql_test 25.2 {
+  SELECT b, max(a+0), min(a+0), group_concat(typeof(a+0))
+    FROM t25 INDEXED BY i25 GROUP BY b;
+} {1 10 9 integer,integer}
+
 
 finish_test

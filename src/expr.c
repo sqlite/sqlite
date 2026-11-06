@@ -4892,6 +4892,30 @@ int sqlite3ExprCanReturnSubtype(Parse *pParse, Expr *pExpr){
   return w.eCode;
 }
 
+/*
+** Return 0 iff the expression in IndexedExpr object p is identical to
+** expression pExpr, and the affinity is such that an entry read from
+** the index may be substituted for pExpr in any context. Otherwise
+** return non-zero.
+*/
+static int indexedExprCompare(
+  IndexedExpr *p,                 /* Indexed expression */
+  Expr *pExpr,                    /* Expression to compare to p */
+  int iDataCur                    /* iTab argument for ExprCompare() */
+){
+  u8 exprAff;
+  if( sqlite3ExprCompare(0, pExpr, p->pExpr, iDataCur)!=0 ) return 1;
+  assert( p->aff>=SQLITE_AFF_BLOB && p->aff<=SQLITE_AFF_NUMERIC );
+  exprAff = sqlite3ExprAffinity(pExpr);
+  if( (exprAff<=SQLITE_AFF_BLOB && p->aff!=SQLITE_AFF_BLOB)
+   || (exprAff==SQLITE_AFF_TEXT && p->aff!=SQLITE_AFF_TEXT)
+   || (exprAff>=SQLITE_AFF_NUMERIC && p->aff!=SQLITE_AFF_NUMERIC)
+  ){
+    /* Affinity mismatch on a generated column */
+    return 1;
+  }
+  return 0;
+}
 
 /*
 ** Check to see if pExpr is one of the indexed expressions on pParse->pIdxEpr.
@@ -4907,24 +4931,13 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
   IndexedExpr *p;
   Vdbe *v;
   for(p=pParse->pIdxEpr; p; p=p->pIENext){
-    u8 exprAff;
     int iDataCur = p->iDataCur;
     if( iDataCur<0 ) continue;
     if( pParse->iSelfTab ){
       if( p->iDataCur!=pParse->iSelfTab-1 ) continue;
       iDataCur = -1;
     }
-    if( sqlite3ExprCompare(0, pExpr, p->pExpr, iDataCur)!=0 ) continue;
-    assert( p->aff>=SQLITE_AFF_BLOB && p->aff<=SQLITE_AFF_NUMERIC );
-    exprAff = sqlite3ExprAffinity(pExpr);
-    if( (exprAff<=SQLITE_AFF_BLOB && p->aff!=SQLITE_AFF_BLOB)
-     || (exprAff==SQLITE_AFF_TEXT && p->aff!=SQLITE_AFF_TEXT)
-     || (exprAff>=SQLITE_AFF_NUMERIC && p->aff!=SQLITE_AFF_NUMERIC)
-    ){
-      /* Affinity mismatch on a generated column */
-      continue;
-    }
-
+    if( indexedExprCompare(p, pExpr, iDataCur)!=0 ) continue;
 
     /* Functions that might set a subtype should not be replaced by the
     ** value taken from an expression index if they are themselves an
@@ -7570,7 +7583,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
         int iDataCur = pIEpr->iDataCur;
         if( iDataCur<0 ) continue;
-        if( sqlite3ExprCompare(0, pExpr, pIEpr->pExpr, iDataCur)==0 ) break;
+        if( indexedExprCompare(pIEpr, pExpr, iDataCur)==0 ) break;
       }
       if( pIEpr==0 ) break;
       if( NEVER(!ExprUseYTab(pExpr)) ) break;
