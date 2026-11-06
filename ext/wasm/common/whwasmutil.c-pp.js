@@ -20,17 +20,16 @@
 
   and SQLite:
 
-  https://sqlite.org
+  https://sqlite.org/src/dir/ext/wasm/common
 
   This file is kept in sync between both of those trees.
 
-//#@ push policy error
+//#@ push policy error delimiter "@" "@"
   This build was generated using:
 
   @c-pp::argv@
 
   by libcmpp @cmpp::version@
-//#@ pop policy
 */
 //#savepoint begin
 //#define ? esm 0
@@ -48,7 +47,6 @@
 //#if esm
 //#  define lexical-scoped 1
 //#/if
-//#@ push policy error delimiter "@" "@"
 /**
    The primary goal of this function is to provide JS/WASM utility
    code similar to some of that provided by Emscripten-generated
@@ -57,18 +55,23 @@
    that end, it populates the given object with various WASM-specific
    APIs. These APIs work with both 32- and 64-bit WASM builds.
 
+   This function is intended to be called after a WASM module has been
+   loaded, passed some of that module's state as described in the
+   following docs. Its arugment is both a configuration object and
+   a target which gets filled out with many new members.
+
    Forewarning: this API explicitly targets only browser environments.
    If a given non-browser environment has the capabilities needed for
    a given feature (e.g. TextEncoder), great, but it does not go out
    of its way to account for them and does not provide compatibility
    crutches for them. That said: no specific incompatibilities with,
-   e.g., node.js are known (whereas it is known that some folks
-   use this with node.js).
+   e.g., node.js are known (whereas it is known that some folks use
+   this with node.js via the sqlite3.org JS/WASM bindings).
 
    Intended usage:
 
    ```
-   const target = {}; // ... some object ...
+   const target = { ...see config options below... };
 //#if esm
    import {default as whw} from "./whwasmutil.mjs";
    whw(target);
@@ -82,10 +85,12 @@
    properties on it, before calling this, to configure it, as
    documented below.
 
+//#if not esm
    The global-scope symbol for this function is intended only to
    provide an easy way to make it available to 3rd-party scripts and
    "should" be deleted after calling it. That symbol is _not_ used
    within the library.
+//#/if
 
    It currently offers alternatives to the following
    Emscripten-generated APIs:
@@ -127,11 +132,15 @@
 
    How to install...
 
-   Passing an object to this function will install this library's
-   functionality into that object. It returns its argument.
+   Passing an object to this function both pulls the configuration
+   from that object and installs this library's functionality into
+   that object. It returns its argument.  It throws for various error
+   conditions, such as missing required config info (see below).
 
+//#if not esm
    After installation, client code "should" delete this function's
    global symbol (if any).
+//#/if
 
    This code requires that the target object have the following
    properties, though they needn't be available until the first time
@@ -143,8 +152,10 @@
      contain the symbols exported by the WASM module associated with
      this code. In an Enscripten environment it must be set to
      `Module['asm']` (versions <=3.1.43) or `wasmExports` (versions
-     >=3.1.44). The exports object must contain a minimum of the
-     following symbols:
+     >=3.1.44). For WASI-SDK (or similar) builds, assigning
+     (target.instance=X.instance) suffices, where X is the result of
+     WebAssembly.instantiate(). The exports object must contain a
+     minimum of the following symbols:
 
      - `memory`: a WebAssembly.Memory object representing the WASM
        memory. _Alternately_, the `memory` property can be set as
@@ -159,9 +170,10 @@
 
    - `functionTable`: WebAssembly.Table object holding the indirect
      function call table.  If not set then
-     `exports.__indirect_function_table` is assumed. Achtung: this
-     property gets replaced by a function with the same name (because
-     this API used that name before this config option was added).
+     `exports.__indirect_function_table` is assumed (and must be
+     set). ACHTUNG: this property gets replaced by a function with the
+     same name because this API used that name before this config
+     option was added.
 
    In order to simplify downstream usage, if `target.exports` is not
    set when this is called then a property access interceptor
@@ -195,6 +207,11 @@
      null/0 (for which it must be a no-op). In Emscripten this is
      conventionally made available via `Module['_free']`.
 
+   These are commonly injected by exporting the C library's malloc()
+   and free(). With WASI-SDK that's (--export=malloc --export=free) and
+   in Emscripten it's -SEXPORTED_FUNCTIONS=_malloc,_free.  However,
+   any compliant allocators will do.
+
    APIs which require allocation routines are explicitly documented as
    such and/or have "alloc" in their names.
 
@@ -206,7 +223,9 @@
       set, it gets set to whatever this code thinks the pointer size
       is.  Modifying it after this call has no effect. A reliable
       way to get this value is (typeof X()), where X is a function
-      from target.exports which returns an innocuous pointer.
+      from target.exports which returns an innocuous const pointer.
+      The typeof will be 'number' on 32-bit builds and 'bigint'
+      on 64-bit.
 
    - `pointerSize`: if set, it must be one of 4 or 8 and must
       correspond to the value of `pointerIR`. If not set, it gets set
@@ -214,8 +233,13 @@
       `pointerIR` is 'i64'). If `pointerSize` is set but `pointerIR`
       is not, `pointerIR` gets set appropriately, and vice versa.
 
-   When building with Emscripten's -sMEMORY64=1, `pointerIR` must be
-   set to 'i64' and/or `pointerSize` must be set to 8.
+   - `logger`: optional object with `debug`, `warn`, and/or `error`
+      properties which behave like their same-named counterparts in
+      the global console object. The default uses the console API
+      with a file-local prefix on each message.
+
+   When building with Emscripten's --target=wasm64, `pointerIR` must
+   be set to 'i64' and/or `pointerSize` must be set to 8.
 
    After calling this, the pointerIR and pointerSize properties are
    replaced with a read-only Object member named target.ptr. It
@@ -236,8 +260,8 @@
    - `add(...args)` = performs "pointer arithmetic" (`wasmPtr+offset`
      does not work in 64-bit builds unless all operands are of type
      BigInt). Adds up all of its arguments, accounting for whether
-     each is a Number of BigInt, and returns either a Number or
-     BigInt.
+     each is a Number of BigInt, and returns either a value of the
+     same type as `this.null`.
 
    - `addn(...args)` = like `add()` but always returns its result as a
      Number. Equivalent to Number(add(...)).
@@ -256,10 +280,18 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   if(undefined===target.bigIntEnabled){
     target.bigIntEnabled = !!globalThis['BigInt64Array'];
   }
+  const LOGPREFIX = "@__FILE__@:";
 
   /** Throws a new Error, the message of which is the concatenation of
-      all args with a space between each. */
-  const toss = (...args)=>{throw new Error(args.join(' '))};
+      a file-local prefix and all args with a space between each. */
+  const toss = (...args)=>{
+    throw new Error(LOGPREFIX+" "+args.join(' '))
+  };
+
+  const warn = target.logger?.warn
+        || ((...args)=>console.warn(LOGPREFIX,...args));
+  const debug = target.logger?.debug
+        || ((...args)=>console.debug(LOGPREFIX,...args));
 
   if( !target.pointerSize && !target.pointerIR
       && target.alloc && target.dealloc ){
@@ -355,19 +387,13 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
         set: ()=>toss("ptr["+name+"] is read-only.")
       });
       return f;
-    })(
-      'null', __NullPtr
-    )(
-      'size', __ptrSize
-    )(
-      'ir', __ptrIR
-    )(
-      'coerce', __asPtrType
-    )(
-      'add', __ptrAdd
-    )(
-      'addn', (4===__ptrIR) ? __ptrAdd : (...args)=>Number(__ptrAdd(...args))
-    );
+    })
+    ('null', __NullPtr)
+    ('size', __ptrSize)
+    ('ir', __ptrIR)
+    ('coerce', __asPtrType)
+    ('add', __ptrAdd)
+    ('addn', (4===__ptrIR) ? __ptrAdd : (...args)=>Number(__ptrAdd(...args)));
   }
 
   if(!target.exports){
@@ -563,7 +589,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   */
   target.functionEntry = function(fptr){
     const ft = target.functionTable();
-    //console.debug("functionEntry(",arguments,")", __asPtrType(fptr));
+    //debug("functionEntry(",arguments,")", __asPtrType(fptr));
     //-sMEMORY64=1: we get a BigInt fptr and ft.get() wants a BigInt.
     //-sMEMORY64=2: we get a Number fptr and ft.get() wants a Number.
     return fptr < ft.length ? ft.get(__asPtrType(fptr)) : undefined;
@@ -905,7 +931,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
         const p = Number(ptr[i]);
 //#@ policy off <<
 //#define theSwitch <<
-        switch (type) {
+        switch(type){
           case 'i1':
           case 'i8': @op@ c.HEAP8[p >> 0]; break;
           case 'i16': @op@ c.HEAP16[p >> 1]; break;
@@ -915,7 +941,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
           case 'double':
           case 'f64': @op@ Number(c.HEAP64F[p >> 3]); break;
           case 'i64':
-            if (c.HEAP64) { @op@ __BigInt(c.HEAP64[p >> 3]); break; }
+            if(c.HEAP64){ @op@ __BigInt(c.HEAP64[p >> 3]); break; }
             /* fallthru */
           default:
             toss('Invalid type for peek():', type);
@@ -1754,6 +1780,12 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
      Internal-use-only base class for FuncPtrAdapter and potentially
      additional stateful argument adapter classes.
 
+     By "internal" we mean "within the sqlite project" (where this
+     code originated and where it continues to serve). That is: this
+     API exists to suit that project's internal needs, with no
+     consideration for its use elsewhere. Client-level code must not
+     rely on this interface.
+
      Its main interface (convertArg()) is strictly internal, not to be
      exposed to client code, as it may still need re-shaping. Only the
      constructors of concrete subclasses should be exposed to clients,
@@ -1783,7 +1815,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
        and that context invariably lies in the LHS arguments of v.
        Examples of how this is useful can be found in FuncPtrAdapter.
     */
-    convertArg(v,argv,argIndex){
+    convertArg(/*v,argv,argIndex*/){
       toss("AbstractArgAdapter must be subclassed.");
     }
   };
@@ -1903,9 +1935,9 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
     constructor(opt) {
       super(opt);
       if(xArg.FuncPtrAdapter.warnOnUse){
-        console.warn('xArg.FuncPtrAdapter is an internal-only API',
-                     'and is not intended to be invoked from',
-                     'client-level code. Invoked with:',opt);
+        warn('xArg.FuncPtrAdapter is an internal-only API',
+             'and is not intended to be invoked from',
+             'client-level code. It was invoked with:',opt);
       }
       this.name = opt.name || "unnamed";
       this.signature = opt.signature;
@@ -1923,7 +1955,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
       this.isContext = 'context'===this.bindScope;
       this.isPermanent = 'permanent'===this.bindScope;
       this.singleton = ('singleton'===this.bindScope) ? [] : undefined;
-      //console.warn("FuncPtrAdapter()",opt,this);
+      //warn("FuncPtrAdapter()",opt,this);
       this.callProxy = (opt.callProxy instanceof Function)
         ? opt.callProxy : undefined;
     }
@@ -1935,7 +1967,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
     */
 
     /* Dummy impl. Overwritten per-instance as needed. */
-    contextKey(argv,argIndex){
+    contextKey(/*argv,argIndex*/){
       return this;
     }
 
@@ -2059,13 +2091,13 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   xArg.FuncPtrAdapter.warnOnUse = false;
 
   /** If true, convertArg() will call FuncPtrAdapter.debugOut() when
-      it (un)installs a function binding to/from WASM. Note that
-      deinstallation of bindScope=transient bindings happens via
-      scopedAllocPop() so will not be output. */
+      it (un)installs a function binding to/from WASM. Deinstallation
+      of bindScope=transient bindings happens via scopedAllocPop() so
+      will not be output. */
   xArg.FuncPtrAdapter.debugFuncInstall = false;
 
   /** Function used for debug output. */
-  xArg.FuncPtrAdapter.debugOut = console.debug.bind(console);
+  xArg.FuncPtrAdapter.debugOut = debug;
 
   /**
      List of legal values for the FuncPtrAdapter bindScope config
@@ -2097,19 +2129,23 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   cache.xWrap.convertArgNoCheck =
     (t, v, argv, argIndex)=> xArg.get(t)(v, argv, argIndex);
 
+  /* Internal code de-duplifier. True if xWrap type id t is
+     null or 'null'. */
+  const __typeIsNull = (t)=>(null===t || 'null'===t);
+
   /**
      Fetches the xWrap() result adapter mapped to t, calls it, passing
      it v, and returns the result.  Throws if t is not mapped to an
      argument converter.
   */
   cache.xWrap.convertResult =
-    (t,v)=>(null===t ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
+    (t,v)=>(__typeIsNull(t) ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
   /**
      Identical to convertResult() except that it does not perform an
      is-defined check on the mapping to t before invoking it.
   */
   cache.xWrap.convertResultNoCheck =
-    (t,v)=>(null===t ? v : (t ? xResult.get(t)(v) : undefined));
+    (t,v)=>(__typeIsNull(t) ? v : (t ? xResult.get(t)(v) : undefined));
 
   /**
      Creates a wrapper for another function which converts the arguments
@@ -2299,8 +2335,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
     if(argTypes.length!==xf.length){
       __argcMismatch(fArg, xf.length) /* throws */;
     }
-    if( 0===xf.length
-        && (null===resultType || 'null'===resultType) ){
+    if( 0===xf.length && __typeIsNull(resultType) ){
       /* Func taking no args with an as-is return. We don't need a wrapper. */
       return xf;
     }
@@ -2320,7 +2355,9 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
                          : cxw.convertResult(resultType, xf.call(null)));
     }
     const resConverter =
-          (null === resultType || 'null' === resultType)
+          /* Result conversion: null/'null'==> do nothing,
+             undefined==>void, else do the installed conversion */
+          __typeIsNull(resultType)
           ? null
           : (resultType
              ? __xResultAdapterCheck(resultType)
@@ -2353,16 +2390,16 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
         */
         let i = 0;
         if( callee.debug ){
-          console.debug('xWrap() preparing: resultType ', resultType,
-                        'xf', xf,
-                        'argTypes', argTypes, 'args', args);
+          debug('xWrap() preparing: resultType ', resultType,
+                'xf', xf,
+                'argTypes', argTypes, 'args', args);
         }
         for(; i < args.length; ++i){
           args[i] = cxw.convertArgNoCheck(argTypes[i], args[i], args, i);
         }
         if( callee.debug ){
-          console.debug('xWrap() calling: resultType ', resultType,
-                        'xf', xf,'argTypes', argTypes, 'args', args);
+          debug('xWrap() calling: resultType ', resultType,
+                'xf', xf,'argTypes', argTypes, 'args', args);
         }
         const rawRes = xf.apply(null, args);
         return resConverter ? resConverter(rawRes) : rawRes;
@@ -2537,8 +2574,13 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
 
    - `uri`: required URI of the WASM file to load.
 
-   - `onload(loadResult)`: optional callback. Its argument is an
-     object described in more detail below.
+   - `fetchOpt`: Optional object to pass as the second argument to
+     `fetch(config.uri,X)`. This function always includes
+     `{credentials:'same-origin'}` unless the caller provides a
+     different credentials value.
+
+   - `onload(loadResult)`: optional on-success callback. Its argument
+     is an object described in more detail below.
 
    - `imports`: optional imports object for
      WebAssembly.instantiate[Streaming]().  The default is an empty
@@ -2578,18 +2620,20 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
    }
    ```
 
-   (The initial `then()` attached to the promise gets only that
-   object, and not the `config` object, thus the potential need for a
-   `config.onload` handler.)
+   The resulting Promise resolves to that same value.
 
-   Error handling is up to the caller, who may attach a `catch()` call
-   to the promise.
+   Error handling for the returned function is up to the caller, who
+   may attach a `catch()` call to its returned Promise.
 */
 WhWasmUtilInstaller.yawl = function yawl(config){
 //#if not esm
   'use strict';
 //#/if
-  const wfetch = ()=>fetch(config.uri, {credentials: 'same-origin'});
+  const wfetch = ()=>fetch(
+    config.uri, Object.assign(Object.create(null),{
+      credentials: 'same-origin'
+    }, config.fetchOpt)
+  );
   const wui = this;
   const finalThen = function(arg){
     //log("finalThen()",arg);
@@ -2618,7 +2662,7 @@ WhWasmUtilInstaller.yawl = function yawl(config){
       wui(tgt);
     }
     arg.config = config;
-    if(config.onload) config.onload(arg);
+    if(config.onload instanceof Function) config.onload(arg);
     return arg /* for any then() handler attached to
                   yetAnotherWasmLoader()'s return value */;
   };
@@ -2645,5 +2689,5 @@ export default WhWasmUtilInstaller;
 //#else if not lexical-scoped
 globalThis.WhWasmUtilInstaller = WhWasmUtilInstaller;
 //#/if
-//#@ pop policy delimiter
 //#savepoint rollback
+//#@ pop policy delimiter

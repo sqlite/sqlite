@@ -51,46 +51,47 @@ const Jaccwabyt = function StructBinderFactory(config){
 */
 //#/if
 
-  /** Throws a new Error, the message of which is the concatenation
-      all args with a space between each. */
-  const toss = (...args)=>{throw new Error(args.join(' '))};
+  const LOGPREFIX = '@__FILE__@:';
+  /** Throws a new Error, the message of which is the concatenation of
+      a file-local prefix and all args with a space between each. */
+  const toss = (...args)=>{
+    throw new Error(LOGPREFIX+" "+args.join(' '))
+  };
 
+  const error = config.logger?.error
+        || ((...args)=>console.error(LOGPREFIX,...args));
   {
     let h = config.heap;
     if( h instanceof WebAssembly.Memory ){
       h = function(){return new Uint8Array(this.buffer)}.bind(h);
     }else if( !(h instanceof Function) ){
-      //console.warn("The bothersome StructBinderFactory config:",config);
+      error("The bothersome StructBinderFactory config:",config);
       toss("config.heap must be WebAssembly.Memory instance or",
            "a function which returns one.");
     }
     config.heap = h;
   }
-  ['alloc','dealloc'].forEach(function(k){
-    (config[k] instanceof Function) ||
+  for(const k of ['alloc','dealloc']){
+    if( !(config[k] instanceof Function) ){
       toss("Config option '"+k+"' must be a function.");
-  });
+    }
+  }
   const SBF = StructBinderFactory;
   const heap = config.heap,
         alloc = config.alloc,
         dealloc = config.dealloc,
-//#if 0
-        realloc = (config.realloc || function(){
-          toss("This StructBinderFactory was configured without realloc()");
-          /* We can't know the original memory's size from here unless
-             we internally proxy alloc()/dealloc() to track all
-             pointers (not going to happen), so we can't fall back to
-             doing alloc()/copy/dealloc(). */
-        }),
-//#/if
-        log = config.log || ((...args)=>console.debug('Jaccwabyt:',...args)),
+        log = config.log/*deprecated*/
+          || config.logger?.debug
+          || ((...args)=>console.debug(LOGPREFIX,...args)),
+        warn = config.logger?.warn
+          || ((...args)=>console.warn(LOGPREFIX,...args)),
         memberPrefix = (config.memberPrefix || ""),
         memberSuffix = (config.memberSuffix || ""),
         BigInt = globalThis['BigInt'],
         BigInt64Array = globalThis['BigInt64Array'],
         bigIntEnabled = config.bigIntEnabled ?? !!BigInt64Array;
 
-  //console.warn("config",config);
+  //warn("config",config);
   let ptr;
   const ptrSize = config.pointerSize
         || config.ptrSize/*deprecated*/
@@ -102,7 +103,7 @@ const Jaccwabyt = function StructBinderFactory(config){
     dealloc(ptr);
     ptr = undefined;
   }
-  //console.warn("ptrIR =",ptrIR,"ptrSize =",ptrSize);
+  //warn("ptrIR =",ptrIR,"ptrSize =",ptrSize);
 
   if(ptrSize!==4 && ptrSize!==8) toss("Invalid pointer size:",ptrSize);
   if(ptrIR!=='i32' && ptrIR!=='i64') toss("Invalid pointer representation:",ptrIR);
@@ -114,7 +115,6 @@ const Jaccwabyt = function StructBinderFactory(config){
         : (v)=>toss("BigInt support is disabled in this build.");
   const __asPtrType = ('i32'==ptrIR) ? Number : __BigInt;
   const __NullPtr = __asPtrType(0);
-
   const nu = (...args)=>Object.assign(Object.create(null),...args);
   /**
      Expects any number of numeric arguments, each one of either type
@@ -133,7 +133,6 @@ const Jaccwabyt = function StructBinderFactory(config){
     }
     return rc;
   };
-
   const __ptrAddSelf = function(...args){
     return __ptrAdd(this.pointer,...args);
   };
@@ -361,7 +360,7 @@ const Jaccwabyt = function StructBinderFactory(config){
     if( !ii || ii.isDisposing ) return;
     ii.isDisposing = true;
     if( !m && !(m = ii.p) ){
-      console.warn("Cannot(?) happen: __freeStruct() found no instanceInfo");
+      error("Cannot(?) happen: __freeStruct() found no instanceInfo");
       return;
     }
     if(Array.isArray(obj.ondispose)){
@@ -374,16 +373,16 @@ const Jaccwabyt = function StructBinderFactory(config){
           // else ignore. Strings are permitted to annotate entries
           // to assist in debugging.
         }catch(e){
-          console.warn("ondispose() for",ctor.structName,'@',
-                       m,'threw. NOT propagating it.',e);
+          warn("ondispose() for",ctor.structName,'@',
+               m,'threw. NOT propagating it.',e);
         }
       }
     }else if(obj.ondispose instanceof Function){
       try{obj.ondispose()}
       catch(e){
         /*do not rethrow: destructors must not throw*/
-        console.warn("ondispose() for",ctor.structName,'@',
-                     m,'threw. NOT propagating it.',e);
+        warn("ondispose() for",ctor.structName,'@',
+             m,'threw. NOT propagating it.',e);
       }
     }
     rmInstanceHandle(obj);
@@ -483,14 +482,41 @@ const Jaccwabyt = function StructBinderFactory(config){
     return f.rxSig1.test(sig) || f.rxSig2.test(sig);
   };
 
-  /** Returns a pair of adaptor maps (objects) in a length-3
-      array specific to the given object. */
-  const __adaptorsFor = function(who){
+//#define j-proxy-through-ctor 0
+//#if 0
+  /*
+    j-proxy-through-ctor is an attempt to cascade adaptSet(),
+    adaptGet(), and adaptStruct() through two levels: StructBinder and
+    the StructCtors which it creates.
+
+    It does not yet work due to missing context pieces in a few spots.
+
+    The problem this is intended to solve is that a struct descriptor
+    like:
+
+    const Foo = {
+      adaptor: {
+        struct: { ProxyInner: someStructDescriptor }
+      }
+    }
+
+    does not need to overwrite StructBinder's mapping (if any) of
+    "ProxyInner". As of this writing, that construct will overwrite
+    the one in the managing StructBinder. That's not _horrible_, but
+    having two layers would be nicer.
+  */
+//#/if
+
+  /**
+     Returns a pair of adaptor maps (objects) in a length-3 array
+     specific to the given object.
+  */
+  const __adaptorsFor = function(who, createIfNeeded=true){
     let x = this.get(who);
-    if( !x ){
-      x = [ Object.create(null)/*getter*/,
-            Object.create(null)/*setter*/,
-            Object.create(null)/*struct*/ ];
+    if( !x && createIfNeeded ){
+      x = [ Object.create(null)/*0=getter*/,
+            Object.create(null)/*1=setter*/,
+            Object.create(null)/*2=struct*/ ];
       this.set(who, x);
     }
     return x;
@@ -548,6 +574,7 @@ const Jaccwabyt = function StructBinderFactory(config){
     const si = ('string'===typeof key)
           ? __adaptor(who, 2, key) : key;
     if( 'object'!==typeof si ){
+      warn('adaptStruct2(',who,key,')', si);
       toss("Invalid struct mapping object. Arg =",key,JSON.stringify(si));
     }
     return si;
@@ -813,12 +840,21 @@ const Jaccwabyt = function StructBinderFactory(config){
      function), else return undefined.
   */
   const memberGetterProxy = function(si){
+//#if j-proxy-through-ctor
+    const g = si.getter;
+    return (g instanceof Function)
+      ? g
+      : (__adaptorsFor(si.constructor, false)?.[0]?.[g]
+         ?? StructBinder.adaptGetter(g));
+//#else
     const g = si.getter;
     return g
       ? ((g instanceof Function)
          ? g
          : StructBinder.adaptGetter(g))
       : undefined;
+
+//#/if
   };
 
   /**
@@ -826,12 +862,20 @@ const Jaccwabyt = function StructBinderFactory(config){
      function), else return undefined.
   */
   const memberSetterProxy = function(si){
+//#if j-proxy-through-ctor
+    let s = si.setter;
+    return (s instanceof Function)
+      ? s
+      : (__adaptorsFor(si.constructor, false)?.[1]?.[s]
+         ?? StructBinder.adaptGetter(s));
+//#else
     const s = si.setter;
     return s
       ? ((s instanceof Function)
          ? s
          : StructBinder.adaptSetter(s))
       : undefined;
+//#/if
   };
 
   /**
@@ -873,13 +917,13 @@ const Jaccwabyt = function StructBinderFactory(config){
     if( memberSetterProxy(si) ){
       toss("'set' and 'adaptSetter' are not permitted for nested struct members.");
     }
-    //console.warn("si =",ctor.structName, name, JSON.stringify(si,'  '));
+    //warn("si =",ctor.structName, name, JSON.stringify(si,'  '));
     si.structName ??= ctor.structName+'::'+name;
     si.key = key;
     si.name = name;
     si.constructor = this.call(this, si.structName, si);
-    //console.warn("si.constructor =",si.constructor);
-    //console.warn("si =",si,"ctor=",ctor);
+    //warn("si.constructor =",si.constructor);
+    //warn("si =",si,"ctor=",ctor);
     const getterProxy = memberGetterProxy(si);
     const prop = nu({
       configurable: false,
@@ -892,13 +936,20 @@ const Jaccwabyt = function StructBinderFactory(config){
         let s = __innerStructs.get(k);
         if(dbg.getter){ log("debug.getter: k =",k); }
         if( !s ){
+          /* Create a proxy to access this member and set
+             it up to be disposed when this object is.*/
           s = new si.constructor(__ptrAdd(p, si.offset));
           __innerStructs.set(k, s);
           this.addOnDispose(()=>s.dispose());
-          s.addOnDispose(()=>__innerStructs.delete(k));
-          //console.warn("Created",k,"proxy");
+          s.addOnDispose(
+            ()=>__innerStructs.delete(k)
+            /* Reminder: we need this attached to s, instead of
+               doing it via this.addOnDispose(), in case
+               s.dispose() is called. */
+          );
+          //warn("Created",k,"proxy");
         }
-        if(getterProxy) s = getterProxy.apply(this,[name, s]);
+        if(getterProxy) s = getterProxy.call(this, name, s);
         if(dbg.getter) log("debug.getter: result =",s);
         return s;
       }
@@ -974,8 +1025,8 @@ const Jaccwabyt = function StructBinderFactory(config){
       )[f.cache.getters[sigGlyph]](0, isLittleEndian);
 
       if(getterProxy){
-        //console.warn("getterProxy",rc,name,key, xPropName);
-        rc = getterProxy.apply(this,[name/*key*/,rc]);
+        //warn("getterProxy",rc,name,key, xPropName);
+        rc = getterProxy.call(this,name/*!key*/,rc);
       }
       if(dbg.getter) log("debug.getter:",xPropName,"result =",rc);
       return rc;
@@ -997,7 +1048,7 @@ const Jaccwabyt = function StructBinderFactory(config){
           toss("Cannot set native property on a disposed",
                this.structName,"instance.");
         }
-        if( setterProxy ) v = setterProxy.apply(this,[name,v]);
+        if( setterProxy ) v = setterProxy.call(this,name/*!key*/,v);
         if( null===v || undefined===v ) v = __NullPtr;
         else if( isPtrSig(si.signature) && !__isPtr(v) ){
           if(isAutoPtrSig(si.signature) && (v instanceof StructType)){
@@ -1066,23 +1117,23 @@ const Jaccwabyt = function StructBinderFactory(config){
        });
     */
     const StructCtor = function StructCtor(arg){
-      //console.warn("opt",opt,arguments[0]);
+      //warn("opt",opt,arguments[0]);
       if(!(this instanceof StructCtor)){
         toss("The",structName,"constructor may only be called via 'new'.");
       }
       __allocStruct(StructCtor, this, ...arguments);
     };
-    const self = this;
+    const thisBinder = this;
     /**
       "Convert" struct descriptor x to a struct descriptor, if
       needed. This expands adaptStruct() mappings and transforms
       {memberName:signatureString} signature syntax to object form.
     */
     const ads = (x)=>{
-      //console.warn("looksLikeASig(",x,") =",looksLikeASig(x));
+      //warn("looksLikeASig(",x,") =",looksLikeASig(x));
       return (('string'===typeof x) && looksLikeASig(x))
       /* 2026-11-05: why was ^^^ this ^^^ done? */
-        ? nu({signature: x}) : __adaptStruct2(self,x);
+        ? nu({signature: x}) : __adaptStruct2(thisBinder,x);
     };
     if(1===arguments.length){
       si = ads(structName);
@@ -1094,19 +1145,39 @@ const Jaccwabyt = function StructBinderFactory(config){
       si = ads(si);
     }
     structName ??= si.structName;
-    //console.warn("arguments =",JSON.stringify(arguments));
+    //warn("arguments =",JSON.stringify(arguments));
     if( !structName ){
       toss("Missing struct name. Pass it as the first argument",
            "or in structDescriptor.structName.");
     }
     if( si.adaptor ){
       /* Install adaptGetter(), adaptSetter(), and adaptStruct() proxies. */
-      for(const a of [[si.adaptor.struct, __adaptStruct],
-                      [si.adaptor.setter, __adaptSetter],
-                      [si.adaptor.getter, __adaptGetter]]){
-        if( !a[0] ) continue;
-        for(const e of Object.entries(a[0])){
-          a[1].call(StructBinderImpl, e[0], e[1]);
+      for(const a of [['struct', __adaptStruct],
+                      ['setter', __adaptSetter],
+                      ['getter', __adaptGetter]]){
+        const ao = si.adaptor[a[0]];
+        if( !ao ) continue;
+        for(const e of Object.entries(ao)){
+          //warn("si.adaptor bits", a, e);
+          const [key, proxy] = e;
+          if( 'struct'===a[0] ){
+            if( !proxy || ('object'!==typeof proxy ) ){
+              error("Offending struct adaptor", si, ao);
+              toss("Expecting an Object for struct adaptor",key);
+            }
+          }else if( !(proxy instanceof Function) ){
+            toss("Expecting a function for",a[0],"adaptor",key);
+          }
+//#if j-proxy-through-ctor
+          a[1].call(StructCtor, e[0], e[1]);
+//#else
+          if( a[1].call(thisBinder, e[0]) ){
+            warn(structName,"is overriding adaptor", e[0]);
+            /* Potential TODO is map any overrides to StructCtor and
+               look for those first when fetching. */
+          }
+          a[1].call(thisBinder, e[0], e[1]);
+//#/if
         }
       }
     }
@@ -1116,6 +1187,7 @@ const Jaccwabyt = function StructBinderFactory(config){
 
     const debugFlags = rop(SBF.__makeDebugFlags(StructBinder.debugFlags));
     Object.defineProperties(StructCtor,{
+      /* Ctor static properties. */
       debugFlags: debugFlags,
       isA: rop((v)=>v instanceof StructCtor),
       memberKey: __memberKeyProp,
@@ -1127,6 +1199,7 @@ const Jaccwabyt = function StructBinderFactory(config){
     });
     StructCtor.prototype = new StructType(structName, si, rop);
     Object.defineProperties(StructCtor.prototype,{
+      /* Ctor inherited properties. */
       debugFlags: debugFlags,
       constructor: rop(StructCtor)
       /*if we assign StructCtor.prototype and don't do
@@ -1136,7 +1209,7 @@ const Jaccwabyt = function StructBinderFactory(config){
     let lastMember = false;
     let offset = 0;
     const autoCalc = !!si.autoCalcSizeOffset;
-    //console.warn(structName,"si =",si);
+    //warn(structName,"si =",si);
     if( !autoCalc ){
       if( !si.sizeof ){
         toss(structName,"description is missing its sizeof property.");
@@ -1148,9 +1221,10 @@ const Jaccwabyt = function StructBinderFactory(config){
     }else{
       si.offset ??= 0;
     }
-    Object.keys(si.members || {}).forEach((k)=>{
+    for( const e of Object.entries(si.members||{}) ){
       // Sanity checks of sizeof/offset info...
-      let m = ads(si.members[k]);
+      const [k, v] = e;
+      const m = ads(v);
       if(!m.members && !m.sizeof){
         /* ^^^^ fixme: we need to recursively collect all sizeofs
            before updating that. */
@@ -1168,18 +1242,23 @@ const Jaccwabyt = function StructBinderFactory(config){
         /* A missing offset on the initial child is okay (it's always
            zero), but we don't know for sure that the members are
            their natural order, so we don't know, at this point, which
-           one is "first". */
+           one is "first".
+
+           2026-11-05: this is probably gonna break when we start
+           supporting proxied instances of structs for sharing across
+           disparate outer structs because we modify these objects.
+        */
       }
       si.members[k] = m /* in case ads() resolved it to something else */;
       if(!lastMember || lastMember.offset < m.offset) lastMember = m;
       const oldAutoCalc = !!m.autoCalc;
       if( autoCalc ) m.autoCalcSizeOffset = true;
-      makeMemberWrapper.call(self, StructCtor, k, m);
+      makeMemberWrapper.call(thisBinder, StructCtor, k, m);
       if( oldAutoCalc ) m.autoCalcSizeOffset = true;
       else delete m.autoCalcSizeOffset;
       offset += m.sizeof;
-      //console.warn("offset",sPropName(structName,k),offset);
-    });
+      //warn("offset",sPropName(structName,k),offset);
+    }
 
     if( !lastMember ) toss("No member property descriptions found.");
     if( !si.sizeof ) si.sizeof = offset;
@@ -1192,16 +1271,16 @@ const Jaccwabyt = function StructBinderFactory(config){
       // sizes and offsets of size-1 members may be odd values, but
       // others may not.
       if(0!==(si.sizeof%4)){
-        console.warn("Invalid struct member description",si);
+        warn("Invalid struct member description",si);
         toss(structName,"sizeof is not aligned. sizeof="+si.sizeof);
       }
       if(0!==(si.offset%4)){
-        console.warn("Invalid struct member description",si);
+        warn("Invalid struct member description",si);
         toss(structName,"offset is not aligned. offset="+si.offset);
       }
     }
     if( si.sizeof < offset ){
-      console.warn("Suspect struct descriptor:",si,"offset =",offset);
+      warn("Suspect struct descriptor:",si,"offset =",offset);
       toss("Mismatch in the calculated vs. the provided sizeof/offset info.",
            "Expected sizeof",offset,"but got",si.sizeof,"for",si);
       /* It is legal for the native struct to be larger, so long as

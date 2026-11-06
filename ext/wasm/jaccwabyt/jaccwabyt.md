@@ -21,13 +21,13 @@ Table of Contents
   - [Type signatures](#type-signatures)
      - [Type "s"](#type-s)
      - [Type "p" vs. "P"](#type-p)
-  - [Adaptors](#adaptors)
+  - [Property Access Adaptors](#adaptors)
 - Class APIs
-  - [StructBinderFactory][]: environment configuration
-  - [StructBinder][]: struct codec generator
-  - [StructType][]
+  - [StructBinderFactory][]: Environment Configuration
+  - [StructBinder][]: Struct Codec Generator
+  - [StructType][]: Struct Codec
      - [Constructor][StructCtor]
-     - [Struct instances][StructInstance]
+     - [Struct Instances][StructInstance]
 - Using the Classes
   - [StructBinder](#using-StructBinder)
   - [StructCtor](#using-StructCtor)
@@ -70,7 +70,7 @@ Brief Usage Overview
 Client-side, Jaccwabyt looks like...
 
 >  
-```javascript
+```js
 // 1. Initialize for the current WASM environment. Needed once
 //    per app session.
 const StructBinder = StructBinderFactory({ 
@@ -163,24 +163,27 @@ and target) look like:
   "name": "MyStruct",
   "sizeof": 16,
   "members": {
-    "member1": {"offset": 0,"sizeof": 4,"signature": "i"},
-    "member2": {"offset": 4,"sizeof": 4,"signature": "p"},
-    "member3": {"offset": 8,"sizeof": 8,"signature": "j"}
+    "member1": {"offset": 0, "sizeof": 4, "signature": "i"},
+    "member2": {"offset": 4, "sizeof": 4, "signature": "p"},
+    "member3": {"offset": 8, "sizeof": 8, "signature": "j"}
   }
 }
 ```
 
 Forewarning: these data _must_ match up with the C-side definition of
-the struct (if any). See [](#appendix-g) for one way to
-easily generate these from C code.
+the struct (if any), noting that padding and members not exposed to
+Jaccwabyt must be accounted for in the offsets. See [](#appendix-g)
+for one way to easily generate these from C code.
 
-Every struct must have a `sizeof` (^Though we _could_ calculate the
-sizeof based on the list of members, we don't. Actually, we do, then
-we throw an exception if the values don't match up.). The `name` is
+Every struct must have a `sizeof`[^sizeof]. The `name` is
 required as well but it may optionally be passed as the first argument
-to `StructBinder(structName,structDescriptor)`. the `name` property
+to `StructBinder(structName,structDescriptor)`. The `name` property
 represents the member's symbolic name, typically (but not necessarily)
 its native name.
+
+[^sizeof]: Though we _could_ calculate the sizeof based on the list of
+    members, we don't. Actually, we do, then we throw an exception if
+    the values don't match up.
 
 Abstractly speaking, a struct descriptor in an object with the
 properties `sizeof`, `offset`, and either `signature` _or_
@@ -212,27 +215,24 @@ name to its low-level layout and other metadata:
 - `readOnly` (bool=false)  
   Optional boolean. If set to truthy, the binding layer will throw if
   JS code tries to set that property.
-- `zeroOnDispose` (bool=false)  
+- `zeroOnDispose` (bool=false) <a id='zeroOnDispose'></a>  
   If truthy, then the library will zero out the memory of instances of
   this struct when their `dispose()` method is called. Because
   `StructType.dispose()` does not free instances which wrap
   externally-provided memory, those instances are not wiped when
   disposed (doing so would likely interfere with other users of that
   memory). (There is no need for a `zeroOnAlloc` counterpart because
-  newly-allocated instances are always zero-filled for sanity's sake.)
+  newly-allocated instances are always zero-filled for sanity's sake.)  
+  This option has no effect on [nested structs](#nested-structs)
+  because they are implemented as non-owning pointers to an offset
+  within their containing struct's memory. Disposing an outer struct
+  with this flag will _de facto_ also wipe the sub-structs.
 - `members` (Object)  
   This object describes the individual struct members, mapping their
   names to a member descriptor object. `members` gets processed
-  recursively. Any member with its own `members` property is a
-  [nested-struct](#nested-structs), and the property accessor for such
-  members will return an instance of the distinct StructType which
-  wraps that
-  member's native memory.  
-  Nested-struct members cannot be assigned over. `signature` is
-  illegal if `members` is set. The following properties are relevant
-  only for `members` entries, not top-level structs:
-   - `getter` See [](#adaptors)
-   - `setter` See [](#adaptors)
+  recursively and `signature` is illegal if `members` is set. Any
+  member with its own `members` property is a
+  [nested-struct](#nested-structs) - see that section for details.
 - `name`  
   Is usually optional, and is always optional in `members` entries
   because their names are conveniently derived from their containing
@@ -251,7 +251,8 @@ name to its low-level layout and other metadata:
   and its sub-structs. This is provided _soley_ as a convenience to
   Jaccwabyt's own developer in testing using ad hoc JS structs which
   have no genuine C counterparts. This _must not_ be used with genuine
-  C structs because it cannot account for padding. It _is_ safe (and
+  C structs because it cannot account for padding or native members
+  which are not exposed via the struct descriptor. It _is_ safe (and
   terribly convenient) to use when there is no native counterpart, but
   genuine use cases for such a thing are probably limited to
   Jaccwabyt's own testing.
@@ -270,12 +271,13 @@ prefix and/or suffix to their names.
 Type Signatures
 --------------------
 
-Struct member `signature` describes the data type of each member,
-and uses an extended variant of the format used by Emscripten's
-`addFunction()`. A signature for a non-function-pointer member, or
-function pointer member which is to be modelled as an opaque pointer,
-is a single letter. A signature for a function pointer may also be
-modelled as a series of letters describing the call signature.
+Struct descriptor member `signature` describes the data type of each
+member, and uses an extended variant of the format used by
+Emscripten's `addFunction()`. A signature for a non-function-pointer
+member, or function pointer member which is to be modelled as an
+opaque pointer, is a single letter. A signature for a function pointer
+may also be modelled as a series of letters describing the call
+signature.
 
 Signatures in the form `x(...)` denote function-pointer members and
 the form `x` denotes non-function members. Functions with no arguments
@@ -352,18 +354,17 @@ when setting.
 
 
 <a id='adaptors'></a>
-Adaptors
+Property Access Adaptors
 -------------------------------
 
 Adaptors, an optional part of a [struct descriptor](#descriptors),
-provide a way to customize the result of fetching struct properties
-and the value which get written to their memory when they are
-assigned. This enables transparent installation of custom "JS-to-WASM"
-and "WASM-to-JS" conversions for struct properties.
+provide a way to customize the result of reading and writing WASM-side
+struct properties. This enables transparent installation of custom
+"JS-to-WASM" and "WASM-to-JS" conversions for struct properties.
 
 The following optional [struct descriptor](#descriptors) properties
 may be used on [Object-type entries of the `members`
-property](#member-descr).
+property](#member-descr):
 
 - `getter` (Function)  
   When fetching this struct member, this getter is passed `(K,V)`,
@@ -406,19 +407,18 @@ Getter and setter implementations ***MUST NOT*** try to look up that
 struct property using Jaccwabyt's property interceptor or they will
 cause endless recursion and a stack overflow.
 
-
 A rather contrived example...
 
 First, map getter/setter names to functions for use in the JSON
 descriptors:
 
 >  
-```javascript
+```js
 MyStructBinder.adaptGetter('truncateFloat',(k,v)=>v | 0);
 MyStructBinder.adaptSetter('parseFloat',(k,v)=>{
   v = parseFloat(v);
-  return isNan(v) ? 0 : v;
-);
+  return isNaN(v) ? 0 : v;
+});
 ```
 
 > Sidebar: most implementations will not need the key but it is
@@ -431,7 +431,7 @@ With that in place, we can map those to members using something
 like:
 
 >  
-```javascript
+```js
 const MyStruct = MyStructBinder({
   ...
   memberPrefix: "$",
@@ -515,7 +515,14 @@ function.
 
 * `log` (Function, optional)  
   Logging function used for debugging output (defaults to
-  `console.debug`).
+  `console.debug`). This name is deprecated in favor of:
+
+* `logger` (Object)  
+  Optional object to control certain output generated by the library:
+  the `debug`, `warn`, and `error` properties, if set, are expected
+  to be functions which work like their same-named counterparts in
+  the global `console` object. By default it uses the `console`
+  object's methods.
 
 -----
 
@@ -544,20 +551,20 @@ See also: [](#using-StructBinder)
   The configuration object passed to [StructBinderFactory][].
 
 - `adaptGetter(key [,func])`  
-  Gets or sets a "getter adaptor" function by name.
-  When called as a getter, returns a falsy value if no such getter
-  is mapped. Getters mapped this way can be used by any structs
-  generated by this `StructBinder`.  See [](#adaptors).
+  Gets or sets a "getter adaptor" function by name.  When called as a
+  getter, returns a function if one is found or a falsy value if no
+  such getter is mapped. Getters mapped this way can be used by any
+  structs generated by this `StructBinder`: see [](#adaptors).
 
 - `adaptSetter(key [,func])`  
   Gets or sets a "setter adaptor" function by name.
   When called as a getter, returns a falsy value if no such setter
   is mapped. Setters mapped this way can be used by any structs
-  generated by this `StructBinder`.  See [](#adaptors).
+  generated by this `StructBinder`: see [](#adaptors).
 
 - `ptrAdd(...)`  
   Coerces all arguments to the WASM pointer type, adds them together,
-  and returns the resulting sum as the current WASM pointer type.
+  and returns the resulting sum as the WASM pointer type.
 
 
 Quirks:
@@ -605,9 +612,9 @@ inherit. Accessible via [StructBinder][].StructType.
 - `extraBytes` (integer, read-only)  
   Extra bytes allocated along with this instance, or `0`/`0n`.
 
-- `lookupMember(memberName [, throwIfNotFNotFound=true])`  
+- `lookupMember(memberName [, throwIfNotFound=true])`  
   Returns the member descriptor object. If not found, it throws if
-  `throwIfNotFNotFound` is truthy, else it returns
+  `throwIfNotFound` is truthy, else it returns
   `undefined`. `memberName` may be in either the name from its [struct
   descriptor](#descriptors) or its JS property name, as modified by
   [the memberPrefix/memberSuffix options](#member-prefix). That is: if
@@ -620,7 +627,7 @@ inherit. Accessible via [StructBinder][].StructType.
   non-"s" member. `memberName` is interpreted as for `lookupMember()`.
   See [](#type-s).
 
-- `memberIsString(memberName [, throwIfNotFNotFound=true])`  
+- `memberIsString(memberName [, throwIfNotFound=true])`  
   Returns the member descriptor object if signature is "s", else
   `false`. Both arguments are interpreted as for `lookupMember()`.
 
@@ -631,7 +638,7 @@ inherit. Accessible via [StructBinder][].StructType.
   Returns an array of property names mapped to C struct members, without
   their [configured prefix/suffix](#member-prefix).
 
-- `memberSignature(memberName [,throwIfNotFNotFound=true])`  
+- `memberSignature(memberName [,throwIfNotFound=true])`  
   Returns the signature for the given member. Both arguments are
   interpreted as for `lookupMember()`.
 
@@ -700,7 +707,8 @@ API overview:
 
 - `structInfo` (Object, read-only)  
   The struct descriptor metadata object passed when generating the
-  constructor.
+  constructor. (Design note: this should have been named
+  `structDescriptor`. Too late.)
 
 - `structName` (string, read-only)  
   The structure name passed when generating the constructor.
@@ -858,7 +866,7 @@ configured heap, so passing addresses from different heaps _will_
 corrupt memory.
 
 When a client is done with a struct instance, they must free all
-associated resources by calling **`theInstance.dipose()`**. That will, if
+associated resources by calling **`theInstance.dispose()`**. That will, if
 the struct instance owns its memory, free it, otherwise it will simply
 disassociate the object from it.
 
@@ -887,7 +895,7 @@ instance.
 The try/finally construct is ideal for managing short-lived instances:
 
 >  
-```javascript
+```js
 const x = new MyStruct;
 try{
  ...
@@ -903,9 +911,66 @@ Alas, longer-lived instances must be managed more closely by the client.
 Nested Structs
 ===============================
 
-TODO. The feature exists but is not yet well documented.  The [test
+_Experimental and Subject to Change_.
+
+The feature exists but is not yet well documented.  The [test
 app][test-app] is currently the authority but the API is also still
 subject to change.
+
+This feature supports structs shaped like:
+
+>  
+```c
+struct X {
+  int i;
+  struct {int x; int y;} pos;
+}
+```
+
+It is not tested with the semantically equivalent:
+
+>  
+```
+struct XPos {int x; int y;};
+struct X {int i; struct XPos pos;};
+```
+
+(But nor should that impact how the descriptor is defined.)
+
+It does this by treating inner structs (recursively) _almost_ exactly
+like any an outer struct.
+
+Fetching a property of inner struct `X::pos` then becomes
+`anX.$pos.$x`, where the `anX.$pos` property accessor returns an
+instance of a [StructType][] representation of `X::pos`. That proxy
+instance has the following quirks:
+
+- `anX.$pos = X` triggers an exception. These members cannot be
+  overwritten.
+
+- `anX.$pos.pointer` points to memory inside the parent object (or one
+  of its ancestors, if `anX` is itself a nested struct instances),
+  which the sub-object owns in the sense of read/writing, but not in
+  the sense of memory lifetime.
+
+- Because the proxy does not control its memory's lifetime,
+  [](#zeroOnDispose) is ignored for sub-structs.
+  [dispose()](#dispose)ing the outermost parent will, _if_ that parent
+  has the `zeroOnDispose` flag, inherently also zero the inner
+  objects.
+
+- Accessing `anX.$pos` repeatedly will return the same proxy object
+  instance unless...
+
+- Calling the proxy's [dispose()](#dispose) method will (A) disconnect
+  it but not free the memory (which is owned by someone else further
+  up its chain of command) and (B) the next getter access to
+  `anX.$pos` will create a new proxy instance which points to the same
+  memory as the old one, after which `anX.$pos` will continue to
+  return _that_ proxy instance until it's again `dispose()`d.
+
+- All such proxies are disposed automatically when their containing
+  struct is disposed.
 
 -----
 <a id='64bit'></a>
@@ -920,24 +985,27 @@ Specifically: mixed-number-type math is illegal, triggering a
 `TypeError` exception. Ergo, on 64-bit builds the following will fail:
 
 >  
-```javascript
+```js
 const offset = myStruct.pointer + 8;
 ```
 
 Because `myStruct.pointer` is of type `Number` in 32-bit builds
 and `BigInt` in 64-bit builds.
 
-The `ptrAdd()` method was added to several places in the API as an
-alternative to adding and subtracting pointers:
+The `ptrAdd()` method was added to several places in the API as an aid
+for portably adding and subtracting pointers:
 
 >  
-```javascript
+```js
 const offset = MyStructBinder.ptrAdd(myStruct.pointer, 8);
 // Or:
 const offset = MyStructCtor.ptrAdd(myStruct.pointer, 8);
 // Or, more simply:
 const offset = myStruct.ptrAdd(8);
 ```
+
+The return type of each of those calls is `Number` in 32-bit builds
+and `BigInt` in 64-bit builds.
 
 ------
 
@@ -992,11 +1060,12 @@ Appendix G: Generating Struct Descriptors
 Struct definitions _really, really must_ be generated from
 WASM-compiled C, as opposed to simply guessing the sizeofs and
 offsets, so that the sizeof and offset information can be collected
-using C's `sizeof()` and `offsetof()` features. Struct padding may
-impact offsets in ways which might not be immediately obvious, so
-writing them by hand is _most certainly not recommended_. (WASM
-retains the shape of C structs, including their padding, unless the
-compiler is specifically directed otherwise.)
+using C's `sizeof()` and `offsetof()` features. Struct padding and
+members which are not exposed to Jaccwabyt may impact offsets in ways
+which might not be immediately obvious, so writing them by hand is
+_most certainly not recommended_. (WASM retains the shape of C
+structs, including their padding, unless the compiler is specifically
+directed otherwise.)
 
 How exactly the desciption is generated is necessarily
 project-dependent. It's tempting say, "oh, that's easy! We'll just

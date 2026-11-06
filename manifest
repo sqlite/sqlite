@@ -1,5 +1,5 @@
-C JS:\sa\scouple\sof\shot-path\soptimizations\sin\sthe\sWASM\sglue\sand\steach\swasm.isPtr32()\sto\srecognize\sa\sfull\s4gb\srange\sinstead\sof\s2gb.
-D 2026-11-06T09:30:21.465
+C JS:\snumerous\sinternal\scleanups\sand\sdoc/test\stweaks.
+D 2026-11-06T12:00:02.026
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -685,7 +685,7 @@ F ext/wasm/api/sqlite3-worker1.c-pp.js d274d5eb7f43f4f3b35a4d1f9213a1e34aa5ae27d
 F ext/wasm/common/SqliteTestUtil.js dae753b95e72248c4395d8de8359e0d055cd9928488e8dd84aef89e46d23b32e
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.c-pp.js d8f4275f4830606201b649c0d7ded9377ab2728b05b022c5b36cf6ba22b5f988
+F ext/wasm/common/whwasmutil.c-pp.js 85bc2d921ecd39dc7e87d97259f7bc85b8ffd3718a9be88e2144494a1a3f7771
 F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -702,8 +702,8 @@ F ext/wasm/fiddle/fiddle.js 2a0984cc4a35e6889c0d84ee9bf853317d5545ddb3966dfb995b
 F ext/wasm/fiddle/index.c-pp.html 5fd1f462864710d1b00d27fc4bc6190cb846cc865d7cc93b99644423f2c4cc84
 F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73607dc54d290
 F ext/wasm/index.html 7b27bb7518558c58c518ac3b47220226f635fa11331bac98f4aaf0d63fc4b283
-F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js 4cbe4caeb6827221b940c3c28c7690d2b1dad305ad4cf41d01c4efb7cf94858c
-F ext/wasm/jaccwabyt/jaccwabyt.md 60f531663daec654127f5705ace877619dd62f7f656fc23a06299c8bbfb33f4d
+F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js 145da2c24d8f58e92db8057db1827cd3c48e75c236adfb14e942f6a838334792
+F ext/wasm/jaccwabyt/jaccwabyt.md 4140e42e52b2108fb5b5e6e05f05d4609d42771943f86cd95969cf16457637de
 F ext/wasm/libcmpp.c a5bec47a754206aac2ffb45ba4adaec6af3b4fcc24c705c61a6f47893b72aef5
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
 F ext/wasm/mkwasmbuilds.c a012ba85adc4dea9cc6a6ed6ffb1d127ceda6bcc8e18cd0a118bf4d6e9049caa
@@ -721,7 +721,7 @@ F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f
 F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555e685bce3da8c3f
 F ext/wasm/tester1-worker.c-pp.html c95f3b37c5baa6e7ca1c9c622a081b02dae1acb011e7dc3c99c488456be2864b
 F ext/wasm/tester1.c-pp.html ef13dd266d4aa7dae0f27f4448978e571bddb0c7e058d108328438feef226ae9
-F ext/wasm/tester1.c-pp.js 7c31ed671612a3f26a6f3e96126b71ae2d2798a343ca5aaafaa18e4a998206d0
+F ext/wasm/tester1.c-pp.js 88463869fa8c8bb7388ee6e6040c7283ff53a02f319504fb2348d8581d33106e
 F ext/wasm/tests/opfs/concurrency/index.html 706eab6308343c04ac2360aba6001af4ffaf46d8f33a0ccd02c64d93e3216a43
 F ext/wasm/tests/opfs/concurrency/test.js 6919778fceaac1b7cc78caf41d796f545d2c4433b31188aa9689f05b5ad28828
 F ext/wasm/tests/opfs/concurrency/worker.js 704d82c5e287e47f612349e027765943a58ad967dcf178fb5a1c3a8eaafb09af
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6107f5affe4ff1cfa39689a899877301bdd9f8f210dd8e11bfb4a0f26ff681c1
-R bcba6e5976cf987e7e3639346acca665
+P 1eb8bc17c92fa9fe72cbaf805f36f13a869845fb1225f2e593e892cccdb6926c
+R 701fbd5803d6287486fef970bc5cec25
 U stephan
-Z a3d57c90e29b271d89e1d82e20ce5ca7
+Z a6f8df944655e80c48f97ba7a4e97f98
 # Remove this line to create a well-formed Fossil manifest.

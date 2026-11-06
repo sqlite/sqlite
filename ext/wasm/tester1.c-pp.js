@@ -901,13 +901,13 @@ T.g('C/WASM Utilities')
       const alloc = w.alloc, dealloc = w.dealloc;
       w.alloc = w.dealloc = null;
       T.assert(!w.scopedAlloc.level)
-        .mustThrowMatching(()=>w.scopedAlloc(1), /^No scopedAllocPush/)
+        .mustThrowMatching(()=>w.scopedAlloc(1), /No scopedAllocPush/)
         .mustThrowMatching(()=>w.scopedAllocPush(), /missing alloc/);
       w.alloc = alloc;
       T.mustThrowMatching(()=>w.scopedAllocPush(), /missing alloc/);
       w.dealloc = dealloc;
-      T.mustThrowMatching(()=>w.scopedAllocPop(), /^Invalid state/)
-        .mustThrowMatching(()=>w.scopedAlloc(1), /^No scopedAllocPush/)
+      T.mustThrowMatching(()=>w.scopedAllocPop(), /Invalid state/)
+        .mustThrowMatching(()=>w.scopedAlloc(1), /No scopedAllocPush/)
         .mustThrowMatching(()=>w.scopedAlloc.level=0, /read-only/);
       const asc = w.scopedAllocPush();
       let asc2, reachedEnd = false;
@@ -936,7 +936,7 @@ T.g('C/WASM Utilities')
         w.scopedAllocPop(asc);
         T.assert(!asc.ptr/*API internals*/);
         T.mustThrowMatching(()=>w.scopedAllocPop(asc),
-                            /^Invalid state object/);
+                            /Invalid state object/);
         if(asc2){
           if( reachedEnd ){
             T.assert(2===asc2.ptr.length/*API internals*/,
@@ -945,7 +945,7 @@ T.g('C/WASM Utilities')
           w.scopedAllocPop(asc2);
           T.assert(!asc2.ptr/*API internals*/);
           T.mustThrowMatching(()=>w.scopedAllocPop(asc2),
-                              /^Invalid state object/);
+                              /Invalid state object/);
         }
       }
       T.assert(0===w.scopedAlloc.level);
@@ -1008,7 +1008,7 @@ T.g('C/WASM Utilities')
           .assert( 3 === fw.length )
           .assert( 6 === fw(1,2,3) );
         T.mustThrowMatching( ()=>w.jsFuncToWasm('x()', function(){}),
-                             'Invalid signature letter: x');
+                             /Invalid signature letter: x/);
       }
 
       // xWrap(Function,...)
@@ -1121,7 +1121,7 @@ T.g('C/WASM Utilities')
       //K.debugFlags(0x03);
       T.mustThrowMatching(()=>K(), /via 'new'/).
         mustThrowMatching(()=>new K('hi'), (err)=>{
-          return /^Invalid pointer/.test(err.message)/*32-bit*/
+          return /Invalid pointer/.test(err.message)/*32-bit*/
             || /.*bigint.*/i.test(err.message)/*64-bit*/;
         });
       const k1 = new K(), k2 = new K();
@@ -1247,7 +1247,7 @@ T.g('C/WASM Utilities')
         /** The 3rd call to wtsFunc throw from JS, which is called
             from C, which is called from JS. Let's ensure that
             that exception propagates back here... */
-        T.mustThrowMatching(()=>testFunc(wts.pointer),/^Testing/);
+        T.mustThrowMatching(()=>testFunc(wts.pointer),/Testing/);
         W.uninstallFunction(wts.$xFunc);
         wts.$xFunc = 0;
         wts.$ppV = 0;
@@ -2484,7 +2484,7 @@ T.g('sqlite3.oo1')
                 /* Strange but true. */);
       T.mustThrowMatching(()=>{
         db.exec({sql:'', returnValue: 'nope'});
-      }, /^Invalid returnValue/);
+      }, /Invalid returnValue/);
 
       db.exec("DROP TABLE twin");
     }
@@ -4228,7 +4228,7 @@ T.g('"opfs-sahpool" VFS',
           ()=>u1.pauseVfs(),
           (err)=>{
             return capi.SQLITE_MISUSE===err.resultCode
-              && /^SQLITE_MISUSE: Cannot pause VFS /.test(err.message);
+              && /SQLITE_MISUSE: Cannot pause VFS /.test(err.message);
           },
           "Cannot pause VFS with opened db."
         );
@@ -4431,7 +4431,7 @@ T.g('Misc. APIs')
             }
           }
         });
-      }, /^Operation is illegal when statement is locked.*/)
+      }, /Operation is illegal when statement is locked.*/)
     };
     try{
       checkOp('bind');
