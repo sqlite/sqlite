@@ -138,4 +138,58 @@ do_faultsim_test 3 -faults oom* -prep {
   faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
 }
 
+#-------------------------------------------------------------------------
+# Test that an OOM in change_begin() or a change_xxx() function does not
+# leave a partially constructed change behind. 
+#
+# Report: https://sqlite.org/bugs/forumpost/875fb2b46f
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+}
+
+do_faultsim_test 4 -faults oom* -prep {
+  sqlite3changegroup G
+  G schema db main
+  G change_begin INSERT t1 0
+  G change_finish 1
+} -body {
+  G change_begin UPDATE t1 0
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  if {$testrc} { G change_begin UPDATE t1 0 }
+  G change_finish 1
+  G delete
+}
+
+do_faultsim_test 5 -faults oom* -prep {
+  sqlite3changegroup G
+  G schema db main
+  G change_begin INSERT t1 0
+  G change_int64 new 0 1
+  G change_int64 new 1 1
+  G change_null new 2
+  G change_null new 3
+  G change_finish 0
+  G change_begin INSERT t1 0
+  G change_int64 new 0 2
+  G change_null new 2
+  G change_null new 3
+} -body {
+  G change_blob new 1 [binary format x400]
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  set rc [catch { G change_finish 0 } msg]
+  G delete
+  if {$testrc} {
+    set expect {1 {SQLITE_ERROR - invalid change: column 1 is undefined}}
+  } else {
+    set expect {0 {}}
+  }
+  if {[list $rc $msg]!=$expect} {
+    error "change_finish returned: [list $rc $msg]"
+  }
+}
+
 finish_test

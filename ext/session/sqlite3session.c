@@ -7371,9 +7371,6 @@ int sqlite3changegroup_change_begin(
   }
   if( rc==SQLITE_OK ){
     int nReq = pTab->nCol * (eOp==SQLITE_UPDATE ? 2 : 1);
-    pGrp->cd.pTab = pTab;
-    pGrp->cd.eOp = eOp;
-    pGrp->cd.bIndirect = bIndirect;
 
     if( pGrp->cd.nBufAlloc<nReq ){
       SessionBuffer *aBuf = (SessionBuffer*)sqlite3_realloc(
@@ -7388,6 +7385,14 @@ int sqlite3changegroup_change_begin(
         pGrp->cd.aBuf = aBuf;
         pGrp->cd.nBufAlloc = nReq;
       }
+    }
+
+    /* Only mark a change as under construction once the column buffers
+    ** have been allocated. */
+    if( rc==SQLITE_OK ){
+      pGrp->cd.pTab = pTab;
+      pGrp->cd.eOp = eOp;
+      pGrp->cd.bIndirect = bIndirect;
     }
 
 #ifdef SQLITE_DEBUG
@@ -7431,8 +7436,9 @@ static int checkChangeParams(
       pBuf += pGrp->cd.pTab->nCol;
     }
     pBuf->nBuf = 0;
-    sessionBufferGrow(pBuf, nReq, &rc);
-    pBuf->nBuf = nReq;
+    if( sessionBufferGrow(pBuf, nReq, &rc)==0 ){
+      pBuf->nBuf = (int)nReq;
+    }
     *ppBuf = pBuf;
   }
   return rc;
