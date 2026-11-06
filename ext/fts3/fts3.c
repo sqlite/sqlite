@@ -896,6 +896,7 @@ static char *fts3ReadExprList(Fts3Table *p, const char *zFunc, int *pRc){
       zFunction = "";
     }else{
       zFree = zFunction = fts3QuoteId(zFunc);
+      if( zFunction==0 ) *pRc = SQLITE_NOMEM;
     }
     fts3Appendf(pRc, &zRet, "docid");
     for(i=0; i<p->nColumn; i++){
@@ -952,6 +953,7 @@ static char *fts3WriteExprList(Fts3Table *p, const char *zFunc, int *pRc){
     zFunction = "";
   }else{
     zFree = zFunction = fts3QuoteId(zFunc);
+    if( zFunction==0 ) *pRc = SQLITE_NOMEM;
   }
   fts3Appendf(pRc, &zRet, "?");
   for(i=0; i<p->nColumn; i++){

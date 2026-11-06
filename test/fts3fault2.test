@@ -246,5 +246,35 @@ do_faultsim_test 8.2 -faults io* -body {
 
 eval fts3_configure_incr_load $chunkconfig
 
+#-------------------------------------------------------------------------
+# An OOM while connecting to a table with compress= and uncompress= 
+# options. Report: [bugs:/forumpost/4651a02626].
+#
+reset_db
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE t10 USING fts4(x, compress=hex, uncompress=unhex);
+  INSERT INTO t10(rowid, x) VALUES(1, 'hello');
+}
+faultsim_save_and_close
+
+do_faultsim_test 10.1 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { SELECT CAST(x AS text) FROM t10 }
+} -test {
+  faultsim_test_result {0 hello}
+}
+
+do_faultsim_test 10.2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO t10(rowid, x) VALUES(2, 'world') }
+} -test {
+  faultsim_test_result {0 {}}
+  if {$testrc==0} {
+    set res [db eval { SELECT c0x FROM t10_content WHERE docid=2 }]
+    if {$res!="776F726C64"} { error "bad %_content record: $res" }
+  }
+}
 
 finish_test

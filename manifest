@@ -1,5 +1,5 @@
-C Fix\sthe\sgenerate_series()\stable-valued\sfunction\ssuch\sthat\sit\sworks\scorrectly\nwith\san\sORDER\sBY\srowid\sDESC\sLIMIT\s&larr;\s"rowid"\sinstead\sof\s"value".\n[bugs:/info/2026-11-05T22:31:13Z|Bug\s2026-11-05T22:31:13Z]
-D 2026-11-06T17:51:36.401
+C Avoid\ssilently\somitting\sto\sconfigure\sthe\sfts3/4\scompress=\sor\suncompress=\sfunctions\sfollowing\san\sOOM\serror\swhen\sloading\sthe\sschema\sfor\ssuch\san\sfts3/4\stable.\sReport\s[bugs:/info/2026-10-28T11:05:06Z\s|\s2026-10-28T11:05:06Z].
+D 2026-11-06T18:01:22.522
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -80,7 +80,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax b72477722e9b4fe43f8403227d790a1c94221bfad15c27863a4b36d1052e892b
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 347d390ed4c02b8add20cbca19edd714755800c0c57e0ee5ee8e2c2c185a46d1
+F ext/fts3/fts3.c 61e6cb53ef31aefde2157307eff848f64e155842dacb5993b1e8f79f66ddc147
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 02fda62a0569b9c1d1990c9b91b4f0928f14a78687029c128e2327df911a3137
 F ext/fts3/fts3_aux.c e9623cc1bca7d20bb504e9b47a6e87c8b27ee9a4516908a24c96c47c9885b507
@@ -1270,7 +1270,7 @@ F test/fts3expr4.test 6c7675bbdbffe6ffc95e9e861500b8ac3f739c4d004ffda812f138eeb1
 F test/fts3expr5.test a5b9a053becbdb8e973fbf4d6d3abaabeb42d511d1848bd57931f3e0a1cf983e
 F test/fts3f.test 8c438d5e1cab526b0021988fb1dc70cf3597b006a33ffd6c955ee89929077fe3
 F test/fts3fault.test 9228f00cd69e2a5d2ed0f06c181981f4f90bd36da9f86b73f3a58b4b23451fd4
-F test/fts3fault2.test 7b2741e5095367238380b0fcdb837f36c24484c7a5f353659b387df63cf039ec
+F test/fts3fault2.test 85d566cb94739406b005d6cec7accb6aa08ad12cd79cff755abc92c2f6bb38a4
 F test/fts3fault3.test ccdd2292dd2d4e21e30fc5f4c8e064f79e516087eec5ff57ab6bc4f6a7714097
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3fuzz001.test c78afcd8ad712ea0b8d2ed50851a8aab3bc9dc52c64a536291e07112f519357c
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 89ace0292a78b6d09494ae1bad4e75cab82b260cb3476ca12059be4a129d5d05
-R 2c1e59306255fee47b301fd93c83370d
-U drh
-Z 103754ef0d3157300463bee9666eecaf
+P b05d02e27ac00bb12b16dc1b2ceee3221c5eb343f41487c966b637598f9fdc1b
+R 8ed2aa6e36a6a56f29d4d6808a9615af
+U dan
+Z 87a2f761bc77fbfc8599b44aff1e5195
 # Remove this line to create a well-formed Fossil manifest.
