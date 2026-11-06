@@ -5217,6 +5217,7 @@ static void shellDualRepFunc(
   int argcUnused,
   sqlite3_value **argv
 ){
+  (void)argcUnused;
   sqlite3_value_text(argv[0]);
   sqlite3_result_value(context, argv[0]);
 }
