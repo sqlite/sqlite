@@ -765,7 +765,7 @@ int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig){
     const char *zSep = (i==0?"":", ");
     zSql = sqlite3Fts5Mprintf(&rc, "%z%s%Q", zSql, zSep, pConfig->azCol[i]);
   }
-  zSql = sqlite3Fts5Mprintf(&rc, "%z, %Q HIDDEN, %s HIDDEN)", 
+  zSql = sqlite3Fts5Mprintf(&rc, "%z, %Q BLOB HIDDEN, %s HIDDEN)", 
       zSql, pConfig->zName, FTS5_RANK_NAME
   );
 
