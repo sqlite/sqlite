@@ -4229,6 +4229,30 @@ static int compoundHasDifferentAffinities(Select *p){
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /*
+** Return true if the FROM clause pSrc, other than item iExcept, contains
+** a subquery implemented using a co-routine.  Such co-routines may have
+** been coded while the SQL text was being parsed, before query planning.
+*/
+static int srcListHasCoroutine(const SrcList *pSrc, int iExcept){
+  int i;
+  for(i=0; i<pSrc->nSrc; i++){
+    const SrcItem *pItem = &pSrc->a[i];
+    if( i==iExcept ) continue;
+    if( pItem->fg.viaCoroutine ) return 1;
+    if( pItem->fg.isSubquery ){
+      Select *pSelect;
+      for(pSelect=pItem->u4.pSubq->pSelect;
+          pSelect;
+          pSelect=pSelect->pPrior
+      ){
+        if( srcListHasCoroutine(pSelect->pSrc, -1) ) return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+/*
 ** This routine attempts to flatten subqueries as a performance optimization.
 ** This routine returns 1 if it makes changes and 0 if no flattening occurs.
 **
@@ -4556,6 +4580,7 @@ static int flattenSubquery(
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
       if( OptimizationDisabled(db, SQLITE_FlttnUnionAll) ) return 0;
+      if( p->pOrderBy && srcListHasCoroutine(pSrc, iFrom) ) return 0;
       aCsrMap = sqlite3DbMallocZero(db, ((i64)pParse->nTab+1)*sizeof(int));
       if( aCsrMap ) aCsrMap[0] = pParse->nTab;
     }
