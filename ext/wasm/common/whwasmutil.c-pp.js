@@ -48,6 +48,7 @@
 //#if esm
 //#  define lexical-scoped 1
 //#/if
+//#@ push policy error delimiter "@" "@"
 /**
    The primary goal of this function is to provide JS/WASM utility
    code similar to some of that provided by Emscripten-generated
@@ -378,6 +379,10 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
 
   /** Stores various cached state. */
   const cache = Object.create(null);
+//#define cache <<
+((cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
+ ? cache : heapWrappers())
+//#/define
   /** Previously-recorded size of cache.memory.buffer, noted so that
       we can recreate the view objects if the heap grows. */
   cache.heapSize = 0;
@@ -438,14 +443,18 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
      Returns the cache object.
   */
   const heapWrappers = function(){
-    if(!cache.memory){
+    if( cache.heapSize === cache.memory?.buffer?.byteLength ){
+      return cache;
+    }else if( !cache.memory ){
       cache.memory = (target.memory instanceof WebAssembly.Memory)
         ? target.memory : target.exports.memory;
-    }else if(cache.heapSize === cache.memory.buffer.byteLength){
-      return cache;
     }
     // heap is newly-acquired or has been resized....
     const b = cache.memory.buffer;
+    /**
+       TODO (2026-11-06) is optimize this to lazily create each heap
+       as needed.  Some of them are unused in most apps.
+    */
     cache.HEAP8 = new Int8Array(b); cache.HEAP8U = new Uint8Array(b);
     cache.HEAP16 = new Int16Array(b); cache.HEAP16U = new Uint16Array(b);
     cache.HEAP32 = new Int32Array(b); cache.HEAP32U = new Uint32Array(b);
@@ -507,8 +516,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   */
   target.heapForSize = function(n,unsigned = true){
     let ctor;
-    const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
-          ? cache : heapWrappers();
+    const c = @cache@;
     switch(n){
         case Int8Array: return c.HEAP8; case Uint8Array: return c.HEAP8U;
         case Int16Array: return c.HEAP16; case Uint16Array: return c.HEAP16U;
@@ -888,33 +896,39 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
 
      See also: poke()
   */
-  target.peek = function f(ptr, type='i8'){
-    if(type.endsWith('*')) type = __ptrIR;
-    const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
-          ? cache : heapWrappers();
-    const list = Array.isArray(ptr) ? [] : undefined;
-    let rc;
-    do{
-      if(list) ptr = arguments[0].shift();
-      switch(type){
+  target.peek = function(ptr, type = 'i8') {
+    if( type.endsWith('*') ) type = __ptrIR;
+    if( Array.isArray(ptr) ){
+      const c = heapWrappers();
+      const res = new Array(ptr.length);
+      for (let i = 0; i < ptr.length; ++i) {
+        const p = Number(ptr[i]);
+//#@ policy off <<
+//#define theSwitch <<
+        switch (type) {
           case 'i1':
-          case 'i8': rc = c.HEAP8[Number(ptr/*tag:64bit*/)>>0]; break;
-          case 'i16': rc = c.HEAP16[Number(ptr/*tag:64bit*/)>>1]; break;
-          case 'i32': rc = c.HEAP32[Number(ptr/*tag:64bit*/)>>2]; break;
-          case 'float': case 'f32': rc = c.HEAP32F[Number(ptr/*tag:64bit*/)>>2]; break;
-          case 'double': case 'f64': rc = Number(c.HEAP64F[Number(ptr/*tag:64bit*/)>>3]); break;
+          case 'i8': @op@ c.HEAP8[p >> 0]; break;
+          case 'i16': @op@ c.HEAP16[p >> 1]; break;
+          case 'i32': @op@ c.HEAP32[p >> 2]; break;
+          case 'float':
+          case 'f32': @op@ c.HEAP32F[p >> 2]; break;
+          case 'double':
+          case 'f64': @op@ Number(c.HEAP64F[p >> 3]); break;
           case 'i64':
-            if(c.HEAP64){
-              rc = __BigInt(c.HEAP64[Number(ptr/*tag:64bit*/)>>3]);
-              break;
-            }
+            if (c.HEAP64) { @op@ __BigInt(c.HEAP64[p >> 3]); break; }
             /* fallthru */
           default:
-            toss('Invalid type for peek():',type);
+            toss('Invalid type for peek():', type);
+        }
+//#/define
+//#/@
+//#expand theSwitch {op -> "res[i] ="}
       }
-      if(list) list.push(rc);
-    }while(list && arguments[0].length);
-    return list || rc;
+      return res;
+    }
+    const c = heapWrappers();
+    const p = Number(ptr);
+//#expand theSwitch {op -> "return"}
   };
 
   /**
@@ -936,8 +950,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   */
   target.poke = function(ptr, value, type='i8'){
     if (type.endsWith('*')) type = __ptrIR;
-    const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
-          ? cache : heapWrappers();
+    const c = @cache@;
     for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
       switch (type) {
           case 'i1':
@@ -994,16 +1007,33 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   /** i16 variant of poke8(). */
   target.poke16 = (ptr, value)=>target.poke(ptr, value, 'i16');
   /** i32 variant of peek8(). */
-  target.peek32 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i32' );
+  target.peek32 = function(ptr){
+    if( 'number' === typeof ptr && 1 === arguments.length ) {
+      /* Fast-path common case. */
+      return @cache@.HEAP32[ptr >> 2];
+    }
+    return target.peek(1 === arguments.length
+                       ? ptr
+                       : Array.from(arguments), 'i32');
+  };
   /** i32 variant of poke8(). */
-  target.poke32 = (ptr, value)=>target.poke(ptr, value, 'i32');
+  target.poke32 = (ptr, value)=>{
+    /* Fast-path common case. */
+    if( 'number' === typeof ptr ){
+      @cache@.HEAP32[ptr >> 2] = value;
+      return target;
+    }
+    return target.poke(ptr, value, 'i32');
+  };
   /** i64 variant of peek8(). Will throw if this build is not
       configured for BigInt support. */
-  target.peek64 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i64' );
+  target.peek64 = (ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i64' );
+
   /** i64 variant of poke8(). Will throw if this build is not
       configured for BigInt support. Note that this returns
       a BigInt-type value, not a Number-type value. */
   target.poke64 = (ptr, value)=>target.poke(ptr, value, 'i64');
+
   /** f32 variant of peek8(). */
   target.peek32f = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f32' );
   /** f32 variant of poke8(). */
@@ -1023,8 +1053,8 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   target.setPtrValue = target.pokePtr;
 
   /**
-     Returns true if the given value appears to be legal for use as
-     a WASM pointer value. Its _range_ of values is not (cannot be)
+     Returns true if the given value appears to be legal for use as a
+     WASM pointer value. Its _range_ of values is not (cannot be)
      validated except to ensure that it is a 32-bit integer with a
      value of 0 or greater. Likewise, it cannot verify whether the
      value actually refers to allocated memory in the WASM heap.
@@ -1035,7 +1065,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
      integer arguments.
   */
   target.isPtr32 = (ptr)=>(
-    'number'===typeof ptr && ptr>=0 && ptr===(ptr|0)
+    'number'===typeof ptr && ptr===(ptr>>>0)
   );
 
   /** 64-bit counterpart of isPtr32() and falls back to that function
@@ -2615,4 +2645,5 @@ export default WhWasmUtilInstaller;
 //#else if not lexical-scoped
 globalThis.WhWasmUtilInstaller = WhWasmUtilInstaller;
 //#/if
+//#@ pop policy delimiter
 //#savepoint rollback

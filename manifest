@@ -1,5 +1,5 @@
-C Fix\soverly\saggressive\srecursion\sdepth\slimitations\sin\sjson_pretty().\n[bugs:/info/2026-11-04T00:55:30Z|Bug\s2026-11-04T00:55:30Z]
-D 2026-11-05T23:26:20.559
+C JS:\sa\scouple\sof\shot-path\soptimizations\sin\sthe\sWASM\sglue\sand\steach\swasm.isPtr32()\sto\srecognize\sa\sfull\s4gb\srange\sinstead\sof\s2gb.
+D 2026-11-06T09:30:21.465
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -685,7 +685,7 @@ F ext/wasm/api/sqlite3-worker1.c-pp.js d274d5eb7f43f4f3b35a4d1f9213a1e34aa5ae27d
 F ext/wasm/common/SqliteTestUtil.js dae753b95e72248c4395d8de8359e0d055cd9928488e8dd84aef89e46d23b32e
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.c-pp.js 4b8c63ab5c606b2989e0b23041cd4f7feae3896c49c71fb4109eb054048c4e99
+F ext/wasm/common/whwasmutil.c-pp.js d8f4275f4830606201b649c0d7ded9377ab2728b05b022c5b36cf6ba22b5f988
 F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -721,7 +721,7 @@ F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f
 F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555e685bce3da8c3f
 F ext/wasm/tester1-worker.c-pp.html c95f3b37c5baa6e7ca1c9c622a081b02dae1acb011e7dc3c99c488456be2864b
 F ext/wasm/tester1.c-pp.html ef13dd266d4aa7dae0f27f4448978e571bddb0c7e058d108328438feef226ae9
-F ext/wasm/tester1.c-pp.js c673adb82e69c320d46314906dab19d9cfa202513e333ef501717af3a26a390a
+F ext/wasm/tester1.c-pp.js 7c31ed671612a3f26a6f3e96126b71ae2d2798a343ca5aaafaa18e4a998206d0
 F ext/wasm/tests/opfs/concurrency/index.html 706eab6308343c04ac2360aba6001af4ffaf46d8f33a0ccd02c64d93e3216a43
 F ext/wasm/tests/opfs/concurrency/test.js 6919778fceaac1b7cc78caf41d796f545d2c4433b31188aa9689f05b5ad28828
 F ext/wasm/tests/opfs/concurrency/worker.js 704d82c5e287e47f612349e027765943a58ad967dcf178fb5a1c3a8eaafb09af
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 35a22d469ff985e8c637a5dff22a9ab538455afa5511320f100ec8eef01943d8
-R 25cd6ff2d345eeeebd22e48413f68f73
-U drh
-Z cfcc36d36c60f6f32c5bc99e0c37d9cd
+P 6107f5affe4ff1cfa39689a899877301bdd9f8f210dd8e11bfb4a0f26ff681c1
+R bcba6e5976cf987e7e3639346acca665
+U stephan
+Z a3d57c90e29b271d89e1d82e20ce5ca7
 # Remove this line to create a well-formed Fossil manifest.
