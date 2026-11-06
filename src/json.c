@@ -381,7 +381,11 @@ struct JsonParse {
 #define JEDIT_AINS  5   /* array_insert() */
 
 /*
-** Maximum nesting depth of JSON for this implementation.
+** The approximate maximum nesting depth of JSON for this implementation.
+**
+** Applications should say well clear of this maximum.  Depending on
+** implementation quirks, the limit might not reached one or two before
+** or one or two after the published limit.
 **
 ** This limit is needed to avoid a stack overflow in the recursive
 ** descent parser.  A depth of 1000 is far deeper than any sane JSON
