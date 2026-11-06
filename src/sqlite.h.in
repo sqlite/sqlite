@@ -2664,7 +2664,7 @@ struct sqlite3_mem_methods {
 ** default value 17, as of SQLite version 3.52.0.  The value was 15 in all
 ** prior versions.<p>
 ** This option takes two arguments which are an integer and a pointer
-** to an integer.  The first argument is a small integer, between 3 and 23, or
+** to an integer.  The first argument is a small integer, between 4 and 23, or
 ** zero.  The FP_DIGITS setting is changed to that small integer, or left
 ** unaltered if the first argument is zero or out of range. The second argument
 ** is a pointer to an integer.  If the pointer is not NULL, then the value of
