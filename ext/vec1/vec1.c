@@ -2312,44 +2312,6 @@ static int vec1KMeansInitOne(
 }
 
 
-/*
-** Implementation of KMeans || initialization.
-*/
-#if 0
-static int vec1KMeansParallel(
-  Vec1TrainVectors *pVec,
-  Vec1JobQueue *pQueue,           /* Job queue to use (NULL -> 1 thread) */
-  int nK,                         /* Required number of outputs */
-  float *aOut                     /* Array to populate with centroids */
-){
-  int rc = SQLITE_OK;
-  const int nCent = nK * 2;
-  const int nByte = nCent * (pVec->nElem * sizeof_f32 + sizeof_u32);
-  float *aCent;
-
-  aCent = (float*)vec1MallocZero(nByte);
-  if( aCent==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    u32 *aWeight = (u32*)&aCent[pVec->nElem * nCent];
-    rc = vec1KMeansInitOne(pVec, 0, pQueue, nCent, nCent/10, 0, aCent,aWeight);
-    if( rc==SQLITE_OK ){
-      Vec1TrainVectors vv;
-      memset(&vv, 0, sizeof(vv));
-      vv.nElem = pVec->nElem;
-      vv.nVec = nCent;
-      vv.nVecPerChunk = nCent;
-      vv.nChunk = 1;
-      vv.aChunk[0] = aCent;
-      rc = vec1KMeansInitOne(&vv, aWeight, pQueue, nK, nK, 0, aOut, 0);
-    }
-    sqlite3_free(aCent);
-  }
-
-  return rc;
-}
-#endif
-
 static int vec1KMeansPlusPlus(
   Vec1TrainVectors *pVec,
   Vec1JobQueue *pQueue,           /* Job queue to use (NULL -> 1 thread) */
@@ -5233,7 +5195,6 @@ static void vec1TrainFinal(sqlite3_context *pCtx){
   for(ii=0; ii<p->tv.nChunk; ii++){
     sqlite3_free(p->tv.aChunk[ii]);
   }
-
   vec1JobQueueFree(pQueue);
   sqlite3_free(aByte);
 }
