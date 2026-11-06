@@ -310,7 +310,7 @@ do_execsql_test 8.9 {
 do_execsql_test 8.10 {
   SELECT count(*) FROM d WHERE e IN (SELECT 2 UNION SELECT '2.5');
 } {2}
-ifcapable foreignkey {
+ifcapable foreignkey&&vtab {
   do_execsql_test 8.11 {
     PRAGMA foreign_keys=ON;
     CREATE TABLE p(k REAL UNIQUE);
