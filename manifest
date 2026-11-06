@@ -1,5 +1,5 @@
-C Change\san\sassert()\sinto\sa\stestcase().\s\sNew\stest\scase\sadded\sto\sTH3\sfor\ncoverage.\s\s[bugs:/info/2026-11-06T00:24:19Z|Bug\s2026-11-06T00:24:19Z].
-D 2026-11-06T12:01:06.782
+C The\s.recover\scommand\snow\somits\sextraneous\stext\sfound\sat\sthe\send\sof\sthe\nsqlite_schema.sql\sfield.\n[bugs:/info/2026-11-06T04:16:54Z|Bug\s2026-11-06T04:16:54Z]
+D 2026-11-06T13:22:44.469
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -496,7 +496,7 @@ F ext/recover/recoverpgsz.test 88766fcb810e52ee05335c456d4e5fb06d02b73d3ccb48c52
 F ext/recover/recoverrowid.test 8a28c8dc060199360025e1e25d71f3e775a8a600091db4905ffd21f5f26c031d
 F ext/recover/recoverslowidx.test c90d59c46bb8924a973ac6fbc38f3163cee38cc240256addcab1cf1a322c37dc
 F ext/recover/recoversql.test e66d01f95302a223bcd3fd42b5ee58dc2b53d70afa90b0d00e41e4b8eab20486
-F ext/recover/sqlite3recover.c f57dbb410637c7bbca15eee955b7aedbc431280c1e3f98d402c5c47ee2188eda
+F ext/recover/sqlite3recover.c c4ae631cb941e9703f31ee2e5596e1081db22ffac9cd907f2e1795c553bb7872
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
@@ -1524,7 +1524,7 @@ F test/minmax.test 885d89737b955905b52bd5b203f27b9b56d1e399b8155c2a95ab0f3264e0f
 F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595e0de
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
-F test/misc01.sql 7dc97b15c026606c8956bb896d17165033befed2a1ba733b04a983bc25cbcedb
+F test/misc01.sql e3c02c098d8d06c9f0ee81929672f7c3144c7b60b911909a83be4f344e59bfef
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5a62f2b816950206f5bb23ca04e6744322a55921546d0d64c7ca621cbe0a54c6
-R 32f41d7b40b471f739714235977b9204
+P b92950bde7558402f2f518f7d7087d378e4e362c5a515744cdc11f479579294d
+R 81f20e679f50ff4b339cbd4f4ddb52d3
 U drh
-Z b63a313f401c62cbdbe8c2f41846f9b8
+Z 7fa0b5d83583d40b2bbd038ac4269ad0
 # Remove this line to create a well-formed Fossil manifest.

@@ -65,3 +65,39 @@ INSERT INTO c VALUES(dualrep(5));
 .testcase 302
 SELECT count(*) FROM c;
 .check 2
+
+# f945de7c4eb73732 2026-11-06T04:16:54Z
+# sqlite3's .recover output can smuggle shell commands into the next
+# sqlite3 run
+#
+.testcase 400
+.open --hexdb
+| size 8192 pagesize 4096 filename unk.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 00 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     96: 00 00 00 00 0d 00 00 00 01 0f ca 00 0f ca 00 00   ................
+|   4032: 00 00 00 00 00 00 00 00 00 00 34 01 06 17 11 11   ..........4.....
+|   4048: 01 55 74 61 62 6c 65 74 31 74 31 02 43 52 45 41   .Utablet1t1.CREA
+|   4064: 54 45 20 54 41 42 4c 45 20 74 31 28 61 2c 62 2c   TE TABLE t1(a,b,
+|   4080: 63 29 3b 0a 2e 70 72 69 6e 74 20 68 65 6c 6c 6f   c);..print hello
+| page 2 offset 4096
+|      0: 0d 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00   ................
+| end unk.db
+.recover
+.check <<END
+.dbconfig defensive off
+BEGIN;
+PRAGMA writable_schema = on;
+PRAGMA foreign_keys = off;
+PRAGMA encoding = 'UTF-8';
+PRAGMA page_size = '4096';
+PRAGMA auto_vacuum = '0';
+PRAGMA user_version = '0';
+PRAGMA application_id = '0';
+CREATE TABLE t1(a,b,c);
+PRAGMA writable_schema = off;
+COMMIT;
+END
