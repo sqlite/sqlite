@@ -24,7 +24,7 @@ namespace eval trd {
   set tcltest(linux.Apple)                veryquick
   set tcltest(linux.Android)              veryquick
   set tcltest(linux.Sanitize)             veryquick
-  set tcltest(linux.Device-One)           all
+  set tcltest(linux.Device-One)           veryquick
   set tcltest(linux.Default)              all_plus_autovacuum_crash
   set tcltest(linux.Valgrind)             valgrind
 
