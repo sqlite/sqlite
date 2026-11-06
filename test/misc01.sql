@@ -178,3 +178,25 @@ SELECT c1, c0 FROM t0 NOT INDEXED
 │  5 │ x'616263' │
 ╰────┴───────────╯
 *END*
+
+# db0bb9d415ffc8f0 2026-11-05T22:31:13Z
+# generate_series(0,32,5) ORDER BY rowid DESC LIMIT 3 returns 10, 5, 0
+# instead of 30, 25, 20
+#
+.open :memory:
+.mode -reset list --rowsep ' ' --colsep ','
+.testcase 600
+SELECT value FROM generate_series(0,32,5) ORDER BY rowid DESC;
+.check --glob '30 25 20 15 10 5 0'
+
+.testcase 610
+SELECT value FROM generate_series(0,32,5) ORDER BY rowid DESC LIMIT 3;
+.check --glob '30 25 20'
+
+.testcase 620
+SELECT value FROM generate_series(0,32,5) ORDER BY value DESC LIMIT 3;
+.check --glob '30 25 20'
+
+.testcase 630
+SELECT rowid, value FROM generate_series(0,12,5);
+.check --glob '0,0 5,5 10,10'
