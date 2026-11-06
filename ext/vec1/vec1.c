@@ -1926,11 +1926,9 @@ static int vec1JobQueueAddJob(
 
 /*
 ** When accumulating training data, allocate space in chunks of 
-** VEC1_TRAINING_SZCHUNK. Allow at most VEC1_TRAINING_MAXCHUNK chunks of
-** training data. With default values, the limit is 64GiB of training
-** vectors.
+** VEC1_TRAINING_SZCHUNK. The number of chunks is limited only by available
+** memory.
 */
-#define VEC1_TRAINING_MAXCHUNK 1024
 #define VEC1_TRAINING_SZCHUNK  (32*1024*1024)
 
 /*
@@ -1948,10 +1946,10 @@ static int vec1JobQueueAddJob(
 typedef struct Vec1TrainVectors Vec1TrainVectors;
 struct Vec1TrainVectors {
   int nElem;                      /* Number of elements in each vector */
-  int nVec;                       /* Number of vectors in chunk array */
-  int nChunk;                     /* Number of chunks allocated so far */
-  int nVecPerChunk;               /* Number of vectors in each chunk */
-  float *aChunk[VEC1_TRAINING_MAXCHUNK];
+  i64 nVec;                       /* Number of vectors in chunk array */
+  i64 nChunk;                     /* Number of chunks allocated so far */
+  i64 nVecPerChunk;               /* Number of vectors in each chunk */
+  float **aChunk;                 /* Array of nChunk allocated chunks */
 };
 
 /*
@@ -2013,9 +2011,9 @@ struct Vec1TrainCtx {
 ** Return a pointer to the requested training vector. The results are
 ** undefined if parameter iVec is out of range.
 */
-static float *vec1TrainingVector(Vec1TrainVectors *p, int iVec){
-  int iChunk = iVec / p->nVecPerChunk;
-  int iOff = (iVec % p->nVecPerChunk) * p->nElem;
+static float *vec1TrainingVector(Vec1TrainVectors *p, i64 iVec){
+  i64 iChunk = iVec / p->nVecPerChunk;
+  i64 iOff = (iVec % p->nVecPerChunk) * p->nElem;
   return &((p->aChunk[iChunk])[iOff]);
 }
 
@@ -2086,8 +2084,8 @@ typedef struct LloydsJob LloydsJob;
 struct LloydsJob {
   /* Data to train on */
   Vec1TrainVectors *pVec;
-  int iFirst;                     /* First vector for this job */
-  int iEof;                       /* Index of last vector +1 for this job */
+  i64 iFirst;                     /* First vector for this job */
+  i64 iEof;                       /* Index of last vector +1 for this job */
 
   int nK;                         /* Number of centroids */
   const float *aCentroid;         /* Centroids */
@@ -2098,7 +2096,7 @@ struct LloydsJob {
   /* Outputs */
   double fTotal;
   float *aSum;
-  int *aCount;
+  i64 *aCount;
 };
 
 /*
@@ -2131,8 +2129,8 @@ static void vec1RandomInit(Vec1Random *p, u64 seed, u64 id){
 
 typedef struct KMeansInitJob KMeansInitJob;
 struct KMeansInitJob {
-  int iFirst;                     /* First vector for this job */
-  int iEof;                       /* Index of last vector +1 for this job */
+  i64 iFirst;                     /* First vector for this job */
+  i64 iEof;                       /* Index of last vector +1 for this job */
   double fTotalMin;               /* Total of aMin[iFirst..iEof-1] */
 
   Vec1TrainVectors *pVec;
@@ -2150,7 +2148,7 @@ static void vec1KMeansInitWork(void *pCtx){
   KMeansInitJob *p = (KMeansInitJob*)pCtx;
   const int nElem = p->pVec->nElem;
   double fTotalMin = 0.0;
-  int ii;
+  i64 ii;
 
   for(ii=p->iFirst; ii<p->iEof; ii++){
     int jj;
@@ -2177,8 +2175,8 @@ static void vec1KMeansInitWork(void *pCtx){
 **   struct XyzJob {
 **     ...
 **     Vec1TrainVectors *pVec;    // Training vectors to use a subset of
-**     int iFirst;                // index of first vector in pVec to use
-**     int iEof;                  // 1 past index of last vector in pVec to use
+**     i64 iFirst;                // index of first vector in pVec to use
+**     i64 iEof;                  // 1 past index of last vector in pVec to use
 **     ...
 **   };
 */
@@ -2208,7 +2206,7 @@ static int vec1KMeansInitOne(
 
   Vec1Random rnd;
 
-  int nByte;                      /* Bytes of space to allocate */
+  i64 nByte;                      /* Bytes of space to allocate */
   KMeansInitJob *aJob = 0;
   float *aMin = 0;
   int *aBest = 0;
@@ -2248,7 +2246,7 @@ static int vec1KMeansInitOne(
   nCentroid = nNewCentroid = 1;
 
   for(rr=1; rr<nK; rr+=nNewCentroid){
-    int vv;
+    i64 vv;
     double fTotalMin = 0.0;
 
     /* Step 2: */
@@ -2301,7 +2299,7 @@ static int vec1KMeansInitOne(
   }
 
   if( aHist ){
-    int vv;
+    i64 vv;
     for(vv=0; vv<pVec->nVec; vv++){
       aHist[aBest[vv]]++;
     }
@@ -2646,11 +2644,11 @@ static void vec1LloydsWork(void *pCtx){
   LloydsJob *p = (LloydsJob*)pCtx;
   Vec1TrainVectors *pVec = p->pVec;
   int nElem = pVec->nElem;
-  int ii;
+  i64 ii;
 
   p->fTotal = 0.0f;
   memset(p->aSum, 0, sizeof_f32 * p->nK * nElem);
-  memset(p->aCount, 0, sizeof(int) * p->nK);
+  memset(p->aCount, 0, sizeof(i64) * p->nK);
 
   /* Loop through those vectors that are our responsibility, 
   ** VEC1_MULTIMATCH_NVEC vectors at a time. Each iteration of this outer 
@@ -2792,10 +2790,11 @@ static int vec1Ann1KMeans(
   int ii;
   int iIter;
   int nElem = pVec->nElem;
-  int *pCsr = 0;
+  i64 *pCountCsr = 0;
+  float *pSumCsr = 0;
   double fPrevTotal = 0.0;
 
-  int *aCount = 0;
+  i64 *aCount = 0;
   float *aSum = 0;
 
   LloydsJob *aJob = 0;
@@ -2809,20 +2808,24 @@ static int vec1Ann1KMeans(
   **
   ** Each job requires the following working space:
   **
-  **   + aCount      -> (sizeof(int) * K) bytes
+  **   + aCount      -> (sizeof(i64) * K) bytes
   **   + aSum        -> (sizeof_f32 * nElem * K) bytes
+  **
+  ** All aCount[] arrays are allocated before all aSum[] arrays, so that the
+  ** 64-bit integers are correctly aligned.
   */
   nByte = nThread * (
       sizeof(LloydsJob) +
       nElem * nK * sizeof_f32 +       /* aSum[] */
-      nK * sizeof(int)                      /* aCount[] */
+      nK * sizeof(i64)                      /* aCount[] */
   );
 
   aJob = (LloydsJob*)sqlite3_malloc64(nByte);
   if( aJob==0 ) return SQLITE_NOMEM;
   memset(aJob, 0, sizeof(LloydsJob) * nThread);
 
-  pCsr = (int*)&aJob[nThread];
+  pCountCsr = (i64*)&aJob[nThread];
+  pSumCsr = (float*)&pCountCsr[(i64)nThread * nK];
 
   /* Initialize each job object in the array */
   for(ii=0; ii<nThread; ii++){
@@ -2834,10 +2837,10 @@ static int vec1Ann1KMeans(
 
     pJob->nK = nK;
     pJob->aCentroid = aCode;
-    pJob->aSum = (float*)pCsr;
-    pCsr += (nK * nElem);
-    pJob->aCount = pCsr;
-    pCsr += nK;
+    pJob->aCount = pCountCsr;
+    pCountCsr += nK;
+    pJob->aSum = pSumCsr;
+    pSumCsr += (nK * nElem);
   }
   aCount = aJob[0].aCount;
   aSum = aJob[0].aSum;
@@ -2855,7 +2858,7 @@ static int vec1Ann1KMeans(
   }
 #endif
 
-  assert( (u8*)pCsr==((u8*)aJob)+nByte );
+  assert( (u8*)pSumCsr==((u8*)aJob)+nByte );
 
   /* If pQueue is not NULL, then this is training the coarse quantizer
   ** and so we have exclusive access to the Vec1TrainCtx object. So
@@ -3333,7 +3336,7 @@ static void vec1TrainStep(
   Vec1TrainCtx *p = 0;
   int n = 0;
   const u8 *a = 0;
-  int iChunk = 0;
+  i64 iChunk = 0;
   char *zErr = 0;
 
   assert( nArg==1 || nArg==2 );
@@ -3455,9 +3458,19 @@ static void vec1TrainStep(
 
   iChunk = (p->tv.nVec+1)/p->tv.nVecPerChunk;
   if( iChunk>=p->tv.nChunk ){
+    float **aNew = (float**)sqlite3_realloc64(
+        p->tv.aChunk, sizeof(float*) * (iChunk+1)
+    );
+    if( aNew==0 ){
+      sqlite3_result_error_nomem(pCtx);
+      p->rc = SQLITE_NOMEM;
+      return;
+    }
+    p->tv.aChunk = aNew;
     p->tv.aChunk[iChunk] = (float*)sqlite3_malloc(VEC1_TRAINING_SZCHUNK);
     if( p->tv.aChunk[iChunk]==0 ){
       sqlite3_result_error_nomem(pCtx);
+      p->rc = SQLITE_NOMEM;
       return;
     }
     p->tv.nChunk++;
@@ -3472,15 +3485,20 @@ static void vec1TrainStep(
 ** Normalize all the training vectors.
 */
 static void vec1TrainNormalizeAll(Vec1TrainCtx *p){
-  int ii;
+  i64 ii;
   for(ii=0; ii<p->tv.nVec; ii++){
     vec1NormalizeVector(vec1TrainingVector(&p->tv, ii), p->tv.nElem);
   }
 }
 
+/*
+** Free a Vec1TrainVectors object allocated by vec1CodebookWork() or
+** vec1CopyVectors(). In these objects the aChunk[] array is part of the same
+** allocation as the structure itself.
+*/
 static void vec1FreeVectors(Vec1TrainVectors *pFree){
   if( pFree ){
-    int ii;
+    i64 ii;
     for(ii=0; ii<pFree->nChunk; ii++){
       sqlite3_free(pFree->aChunk[ii]);
     }
@@ -3504,20 +3522,26 @@ struct Vec1CodebookJob {
 static void vec1CodebookWork(void *pCtx){
   Vec1CodebookJob *pJob = (Vec1CodebookJob*)pCtx;
   Vec1TrainCtx *p = pJob->p;
-  int nByte = sizeof(Vec1TrainVectors);
+  const int nBytePerVec = p->nCodeElem * sizeof_f32;
+  const i64 nVec = pJob->pTrain->nVec;
+  const i64 nVecPerChunk = (VEC1_TRAINING_SZCHUNK / nBytePerVec);
+  const i64 nChunk = (nVec + nVecPerChunk - 1) / nVecPerChunk;
 
-  Vec1TrainVectors *pVec = (Vec1TrainVectors*)vec1MallocZero(nByte);
+  /* Allocate the Vec1TrainVectors structure and its aChunk[] array */
+  Vec1TrainVectors *pVec = (Vec1TrainVectors*)vec1MallocZero(
+      sizeof(Vec1TrainVectors) + sizeof(float*) * nChunk
+  );
 
   if( pVec==0 ){
     pJob->rc = SQLITE_NOMEM;
   }else{
-    int ii;
+    i64 ii;
     int nShort = 0;
-    int nBytePerVec = p->nCodeElem * sizeof_f32;
     pVec->nElem = p->nCodeElem;
-    pVec->nVec = pJob->pTrain->nVec;
-    pVec->nVecPerChunk = (VEC1_TRAINING_SZCHUNK / nBytePerVec);
-    pVec->nChunk = (pVec->nVec+pVec->nVecPerChunk-1) / pVec->nVecPerChunk;
+    pVec->nVec = nVec;
+    pVec->nVecPerChunk = nVecPerChunk;
+    pVec->nChunk = nChunk;
+    pVec->aChunk = (float**)&pVec[1];
 
     /* If the training vector size is not an integer multiple of the 
     ** sub-vector size and this is the rightmost sub-vector (the one that
@@ -3531,10 +3555,10 @@ static void vec1CodebookWork(void *pCtx){
     for(ii=0; ii<pVec->nChunk; ii++){
       /* Allocate space for this chunk. Either VEC1_TRAINING_SZCHUNK or
       ** enough space for all remaining sub-vectors, whichever is smaller. */
-      int nAlloc = MIN(VEC1_TRAINING_SZCHUNK, 
+      i64 nAlloc = MIN(VEC1_TRAINING_SZCHUNK,
           (pVec->nVec - (ii * pVec->nVecPerChunk)) * nBytePerVec
       );
-      pVec->aChunk[ii] = (float*)sqlite3_malloc(nAlloc);
+      pVec->aChunk[ii] = (float*)sqlite3_malloc64(nAlloc);
 
       if( pVec->aChunk[ii]==0 ){
         pJob->rc = SQLITE_NOMEM;
@@ -4386,9 +4410,10 @@ static void vec1CovarianceWork(void *pArg){
   Vec1CovarianceJob *pJob = (Vec1CovarianceJob*)pArg;
   const int iSubOff = pJob->iSub*pJob->nCodeElem;
   float *aCode = &pJob->aBook[iSubOff * VEC1_PQ_CODEBOOK_SZ];
-  int ii, kk;
+  i64 ii;
+  int kk;
 
-  int nVec = pJob->pVec->nVec;
+  i64 nVec = pJob->pVec->nVec;
   int nElem = pJob->pVec->nElem;
   int nKK = MIN(pJob->nCodeElem, nElem - iSubOff);
 
@@ -4548,8 +4573,8 @@ struct Vec1RotationJob {
   Vec1TrainVectors *pVec;         /* Input vectors */
   Vec1TrainVectors *pOut;         /* Output vectors */
 
-  int iFirst;
-  int iEof;
+  i64 iFirst;
+  i64 iEof;
 
   const float *aRotation;         /* nElem*nElem rotation matrix */
 #ifdef VEC1_USE_TRANSPOSITION
@@ -4703,7 +4728,7 @@ static void vec1RotationWork(void *pArg){
   Vec1RotationJob *pJob = (Vec1RotationJob*)pArg;
   int nElem = pJob->pVec->nElem;
 
-  int ii = pJob->iFirst;
+  i64 ii = pJob->iFirst;
   for(; ii<=(pJob->iEof-VEC1_MULTIMATCH_NVEC); ii+=VEC1_MULTIMATCH_NVEC){
     const float *aIn[VEC1_MULTIMATCH_NVEC];
     float *aOut[VEC1_MULTIMATCH_NVEC];
@@ -4735,17 +4760,20 @@ static void vec1RotationWork(void *pArg){
 */
 static Vec1TrainVectors *vec1CopyVectors(Vec1TrainVectors *pIn){
   Vec1TrainVectors *pRet = 0;
-  int ii;
+  i64 ii;
 
-  pRet = (Vec1TrainVectors*)vec1MallocZero(sizeof(Vec1TrainVectors));
+  pRet = (Vec1TrainVectors*)vec1MallocZero(
+      sizeof(Vec1TrainVectors) + sizeof(float*) * pIn->nChunk
+  );
   if( pRet==0 ) return pRet;
   pRet->nElem = pIn->nElem;
   pRet->nVec = pIn->nVec;
-  pRet->nChunk = pIn->nChunk;
   pRet->nVecPerChunk = pIn->nVecPerChunk;
+  pRet->nChunk = pIn->nChunk;
+  pRet->aChunk = (float**)&pRet[1];
 
   for(ii=0; ii<pIn->nChunk; ii++){
-    int nByte = pRet->nVecPerChunk * pIn->nElem * sizeof_f32;
+    i64 nByte = pRet->nVecPerChunk * pIn->nElem * sizeof_f32;
     pRet->aChunk[ii] = (float*)sqlite3_malloc(VEC1_TRAINING_SZCHUNK);
     if( pRet->aChunk[ii]==0 ){
       vec1FreeVectors(pRet);
@@ -4770,7 +4798,7 @@ static void vec1TrainRotation(
   const int nElem = p->tv.nElem;
   const int nMatrixByte = sizeof_f32 * nElem * nElem;
   int iRound = 0;                 /* Current OPQ round */
-  int ii;
+  i64 ii;
   float *aRot = (float*)sqlite3_malloc(nMatrixByte * 2);
   float *aRot2 = &aRot[nElem*nElem];
   Vec1TrainVectors *pTrain = vec1CopyVectors(&p->tv);
@@ -4901,15 +4929,15 @@ struct Vec1ResidualJob {
   /* Data to train on */
   const Vec1TrainCtx *p;
   Vec1TrainVectors *pVec;
-  int iFirst;
-  int iEof;
+  i64 iFirst;
+  i64 iEof;
   const float *aCentroid;
   int nCentroid;
 };
 
 static void vec1TrainResidualWorker(void *pCtx){
   Vec1ResidualJob *p = (Vec1ResidualJob*)pCtx;
-  int ii;
+  i64 ii;
   int nElem = p->pVec->nElem;
 
   for(ii=p->iFirst; ii<p->iEof; ii++){
@@ -5032,7 +5060,7 @@ static void vec1ApplyWHT(float *aVec, int nElem){
 ** the training context.
 */
 static void vec1TrainApplyWHT(Vec1TrainCtx *p){
-  int ii;
+  i64 ii;
   for(ii=0; ii<p->tv.nVec; ii++){
     vec1ApplyWHT(vec1TrainingVector(&p->tv, ii), p->tv.nElem);
   }
@@ -5055,7 +5083,7 @@ static void vec1TrainFinal(sqlite3_context *pCtx){
   float *pCsr = 0;
   Vec1JobQueue *pQueue = 0;
   u32 flags = 0;
-  int ii;
+  i64 ii;
   int bPQ = 0;
   i64 nElem = 0;                  /* 64-bit copy of p->tv.nElem */
 
@@ -5065,6 +5093,10 @@ static void vec1TrainFinal(sqlite3_context *pCtx){
   p->pCtx = pCtx;
   bPQ = (p->eQuant==VEC1_QUANTIZE_PQ || p->eQuant==VEC1_QUANTIZE_OPQ);
   nElem = p->tv.nElem;
+
+  /* If an error occurred in xStep(), then the statement is being aborted and
+  ** this call is just to clean up. Do not start training.  */
+  if( p->rc!=SQLITE_OK ) goto train_final_out;
 
   if( p->tv.nVec==0 ){
     vec1ResultErrorF(pCtx,
@@ -5077,7 +5109,7 @@ static void vec1TrainFinal(sqlite3_context *pCtx){
     if( bPQ ) nReq = MAX(VEC1_PQ_TRAINING_SET_MIN, nReq);
     if( p->tv.nVec<nReq ){
       vec1ResultErrorF(pCtx,
-          "too few training vectors (require %d, have %d)",
+          "too few training vectors (require %d, have %lld)",
           nReq, p->tv.nVec
       );
       goto train_final_out;
@@ -5195,6 +5227,7 @@ static void vec1TrainFinal(sqlite3_context *pCtx){
   for(ii=0; ii<p->tv.nChunk; ii++){
     sqlite3_free(p->tv.aChunk[ii]);
   }
+  sqlite3_free(p->tv.aChunk);
   vec1JobQueueFree(pQueue);
   sqlite3_free(aByte);
 }
