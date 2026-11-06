@@ -43,5 +43,91 @@ foreach {tn nRepeat op bErr} {
   } $res
 }
 
+#-------------------------------------------------------------------------
+# Test that if a record written to the %_data or %_docsize tables is larger
+# than SQLITE_LIMIT_LENGTH, the write fails with SQLITE_TOOBIG. It should not
+# succeed and store a NULL in place of the record, corrupting the index.
+#
+# Report: https://sqlite.org/bugs/forumpost/f712b4e116
+#
+set toobig {1 {string or blob too big}}
+
+# A %_data leaf record that is too large.
+#
+reset_db
+set nLimit [sqlite3_limit db SQLITE_LIMIT_LENGTH -1]
+do_execsql_test 2.1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(a);
+}
+sqlite3_limit db SQLITE_LIMIT_LENGTH 100
+do_catchsql_test 2.1.1 {
+  INSERT INTO ft VALUES('a b c d e f g h i j k l m n o p q r s t u v w x y z');
+} $toobig
+sqlite3_limit db SQLITE_LIMIT_LENGTH $nLimit
+do_execsql_test 2.1.2 {
+  SELECT count(*) FROM ft_data WHERE block IS NULL;
+} {0}
+do_execsql_test 2.1.3 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+  SELECT rowid FROM ft('a');
+} {}
+
+# The tables used by the following tests have 31 columns, so that both the
+# averages record and the %_docsize record are larger than the minimum
+# possible value of SQLITE_LIMIT_LENGTH (30). They are contentless, as
+# otherwise writing to the %_content table fails. And all values inserted
+# are empty, so that no leaf records are written.
+#
+set cols [list]
+set vals [list]
+for {set i 0} {$i < 31} {incr i} {
+  lappend cols c$i
+  lappend vals "''"
+}
+set cols [join $cols ,]
+set vals [join $vals ,]
+
+# An averages record that is too large. The columnsize=0 option means that
+# there is no %_docsize record to write.
+#
+reset_db
+do_execsql_test 2.2.0 "
+  CREATE VIRTUAL TABLE ft USING fts5($cols, content='', columnsize=0);
+"
+sqlite3_limit db SQLITE_LIMIT_LENGTH 30
+do_catchsql_test 2.2.1 "
+  INSERT INTO ft(rowid, $cols) VALUES(1, $vals);
+" $toobig
+sqlite3_limit db SQLITE_LIMIT_LENGTH $nLimit
+do_execsql_test 2.2.2 {
+  SELECT count(*) FROM ft_data WHERE block IS NULL;
+} {0}
+do_execsql_test 2.2.3 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+# A %_docsize record that is too large. The %_docsize record is written as
+# part of the INSERT statement, but the slightly larger averages record is
+# not written until the transaction is committed. So raising the limit before
+# the COMMIT means that this tests the %_docsize write only.
+#
+reset_db
+do_execsql_test 2.3.0 "
+  CREATE VIRTUAL TABLE ft USING fts5($cols, content='');
+  BEGIN;
+"
+sqlite3_limit db SQLITE_LIMIT_LENGTH 30
+do_catchsql_test 2.3.1 "
+  INSERT INTO ft(rowid, $cols) VALUES(1, $vals);
+" $toobig
+sqlite3_limit db SQLITE_LIMIT_LENGTH $nLimit
+do_execsql_test 2.3.2 {
+  COMMIT;
+  SELECT count(*) FROM ft_docsize WHERE sz IS NULL;
+} {0}
+do_execsql_test 2.3.3 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
 finish_test
 

@@ -968,6 +968,17 @@ static int fts5IndexPrepareStmt(
   return p->rc;
 }
 
+/*
+** If *pRc is other than SQLITE_OK when this function is called, it is a
+** no-op. Otherwise, call sqlite3_step() and then sqlite3_reset() on the
+** supplied statement pointer. Set (*pRc) to the result of sqlite3_reset().
+*/
+static void fts5StepAndReset(int *pRc, sqlite3_stmt *pStmt){
+  if( *pRc==SQLITE_OK ){
+    sqlite3_step(pStmt);
+    *pRc = sqlite3_reset(pStmt);
+  }
+}
 
 /*
 ** INSERT OR REPLACE a record into the %_data table.
@@ -985,9 +996,8 @@ static void fts5DataWrite(Fts5Index *p, i64 iRowid, const u8 *pData, int nData){
   }
 
   sqlite3_bind_int64(p->pWriter, 1, iRowid);
-  sqlite3_bind_blob(p->pWriter, 2, pData, nData, SQLITE_STATIC);
-  sqlite3_step(p->pWriter);
-  p->rc = sqlite3_reset(p->pWriter);
+  p->rc = sqlite3_bind_blob(p->pWriter, 2, pData, nData, SQLITE_STATIC);
+  fts5StepAndReset(&p->rc, p->pWriter);
   sqlite3_bind_null(p->pWriter, 2);
 }
 
@@ -2743,7 +2753,8 @@ static void fts5SegIterSeekInit(
   pIdxSelect = fts5IdxSelectStmt(p);
   if( p->rc ) return;
   sqlite3_bind_int(pIdxSelect, 1, pSeg->iSegid);
-  sqlite3_bind_blob(pIdxSelect, 2, pTerm, nTerm, SQLITE_STATIC);
+  p->rc = sqlite3_bind_blob(pIdxSelect, 2, pTerm, nTerm, SQLITE_STATIC);
+  if( p->rc ) return;
   if( SQLITE_ROW==sqlite3_step(pIdxSelect) ){
     i64 val = sqlite3_column_int(pIdxSelect, 0);
     iPg = (int)(val>>1);
@@ -2835,8 +2846,8 @@ static void fts5SegIterNextInit(
   if( pSel ){
     assert( p->rc==SQLITE_OK );
     sqlite3_bind_int(pSel, 1, pSeg->iSegid);
-    sqlite3_bind_blob(pSel, 2, pTerm, nTerm, SQLITE_STATIC);
-
+    p->rc = sqlite3_bind_blob(pSel, 2, pTerm, nTerm, SQLITE_STATIC);
+    if( p->rc ) return;
     if( sqlite3_step(pSel)==SQLITE_ROW ){
       i64 val = sqlite3_column_int64(pSel, 0);
       iPg = (int)(val>>1);
@@ -4340,10 +4351,11 @@ static void fts5WriteFlushBtree(Fts5Index *p, Fts5SegWriter *pWriter){
     const char *z = (pWriter->btterm.n>0?(const char*)pWriter->btterm.p:"");
     /* The following was already done in fts5WriteInit(): */
     /* sqlite3_bind_int(p->pIdxWriter, 1, pWriter->iSegid); */
-    sqlite3_bind_blob(p->pIdxWriter, 2, z, pWriter->btterm.n, SQLITE_STATIC);
+    p->rc = sqlite3_bind_blob(
+        p->pIdxWriter, 2, z, pWriter->btterm.n, SQLITE_STATIC
+    );
     sqlite3_bind_int64(p->pIdxWriter, 3, bFlag + ((i64)pWriter->iBtPage<<1));
-    sqlite3_step(p->pIdxWriter);
-    p->rc = sqlite3_reset(p->pIdxWriter);
+    fts5StepAndReset(&p->rc, p->pIdxWriter);
     sqlite3_bind_null(p->pIdxWriter, 2);
   }
   pWriter->iBtPage = 0;

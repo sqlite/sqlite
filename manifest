@@ -1,5 +1,5 @@
-C Avoid\ssilently\somitting\sto\sconfigure\sthe\sfts3/4\scompress=\sor\suncompress=\sfunctions\sfollowing\san\sOOM\serror\swhen\sloading\sthe\sschema\sfor\ssuch\san\sfts3/4\stable.\sReport\s[bugs:/info/2026-10-28T11:05:06Z\s|\s2026-10-28T11:05:06Z].
-D 2026-11-06T18:01:22.522
+C Handle\ssqlite3_bind_blob()\sreturning\sSQLITE_TOOBIG\sin\sfts5.\sThis\sshould\sonly\sbe\spossible\swith\sa\svery\ssmall\sSQLITE_LIMIT_LENGTH\sconfiguration.\sReport\s[bugs:/info/2026-11-03T19:00:39Z\s|\s2026-11-03T19:00:39Z].
+D 2026-11-06T18:40:52.851
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -114,9 +114,9 @@ F ext/fts5/fts5_buffer.c dcc3f0352339fe79c9d8abbc1c2009bc3469206467880bf43558447
 F ext/fts5/fts5_config.c 3e35fd126c1ff9892cab0aa6ee72522f02866cdef0fd9046e814e486290cc70a
 F ext/fts5/fts5_expr.c 77e1a5e4aa11209d38f488afeb7ee8a96b92c782154d67dedd5ec3c8a36f45aa
 F ext/fts5/fts5_hash.c 341a08ad0153b397b819ef3d7a7959c1dc3c84a6988a431d93dece8bd62ae10e
-F ext/fts5/fts5_index.c 7a40c314c7464c9ba92c1462be97114c02f7832fe6abb23962b77241ce6fb511
+F ext/fts5/fts5_index.c f577cbd070ecdebfa80a142ce265ced4dcae54ac905bfa9607a2f38ac15c63c9
 F ext/fts5/fts5_main.c d16e7b639370f4d0a8056c9b2485786321d3e6548cb80254b7c9f23c323748d2
-F ext/fts5/fts5_storage.c 2acf480b42f56d5163e1f4e6223606b85effac1ff9d331797edd367bd8c98ec7
+F ext/fts5/fts5_storage.c 1854936836cf7505efaf10114cb542dc37cd576c83d83461721a25c38c4f1e56
 F ext/fts5/fts5_tcl.c aed8905b1a3c6ecc94da15e9cc54d889045b9eacecc7a17b6fcc1294225f7716
 F ext/fts5/fts5_test_mi.c 3074a25cb661b2301143022ef96a950618452a5b082abd9ba7b9daaf29d01537
 F ext/fts5/fts5_test_tok.c 6021033bd4f4feffe8579efb6e1f58156ed462256bf99a2acdbd629246529204
@@ -210,7 +210,7 @@ F ext/fts5/test/fts5interrupt.test af7834ac6c2e71c05aea42d92f272eef3655e89b7a14a
 F ext/fts5/test/fts5join.test 3791e30d034050281191cd8141d969849f6c060135f1e3938fea3eea955f9da9
 F ext/fts5/test/fts5lastrowid.test f36298a1fb9f988bde060a274a7ce638faa9c38a31400f8d2d27ea9373e0c4a1
 F ext/fts5/test/fts5leftjoin.test 1c14b51f4d1344a89e488160882f05a2246dd7e70c5cf077c8fb473e03c66338
-F ext/fts5/test/fts5limits.test 8ab67cf5d311c124b6ceb0062d0297767176df4572d955fce79fa43004dff01c
+F ext/fts5/test/fts5limits.test c45d4f8996f30d212879c8312ff249c761c5acf80c4c71b9aad3e5e0c9c0bcde
 F ext/fts5/test/fts5locale.test fc8faa01e566bcfb3810bcd3c7b8b94c17f0d088cb34ac0f338761d8b5a573d8
 F ext/fts5/test/fts5matchinfo.test bc9e74157773db7f00aec1e85587f1145956ebdf1672c136f0f04323b2752aa0
 F ext/fts5/test/fts5merge.test 088133e135ef7dcd6701753c95b8b10be3c52fa1a99507933e00756d6437489e
@@ -2305,8 +2305,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b05d02e27ac00bb12b16dc1b2ceee3221c5eb343f41487c966b637598f9fdc1b
-R 8ed2aa6e36a6a56f29d4d6808a9615af
+P cf4e4a7de2057e2c742a838fcec7c775d614136236f180aff333013e4d2b0238
+R 9a6f921c9cdd5b17c33b5b8dc9b26fae
 U dan
-Z 87a2f761bc77fbfc8599b44aff1e5195
+Z 9b750b9fe556d2525e78a8c0c5369f32
 # Remove this line to create a well-formed Fossil manifest.
