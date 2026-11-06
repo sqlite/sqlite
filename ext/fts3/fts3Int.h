@@ -634,6 +634,9 @@ int sqlite3Fts3FirstFilter(sqlite3_int64, char *, int, char *);
 void sqlite3Fts3CreateStatTable(int*, Fts3Table*);
 int sqlite3Fts3EvalTestDeferred(Fts3Cursor *pCsr, int *pRc);
 int sqlite3Fts3ReadInt(const char *z, int *pnOut);
+int sqlite3Fts3CreateHashFunction(sqlite3*, const char*, int, int, Fts3Hash*,
+    void (*)(sqlite3_context*,int,sqlite3_value**)
+);
 
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);

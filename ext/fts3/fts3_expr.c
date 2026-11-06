@@ -1304,12 +1304,13 @@ static void fts3ExprTestRebalance(
 ** with database connection db. 
 */
 int sqlite3Fts3ExprInitTestInterface(sqlite3 *db, Fts3Hash *pHash){
-  int rc = sqlite3_create_function(
-      db, "fts3_exprtest", -1, SQLITE_UTF8, (void*)pHash, fts3ExprTest, 0, 0
+  int rc = sqlite3Fts3CreateHashFunction(
+      db, "fts3_exprtest", -1, SQLITE_UTF8, pHash, fts3ExprTest
   );
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "fts3_exprtest_rebalance", 
-        -1, SQLITE_UTF8, (void*)pHash, fts3ExprTestRebalance, 0, 0
+    rc = sqlite3Fts3CreateHashFunction(
+        db, "fts3_exprtest_rebalance", -1, SQLITE_UTF8, pHash,
+        fts3ExprTestRebalance
     );
   }
   return rc;
