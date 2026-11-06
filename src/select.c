@@ -521,6 +521,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
   int bSeenTFunc = 0;             /* True if have seen table-valued function */
 
   pSrc = p->pSrc;
+  if( pSrc->nSrc<=1 ) return 0;
   pLeft = &pSrc->a[0];
   pRight = &pLeft[1];
   for(i=0; i<pSrc->nSrc-1; i++, pRight++, pLeft++){
