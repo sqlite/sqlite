@@ -1164,7 +1164,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
         idxCols |= cMask;
         pIdx->aiColumn[n] = pTerm->u.x.leftColumn;
         pColl = sqlite3ExprCompareCollSeq(pParse, pX);
-        assert( pColl!=0 || pParse->nErr>0 ); /* TH3 collate01.800 */
+        testcase( pColl==0 && pParse->nErr==0 ); /* TH3 collate01.810 */
         if( !sqlite3IsBinary(pColl) ){
           /* Disallow the use of a Bloom filter if any non-BINARY collating
           ** sequence is involved.  tag-202607231411 */
