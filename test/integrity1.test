@@ -1,0 +1,351 @@
+# 2026-11-07
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Regression tests for the datatype checks that PRAGMA integrity_check
+# and PRAGMA quick_check perform on non-STRICT tables.
+#
+# Forum post 8c9e6f5400:  After a problem has been reported for an earlier
+# column of a row, the datatype of a later column in the same row could be
+# misjudged: a TEXT value in a numeric column was missed, or an integer in
+# a column with a TEXT default was reported as a "TEXT value".
+#
+# Forum post a8b0a1e18e:  A VIRTUAL generated column declared before the
+# INTEGER PRIMARY KEY caused the last stored column to be judged by the
+# datatype of its DEFAULT instead of by its stored value, giving a false
+# "TEXT value" report or hiding a real one.
+#
+# Section 4 (found by an independent review of the first candidate):  on a
+# WITHOUT ROWID table, a "row not in PRIMARY KEY order" report precedes the
+# datatype checks of the same row and had the same effect as an earlier
+# datatype problem.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix integrity1
+
+#-------------------------------------------------------------------------
+# Section 1: later columns after an earlier problem in the same row.
+#
+# Typeless tables are created and populated first.  The column types are
+# then written into the schema so that the stored values keep their
+# original storage classes.
+#
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);        INSERT INTO t1 VALUES(1, '2', '3');
+  CREATE TABLE t2(a, b, c);        INSERT INTO t2 VALUES('one', '2', '3');
+  CREATE TABLE t3(a, b, c);        INSERT INTO t3 VALUES(1, '2', 3);
+  CREATE TABLE t4(a, b, c);        INSERT INTO t4 VALUES(1, 'abc', '3');
+  CREATE TABLE t5(a, b, c);        INSERT INTO t5 VALUES(1, 2, '3');
+  CREATE TABLE t6(a, b, c, d);     INSERT INTO t6 VALUES(1, '2', '3', '4');
+  CREATE TABLE t7(a, b, c);        INSERT INTO t7 VALUES(1, 2.5, '3');
+  CREATE TABLE t8(a, b, c);        INSERT INTO t8 VALUES(1, 'abc', 3);
+  CREATE TABLE t9(a, b, c);        INSERT INTO t9 VALUES('one', '2', 3);
+  CREATE TABLE w1(k, a, b, c, PRIMARY KEY(k)) WITHOUT ROWID;
+  INSERT INTO w1 VALUES(1, 1, '2', '3');
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_schema SET sql='CREATE TABLE t1(a TEXT, b INT, c INT)'
+    WHERE name='t1';
+  UPDATE sqlite_schema SET sql='CREATE TABLE t2(a TEXT, b INT, c INT)'
+    WHERE name='t2';
+  UPDATE sqlite_schema SET sql='CREATE TABLE t3(a TEXT, b INT, c INT DEFAULT ''x'')'
+    WHERE name='t3';
+  UPDATE sqlite_schema SET sql='CREATE TABLE t4(a TEXT, b INT, c INT)'
+    WHERE name='t4';
+  UPDATE sqlite_schema SET sql='CREATE TABLE t5(a TEXT, b INT, c INT)'
+    WHERE name='t5';
+  UPDATE sqlite_schema SET sql='CREATE TABLE t6(a TEXT, b INT, c INT, d INT)'
+    WHERE name='t6';
+  UPDATE sqlite_schema SET sql='CREATE TABLE t7(a TEXT, b REAL NOT NULL, c INT)'
+    WHERE name='t7';
+  UPDATE sqlite_schema SET sql='CREATE TABLE t8(a TEXT, b INT, c INT DEFAULT ''x'')'
+    WHERE name='t8';
+  UPDATE sqlite_schema SET sql='CREATE TABLE t9(a TEXT, b INT, c INT DEFAULT ''x'')'
+    WHERE name='t9';
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE w1(k, a TEXT, b INT, c INT, PRIMARY KEY(k)) WITHOUT ROWID'
+    WHERE name='w1';
+} {}
+db close
+sqlite3 db test.db
+
+do_execsql_test 1.1 {
+  SELECT typeof(a), typeof(b), typeof(c) FROM t1;
+  SELECT typeof(a), typeof(b), typeof(c) FROM t3;
+} {integer text text integer text integer}
+
+# Two earlier problems, then a TEXT value in an INT column (false negative).
+do_execsql_test 1.2 {
+  PRAGMA integrity_check(t1);
+} {{NUMERIC value in t1.a} {TEXT value in t1.b} {TEXT value in t1.c}}
+
+# Control: one earlier problem, same stored value in c.
+do_execsql_test 1.3 {
+  PRAGMA integrity_check(t2);
+} {{TEXT value in t2.b} {TEXT value in t2.c}}
+
+# Two earlier problems, then an integer in an INT column with a TEXT
+# default (false positive).
+do_execsql_test 1.4 {
+  PRAGMA integrity_check(t3);
+} {{NUMERIC value in t3.a} {TEXT value in t3.b}}
+
+# One earlier problem; b holds non-numeric text (not itself a problem).
+do_execsql_test 1.5 {
+  PRAGMA integrity_check(t4);
+} {{NUMERIC value in t4.a} {TEXT value in t4.c}}
+
+# Control: one earlier problem; b holds an integer.
+do_execsql_test 1.6 {
+  PRAGMA integrity_check(t5);
+} {{NUMERIC value in t5.a} {TEXT value in t5.c}}
+
+# Four columns: every later column must still be checked.
+do_execsql_test 1.7 {
+  PRAGMA integrity_check(t6);
+} {{NUMERIC value in t6.a} {TEXT value in t6.b} {TEXT value in t6.c} {TEXT value in t6.d}}
+
+# One earlier problem; the NOT NULL check on a REAL column loads b.
+do_execsql_test 1.8 {
+  PRAGMA integrity_check(t7);
+} {{NUMERIC value in t7.a} {TEXT value in t7.c}}
+
+# One earlier problem, then an integer in a column with a TEXT default.
+do_execsql_test 1.9 {
+  PRAGMA integrity_check(t8);
+} {{NUMERIC value in t8.a}}
+
+# Control: the problem is in the column immediately before c.
+do_execsql_test 1.10 {
+  PRAGMA integrity_check(t9);
+} {{TEXT value in t9.b}}
+
+# WITHOUT ROWID table: same checks run against the PRIMARY KEY index.
+do_execsql_test 1.11 {
+  PRAGMA integrity_check(w1);
+} {{NUMERIC value in w1.a} {TEXT value in w1.b} {TEXT value in w1.c}}
+
+do_execsql_test 1.12 {
+  PRAGMA quick_check(t1);
+} {{NUMERIC value in t1.a} {TEXT value in t1.b} {TEXT value in t1.c}}
+
+do_execsql_test 1.13 {
+  PRAGMA quick_check(t3);
+} {{NUMERIC value in t3.a} {TEXT value in t3.b}}
+
+# The maximum error count still limits the output to the first problems.
+do_execsql_test 1.14 {
+  DROP TABLE t2; DROP TABLE t3; DROP TABLE t4; DROP TABLE t5;
+  DROP TABLE t6; DROP TABLE t7; DROP TABLE t8; DROP TABLE t9; DROP TABLE w1;
+  PRAGMA integrity_check(2);
+} {{NUMERIC value in t1.a} {TEXT value in t1.b}}
+do_execsql_test 1.15 {
+  PRAGMA integrity_check(1);
+} {{NUMERIC value in t1.a}}
+do_execsql_test 1.16 {
+  PRAGMA integrity_check;
+} {{NUMERIC value in t1.a} {TEXT value in t1.b} {TEXT value in t1.c}}
+
+#-------------------------------------------------------------------------
+# Section 2: VIRTUAL generated columns declared before the INTEGER PRIMARY
+# KEY.  These tables are ordinary; only fn1 and fn2 have their schema edited
+# so that a numeric-looking TEXT value sits in a REAL column.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE p1(a AS (c) VIRTUAL, b INTEGER PRIMARY KEY, c REAL DEFAULT 'none');
+  INSERT INTO p1(b,c) VALUES(1,2.5);
+  CREATE TABLE p2(b INTEGER PRIMARY KEY, a AS (c) VIRTUAL, c REAL DEFAULT 'none');
+  INSERT INTO p2(b,c) VALUES(1,2.5);
+  CREATE TABLE p3(a AS (c) VIRTUAL, b INTEGER PRIMARY KEY, c REAL);
+  INSERT INTO p3(b,c) VALUES(1,2.5);
+  CREATE TABLE p4(a AS (c) VIRTUAL, b INTEGER PRIMARY KEY,
+                  c REAL DEFAULT 'none', d REAL);
+  INSERT INTO p4(b,c,d) VALUES(1,2.5,3.5);
+  CREATE TABLE p5(v1 AS (c) VIRTUAL, v2 AS (d) VIRTUAL, b INTEGER PRIMARY KEY,
+                  c REAL DEFAULT 'x', d REAL DEFAULT 'y');
+  INSERT INTO p5(b,c,d) VALUES(1,2.5,3.5);
+  CREATE TABLE p6(a AS (c) VIRTUAL, c REAL DEFAULT 'none', b INTEGER PRIMARY KEY);
+  INSERT INTO p6(b,c) VALUES(1,2.5);
+  CREATE TABLE p7(c REAL DEFAULT 'none', a AS (c) VIRTUAL, b INTEGER PRIMARY KEY);
+  INSERT INTO p7(b,c) VALUES(1,2.5);
+  CREATE TABLE p8(a AS (c) STORED, b INTEGER PRIMARY KEY, c REAL DEFAULT 'none');
+  INSERT INTO p8(b,c) VALUES(1,2.5);
+  CREATE TABLE p9(x, b INTEGER PRIMARY KEY, c REAL DEFAULT 'none');
+  INSERT INTO p9(x,b,c) VALUES(0,1,2.5);
+  CREATE TABLE p10(c REAL DEFAULT 'none', b INTEGER PRIMARY KEY);
+  INSERT INTO p10(b,c) VALUES(1,2.5);
+  CREATE TABLE p11(a AS (c) VIRTUAL, b INT PRIMARY KEY, c REAL DEFAULT 'none')
+    WITHOUT ROWID;
+  INSERT INTO p11(b,c) VALUES(1,2.5);
+  CREATE TABLE p12(a AS (c) VIRTUAL, b INTEGER PRIMARY KEY, c INT DEFAULT 'none');
+  INSERT INTO p12(b,c) VALUES(1,7);
+  CREATE TABLE p13(a AS (c) VIRTUAL, b INTEGER PRIMARY KEY, c TEXT DEFAULT 5);
+  INSERT INTO p13(b,c) VALUES(1,'hello');
+  CREATE TABLE fn1(a AS (c) VIRTUAL, b INTEGER PRIMARY KEY, c);
+  INSERT INTO fn1(b,c) VALUES(1,'2.5');
+  CREATE TABLE fn2(b INTEGER PRIMARY KEY, a AS (c) VIRTUAL, c);
+  INSERT INTO fn2(b,c) VALUES(1,'2.5');
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE fn1(a AS (c) VIRTUAL, b INTEGER PRIMARY KEY, c REAL)'
+    WHERE name='fn1';
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE fn2(b INTEGER PRIMARY KEY, a AS (c) VIRTUAL, c REAL)'
+    WHERE name='fn2';
+} {}
+db close
+sqlite3 db test.db
+
+do_execsql_test 2.1  { SELECT typeof(c), c FROM p1 }     {real 2.5}
+do_execsql_test 2.2  { PRAGMA integrity_check(p1) }      {ok}
+do_execsql_test 2.3  { PRAGMA quick_check(p1) }          {ok}
+do_execsql_test 2.4  { PRAGMA integrity_check(p2) }      {ok}
+do_execsql_test 2.5  { PRAGMA integrity_check(p3) }      {ok}
+do_execsql_test 2.6  { PRAGMA integrity_check(p4) }      {ok}
+do_execsql_test 2.7  { PRAGMA integrity_check(p5) }      {ok}
+do_execsql_test 2.8  { PRAGMA integrity_check(p6) }      {ok}
+do_execsql_test 2.9  { PRAGMA integrity_check(p7) }      {ok}
+do_execsql_test 2.10 { PRAGMA integrity_check(p8) }      {ok}
+do_execsql_test 2.11 { PRAGMA integrity_check(p9) }      {ok}
+do_execsql_test 2.12 { PRAGMA integrity_check(p10) }     {ok}
+do_execsql_test 2.13 { PRAGMA integrity_check(p11) }     {ok}
+do_execsql_test 2.14 { PRAGMA integrity_check(p12) }     {ok}
+do_execsql_test 2.15 { PRAGMA integrity_check(p13) }     {ok}
+
+# A numeric-looking TEXT value in a REAL column must be reported whether
+# or not a VIRTUAL column precedes the INTEGER PRIMARY KEY.
+do_execsql_test 2.16 { SELECT typeof(c) FROM fn1 }       {text}
+do_execsql_test 2.17 { PRAGMA integrity_check(fn1) }     {{TEXT value in fn1.c}}
+do_execsql_test 2.18 { PRAGMA integrity_check(fn2) }     {{TEXT value in fn2.c}}
+do_execsql_test 2.19 { PRAGMA quick_check(fn1) }         {{TEXT value in fn1.c}}
+do_test 2.20 {
+  lsort [execsql {PRAGMA integrity_check}]
+} {{TEXT value in fn1.c} {TEXT value in fn2.c}}
+
+#-------------------------------------------------------------------------
+# Section 3: both conditions together.  A VIRTUAL column precedes the
+# INTEGER PRIMARY KEY and an earlier column has a problem.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE q1(v AS (c) VIRTUAL, b INTEGER PRIMARY KEY, x, c);
+  INSERT INTO q1(b,x,c) VALUES(1, 1, 3);
+  CREATE TABLE q2(v AS (c) VIRTUAL, b INTEGER PRIMARY KEY, x, c);
+  INSERT INTO q2(b,x,c) VALUES(1, 1, '3');
+  CREATE TABLE q3(v AS (c) VIRTUAL, x, b INTEGER PRIMARY KEY, c);
+  INSERT INTO q3(b,x,c) VALUES(1, 1, 3);
+  CREATE TABLE q4(v AS (c) VIRTUAL, x, b INTEGER PRIMARY KEY, c);
+  INSERT INTO q4(b,x,c) VALUES(1, 1, '3');
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE q1(v AS (c) VIRTUAL, b INTEGER PRIMARY KEY, x TEXT, c INT DEFAULT ''q'')'
+    WHERE name='q1';
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE q2(v AS (c) VIRTUAL, b INTEGER PRIMARY KEY, x TEXT, c INT)'
+    WHERE name='q2';
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE q3(v AS (c) VIRTUAL, x TEXT, b INTEGER PRIMARY KEY, c INT DEFAULT ''q'')'
+    WHERE name='q3';
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE q4(v AS (c) VIRTUAL, x TEXT, b INTEGER PRIMARY KEY, c INT)'
+    WHERE name='q4';
+} {}
+db close
+sqlite3 db test.db
+
+# Controls: with three stored columns the right-most column is still
+# prefetched correctly, and the problem in x is immediately before c.
+do_execsql_test 3.1 { PRAGMA integrity_check(q1) } {{NUMERIC value in q1.x}}
+do_execsql_test 3.2 { PRAGMA integrity_check(q2) } {{NUMERIC value in q2.x} {TEXT value in q2.c}}
+
+# With the stored column x before the INTEGER PRIMARY KEY, the storage
+# index of the key equals the number of stored columns minus one, so the
+# prefetch could stop short of c.
+do_execsql_test 3.3 { PRAGMA integrity_check(q3) } {{NUMERIC value in q3.x}}
+do_execsql_test 3.4 { PRAGMA integrity_check(q4) } {{NUMERIC value in q4.x} {TEXT value in q4.c}}
+
+#-------------------------------------------------------------------------
+# Section 4: WITHOUT ROWID tables whose PRIMARY KEY order check reports a
+# problem before the datatype checks of the same row.  Keys 'A' and 'a' are
+# inserted under BINARY collation and the key column is then given COLLATE
+# NOCASE, so the second row is reported as out of order.  The datatype
+# checks that follow must still see the stored values.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE clean(k TEXT PRIMARY KEY, a, b, c) WITHOUT ROWID;
+  INSERT INTO clean VALUES('A','ok',1,2),('a','ok',1,2);
+  CREATE TABLE miss(k TEXT PRIMARY KEY, a, b) WITHOUT ROWID;
+  INSERT INTO miss VALUES('A','ok',1),('a',7,NULL);
+  CREATE TABLE wfp(k TEXT PRIMARY KEY, a, b, c) WITHOUT ROWID;
+  INSERT INTO wfp VALUES('A',7,'2',5),('a','ok',1,2);
+  CREATE TABLE worder(a, k TEXT PRIMARY KEY, b) WITHOUT ROWID;
+  INSERT INTO worder VALUES('ok','A',1),('ok','a','2');
+  CREATE TABLE wboth(v AS (c+0) VIRTUAL, k TEXT PRIMARY KEY, c) WITHOUT ROWID;
+  INSERT INTO wboth(k,c) VALUES('A',1),('a','2');
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE clean(k TEXT COLLATE NOCASE PRIMARY KEY, a TEXT, b INT, c INT DEFAULT ''x'') WITHOUT ROWID'
+    WHERE name='clean';
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE miss(k TEXT COLLATE NOCASE PRIMARY KEY, a TEXT, b INT NOT NULL DEFAULT 0) WITHOUT ROWID'
+    WHERE name='miss';
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE wfp(k TEXT COLLATE NOCASE PRIMARY KEY, a TEXT, b INT, c INT DEFAULT ''x'') WITHOUT ROWID'
+    WHERE name='wfp';
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE worder(a TEXT, k TEXT COLLATE NOCASE PRIMARY KEY, b INT) WITHOUT ROWID'
+    WHERE name='worder';
+  UPDATE sqlite_schema
+    SET sql='CREATE TABLE wboth(v AS (c+0) VIRTUAL, k TEXT COLLATE NOCASE PRIMARY KEY, c INT) WITHOUT ROWID'
+    WHERE name='wboth';
+} {}
+db close
+sqlite3 db test.db
+
+do_execsql_test 4.1 {
+  SELECT k, typeof(a), typeof(b), typeof(c) FROM clean;
+} {A text integer integer a text integer integer}
+
+# Integer in a column with a TEXT default after the order report: no
+# datatype problem may be reported.
+do_execsql_test 4.2 {
+  PRAGMA integrity_check(clean);
+} {{row not in PRIMARY KEY order for clean}}
+
+# An integer in a TEXT column and a NULL in a NOT NULL column after the
+# order report must still be reported.
+do_execsql_test 4.3 {
+  PRAGMA integrity_check(miss);
+} {{row not in PRIMARY KEY order for miss} {NUMERIC value in miss.a} {NULL value in miss.b}}
+
+# First row: in-loop problems only.  Second row: order report only.
+do_execsql_test 4.4 {
+  PRAGMA integrity_check(wfp);
+} {{NUMERIC value in wfp.a} {TEXT value in wfp.b} {row not in PRIMARY KEY order for wfp}}
+
+# PRIMARY KEY that is not the first declared column.
+do_execsql_test 4.5 {
+  PRAGMA integrity_check(worder);
+} {{row not in PRIMARY KEY order for worder} {TEXT value in worder.b}}
+
+# VIRTUAL column before the key as well.
+do_execsql_test 4.6 {
+  PRAGMA integrity_check(wboth);
+} {{row not in PRIMARY KEY order for wboth} {TEXT value in wboth.c}}
+
+# quick_check does not run the order check and is unaffected.
+do_execsql_test 4.7 { PRAGMA quick_check(clean) }  {ok}
+do_execsql_test 4.8 { PRAGMA quick_check(miss) }   {{NUMERIC value in miss.a} {NULL value in miss.b}}
+do_execsql_test 4.9 { PRAGMA quick_check(wboth) }  {{TEXT value in wboth.c}}
+
+finish_test

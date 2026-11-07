@@ -1867,7 +1867,14 @@ void sqlite3Pragma(
           for(j=0; j<pTab->nCol; j++){
             if( (pTab->aCol[j].colFlags & COLFLAG_VIRTUAL)==0 ) mxCol++;
           }
-          if( mxCol==pTab->iPKey ) mxCol--;
+          /* mxCol is a storage-column index.  Table.iPKey is an index into
+          ** Table.aCol[] and so also counts VIRTUAL columns that precede it.
+          ** Compare against the storage index of the INTEGER PRIMARY KEY. */
+          if( pTab->iPKey>=0
+           && sqlite3TableColumnToStorage(pTab, pTab->iPKey)==mxCol
+          ){
+            mxCol--;
+          }
         }else{
           /* COLFLAG_VIRTUAL columns are not included in the WITHOUT ROWID
           ** PK index column-count, so there is no need to account for them
@@ -1892,6 +1899,15 @@ void sqlite3Pragma(
                     pTab->zName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
             integrityCheckResultRow(v);
+            if( mxCol>=0 ){
+              /* The OP_ResultRow just emitted invalidates the row cache, and
+              ** the key-column loads below would re-parse the header only
+              ** through the key columns.  Re-read the right-most column on
+              ** this error path so that the header is complete again before
+              ** the datatype checks.  Rows in order jump past this opcode. */
+              sqlite3VdbeAddOp3(v, OP_Column, iDataCur, mxCol, 3);
+              sqlite3VdbeTypeofColumn(v, 3);
+            }
             sqlite3VdbeJumpHere(v, a1);
             sqlite3VdbeJumpHere(v, a1+1);
             for(j=0; j<pPk->nKeyCol; j++){
@@ -2029,6 +2045,17 @@ void sqlite3Pragma(
           }
           sqlite3VdbeResolveLabel(v, labelError);
           integrityCheckResultRow(v);
+          if( mxCol>=0 ){
+            /* OP_ResultRow invalidates the cursor row cache.  A subsequent
+            ** OP_Column on a later column would re-parse the record header
+            ** only through that column, after which OP_IsType for any column
+            ** beyond it would fall back to the DEFAULT datatype as if the
+            ** record were short.  Re-read the right-most column so that the
+            ** whole header is parsed again before the next column is checked.
+            */
+            sqlite3VdbeAddOp3(v, OP_Column, iDataCur, mxCol, 3);
+            sqlite3VdbeTypeofColumn(v, 3);
+          }
           sqlite3VdbeResolveLabel(v, labelOk);
         }
         /* Verify CHECK constraints */
