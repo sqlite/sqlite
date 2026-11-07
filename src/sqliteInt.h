@@ -4154,6 +4154,13 @@ struct AuthContext {
 **
 ** The "step_list" member points to the first element of a linked list
 ** containing the SQL statements specified as the trigger program.
+**
+** Trigger.nSelect is a copy of the Parse.nSelect value from when the 
+** trigger and its steps were parsed. There are no Select.selId values 
+** equal to or greater than this anywhere in the trigger program. 
+** Initializing the Parse.nSelect field to this value before coding
+** the trigger program based on these structures ensures that no duplicate
+** selId values are assigned.
 */
 struct Trigger {
   char *zName;            /* The name of the trigger                        */
@@ -4161,6 +4168,7 @@ struct Trigger {
   u8 op;                  /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
   u8 tr_tm;               /* One of TRIGGER_BEFORE, TRIGGER_AFTER */
   u8 bReturning;          /* This trigger implements a RETURNING clause */
+  int nSelect;            /* Upper bound on Select.selId in this trigger */
   Expr *pWhen;            /* The WHEN clause of the expression (may be NULL) */
   IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
                              the <column-list> is stored here */

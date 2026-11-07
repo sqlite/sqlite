@@ -446,4 +446,76 @@ do_execsql_test 8.3 {
   SELECT * FROM t0 WHERE (c1, c0) NOT IN (SELECT c0, c1 FROM t0);
 } {3 1}
 
+#-------------------------------------------------------------------------
+# Bug report https://sqlite.org/bugs/forumpost/2bfd1ae270
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(x);
+  CREATE TABLE t3(y);
+  CREATE TABLE log1(v);
+  CREATE TABLE log2(v);
+  CREATE TABLE trig(z);
+  INSERT INTO t1 VALUES(1,10),(2,20),(3,30),(10,40);
+  INSERT INTO t2 VALUES(10),(20),(30),(40);
+  INSERT INTO t3 VALUES(2),(3);
+  CREATE VIEW v1 AS SELECT a FROM t1 WHERE b IN (SELECT x FROM t2);
+  CREATE TRIGGER r1 AFTER INSERT ON trig BEGIN
+    INSERT INTO log1 
+    SELECT a FROM v1 WHERE (SELECT 1) AND a IN (SELECT y FROM t3);
+  END;
+  CREATE TRIGGER r2 AFTER INSERT ON trig BEGIN
+    INSERT INTO log2 SELECT a FROM v1 WHERE a IN (SELECT y FROM t3);
+  END;
+  INSERT INTO trig VALUES(1);
+}
+
+do_execsql_test 9.1 {
+  SELECT a FROM v1 WHERE (SELECT 1) AND a IN (SELECT y FROM t3);
+} {2 3}
+
+do_execsql_test 9.2 {
+  SELECT v FROM log2;
+} {2 3}
+
+do_execsql_test 9.3 {
+  SELECT v FROM log1;
+} {2 3}
+
+do_execsql_test 9.4 {
+  CREATE TABLE log3(v);
+  CREATE TABLE trig3(z);
+  CREATE TRIGGER r3 AFTER INSERT ON trig3 WHEN (SELECT 1) BEGIN
+    INSERT INTO log3 SELECT a FROM v1 WHERE a IN (SELECT y FROM t3);
+  END;
+  INSERT INTO trig3 VALUES(1);
+  SELECT v FROM log3;
+} {2 3}
+
+do_execsql_test 9.5 {
+  CREATE TABLE log4(v);
+  CREATE TABLE trig4(z);
+  CREATE TRIGGER r4 AFTER INSERT ON trig4 BEGIN
+    INSERT INTO log4 SELECT a FROM t1 WHERE a<0;
+    INSERT INTO log4 SELECT a FROM v1 WHERE a IN (SELECT y FROM t3);
+  END;
+  INSERT INTO trig4 VALUES(1);
+  SELECT v FROM log4;
+} {2 3}
+
+do_execsql_test 9.6 {
+  CREATE TABLE log5(v);
+  CREATE TABLE log6(v);
+  CREATE TABLE trig5(z);
+  CREATE TRIGGER r5 AFTER INSERT ON trig5 BEGIN
+    INSERT INTO log5 SELECT a FROM v1;
+    INSERT INTO log6 SELECT a FROM t1 WHERE a IN (SELECT y FROM t3);
+  END;
+  INSERT INTO trig5 VALUES(1);
+  SELECT v FROM log5;
+  SELECT '|';
+  SELECT v FROM log6;
+} {1 2 3 10 | 2 3}
+
 finish_test

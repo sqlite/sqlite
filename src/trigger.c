@@ -345,6 +345,7 @@ void sqlite3FinishTrigger(
   iDb = sqlite3SchemaToIndex(pParse->db, pTrig->pSchema);
   assert( iDb>=00 && iDb<db->nDb );
   pTrig->step_list = pStepList;
+  pTrig->nSelect = pParse->nSelect;
   for(n=0; pStepList; n++){
     pStepList->pTrig = pTrig;
     pStepList = pStepList->pNext;
@@ -1298,6 +1299,7 @@ static TriggerPrg *codeRowTrigger(
   sSubParse.pTriggerTab = pTab;
   sSubParse.pToplevel = pTop;
   sSubParse.pTrigCoded = pTrigger;
+  sSubParse.nSelect = pTrigger->nSelect;
   sSubParse.zAuthContext = pTrigger->zName;
   sSubParse.eTriggerOp = pTrigger->op;
   sSubParse.nQueryLoop = pParse->nQueryLoop;
