@@ -102,6 +102,7 @@ PRAGMA writable_schema = off;
 COMMIT;
 END
 
+.if NOT capable('LIKE_DOESNT_MATCH_BLOBS')
 # 959866cfe4ec0e16 2026-11-06T00:25:13Z 
 # Wrong result: c0 GLOB 'ab?' OR c0 GLOB 'ab*' on an indexed column
 # omits BLOB rows
@@ -178,6 +179,7 @@ SELECT c1, c0 FROM t0 NOT INDEXED
 │  5 │ x'616263' │
 ╰────┴───────────╯
 *END*
+.endif /* NOT capable('LIKE_DOESNT_MATCH_BLOBS') */
 
 # db0bb9d415ffc8f0 2026-11-05T22:31:13Z
 # generate_series(0,32,5) ORDER BY rowid DESC LIMIT 3 returns 10, 5, 0
