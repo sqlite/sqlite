@@ -829,6 +829,7 @@ static int parseModifier(
       }else if( sqlite3_stricmp(z,"year")==0 ){
         p->M = 12;
         p->D = 31;
+        p->nFloor = 0;  /* EXPERIMENTAL (forumpost/e0fe679e7c) */
         rc = 0;
       }else if( sqlite3_stricmp(z,"day")==0 ){
         rc = 0;
@@ -845,6 +846,7 @@ static int parseModifier(
       if( sqlite3_stricmp(z, "floor")==0 ){
         computeJD(p);
         p->iJD -= p->nFloor*86400000;
+        p->nFloor = 0;  /* EXPERIMENTAL (forumpost/e0fe679e7c): apply once */
         clearYMD_HMS_TZ(p);
         rc = 0;
       }
@@ -962,6 +964,7 @@ static int parseModifier(
           if( strchr(z+8,'-')!=0 ) p->iJD -= 7*86400000;
         }
         clearYMD_HMS_TZ(p);
+        p->nFloor = 0;  /* EXPERIMENTAL (forumpost/e0fe679e7c) */
         rc = 0;
       }
       break;
@@ -1001,10 +1004,12 @@ static int parseModifier(
       p->validJD = 0;
       if( sqlite3_stricmp(z,"month")==0 ){
         p->D = 1;
+        p->nFloor = 0;  /* EXPERIMENTAL (forumpost/e0fe679e7c) */
         rc = 0;
       }else if( sqlite3_stricmp(z,"year")==0 ){
         p->M = 1;
         p->D = 1;
+        p->nFloor = 0;  /* EXPERIMENTAL (forumpost/e0fe679e7c) */
         rc = 0;
       }else if( sqlite3_stricmp(z,"day")==0 ){
         rc = 0;
@@ -1101,17 +1106,31 @@ static int parseModifier(
 
         DateTime tx;
         sqlite3_int64 day;
+        int nDay;      /* EXPERIMENTAL: 1 for a shift of exactly 24:00 */
+        int bTimeOnly = z2==z; /* EXPERIMENTAL: not the HH:MM tail of a
+                               ** +/-YYYY-MM-DD HH:MM shift, whose own
+                               ** nFloor must survive (e0fe679e7c) */
         if( !sqlite3Isdigit(*z2) ) z2++;
         memset(&tx, 0, sizeof(tx));
         if( parseHhMmSs(z2, &tx) ) break;
+        /* EXPERIMENTAL (forumpost/7757ac1132): parseHhMmSs() accepts an
+        ** hour of 24 only as 24:00:00, which computeJD() turns into the
+        ** start of the next day.  Keep that whole day, which the day
+        ** removal below would otherwise discard.  Only with a zero (or
+        ** absent) timezone suffix does the value fall exactly on that
+        ** removed day; a non-zero suffix keeps the historical
+        ** (time - offset) modulo one day result. */
+        nDay = tx.h==24 && tx.tz==0;
         computeJD(&tx);
         tx.iJD -= 43200000;
         day = tx.iJD/86400000;
         tx.iJD -= day*86400000;
+        tx.iJD += nDay*(sqlite3_int64)86400000;
         if( z0=='-' ) tx.iJD = -tx.iJD;
         computeJD(p);
         clearYMD_HMS_TZ(p);
         p->iJD += tx.iJD;
+        if( bTimeOnly ) p->nFloor = 0;  /* EXPERIMENTAL (e0fe679e7c) */
         rc = 0;
         break;
       }
@@ -1212,9 +1231,11 @@ static int isDate(
   }
   computeJD(p);
   if( p->isError || !validJulianDay(p->iJD) ) return 1;
-  if( argc==1 && p->validYMD && p->D>28 ){
+  if( p->validYMD && p->D>28 ){
     /* Make sure a YYYY-MM-DD is normalized.
-    ** Example: 2023-02-31 -> 2023-03-03 */
+    ** Example: 2023-02-31 -> 2023-03-03
+    ** EXPERIMENTAL (forumpost/3cc3a0207e): also when modifiers such as
+    ** "start of day" kept the parsed fields, not only when argc==1. */
     assert( p->validJD );
     p->validYMD = 0;  
   }
