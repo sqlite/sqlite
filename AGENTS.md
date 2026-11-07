@@ -123,5 +123,5 @@ amalgamation by default (except where explicitly included). Major subsystems:
 - File format: <https://sqlite.org/fileformat2.html>
 - VDBE opcodes: <https://sqlite.org/opcode.html>
 - Query planner: <https://sqlite.org/optoverview.html>
-- Lemon parser generator: <https://sqlite.org/doc/trunk/doc/lemon.html>
+- Lemon parser generator: <https://sqlite.org/lemon.html>
 - Compile-time options: <https://sqlite.org/compile.html>
