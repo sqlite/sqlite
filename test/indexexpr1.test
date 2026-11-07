@@ -748,4 +748,39 @@ do_execsql_test indexexpr1-2620 {
   SELECT * FROM (SELECT 99), t3 WHERE a=0 AND c=1 AND a+c=(SELECT 1);
 } {99 0 xyzzy 1}
 
+#-------------------------------------------------------------------------
+# Report: https://sqlite.org/bugs/forumpost/91a332de15
+#
+do_execsql_test indexexpr1-2700 {
+  CREATE TABLE t27l(id INTEGER PRIMARY KEY, k);
+  CREATE TABLE t27r(id INTEGER PRIMARY KEY, k, v);
+  INSERT INTO t27l VALUES(1,1),(2,2),(3,3),(4,NULL);
+  INSERT INTO t27r VALUES(1,1,'a'),(2,1,'b'),(3,3,NULL),(4,NULL,'d');
+  CREATE INDEX t27r1 ON t27r(k, coalesce(v,'zz'));
+  SELECT t27l.id, max(coalesce(v,'zz'))
+    FROM t27l LEFT JOIN t27r NOT INDEXED ON t27r.k=t27l.k
+   GROUP BY t27l.id;
+} {1 b 2 zz 3 zz 4 zz}
+do_execsql_test indexexpr1-2710 {
+  SELECT t27l.id, max(coalesce(v,'zz'))
+    FROM t27l LEFT JOIN t27r ON t27r.k=t27l.k
+   GROUP BY t27l.id;
+} {1 b 2 zz 3 zz 4 zz}
+do_execsql_test indexexpr1-2720 {
+  SELECT t27l.id, count(coalesce(v,'zz'))
+    FROM t27l LEFT JOIN t27r ON t27r.k=t27l.k
+   GROUP BY t27l.id;
+} {1 2 2 1 3 1 4 1}
+do_execsql_test indexexpr1-2730 {
+  SELECT t27l.k, max(coalesce(v,'zz'))
+    FROM t27l LEFT JOIN t27r ON t27r.k=t27l.k
+   GROUP BY t27l.k;
+} {{} zz 1 b 2 zz 3 zz}
+do_execsql_test indexexpr1-2740 {
+  SELECT t27l.id, t27r.id, max(coalesce(v,'zz'))
+    FROM t27l FULL JOIN t27r ON t27r.k=t27l.k
+   GROUP BY t27l.id, t27r.id
+   ORDER BY 1, 2;
+} {{} 4 d 1 1 a 1 2 b 2 {} zz 3 3 zz 4 {} zz}
+
 finish_test

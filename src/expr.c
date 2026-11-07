@@ -7583,6 +7583,13 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
         int iDataCur = pIEpr->iDataCur;
         if( iDataCur<0 ) continue;
+        /* If the index might be on the NULL row of an outer join, then the
+        ** expression must not be replaced by a plain read of the index
+        ** column, as the value of the expression on the NULL row is not
+        ** necessarily NULL. In many cases (when the GROUP BY is not
+        ** using temp b-tree to sort), sqlite3IndexedExprLookup() will make 
+        ** the same substitution later on anyway. */
+        if( pIEpr->bMaybeNullRow ) continue;
         if( indexedExprCompare(pIEpr, pExpr, iDataCur)==0 ) break;
       }
       if( pIEpr==0 ) break;
