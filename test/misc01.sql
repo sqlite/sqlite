@@ -295,3 +295,36 @@ FROM t2 FULL OUTER JOIN t0
 -All
 [[]]
 --end--
+
+# Bug thread https://sqlite.org/bugs/info/a548aa9d4d (2026-11-05T22:09:59Z)
+# was closed as NOT PLANNED.  These tests merely document the current
+# behavior.  The complaint from Claude was that the error message at
+# test 901 was a bit wonky.
+#
+.open :memory:
+.mode -reset list
+.testcase 900
+CREATE TABLE t1(x,y);
+CREATE INDEX t1x ON t1(x);
+CREATE VIEW t2 AS SELECT x+y FROM t1;
+CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT 'hello!'; END;
+.check <<--end--
+--end--
+.testcase 901
+CREATE TABLE main.IF(a);
+.check --glob '*syntax error*'
+.testcase 902
+SELECT group_concat(name,' ' ORDER BY name) FROM sqlite_schema;
+.check 'r1 t1 t1x t2'
+.testcase 903
+PRAGMA integrity_check;
+.check 'ok'
+.testcase 910
+CREATE TABLE main."IF"(a);
+.check ''
+.testcase 911
+SELECT group_concat(name, ' ' ORDER BY name) FROM sqlite_schema;
+.check 'IF r1 t1 t1x t2'
+.testcase 912
+PRAGMA integrity_check;
+.check 'ok'

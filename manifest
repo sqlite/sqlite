@@ -1,5 +1,5 @@
-C Ensure\strigger\sprograms\sthat\suse\sviews\sdo\snot\send\sup\swith\sduplicate\sselect-ids\sin\sthe\sparse-tree.\sReport\s[bugs:/info/2026-11-03T02:11:56Z\s|\s2026-11-03T02:11:56Z].
-D 2026-11-07T16:28:36.678
+C Test\scases\sfor\s[bugs:/info/2026-11-05T22:09:59Z|Bug\s2026-11-05T22:09:59Z].
+D 2026-11-07T17:01:54.832
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1524,7 +1524,7 @@ F test/minmax.test 885d89737b955905b52bd5b203f27b9b56d1e399b8155c2a95ab0f3264e0f
 F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595e0de
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
-F test/misc01.sql cb9517ba5df43f6fd78397bc8a979f228604b58e9e19b8376967b70e7c59b5c9
+F test/misc01.sql 058f4a38862768afbcbbb42a48d5532b64a397d173268eec29be17f04c3a0a3e
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2306,8 +2306,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P eb1fc11ad6687611e571e1f11ea8de253a96f16dc6385d90b72bb412a4f64152
-R 416799c1877edb8e3a570f512fdc275e
-U dan
-Z 6a67d017a2581ddcb992fb0401c77e7f
+P 6240e0daa7936d4e90eec6e4e11c24cdddd41da1070cabc79d831fac6e89231a
+R cc26b5d37847704e949cd7399098bc46
+U drh
+Z 2faeead100cd739fff80289559b00d8b
 # Remove this line to create a well-formed Fossil manifest.
