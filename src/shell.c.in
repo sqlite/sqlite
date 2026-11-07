@@ -437,6 +437,7 @@ struct ShellState {
   FILE *in;              /* Read commands from this stream */
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
+  char *zEqpFile;        /* Append .eqp output to this file, if not NULL */
   int nErr;              /* Number of errors seen */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
   int nCheck;            /* Number of ".check" commands run */
@@ -4060,6 +4061,7 @@ static int shell_exec(
       if( pArg && pArg->mode.autoEQP && isExplain==0 && pArg->dot.nArg==0 ){
         int triggerEQP = 0;
         u8 savedEnableTimer = pArg->enableTimer;
+        FILE *savedOut = pArg->out;
         pArg->enableTimer = 0;
         disable_debug_trace_modes();
         sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
@@ -4069,6 +4071,14 @@ static int shell_exec(
         sqlite3_reset(pStmt);
         spec.eStyle = QRF_STYLE_Auto;
         sqlite3_stmt_explain(pStmt, 2);
+        if( pArg->zEqpFile ){
+          pArg->out = sqlite3_fopen(pArg->zEqpFile, "ab");
+          if( pArg->out==0 ){
+            cli_printf(savedOut, "cannot open .eqp output file \"%s\"\n",
+                       pArg->zEqpFile);
+            pArg->out = savedOut;
+          }
+        }
         sqlite3_format_query_result(pStmt, &spec, 0);
         if( pArg->mode.autoEQP>=AUTOEQP_full ){
           sqlite3_reset(pStmt);
@@ -4081,6 +4091,10 @@ static int shell_exec(
         }
         sqlite3_reset(pStmt);
         sqlite3_stmt_explain(pStmt, 0);
+        if( pArg->out!=savedOut ){
+          fclose(pArg->out);
+          pArg->out = savedOut;
+        }
         restore_debug_trace_modes();
         pArg->enableTimer = savedEnableTimer;
       }
@@ -10144,7 +10158,86 @@ static int dotCmdEndif(ShellState *p){
   return 0;
 }
 
-
+/*
+** DOT-COMMAND: .eqp
+** USAGE: .eqp EQPMODE [>OUTPUTFILE]
+**
+** The .eqp command enables or disables the automatic display of EXPLAIN
+** output for each SQL statement evaluated.  The required EQPMODE argument
+** may be one of the following:
+**
+**   full          Show both EXPLAIN QUERY PLAN and EXPLAIN output.
+**
+**   off           Disable all explain output.
+**
+**   on            Show EXPLAIN QUERY PLAN output only.
+**
+**   trace         Like "full" but also enable VDBE tracing using
+**                 PRAGMA vdbe_trace=ON.  This option only works if the
+**                 CLI is compiled with -DSQLITE_DEBUG.  The trace output
+**                 always appears on stdout and is not redirected to a file.
+**
+**   trigger       Like "full" but also show EXPLAIN output for trigger
+**                 subprograms.
+**
+** The EQPMODE maybe be optionally followed by a filename.  If a file is
+** specified, with or without a single leading ">", then the file is
+** deleted and all subsequent explain output is appended to that file.
+** If the filename begins with ">>" then the content of the file is retained
+** and all output is appended.  If not redirection argument is provided,
+** output redirection is cancelled.  The ability to redirect is not available
+** for --safe mode.
+*/
+static int dotCmdEqp(ShellState *p){
+  int nArg = p->dot.nArg;       /* Number of arguments */
+  char **azArg = p->dot.azArg;  /* Argument list */
+  if( nArg==2 || nArg==3 ){
+    int isTrace = 0;
+    if( p->db ) sqlite3_db_config(p->db, SQLITE_DBCONFIG_VDBE_TRACE, 0,
+                                  (int*)0);
+    if( cli_strcmp(azArg[1],"full")==0 ){
+      p->mode.autoEQP = AUTOEQP_full;
+    }else if( cli_strcmp(azArg[1],"trigger")==0 ){
+      p->mode.autoEQP = AUTOEQP_trigger;
+    }else if( cli_strcmp(azArg[1],"trace")==0 ){
+#ifdef SQLITE_DEBUG
+      p->mode.autoEQP = AUTOEQP_full;
+      if( p->db==0 ){
+        open_db(p, 0);
+        sqlite3_exec(p->db, "SELECT name FROM sqlite_schema LIMIT 1",0,0,0);
+      }
+      sqlite3_db_config(p->db, SQLITE_DBCONFIG_VDBE_TRACE, 1, (int*)0);
+      isTrace = 1;
+#else
+      eputz("\".eqp trace\" is only available in debug builds\n");
+      return 1;
+#endif
+    }else{
+      p->mode.autoEQP = (u8)booleanValue(azArg[1]);
+    }
+    free(p->zEqpFile);
+    if( nArg==3 ){
+      const char *zOut = azArg[2];
+      int bAppend = 0;
+      failIfSafeMode(p, "cannot redirect .eqp output in safe mode");
+      if( zOut[0]=='>' ) zOut++;
+      if( zOut[0]=='>' ){ bAppend = 1; zOut++; }
+      p->zEqpFile = strdup(zOut);
+      if( !bAppend ){
+        (void)shellDeleteFile(p->zEqpFile, 0);
+      }
+      if( isTrace ){
+        cli_printf(p->out, "WARNING: trace output will not be redirected\n");
+      }
+    }else{
+      p->zEqpFile = 0;
+    }
+  }else{
+    eputz("Usage: .eqp off|on|trace|trigger|full [OUTPUTFILE]\n");
+    return 1;
+  }
+  return 0;
+}
 
 /*
 ** Enlarge the space allocated in p->dot so that it can hold more
@@ -10800,29 +10893,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
   }else
 
   if( c=='e' && cli_strncmp(azArg[0], "eqp", n)==0 ){
-    if( nArg==2 ){
-      if( p->db ) sqlite3_db_config(p->db, SQLITE_DBCONFIG_VDBE_TRACE, 0,
-                                    (int*)0);
-      if( cli_strcmp(azArg[1],"full")==0 ){
-        p->mode.autoEQP = AUTOEQP_full;
-      }else if( cli_strcmp(azArg[1],"trigger")==0 ){
-        p->mode.autoEQP = AUTOEQP_trigger;
-#ifdef SQLITE_DEBUG
-      }else if( cli_strcmp(azArg[1],"trace")==0 ){
-        p->mode.autoEQP = AUTOEQP_full;
-        if( p->db==0 ){
-          open_db(p, 0);
-          sqlite3_exec(p->db, "SELECT name FROM sqlite_schema LIMIT 1",0,0,0);
-        }
-        sqlite3_db_config(p->db, SQLITE_DBCONFIG_VDBE_TRACE, 1, (int*)0);
-#endif
-      }else{
-        p->mode.autoEQP = (u8)booleanValue(azArg[1]);
-      }
-    }else{
-      eputz("Usage: .eqp off|on|trace|trigger|full\n");
-      rc = 1;
-    }
+    rc = dotCmdEqp(p);
   }else
 
 #ifndef SQLITE_SHELL_FIDDLE
@@ -15168,6 +15239,7 @@ int SQLITE_CDECL main(int argc, char **argv){
     }
     free(data.aSavedModes);
   }
+  free(data.zEqpFile);
   free(data.zErrPrefix);
   free(data.zNonce);
   free(data.dot.zCopy);
