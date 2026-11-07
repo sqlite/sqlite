@@ -4930,6 +4930,7 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
 ){
   IndexedExpr *p;
   Vdbe *v;
+
   for(p=pParse->pIdxEpr; p; p=p->pIENext){
     int iDataCur = p->iDataCur;
     if( iDataCur<0 ) continue;
@@ -4949,18 +4950,19 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
       continue;
     }
 
+    /* Do not read the value from an index if the expression is a constant.
+    ** This prevents an attempt to use an index value outside of the loop that
+    ** uses the index. (Bugs 2026-10-11T19:26:40Z and 2026-11-03T02:12:43Z). */
+    if( sqlite3ExprIsConstant(pParse, pExpr) ){
+      return -1;
+    }
+
     v = pParse->pVdbe;
     assert( v!=0 );
-    if( p->bMaybeNullRow || sqlite3ExprIsConstant(pParse, pExpr) ){
+    if( p->bMaybeNullRow ){
       /* The value of pExpr should be computed from the original expression,
-      ** not from the index, if either:
-      **
-      **    1.   The index might be on a NULL row due to an outer join.
-      **
-      **    2.   The expression is a constant.  This prevents an attempt to
-      **         use an index value outside of the loop that positions the
-      **         index.  (Bug 2026-10-11T19:26:40Z).
-      */
+      ** not from the index, if the index might be on a NULL row due to an
+      ** outer join.  */
       int addr = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp3(v, OP_IfNullRow, p->iIdxCur, addr+3, target);
       VdbeCoverage(v);

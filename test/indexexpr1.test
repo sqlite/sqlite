@@ -783,4 +783,41 @@ do_execsql_test indexexpr1-2740 {
    ORDER BY 1, 2;
 } {{} 4 d 1 1 a 1 2 b 2 {} zz 3 3 zz 4 {} zz}
 
+#-------------------------------------------------------------------------
+# Report: https://sqlite.org/bugs/forumpost/f28a52344a
+#
+# Because of the (c0=0) term, the (abs(c0)=(SELECT 0)) term is moved out of
+# the inner loop over t28a and evaluated once for each row of t28b. It must
+# not read abs(c0) from index t28ax, as the cursor is left pointing to the
+# (c0=5) entry after the inner loop for the first row of t28b has finished.
+#
+do_execsql_test indexexpr1-2800 {
+  CREATE TABLE t28a(c0 INT);
+  CREATE TABLE t28b(c0 INTEGER PRIMARY KEY);
+  INSERT INTO t28a VALUES(0),(0),(5);
+  INSERT INTO t28b VALUES(1),(2),(3);
+  CREATE INDEX t28ax ON t28a(abs(c0), c0);
+  SELECT count(*) FROM t28b CROSS JOIN t28a
+   WHERE abs(t28a.c0)=(SELECT 0) AND t28a.c0=0;
+} {6}
+do_execsql_test indexexpr1-2810 {
+  SELECT t28b.c0, count(*) FROM t28b CROSS JOIN t28a
+   WHERE abs(t28a.c0)=(SELECT 0) AND t28a.c0=0
+   GROUP BY t28b.c0;
+} {1 2 2 2 3 2}
+do_execsql_test indexexpr1-2820 {
+  SELECT count(*) FROM t28b CROSS JOIN t28a NOT INDEXED
+   WHERE abs(t28a.c0)=(SELECT 0) AND t28a.c0=0;
+} {6}
+do_execsql_test indexexpr1-2830 {
+  SELECT count(*) FROM t28b CROSS JOIN t28a
+   WHERE abs(t28a.c0)=0 AND t28a.c0=0;
+} {6}
+do_execsql_test indexexpr1-2840 {
+  DROP INDEX t28ax;
+  CREATE INDEX t28ax ON t28a(c0+1, c0);
+  SELECT count(*) FROM t28b CROSS JOIN t28a
+   WHERE t28a.c0+1=(SELECT 1) AND t28a.c0=0;
+} {6}
+
 finish_test
