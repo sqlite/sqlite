@@ -5001,9 +5001,13 @@ static int exprPartidxExprLookup(Parse *pParse, Expr *pExpr, int iTarget){
       Vdbe *v = pParse->pVdbe;
       int addr = 0;
       int ret;
+      u8 okConstFactor = pParse->okConstFactor;
 
       if( p->bMaybeNullRow ){
+        /* OP_IfNullRow can overwrite the result register with NULL, so the
+        ** value must be recomputed each time, not factored out. */
         addr = sqlite3VdbeAddOp1(v, OP_IfNullRow, p->iIdxCur);
+        pParse->okConstFactor = 0;
       }
       ret = sqlite3ExprCodeTarget(pParse, p->pExpr, iTarget);
       sqlite3VdbeAddOp4(pParse->pVdbe, OP_Affinity, ret, 1, 0,
@@ -5014,6 +5018,7 @@ static int exprPartidxExprLookup(Parse *pParse, Expr *pExpr, int iTarget){
         sqlite3VdbeAddOp1(pParse->pVdbe, OP_ClrSubtype, ret);
       }
       if( addr ){
+        pParse->okConstFactor = okConstFactor;
         sqlite3VdbeJumpHere(v, addr);
         sqlite3VdbeChangeP3(v, addr, ret);
       }
