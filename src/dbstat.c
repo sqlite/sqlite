@@ -232,7 +232,13 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     }
     switch( pIdxInfo->aConstraint[i].iColumn ){
       case 0: {    /* name */
-        iName = i;
+        /* xFilter matches name=? against sqlite_schema.name using BINARY.
+        ** Leave comparisons that use any other collating sequence to the
+        ** core, which rechecks every row because this term is not omitted. */
+        if( sqlite3StrICmp(sqlite3_vtab_collation(pIdxInfo, i),
+                           sqlite3StrBINARY)==0 ){
+          iName = i;
+        }
         break;
       }
       case 10: {   /* schema */
@@ -418,7 +424,11 @@ static int statDecodePage(Btree *pBt, StatPage *p){
   p->nMxPayload = 0;
   szPage = sqlite3BtreeGetPageSize(pBt);
 
-  nUnused = get2byte(&aHdr[5]) - nHdr - 2*p->nCell;
+  /* A zero cell-content-area offset is interpreted as 65536. That value
+  ** occurs on an empty page of a database with 65536-byte pages. */
+  nUnused = get2byte(&aHdr[5]);
+  if( nUnused==0 ) nUnused = 65536;
+  nUnused -= nHdr + 2*p->nCell;
   nUnused += (int)aHdr[7];
   iOff = get2byte(&aHdr[1]);
   while( iOff ){
@@ -510,7 +520,7 @@ statPageIsCorrupt:
 */
 static void statSizeAndOffset(StatCursor *pCsr){
   StatTable *pTab = (StatTable *)((sqlite3_vtab_cursor *)pCsr)->pVtab;
-  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
+  Btree *pBt = pTab->db->aDb[pCsr->iDb].pBt;
   Pager *pPager = sqlite3BtreePager(pBt);
   sqlite3_file *fd;
   sqlite3_int64 x[2];

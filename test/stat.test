@@ -342,4 +342,148 @@ do_execsql_test 10.2 {
   SELECT pageno, pgoffset FROM dbstat
 } {1 0  2 1024  3 2048  4 3072  5 4096}
 
+#-------------------------------------------------------------------------
+# An empty page of a database with 65536-byte pages stores a cell content
+# area offset of 0, which is interpreted as 65536.
+# https://sqlite.org/bugs/forumpost/14031a27db
+#
+reset_db
+register_dbstat_vtab db
+do_execsql_test 11.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA page_size = 65536;
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y);
+  CREATE INDEX t2y ON t2(y);
+  PRAGMA page_size;
+} {65536}
+do_execsql_test 11.1 {
+  SELECT name, ncell, unused, pgsize FROM dbstat
+   WHERE name!='sqlite_schema' ORDER BY name;
+} {t1 0 65528 65536  t2 0 65528 65536  t2y 0 65528 65536}
+do_execsql_test 11.2 {
+  SELECT name, unused FROM dbstat
+   WHERE aggregate=TRUE AND name!='sqlite_schema' ORDER BY name;
+} {t1 65528  t2 65528  t2y 65528}
+do_execsql_test 11.3 {
+  INSERT INTO t1 VALUES(1);
+  SELECT ncell, unused FROM dbstat WHERE name='t1';
+} {1 65522}
+do_execsql_test 11.4 {
+  DELETE FROM t1;
+  SELECT ncell, unused FROM dbstat WHERE name='t1';
+} {0 65528}
+do_execsql_test 11.5 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  SELECT name, ncell, unused FROM dbstat;
+} {sqlite_schema 0 65428}
+
+#-------------------------------------------------------------------------
+# When the schema=? constraint selects a database other than the one the
+# dbstat table was created for, pgsize and pgoffset must use the page size
+# of the database being analyzed.
+# https://sqlite.org/bugs/forumpost/113506a561
+#
+reset_db
+register_dbstat_vtab db
+forcedelete test.db2
+do_execsql_test 12.0 {
+  PRAGMA auto_vacuum = 0;
+  PRAGMA page_size = 4096;
+  ATTACH 'test.db2' AS two;
+  PRAGMA two.auto_vacuum = 0;
+  PRAGMA two.page_size = 1024;
+  CREATE TABLE main.t1(x);
+  CREATE TABLE two.t2(x);
+  INSERT INTO two.t2 VALUES(randomblob(1500));
+  PRAGMA main.page_size;
+  PRAGMA two.page_size;
+} {4096 1024}
+do_execsql_test 12.1 {
+  SELECT name, pageno, pagetype, pgoffset, pgsize FROM dbstat
+   WHERE schema='two';
+} {
+  sqlite_schema 1 leaf 0 1024
+  t2 2 leaf 1024 1024
+  t2 3 overflow 2048 1024
+}
+do_execsql_test 12.2 {
+  SELECT name, pageno, pagetype, pgoffset, pgsize FROM dbstat('two');
+} {
+  sqlite_schema 1 leaf 0 1024
+  t2 2 leaf 1024 1024
+  t2 3 overflow 2048 1024
+}
+do_execsql_test 12.3 {
+  SELECT name, pageno, pgsize FROM dbstat('two', 1);
+} {sqlite_schema 1 1024  t2 2 2048}
+do_execsql_test 12.4 {
+  CREATE VIRTUAL TABLE temp.st USING dbstat(two);
+  SELECT name, pageno, pgoffset, pgsize FROM st;
+} {
+  sqlite_schema 1 0 1024
+  t2 2 1024 1024
+  t2 3 2048 1024
+}
+do_execsql_test 12.5 {
+  SELECT name, pageno, pgoffset, pgsize FROM st WHERE schema='main';
+} {sqlite_schema 1 0 4096  t1 2 4096 4096}
+do_execsql_test 12.6 {
+  SELECT name, pageno, pgoffset, pgsize FROM dbstat WHERE schema='main';
+} {sqlite_schema 1 0 4096  t1 2 4096 4096}
+
+#-------------------------------------------------------------------------
+# xFilter compares name=? values using BINARY. A name=? constraint that
+# uses another collating sequence must not be used to filter rows.
+# https://sqlite.org/bugs/forumpost/7e102e0e60
+#
+reset_db
+register_dbstat_vtab db
+do_execsql_test 13.0 {
+  CREATE TABLE t1(x);
+  CREATE TABLE n(k TEXT COLLATE NOCASE);
+  INSERT INTO n VALUES('T1');
+}
+do_execsql_test 13.1 {
+  SELECT name FROM dbstat WHERE name='T1' COLLATE NOCASE;
+} {t1}
+do_execsql_test 13.2 {
+  SELECT name FROM dbstat WHERE 'T1' COLLATE NOCASE = name;
+} {t1}
+do_execsql_test 13.3 {
+  SELECT name FROM dbstat WHERE name='t1 ' COLLATE RTRIM;
+} {t1}
+do_execsql_test 13.4 {
+  SELECT k, name FROM n JOIN dbstat ON k=name;
+} {T1 t1}
+do_execsql_test 13.5 {
+  SELECT k, name FROM n LEFT JOIN dbstat ON k=name;
+} {T1 t1}
+# The comparisons below use the BINARY collation of dbstat.name.
+do_execsql_test 13.6 {
+  SELECT k, name FROM n JOIN dbstat ON name=k;
+} {}
+do_execsql_test 13.7 {
+  SELECT k, quote(name) FROM n LEFT JOIN dbstat ON name=k;
+} {T1 NULL}
+do_execsql_test 13.8 {
+  SELECT name FROM dbstat WHERE name='T1';
+} {}
+do_execsql_test 13.9 {
+  SELECT name FROM dbstat WHERE name='t1' COLLATE BINARY;
+} {t1}
+do_eqp_test 13.10 {
+  SELECT name FROM dbstat WHERE name='t1';
+} {SCAN dbstat VIRTUAL TABLE INDEX 0x2:}
+do_eqp_test 13.11 {
+  SELECT name FROM dbstat WHERE name='T1' COLLATE NOCASE;
+} {SCAN dbstat VIRTUAL TABLE INDEX 0x0:}
+do_execsql_test 13.12 {
+  SELECT name FROM dbstat WHERE name='t1' AND name='T1' COLLATE NOCASE;
+} {t1}
+do_execsql_test 13.13 {
+  SELECT name FROM dbstat WHERE name='T1' COLLATE NOCASE AND name='t1';
+} {t1}
+
 finish_test
