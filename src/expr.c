@@ -7582,6 +7582,9 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       assert( pParse->iSelfTab==0 );
       if( (pNC->ncFlags & NC_InAggFunc)==0 ) break;
       if( pParse->pIdxEpr==0 ) break;
+      if( pWalker->walkerDepth>0 ){
+        break; /* See bug report 2026-11-07T18:33:11Z */
+      }
       for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
         int iDataCur = pIEpr->iDataCur;
         if( iDataCur<0 ) continue;

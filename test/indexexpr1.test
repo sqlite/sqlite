@@ -783,6 +783,83 @@ do_execsql_test indexexpr1-2740 {
    ORDER BY 1, 2;
 } {{} 4 d 1 1 a 1 2 b 2 {} zz 3 3 zz 4 {} zz}
 
+# 2026-11-07 https://sqlite.org/bugs/forumpost/2026-11-07T18:33:11Z
+#
+# An indexed expression that appears inside of a subquery that is itself
+# within an argument of an aggregate function of a GROUP BY query.  The
+# column references inside of that expression used to be left with an
+# out-of-range TK_AGG_COLUMN index, causing them to evaluate to NULL.
+#
+reset_db
+do_execsql_test indexexpr1-2800 {
+  CREATE TABLE t28(k INT, a INT, b INT, m INT);
+  INSERT INTO t28 VALUES(1,5,2,1),(1,1,2,1),(2,7,3,1),(2,8,3,0);
+  CREATE TABLE t28b(x INT);
+  INSERT INTO t28b VALUES(1),(6);
+  CREATE INDEX t28x1 ON t28(k, a>b);
+  CREATE INDEX t28x2 ON t28(m, a>b);
+  SELECT k, sum((SELECT 1 WHERE a>b)) FROM t28 GROUP BY k;
+} {1 1 2 2}
+do_execsql_test indexexpr1-2810 {
+  SELECT k, sum((SELECT 1 WHERE a>b)) FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 1 2 2}
+do_execsql_test indexexpr1-2820 {
+  SELECT k, sum((SELECT CASE WHEN a>b THEN 10 ELSE 1 END))
+    FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 11 2 20}
+do_execsql_test indexexpr1-2830 {
+  SELECT k, sum((SELECT a>b)) FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 1 2 2}
+do_execsql_test indexexpr1-2840 {
+  SELECT k, sum((SELECT (SELECT 1 WHERE a>b)))
+    FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 1 2 2}
+do_execsql_test indexexpr1-2850 {
+  SELECT k, sum(a), sum((SELECT 1 WHERE a>b))
+    FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 6 1 2 15 2}
+do_execsql_test indexexpr1-2860 {
+  SELECT k, sum((SELECT count(*) FROM t28b WHERE x<a AND a>b))
+    FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 1 2 4}
+do_execsql_test indexexpr1-2870 {
+  SELECT k, sum(1) FILTER (WHERE EXISTS(SELECT 1 WHERE a>b))
+    FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 1 2 2}
+do_execsql_test indexexpr1-2880 {
+  SELECT k, group_concat(a ORDER BY (SELECT 1 WHERE a>b), a)
+    FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 1,5 2 7,8}
+
+# Same query, but the GROUP BY requires a sorter
+do_execsql_test indexexpr1-2900 {
+  SELECT k, sum((SELECT 1 WHERE a>b))
+    FROM t28 INDEXED BY t28x2 WHERE m=1 GROUP BY k;
+} {1 1 2 1}
+do_execsql_test indexexpr1-2910 {
+  SELECT k, sum((SELECT a>b))
+    FROM t28 INDEXED BY t28x2 WHERE m=1 GROUP BY k;
+} {1 1 2 1}
+do_execsql_test indexexpr1-2920 {
+  SELECT k, sum((SELECT count(*) FROM t28b WHERE x<a AND a>b))
+    FROM t28 INDEXED BY t28x2 WHERE m=1 GROUP BY k;
+} {1 1 2 2}
+
+# Cases where the indexed expression is not inside a subquery of the
+# argument, or where the aggregate as a whole is in the subquery, are
+# still satisfied using the index.
+do_execsql_test indexexpr1-2930 {
+  SELECT k, sum(1) FILTER (WHERE a>b) FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 1 2 2}
+do_execsql_test indexexpr1-2940 {
+  SELECT k, (SELECT sum(a>b)) FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 1 2 2}
+do_execsql_test indexexpr1-2950 {
+  SELECT k, sum(CASE WHEN a>b THEN 10 ELSE 1 END)
+    FROM t28 INDEXED BY t28x1 GROUP BY k;
+} {1 11 2 20}
+
+
 #-------------------------------------------------------------------------
 # Report: https://sqlite.org/bugs/forumpost/f28a52344a
 #
@@ -791,7 +868,8 @@ do_execsql_test indexexpr1-2740 {
 # not read abs(c0) from index t28ax, as the cursor is left pointing to the
 # (c0=5) entry after the inner loop for the first row of t28b has finished.
 #
-do_execsql_test indexexpr1-2800 {
+reset_db
+do_execsql_test indexexpr1-3000 {
   CREATE TABLE t28a(c0 INT);
   CREATE TABLE t28b(c0 INTEGER PRIMARY KEY);
   INSERT INTO t28a VALUES(0),(0),(5);
@@ -800,20 +878,20 @@ do_execsql_test indexexpr1-2800 {
   SELECT count(*) FROM t28b CROSS JOIN t28a
    WHERE abs(t28a.c0)=(SELECT 0) AND t28a.c0=0;
 } {6}
-do_execsql_test indexexpr1-2810 {
+do_execsql_test indexexpr1-3010 {
   SELECT t28b.c0, count(*) FROM t28b CROSS JOIN t28a
    WHERE abs(t28a.c0)=(SELECT 0) AND t28a.c0=0
    GROUP BY t28b.c0;
 } {1 2 2 2 3 2}
-do_execsql_test indexexpr1-2820 {
+do_execsql_test indexexpr1-3020 {
   SELECT count(*) FROM t28b CROSS JOIN t28a NOT INDEXED
    WHERE abs(t28a.c0)=(SELECT 0) AND t28a.c0=0;
 } {6}
-do_execsql_test indexexpr1-2830 {
+do_execsql_test indexexpr1-3030 {
   SELECT count(*) FROM t28b CROSS JOIN t28a
    WHERE abs(t28a.c0)=0 AND t28a.c0=0;
 } {6}
-do_execsql_test indexexpr1-2840 {
+do_execsql_test indexexpr1-3040 {
   DROP INDEX t28ax;
   CREATE INDEX t28ax ON t28a(c0+1, c0);
   SELECT count(*) FROM t28b CROSS JOIN t28a
