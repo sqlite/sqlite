@@ -2416,7 +2416,7 @@ static int jsonConvertInteger(const char *zIn, u32 sz, i64 *pI, double *pR){
     return 1;
   }else{
     memcpy(pI, &u, sizeof(u));
-    if( bNeg ) *pI = -*pI;
+    if( bNeg && u!=0x8000000000000000ULL ) *pI = -*pI;
     return 0;
   }
 }
