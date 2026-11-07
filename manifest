@@ -1,5 +1,5 @@
-C Add\sNEVER()\sto\san\sunreachable\sbranch.
-D 2026-11-07T20:13:07.129
+C Adjustments\sto\stest\sresults\sin\sone\ssession\stest.
+D 2026-11-07T21:02:37.279
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -540,7 +540,7 @@ F ext/rtree/visual01.txt e9c2564083bcd30ec51b07f881bffbf0e12b50a3f6fced0c222c5c1
 F ext/session/changeset.c 7cbfc2fff110620b4f55199393fea7f9046eea1c4f89193d3a0cde51ed49a408
 F ext/session/changesetfuzz.c 227076ab0ae4447d742c01ee88a564da6478bbf26b65108bf8fac9cd8b0b24aa
 F ext/session/changesetfuzz1.test 15b629004e58d5ffcc852e6842a603775bb64b1ce51254831f3d12b113b616cd
-F ext/session/session1.test 373eda3d2e4876f3739e3fcaef1b076de9ce3609e520be012e50c5bdd710862b x
+F ext/session/session1.test 92b00d3a91bd950d6fd7d6d8ce758bef8cd64334390b4a74d7012074510a1e7a x
 F ext/session/session2.test ee83bb973b9ce17ccce4db931cdcdae65eb40bbb22089b2fe6aa4f6be3b9303f
 F ext/session/session3.test 2cc1629cfb880243aec1a7251145e07b78411d851b39b2aa1390704550db8e6a
 F ext/session/session4.test ad0ddaaddb9a99dac433d83fc6674aae2af072b8f57e63a6b3f2d76f1a66e98c
@@ -2306,8 +2306,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P dbc2df5e5059c871ffaf8dae0ef9240e838bcf94a68d8d008d0f275b75c9263c
-R 5d07eaa5d4d07a748846855e9cd7b6c6
+P 3ff20c6b2d71838a6d18320517a20ab3d9a14581a52f03d950b0989930e33191
+R 06422fa93d71cfd81a249b853038b27b
 U drh
-Z 3dbd719b3813b088c88273d004eea36a
+Z 18d235086a009104e9f56873d5be8782
 # Remove this line to create a well-formed Fossil manifest.
