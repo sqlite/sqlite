@@ -369,8 +369,15 @@ static void substrFunc(
   p1 = sqlite3_value_int64(argv[1]);
   if( p0type==SQLITE_BLOB ){
     len = sqlite3_value_bytes(argv[0]);
-    z = sqlite3_value_blob(argv[0]);
-    if( z==0 ) return;
+    if( len==0){
+      /* sqlite3_value_blob() returns a NULL pointer for a zero-length blob.
+      ** But the call to sqlite3_result_blob() below interprets a NULL pointer
+      ** as an SQL NULL. So set z to point to some non-NULL location here. */
+      z = (const unsigned char*)"";
+    }else{
+      z = sqlite3_value_blob(argv[0]);
+      if( z==0 ) return;
+    }
     assert( len==sqlite3_value_bytes(argv[0]) );
   }else{
     z = sqlite3_value_text(argv[0]);

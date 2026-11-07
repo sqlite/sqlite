@@ -166,4 +166,20 @@ do_execsql_test substr-6.2 {
                                       999_999_999_999_995);
 } {abcdefghijk}
 
+# Bug 2026-11-04T00:45:36Z
+# substr() of a zero-length BLOB should return an empty BLOB, not NULL.
+#
+do_execsql_test substr-7.1 {
+  SELECT quote(substr(x'',2)), typeof(substr(x'',2));
+} {X'' blob}
+do_execsql_test substr-7.2 {
+  SELECT quote(substr(x'',1,1)), typeof(substr(x'',1,1));
+} {X'' blob}
+do_execsql_test substr-7.3 {
+  SELECT quote(substr(zeroblob(0),1,1)), typeof(substr(zeroblob(0),1,1));
+} {X'' blob}
+do_execsql_test substr-7.4 {
+  SELECT quote(substr(x'00',2)), typeof(substr(x'00',2));
+} {X'' blob}
+
 finish_test
