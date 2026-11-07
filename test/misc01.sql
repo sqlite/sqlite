@@ -200,3 +200,66 @@ SELECT value FROM generate_series(0,32,5) ORDER BY value DESC LIMIT 3;
 .testcase 630
 SELECT rowid, value FROM generate_series(0,12,5);
 .check --glob '0,0 5,5 10,10'
+
+# b4a8844d427ec7ef 2026-11-04T20:30:26Z
+# Indexed GLOB with a prefix ending in U+07FF returns non-matching rows
+# in a UTF-16be
+#
+.open :memory:
+.mode -reset list -colsep ' ' -rowsep ' '
+.testcase 700
+PRAGMA encoding='UTF-16be';
+CREATE TABLE t1(id INT, x TEXT);
+INSERT INTO t1 VALUES
+  (1, 'a'||char(0x7FF)),
+  (2, 'a'||char(0x7FF)||'z'),
+  (3, 'a'||char(0x800)),
+  (4, 'a'||char(0x4E00)),
+  (5, 'a'||char(0xFFFE)),
+  (6, 'a'||char(0xFFFE)||'z'),
+  (7, 'a'||char(0xFFFF)),
+  (8, 'a'||char(0xFFFF)||'z'),
+  (9, 'a'||char(0x10000));
+CREATE INDEX t1x ON t1(x);
+PRAGMA encoding;
+.check -glob 'UTF-16be'
+
+.param set :p1 "'a'||char(0x7FF)||'*'"
+.param set :p2 "'a'||char(0xFFFE)||'*'"
+.param set :p3 "'a'||char(0xFFFF)||'*'"
+
+.testcase 710
+SELECT id, hex(x) FROM t1 WHERE x GLOB :p1;
+.check -glob '1 006107FF 2 006107FF007A'
+.testcase 711
+EXPLAIN QUERY PLAN
+SELECT id, hex(x) FROM t1 WHERE x GLOB :p1;
+.check -glob '*SEARCH t1 USING INDEX t1x (x>? AND x<?)*'
+
+.testcase 720
+SELECT id, hex(x) FROM t1 WHERE +x GLOB :p1;
+.check -glob '1 006107FF 2 006107FF007A'
+
+.testcase 730
+SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
+.check -glob '5 0061FFFE 6 0061FFFE007A'
+.testcase 731
+EXPLAIN QUERY PLAN
+SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
+.check -glob '*SEARCH t1 USING INDEX t1x (x>? AND x<?)*'
+
+.testcase 740
+SELECT id, hex(x) FROM t1 WHERE +x GLOB :p2;
+.check -glob '5 0061FFFE 6 0061FFFE007A'
+
+.testcase 750
+SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
+.check -glob '7 0061FFFF 8 0061FFFF007A'
+.testcase 751
+EXPLAIN QUERY PLAN
+SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
+.check -glob '*SEARCH t1 USING INDEX t1x (x>? AND x<?)*'
+
+.testcase 760
+SELECT id, hex(x) FROM t1 WHERE +x GLOB :p3;
+.check -glob '7 0061FFFF 8 0061FFFF007A'

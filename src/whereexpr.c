@@ -269,9 +269,22 @@ static int isLikeOrGlob(
         cnt++;
       }else if( c>=0x80 ){
         const u8 *z2 = z+cnt-1;
-        if( c==0xff || sqlite3Utf8Read(&z2)==0xfffd  /* bad utf-8 */
-         || ENC(db)==SQLITE_UTF16LE 
+        u32 u;
+        if( c==0xff                             /* (1) */
+         || (u = sqlite3Utf8Read(&z2))>=0xfffd  /* (2) */
+         || u==0x7ff                            /* (3) */
+         || ENC(db)==SQLITE_UTF16LE             /* (4) */
         ){
+          /* Do not accept this character as part of the prefix because
+          **   (1)  0xff is not part of any valid UTF-8 character and the
+          **        0xff causes difficult when incrementing to the upper bound
+          **   (2)  0xfffd is not a valid UTF-8 character and values greater
+          **        start getting into the surrogate pairs in UTF16BE.
+          **   (3)  When incrementing this code point to the upper bound,
+          **        that would require adding an extra byte to the UTF-8
+          **   (4)  UTF16LE does not compare in sorted order.  Only
+          **        UTF16BE and UTF8 have that property.
+          */
           cnt--;
           break;
         }else{
