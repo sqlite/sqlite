@@ -2754,6 +2754,29 @@ static void markExprListImmutable(ExprList *pList){
 ** "CREATE TABLE ... AS SELECT ..." statement.  The column names of
 ** the new table will match the result set of the SELECT.
 */
+/*
+** If the first token of z[0..n) is the unquoted existence-clause keyword,
+** *pnId receives that token's byte length and the result is the number of
+** quote bytes required for the stored CREATE text to round-trip.
+** The token boundary comes from sqlite3GetToken(). A longer identifier
+** that merely begins with that keyword is left unchanged. Already-quoted
+** names and every other token return 0.
+**
+** z points into a NUL-terminated SQL string. n is the number of bytes the
+** caller is willing to treat as part of this slice.
+*/
+int sqlite3IfNameQuote(const char *z, int n, int *pnId){
+  int tokenType = 0;
+  i64 nToken;
+  *pnId = 0;
+  if( z==0 || n<=0 ) return 0;
+  if( z[0]=='"' || z[0]=='[' || z[0]=='`' || z[0]=='\'' ) return 0;
+  nToken = sqlite3GetToken((const unsigned char*)z, &tokenType);
+  if( nToken<=0 || nToken>n || tokenType!=TK_IF ) return 0;
+  *pnId = (int)nToken;
+  return 2;
+}
+
 void sqlite3EndTable(
   Parse *pParse,          /* Parse context */
   Token *pCons,           /* The ',' token after the last column defn. */
@@ -2765,6 +2788,7 @@ void sqlite3EndTable(
   sqlite3 *db = pParse->db; /* The database connection */
   int iDb;                  /* Database in which the table lives */
   Index *pIdx;              /* An implied index of the table */
+  int nNameExtra = 0;       /* Quote bytes inserted into stored CREATE text */
 
   if( pEnd==0 && pSelect==0 ){
     return;
@@ -3010,12 +3034,18 @@ void sqlite3EndTable(
     if( pSelect ){
       zStmt = createTableStmt(db, p);
     }else{
+      const char *zSlice = pParse->sNameToken.z;
+      int nId = 0;
       Token *pEnd2 = tabOpts ? &pParse->sLastToken : pEnd;
-      n = (int)(pEnd2->z - pParse->sNameToken.z);
+      n = (int)(pEnd2->z - zSlice);
       if( pEnd2->z[0]!=';' ) n += pEnd2->n;
-      zStmt = sqlite3MPrintf(db,
-          "CREATE %s %.*s", zType2, n, pParse->sNameToken.z
-      );
+      nNameExtra = sqlite3IfNameQuote(zSlice, n, &nId);
+      if( nNameExtra ){
+        zStmt = sqlite3MPrintf(db, "CREATE %s \"%.*s\"%.*s",
+            zType2, nId, zSlice, n-nId, zSlice+nId);
+      }else{
+        zStmt = sqlite3MPrintf(db, "CREATE %s %.*s", zType2, n, zSlice);
+      }
     }
 
     /* A slot for the record has already been allocated in the
@@ -3101,7 +3131,8 @@ void sqlite3EndTable(
     if( pCons->z==0 ){
       pCons = pEnd;
     }
-    p->u.tab.addColOffset = 13 + (int)(pCons->z - pParse->sNameToken.z);
+    p->u.tab.addColOffset = 13 + nNameExtra
+                          + (int)(pCons->z - pParse->sNameToken.z);
   }
 #endif
 }
@@ -4575,10 +4606,17 @@ void sqlite3CreateIndex(
       assert( pName!=0 || pStart==0 );
       if( pStart ){
         int n = (int)(pParse->sLastToken.z - pName->z) + pParse->sLastToken.n;
+        int nId = 0;
         if( pName->z[n-1]==';' ) n--;
         /* A named index with an explicit CREATE INDEX statement */
-        zStmt = sqlite3MPrintf(db, "CREATE%s INDEX %.*s",
-            onError==OE_None ? "" : " UNIQUE", n, pName->z);
+        if( sqlite3IfNameQuote(pName->z, n, &nId) ){
+          zStmt = sqlite3MPrintf(db, "CREATE%s INDEX \"%.*s\"%.*s",
+              onError==OE_None ? "" : " UNIQUE",
+              nId, pName->z, n-nId, pName->z+nId);
+        }else{
+          zStmt = sqlite3MPrintf(db, "CREATE%s INDEX %.*s",
+              onError==OE_None ? "" : " UNIQUE", n, pName->z);
+        }
       }else{
         /* An automatic index created by a PRIMARY KEY or UNIQUE constraint */
         /* zStmt = sqlite3MPrintf(""); */

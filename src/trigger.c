@@ -400,7 +400,16 @@ void sqlite3FinishTrigger(
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto triggerfinish_cleanup;
     sqlite3BeginWriteOperation(pParse, 0, iDb);
-    z = sqlite3DbStrNDup(db, (char*)pAll->z, pAll->n);
+    {
+      const char *zAll = (const char*)pAll->z;
+      int nAll = (int)pAll->n;
+      int nId = 0;
+      if( sqlite3IfNameQuote(zAll, nAll, &nId) ){
+        z = sqlite3MPrintf(db, "\"%.*s\"%.*s", nId, zAll, nAll-nId, zAll+nId);
+      }else{
+        z = sqlite3DbStrNDup(db, (char*)pAll->z, pAll->n);
+      }
+    }
     testcase( z==0 );
     sqlite3NestedParse(pParse,
        "INSERT INTO %Q." LEGACY_SCHEMA_TABLE

@@ -475,7 +475,17 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     if( pEnd ){
       pParse->sNameToken.n = (int)(pEnd->z - pParse->sNameToken.z) + pEnd->n;
     }
-    zStmt = sqlite3MPrintf(db, "CREATE VIRTUAL TABLE %T", &pParse->sNameToken);
+    {
+      const char *zSpan = pParse->sNameToken.z;
+      int nSpan = (int)pParse->sNameToken.n;
+      int nId = 0;
+      if( sqlite3IfNameQuote(zSpan, nSpan, &nId) ){
+        zStmt = sqlite3MPrintf(db, "CREATE VIRTUAL TABLE \"%.*s\"%.*s",
+                    nId, zSpan, nSpan-nId, zSpan+nId);
+      }else{
+        zStmt = sqlite3MPrintf(db, "CREATE VIRTUAL TABLE %T", &pParse->sNameToken);
+      }
+    }
 
     /* A slot for the record has already been allocated in the
     ** schema table.  We just need to update that slot with all
