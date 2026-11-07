@@ -263,3 +263,35 @@ SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
 .testcase 760
 SELECT id, hex(x) FROM t1 WHERE +x GLOB :p3;
 .check -glob '7 0061FFFF 8 0061FFFF007A'
+
+# Forum https://sqlite.org/forum/forumpost/c582aea277 2026-11-07T10:10:46Z
+# Incorrect FULL JOIN Result.
+# (Despite the title, the problem is actually subtype propagation through
+# CASE statements.)
+#
+.open :memory:
+.mode -reset list
+.testcase 800
+CREATE TABLE t2(a TEXT);
+CREATE TABLE t0(a TEXT);
+INSERT INTO t2 VALUES('[]');
+INSERT INTO t0 VALUES('[]');
+CREATE INDEX i ON t2(json(a));
+CREATE VIEW v2(x) AS SELECT 1 WHERE 0;
+.check ''
+.testcase 810
+SELECT json_array(CASE WHEN 1 THEN json(t0.a) END)
+FROM t2 FULL OUTER JOIN t0
+  ON json_array(CASE WHEN 1 THEN json(t2.a) END)
+   = json_array(CASE WHEN 1 THEN json(t0.a) END);
+.check '[[]]'
+.testcase 820
+.testctrl opt -All
+SELECT json_array(CASE WHEN 1 THEN json(t0.a) END)
+FROM t2 FULL OUTER JOIN t0
+  ON json_array(CASE WHEN 1 THEN json(t2.a) END)
+   = json_array(CASE WHEN 1 THEN json(t0.a) END);
+.check <<--end--
+-All
+[[]]
+--end--

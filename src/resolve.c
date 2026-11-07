@@ -984,6 +984,10 @@ static SQLITE_NOINLINE void resolveSetExprSubtypeArg(ExprList *pList){
       if( pExpr->op==TK_UPLUS ){
         pExpr = pExpr->pLeft;
         assert( pExpr!=0 );
+      }else if( pExpr->op==TK_CASE ){
+        assert( ExprUseXList(pExpr) );
+        resolveSetExprSubtypeArg(pExpr->x.pList);
+        break;
       }else{
         break;
       }
