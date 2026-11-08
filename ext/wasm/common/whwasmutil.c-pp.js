@@ -24,9 +24,9 @@
 
   This file is kept in sync between both of those trees.
 
-//#@ push policy error delimiter "@" "@"
   This build was generated using:
 
+//#@ push policy error delimiter "@" "@"
   @c-pp::argv@
 
   by libcmpp @cmpp::version@
@@ -169,11 +169,15 @@
        `installFunction()` is called and the table cannot grow.
 
    - `functionTable`: WebAssembly.Table object holding the indirect
-     function call table.  If not set then
-     `exports.__indirect_function_table` is assumed (and must be
-     set). ACHTUNG: this property gets replaced by a function with the
-     same name because this API used that name before this config
-     option was added.
+     function call table or a function which must return one. If not
+     set then `exports.__indirect_function_table` is assumed (and must
+     be set). If it is set and is not a function, it is replaced by a
+     function with the same name, and which returns that object,
+     because this API used that name before this config option was
+     added. If it is set to a function then it MUST return a
+     WebAssembly.Table object and MUST return the same instance on
+     each call (but it may defer any fetching/initialization until its
+     first call and may throw on error).
 
    In order to simplify downstream usage, if `target.exports` is not
    set when this is called then a property access interceptor
@@ -192,6 +196,7 @@
    the BigInt type is not sufficient for full int64 integration with
    WASM: the target WASM file must also have been built with that
    support. In Emscripten that's done using the `-sWASM_BIGINT` flag.
+   On WASI-SDK use --target-wasm64-wasi.
 
    Some optional APIs require that the target have the following
    methods:
@@ -324,7 +329,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
       throws complaining that BigInt is not enabled. */
   const __BigInt = target.bigIntEnabled
         ? (v)=>BigInt(v || 0)
-        : (v)=>toss("BigInt support is disabled in this build.");
+        : toss("BigInt support is disabled in this build.");
 
   const __Number = (v)=>Number(v||0)/*treat undefined the same as null*/;
 
@@ -405,16 +410,9 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
 
   /** Stores various cached state. */
   const cache = Object.create(null);
-//#define cache <<
-((cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
- ? cache : heapWrappers())
-//#/define
-  /** Previously-recorded size of cache.memory.buffer, noted so that
-      we can recreate the view objects if the heap grows. */
-  cache.heapSize = 0;
   /** WebAssembly.Memory object extracted from target.memory or
-      target.exports.memory the first time heapWrappers() is
-      called. */
+      target.exports.memory the first time __HEAPx() is called is used
+      (see __HEAP8, __HEAP32, etc.). */
   cache.memory = null;
   /** uninstallFunction() puts table indexes in here for reuse and
       installFunction() extracts them. */
@@ -464,55 +462,128 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   };
 
   /**
-     If (cache.heapSize !== cache.memory.buffer.byteLength), i.e. if
-     the heap has grown since the last call, updates cache.HEAPxyz.
-     Returns the cache object.
+     The first time this is invoked, it sets up cache.memory, throwing
+     if neither target.memory nor target.exports.memory are a
+     WebAssembly.Memory object. It replaces itself with a function
+     which simply returns cache.memory then returns cache.memory.
+
+     i.e. throws on the first call (only) if no Memory is available,
+     else returns that Memory object.
   */
-  const heapWrappers = function(){
-    if( cache.heapSize === cache.memory?.buffer?.byteLength ){
-      return cache;
-    }else if( !cache.memory ){
+  let __Memory = ()=>{
+    if( !cache.memory ){
       cache.memory = (target.memory instanceof WebAssembly.Memory)
         ? target.memory : target.exports.memory;
-    }
-    // heap is newly-acquired or has been resized....
-    const b = cache.memory.buffer;
-    /**
-       TODO (2026-11-06) is optimize this to lazily create each heap
-       as needed.  Some of them are unused in most apps.
-    */
-    cache.HEAP8 = new Int8Array(b); cache.HEAP8U = new Uint8Array(b);
-    cache.HEAP16 = new Int16Array(b); cache.HEAP16U = new Uint16Array(b);
-    cache.HEAP32 = new Int32Array(b); cache.HEAP32U = new Uint32Array(b);
-    cache.HEAP32F = new Float32Array(b); cache.HEAP64F = new Float64Array(b);
-    if(target.bigIntEnabled){
-      if( 'undefined'!==typeof BigInt64Array ){
-        cache.HEAP64 = new BigInt64Array(b); cache.HEAP64U = new BigUint64Array(b);
-      }else{
-        toss("BigInt support is enabled, but the BigInt64Array type is missing.");
+      if( !(cache.memory instanceof WebAssembly.Memory) ){
+        toss("Missing target.memory or target.exports.memory",
+             "WebAssembly.Memory object.");
       }
     }
-    cache.heapSize = b.byteLength;
-    return cache;
-  };
+    //warn("cache.memory =",cache.memory);
+    __Memory = ()=>cache.memory;
+    return cache.memory;
+  }
 
-  /** Convenience equivalent of this.heapForSize(8,false). */
-  target.heap8 = ()=>heapWrappers().HEAP8;
+  /* True if TypedArray view needs to be created or reinitialized. */
+  const memoryViewNeedsUpdate = (view)=>
+        view?.byteLength !== __Memory().buffer.byteLength;
 
-  /** Convenience equivalent of this.heapForSize(8,true). */
-  target.heap8u = ()=>heapWrappers().HEAP8U;
+  /*
+    __HEAPx each return a TypeArray view of cache.memory.  These
+    lazily initialize both cache.memory and cache._viewX, and update
+    the view if cache.memory grows. Don't use these in a loop: get a
+    handle before the loop.
 
-  /** Convenience equivalent of this.heapForSize(16,false). */
-  target.heap16 = ()=>heapWrappers().HEAP16;
+    __HEAPx.shift is the number of bits which pointers must be
+    right-shifted when using them as an index for this heap.
+  */
+  const __HEAP8 = ()=>(memoryViewNeedsUpdate(cache._view8)
+                       ? (cache._view8=new Int8Array(cache.memory.buffer))
+                       : cache._view8);
+  const __HEAP8U = ()=>(memoryViewNeedsUpdate(cache._view8u)
+                        ? (cache._view8u=new Uint8Array(cache.memory.buffer))
+                        : cache._view8u);
+  __HEAP8.shift = __HEAP8U.shift = 0;
 
-  /** Convenience equivalent of this.heapForSize(16,true). */
-  target.heap16u = ()=>heapWrappers().HEAP16U;
+  const __HEAP16 = ()=>(memoryViewNeedsUpdate(cache._view16)
+                        ? (cache._view16=new Int16Array(cache.memory.buffer))
+                        : cache._view16);
+  const __HEAP16U = ()=>(memoryViewNeedsUpdate(cache._view16u)
+                         ? (cache._view16u=new Uint16Array(cache.memory.buffer))
+                         : cache._view16u);
+  __HEAP16.shift = __HEAP16U.shift = 1;
 
-  /** Convenience equivalent of this.heapForSize(32,false). */
-  target.heap32 = ()=>heapWrappers().HEAP32;
+  const __HEAP32 = ()=>(memoryViewNeedsUpdate(cache._view32)
+                        ? (cache._view32=new Int32Array(cache.memory.buffer))
+                        : cache._view32);
+  const __HEAP32U = ()=>(memoryViewNeedsUpdate(cache._view32u)
+                         ? (cache._view32u=new Uint32Array(cache.memory.buffer))
+                         : cache._view32u);
+  __HEAP32.shift = __HEAP32U.shift = 2;
 
-  /** Convenience equivalent of this.heapForSize(32,true). */
-  target.heap32u = ()=>heapWrappers().HEAP32U;
+  const __HEAP64 = (target.bigIntEnabled && ('undefined'!==typeof BigInt64Array))
+        ? ()=>(memoryViewNeedsUpdate(cache._view64)
+               ? (cache._view64=new BigInt64Array(cache.memory.buffer))
+               : cache._view64)
+        : ()=>toss("BigInt64Array is not available.")
+  const __HEAP64U = (target.bigIntEnabled && ('undefined'!==typeof BigUint64Array))
+    ? ()=>(memoryViewNeedsUpdate(cache._view64u)
+           ? (cache._view64u=new BigUint64Array(cache.memory.buffer))
+           : cache._view64u)
+        : ()=>toss("BigUint64Array is not available.");
+  __HEAP64.shift = __HEAP64U.shift = 3;
+
+  const __HEAP32F = ()=>(memoryViewNeedsUpdate(cache._view32f)
+                         ? (cache._view32f=new Float32Array(cache.memory.buffer))
+                         : cache._view32f);
+  __HEAP32F.shift = 2;
+  const __HEAP64F = ('undefined'!==typeof Float64Array)
+        ? ()=>(memoryViewNeedsUpdate(cache._view64f)
+               ? (cache._view64f=new Float64Array(cache.memory.buffer))
+               : cache._view64f)
+        : ()=>toss("Float64Array is not available.");
+  __HEAP64F.shift = 3;
+
+  /* Map of IR (and internal pseudo-IR) values to __HEAPx funcs. */
+  const __typeToHeap = function(type){
+    return this[type] || toss("Unknown type ID:",type);
+  }.bind(Object.freeze(Object.seal(
+    nu({
+      i1: __HEAP8, i8: __HEAP8,
+      //i1u: __HEAP8,  u8: __HEAP8U,
+      i16: __HEAP16, //u16: __HEAP16U,
+      i32: __HEAP32, //u32: __HEAP32U,
+      i64: __HEAP64, //u64: __HEAP64U,
+      f32: __HEAP32F,
+      f64: __HEAP64F,
+      double: __HEAP64F
+    })
+  )));
+
+  /** Convenience (and faster) equivalent of this.heapForSize(8,false). */
+  target.heap8 = __HEAP8;
+  /** Convenience (and faster) equivalent of this.heapForSize(8,true). */
+  target.heap8u = __HEAP8U;
+  /** Convenience (and faster) equivalent of this.heapForSize(16,false). */
+  target.heap16 = __HEAP16;
+  /** Convenience (and faster) equivalent of this.heapForSize(16,true). */
+  target.heap16u = __HEAP16U;
+  /** Convenience (and faster) equivalent of this.heapForSize(32,false). */
+  target.heap32 = __HEAP32;
+  /** Convenience (and faster) equivalent of this.heapForSize(32,true). */
+  target.heap32u = __HEAP32U;
+  /** Convenience (and faster) equivalent of this.heapForSize(64,false).
+      Throws if BigInt support is not enabled. */
+  target.heap64 = __HEAP64;
+  /** Convenience (and faster) equivalent of this.heapForSize(64,true).
+      Throws if BigInt support is not enabled. */
+  target.heap64u = __HEAP64U;
+  /** Convenience (and faster) equivalent of
+   * this.heapForSize(Float32Array). */
+  target.heap32f = __HEAP32F;
+  /** Convenience (and faster) equivalent of
+   * this.heapForSize(Float64Array). */
+  target.heap64f = __HEAP64F;
 
   /**
      Requires n to be one of:
@@ -541,37 +612,33 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
      Throws if passed an invalid n.
   */
   target.heapForSize = function(n,unsigned = true){
-    let ctor;
-    const c = @cache@;
     switch(n){
-        case Int8Array: return c.HEAP8; case Uint8Array: return c.HEAP8U;
-        case Int16Array: return c.HEAP16; case Uint16Array: return c.HEAP16U;
-        case Int32Array: return c.HEAP32; case Uint32Array: return c.HEAP32U;
-        case 8:  return unsigned ? c.HEAP8U : c.HEAP8;
-        case 16: return unsigned ? c.HEAP16U : c.HEAP16;
-        case 32: return unsigned ? c.HEAP32U : c.HEAP32;
-        case 64:
-          if(c.HEAP64) return unsigned ? c.HEAP64U : c.HEAP64;
-          break;
-        default:
-          if(target.bigIntEnabled){
-            if(n===globalThis['BigUint64Array']) return c.HEAP64U;
-            else if(n===globalThis['BigInt64Array']) return c.HEAP64;
-            break;
-          }
+      case 8:  return unsigned ? __HEAP8U() : __HEAP8();
+      case 16: return unsigned ? __HEAP16U() : __HEAP16();
+      case 32: return unsigned ? __HEAP32U() : __HEAP32();
+      case 64: return unsigned ? __HEAP64U() : __HEAP64();
+      case Int8Array: return __HEAP8();
+      case Uint8Array: return __HEAP8U();
+      case Int16Array: return __HEAP16();
+      case Uint16Array: return __HEAP16U();
+      case Int32Array: return __HEAP32();
+      case Uint32Array: return __HEAP32U();
+      default:
+        if(n===globalThis['BigUint64Array']) return __HEAP64U();
+        else if(n===globalThis['BigInt64Array']) return __HEAP64();
+        else if(n===globalThis['Float32Array']) return __HEAP32F();
+        else if(n===globalThis['Float64Array']) return __HEAP64F();
+        toss("Invalid heapForSize() size: expecting 8, 16, 32,",
+             "or (if BigInt is enabled) 64, or a TypedArray constructor.");
     }
-    toss("Invalid heapForSize() size: expecting 8, 16, 32,",
-         "or (if BigInt is enabled) 64.");
   };
-
-  const __funcTable = target.functionTable;
-  delete target.functionTable;
 
   /**
      Returns the WASM-exported "indirect function table".
   */
-  target.functionTable = __funcTable
-    ? ()=>__funcTable
+  if( !(target.functionTable instanceof Function) ){
+    target.functionTable = target.functionTable
+      ? ((origFuncTable)=>{return ()=>origFuncTable})(target.functionTable)
     : ()=>target.exports.__indirect_function_table
     /** -----------------^^^^^ "seems" to be a standardized export name.
         From Emscripten release notes from 2020-09-10:
@@ -581,6 +648,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
         We must delay access to target.exports until after the library
         is bootstrapped.
     */;
+  }
 
   /**
      Given a function pointer, returns the WASM function table entry
@@ -917,44 +985,27 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
      ACHTUNG #2: ptr may be a BigInt (and generally will be in 64-bit
      builds) but this function must coerce it into a Number in order
      to access the heap's contents. Ergo: BitInts outside of the
-     (extrardinarily genereous) address range exposed to browser-side
+     (extrardinarily generous) address range exposed to browser-side
      WASM may cause misbehavior.
 
      See also: poke()
   */
   target.peek = function(ptr, type = 'i8') {
     if( type.endsWith('*') ) type = __ptrIR;
+    const heaper = __typeToHeap(type), heap = heaper();
     if( Array.isArray(ptr) ){
-      const c = heapWrappers();
       const res = new Array(ptr.length);
       for (let i = 0; i < ptr.length; ++i) {
         const p = Number(ptr[i]);
-//#@ policy off <<
-//#define theSwitch <<
-        switch(type){
-          case 'i1':
-          case 'i8': @op@ c.HEAP8[p >> 0]; break;
-          case 'i16': @op@ c.HEAP16[p >> 1]; break;
-          case 'i32': @op@ c.HEAP32[p >> 2]; break;
-          case 'float':
-          case 'f32': @op@ c.HEAP32F[p >> 2]; break;
-          case 'double':
-          case 'f64': @op@ Number(c.HEAP64F[p >> 3]); break;
-          case 'i64':
-            if(c.HEAP64){ @op@ __BigInt(c.HEAP64[p >> 3]); break; }
-            /* fallthru */
-          default:
-            toss('Invalid type for peek():', type);
-        }
-//#/define
-//#/@
-//#expand theSwitch {op -> "res[i] ="}
+        res[i] = (__HEAP64===heaper)
+          ? __BigInt(heap[p >> heaper.shift])
+          : Number(heap[p >> heaper.shift]);
       }
       return res;
     }
-    const c = heapWrappers();
-    const p = Number(ptr);
-//#expand theSwitch {op -> "return"}
+    return (__HEAP64===heaper)
+          ? __BigInt(heap[Number(ptr) >> heaper.shift])
+          : Number(heap[Number(ptr) >> heaper.shift]);
   };
 
   /**
@@ -976,24 +1027,14 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   */
   target.poke = function(ptr, value, type='i8'){
     if (type.endsWith('*')) type = __ptrIR;
-    const c = @cache@;
-    for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
-      switch (type) {
-          case 'i1':
-          case 'i8': c.HEAP8[Number(p/*tag:64bit*/)>>0] = value; continue;
-          case 'i16': c.HEAP16[Number(p/*tag:64bit*/)>>1] = value; continue;
-          case 'i32': c.HEAP32[Number(p/*tag:64bit*/)>>2] = value; continue;
-          case 'float': case 'f32': c.HEAP32F[Number(p/*tag:64bit*/)>>2] = value; continue;
-          case 'double': case 'f64': c.HEAP64F[Number(p/*tag:64bit*/)>>3] = value; continue;
-          case 'i64':
-            if(c.HEAP64){
-              c.HEAP64[Number(p/*tag:64bit*/)>>3] = __BigInt(value);
-              continue;
-            }
-            /* fallthru */
-          default:
-            toss('Invalid type for poke(): ' + type);
+    const heaper = __typeToHeap(type), heap = heaper();
+    if( __HEAP64===heaper && 'bigint'!==typeof value ) value = __BigInt(value);
+    if( Array.isArray(ptr) ){
+      for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
+        heap[Number(ptr/*tag:64bit*/) >> heaper.shift] = value;
       }
+    }else{
+      heap[Number(ptr) >> heaper.shift] = value;
     }
     return this;
   };
@@ -1036,7 +1077,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   target.peek32 = function(ptr){
     if( 'number' === typeof ptr && 1 === arguments.length ) {
       /* Fast-path common case. */
-      return @cache@.HEAP32[ptr >> 2];
+      return __HEAP32()[ptr >> 2];
     }
     return target.peek(1 === arguments.length
                        ? ptr
@@ -1046,7 +1087,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   target.poke32 = (ptr, value)=>{
     /* Fast-path common case. */
     if( 'number' === typeof ptr ){
-      @cache@.HEAP32[ptr >> 2] = value;
+      __HEAP32()[ptr >> 2] = value;
       return target;
     }
     return target.poke(ptr, value, 'i32');
@@ -1117,7 +1158,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   target.cstrlen = function(ptr){
     if(!ptr || !target.isPtr(ptr)) return null;
     ptr = Number(ptr);
-    const end = heapWrappers().HEAP8U.indexOf(0, ptr);
+    const end = __HEAP8U().indexOf(0, ptr);
     return end < 0 ? null : end - ptr;
   };
 
@@ -1185,7 +1226,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   target.cstrToJs = function(ptr){
     const n = target.cstrlen(ptr);
     return n
-      ? typedArrayToString(heapWrappers().HEAP8U, Number(ptr), Number(ptr)+n)
+      ? typedArrayToString(__HEAP8U(), Number(ptr), Number(ptr)+n)
       : (null===n ? n : "");
   };
 
@@ -1319,7 +1360,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
     if(!tgtPtr || !srcPtr) toss("cstrncpy() does not accept NULL strings.");
     if(n<0) n = target.cstrlen(strPtr)+1;
     else if(!(n>0)) return 0;
-    const heap = target.heap8u();
+    const heap = __HEAP8U();
     let i = 0, ch;
     const tgtNumber = Number(tgtPtr), srcNumber = Number(srcPtr)/*tag:64bit*/;
     for(; i < n && (ch = heap[srcNumber+i]); ++i){
@@ -1353,7 +1394,7 @@ const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
           ptr = allocator(u.length+1);
     let toFree = ptr;
     try{
-      const heap = heapWrappers().HEAP8U;
+      const heap = __HEAP8U();
       heap.set(u, Number(ptr));
       heap[__ptrAdd(ptr, u.length)] = 0;
       toFree = __NullPtr;

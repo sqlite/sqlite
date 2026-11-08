@@ -792,7 +792,7 @@ T.g('C/WASM Utilities')
         .assert(!ip(1.1))
         .assert(ip(0xffffffff))
         /* 4GB is okay, but 4GB+1 is not */
-        .assert(!ip(0x1ffffffff))
+        .assert(!ip(0x100000000))
         .assert(ip(0x7fffffff))
         .assert(!ip())
         .assert(!ip(null)/*might change: under consideration*/)
