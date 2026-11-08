@@ -10677,14 +10677,16 @@ void cmpp__dx_append_script_info(cmpp_dx const * dx,
     ? "<stdin>"
     : (char const *)dx->sourceName;
   if( dx->d ){
-    sqlite3_str_appendf(sstr,  "%s @%s:%d", dx->d->name.z,
-                        zSrcName, (int)dpi->dline.lineNo);
+    sqlite3_str_appendf(sstr,  "%s @ %s:%" CMPP_SIZE_T_PFMT,
+                        dx->d->name.z, zSrcName,
+                        dpi->dline.lineNo);
     if( nl != dpi->dline.lineNo ){
       /* Input position past the directive line. */
       sqlite3_str_appendf(sstr, " from line %" CMPP_SIZE_T_PFMT, nl);
     }
   }else{
-    sqlite3_str_appendf(sstr,  "%s:%d", zSrcName, nl);
+    sqlite3_str_appendf(sstr,  "%s:%" CMPP_SIZE_T_PFMT,
+                        zSrcName, nl);
   }
 }
 
