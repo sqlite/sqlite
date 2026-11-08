@@ -9876,7 +9876,7 @@ static int dotCmdCheck(ShellState *p){
         isOk = 1;
       }else{
         size_t ii;
-        for(ii=n1; ii<n2; ii++){
+        for(ii=0; ii<n2; ii++){
           if( z1[ii]!=z2[ii] && !IsSpace(z1[ii]) && !IsSpace(z2[ii]) ) break;
         }
         if( ii==n2 ) isOk = 1;
@@ -14383,7 +14383,6 @@ static void verify_uninitialized(void){
   }
 }
 
-#ifndef _WIN32
 /*
 ** Run a copy of this program as a subprocess
 */
@@ -14403,6 +14402,12 @@ static void runShellSubprocess(
   }else{
     zTail = zScript;
   }
+#ifdef _WIN32
+  {
+    const char *zBackslash = strrchr(zTail, '\\');
+    if( zBackslash ) zTail = zBackslash+1;
+  }
+#endif
   sqlite3_fprintf(stdout, "%-24s ", zTail);
   fflush(stdout);
   if( !isScriptFile(zScript,0) ){
@@ -14410,8 +14415,17 @@ static void runShellSubprocess(
     (*pNErr)++;
     return;
   }
+#ifdef _WIN32
+  /* The command runs as "cmd.exe /c COMMAND".  If COMMAND starts with a
+  ** double-quote and contains more than two of them, then cmd.exe removes
+  ** the first and the last double-quote before doing anything else.
+  ** The extra pair of quotes around the whole command is there to be
+  ** removed, so that the quotes on the individual arguments survive. */
+  zCmd = sqlite3_mprintf("\"\"%s\" \"%s\" 2>NUL\"", zProg, zScript);
+#else
   zCmd = sqlite3_mprintf("\"%s\" \"%s\" 2>/dev/null", zProg, zScript);
-  in = popen(zCmd, "r");
+#endif
+  in = sqlite3_popen(zCmd, "r");
   if( in==0 ){
     sqlite3_fprintf(stdout, "cannot start subprocess\n");
     sqlite3_free(zCmd);
@@ -14422,7 +14436,6 @@ static void runShellSubprocess(
     int n = 0;
     int m = 0;
     char *zRunWith;
-    if( feof(in) ) break;
     zRunWith = strstr(zIn, " run with ");
     if( zRunWith==0 ) continue;
     if( zIn[0]<'0' || zIn[0]>'9' ) continue;
@@ -14432,7 +14445,7 @@ static void runShellSubprocess(
     if( m==0 ){
       sqlite3_fprintf(stdout, "tests %5d\n", n);
     }else{
-      sqlite3_fprintf(stdout, "tests %5d   errors %5d\n", m, n);
+      sqlite3_fprintf(stdout, "tests %5d   errors %5d\n", n, m);
     }
     (*pNErr) += m;
     (*pNTest) += n;
@@ -14444,9 +14457,8 @@ static void runShellSubprocess(
   sqlite3_free(zCmd);
   sqlite3_fprintf(stdout, "did not complete\n");
   fflush(stdout);
-  (*pNTest)++;
+  (*pNErr)++;
 }
-#endif
 
 #if HAVE_EDITLINE
 /*
@@ -14921,19 +14933,19 @@ int SQLITE_CDECL main(int argc, char **argv){
 
 #ifndef SQLITE_SHELL_FIDDLE
   if( bTestMode ){
-#ifdef _WIN32
-    sqlite3_fprintf(stderr, "--runtests currently only works on unix\n");
-    rc = 1;
-#else
     int nErr = 0;
     int nTest = 0;
+#ifdef _WIN32
+    /* Child processes inherit this.  Without it, a crash in a test script
+    ** might raise a dialog box that stalls the run until it is dismissed. */
+    SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX);
+#endif
     for(i=0; i<nCmd; i++){
       runShellSubprocess(argv[0], azCmd[i], &nErr, &nTest);
     }
     sqlite3_fprintf(stdout, "%-24s tests %5d   errors %5d   scripts %5d\n",
                     "TOTAL", nTest, nErr, nCmd);
     rc = nErr>0;
-#endif
     goto shell_main_exit;
   }
 #endif
