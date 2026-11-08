@@ -115,28 +115,32 @@ END
 
 .testcase 160
 .mode --null xyzzy -v
-.output -glob ' --null "xyzzy"'
+.check -glob ' --null "xyzzy"'
 .testcase 170
 .mode -null abcde -v
-.output -glob ' --null "abcde"'
+.check -glob ' --null "abcde"'
 
 # Test cases for the ".explain off" command
 .mode box -reset
 .testcase 180
 EXPLAIN SELECT * FROM t1;
-.output --notglob *────* --keep
-.output --notglob "* id │ parent │ notused │ detail *" --keep
-.output --glob "*   Init  *"
+.check --not --glob *────* --keep
+.check --notglob *────* --keep
+.check --not --regexp ──── --keep
+.check --not --any ──── --keep
+.check --notglob "* id │ parent │ notused │ detail *" --keep
+.check --regexp '\bInit\b' --keep
+.check --any ' Init '
 .testcase 190
 EXPLAIN QUERY PLAN SELECT * FROM t1;
-.output --glob "*`--SCAN *"
+.check --glob "*`--SCAN *"
 .explain off
 .testcase 200
 EXPLAIN SELECT * FROM t1;
-.output --glob *────*
+.check --regexp ────
 .testcase 210
 EXPLAIN QUERY PLAN SELECT * FROM t1;
-.output --glob "* id │ parent │ notused │ detail *"
+.check --glob "* id │ parent │ notused │ detail *"
 .explain auto
 
 # Test cases for limit settings in the .mode command.

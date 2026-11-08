@@ -12,7 +12,7 @@ INSERT INTO t(rowid, a) VALUES
   (12345,'row 12345'),
   (12350,'row 12350');
 .dbconfig fp_digits 4
-.check
+.check 'fp_digits 4'
 
 .testcase 110
 SELECT a FROM t WHERE rowid = 12345.0;
@@ -186,29 +186,29 @@ SELECT c1, c0 FROM t0 NOT INDEXED
 # instead of 30, 25, 20
 #
 .open :memory:
-.mode -reset list --rowsep ' ' --colsep ','
+.mode -reset test
 .testcase 600
 SELECT value FROM generate_series(0,32,5) ORDER BY rowid DESC;
-.check --glob '30 25 20 15 10 5 0'
+.check '30 25 20 15 10 5 0'
 
 .testcase 610
 SELECT value FROM generate_series(0,32,5) ORDER BY rowid DESC LIMIT 3;
-.check --glob '30 25 20'
+.check '30 25 20'
 
 .testcase 620
 SELECT value FROM generate_series(0,32,5) ORDER BY value DESC LIMIT 3;
-.check --glob '30 25 20'
+.check '30 25 20'
 
 .testcase 630
 SELECT rowid, value FROM generate_series(0,12,5);
-.check --glob '0,0 5,5 10,10'
+.check '0,0 5,5 10,10'
 
 # b4a8844d427ec7ef 2026-11-04T20:30:26Z
 # Indexed GLOB with a prefix ending in U+07FF returns non-matching rows
 # in a UTF-16be
 #
 .open :memory:
-.mode -reset list -colsep ' ' -rowsep ' '
+.mode -reset test -quote off
 .testcase 700
 PRAGMA encoding='UTF-16be';
 CREATE TABLE t1(id INT, x TEXT);
@@ -224,7 +224,7 @@ INSERT INTO t1 VALUES
   (9, 'a'||char(0x10000));
 CREATE INDEX t1x ON t1(x);
 PRAGMA encoding;
-.check -glob 'UTF-16be'
+.check 'UTF-16be'
 
 .param set :p1 "'a'||char(0x7FF)||'*'"
 .param set :p2 "'a'||char(0xFFFE)||'*'"
@@ -232,7 +232,7 @@ PRAGMA encoding;
 
 .testcase 710
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p1;
-.check -glob '1 006107FF 2 006107FF007A'
+.check -glob '1,006107FF 2,006107FF007A'
 .testcase 711
 EXPLAIN QUERY PLAN
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p1;
@@ -240,11 +240,11 @@ SELECT id, hex(x) FROM t1 WHERE x GLOB :p1;
 
 .testcase 720
 SELECT id, hex(x) FROM t1 WHERE +x GLOB :p1;
-.check -glob '1 006107FF 2 006107FF007A'
+.check '1,006107FF 2,006107FF007A'
 
 .testcase 730
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
-.check -glob '5 0061FFFE 6 0061FFFE007A'
+.check '5 0061FFFE 6 0061FFFE007A'
 .testcase 731
 EXPLAIN QUERY PLAN
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
@@ -252,11 +252,11 @@ SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
 
 .testcase 740
 SELECT id, hex(x) FROM t1 WHERE +x GLOB :p2;
-.check -glob '5 0061FFFE 6 0061FFFE007A'
+.check '5 0061FFFE 6 0061FFFE007A'
 
 .testcase 750
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
-.check -glob '7 0061FFFF 8 0061FFFF007A'
+.check '7 0061FFFF 8 0061FFFF007A'
 .testcase 751
 EXPLAIN QUERY PLAN
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
@@ -264,7 +264,7 @@ SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
 
 .testcase 760
 SELECT id, hex(x) FROM t1 WHERE +x GLOB :p3;
-.check -glob '7 0061FFFF 8 0061FFFF007A'
+.check '7 0061FFFF 8 0061FFFF007A'
 
 # Forum https://sqlite.org/forum/forumpost/c582aea277 2026-11-07T10:10:46Z
 # Incorrect FULL JOIN Result.
@@ -272,7 +272,7 @@ SELECT id, hex(x) FROM t1 WHERE +x GLOB :p3;
 # CASE statements.)
 #
 .open :memory:
-.mode -reset list
+.mode -reset test -quote off
 .testcase 800
 CREATE TABLE t2(a TEXT);
 CREATE TABLE t0(a TEXT);
@@ -288,15 +288,12 @@ FROM t2 FULL OUTER JOIN t0
    = json_array(CASE WHEN 1 THEN json(t0.a) END);
 .check '[[]]'
 .testcase 820
-.testctrl opt -All
+.testctrl opt -All -q
 SELECT json_array(CASE WHEN 1 THEN json(t0.a) END)
 FROM t2 FULL OUTER JOIN t0
   ON json_array(CASE WHEN 1 THEN json(t2.a) END)
    = json_array(CASE WHEN 1 THEN json(t0.a) END);
-.check <<--end--
--All
-[[]]
---end--
+.check '[[]]'
 
 # Bug thread https://sqlite.org/bugs/info/a548aa9d4d (2026-11-05T22:09:59Z)
 # was closed as NOT PLANNED.  These tests merely document the current
@@ -304,19 +301,18 @@ FROM t2 FULL OUTER JOIN t0
 # test 901 was a bit wonky.
 #
 .open :memory:
-.mode -reset list
+.mode -reset test -quote relaxed
 .testcase 900
 CREATE TABLE t1(x,y);
 CREATE INDEX t1x ON t1(x);
 CREATE VIEW t2 AS SELECT x+y FROM t1;
 CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT 'hello!'; END;
-.check <<--end--
---end--
+.check ''
 .testcase 901
 CREATE TABLE main.IF(a);
 .check --glob '*syntax error*'
 .testcase 902
-SELECT group_concat(name,' ' ORDER BY name) FROM sqlite_schema;
+SELECT name FROM sqlite_schema ORDER BY name;
 .check 'r1 t1 t1x t2'
 .testcase 903
 PRAGMA integrity_check;

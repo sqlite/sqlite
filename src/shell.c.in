@@ -598,9 +598,10 @@ static const char *qrfQuoteNames[] =
 #define MODE_Table    19  /* MySQL-style table formatting */
 #define MODE_Tabs     20  /* Tab-separated values */
 #define MODE_Tcl      21  /* Space-separated list of TCL strings */
-#define MODE_Www      22  /* Full web-page output */
+#define MODE_Test     22  /* list -colsep , -quote on  <-- for testing */
+#define MODE_Www      23  /* Full web-page output */
 
-#define MODE_BUILTIN  22  /* Maximum built-in mode */
+#define MODE_BUILTIN  23  /* Maximum built-in mode */
 #define MODE_BATCH    50  /* Default mode for batch processing */
 #define MODE_TTY      51  /* Default mode for interactive processing */
 #define MODE_USER     75  /* First user-defined mode */
@@ -655,6 +656,7 @@ static const ModeInfo aModeInfo[] = {
   { "table",    0,     0,    9,    1,    1,    0,   3,   19,    2,  0 },
   { "tabs",     8,     1,    9,    3,    3,    0,   1,   12,    0,  0 },
   { "tcl",      3,     1,    12,   5,    5,    4,   1,   12,    0,  0 },
+  { "test",     4,     1,    10,   2,    2,    2,   1,   12,    0,  0 },
   { "www",      0,     0,    9,    4,    4,    0,   3,   7,     0,  0 }
 };     /*       |     /     /      |     /    /     |    |     /     \____
        **       |    /     /       |    /    /      |    |    /           |
@@ -9730,14 +9732,21 @@ static char *captureHereDoc(ShellState *p, const char *zTerminator){
 ** subsequent lines of text up to the first line that begins with ENDMARK.
 ** All pattern lines and the ENDMARK are discarded.
 **
+** The default comparison algorithm is to ignore all leading and trailing
+** whitespace and to treat all interior whitespace characters as being
+** equal to one another.
+**
 ** Options:
-**   --exact                Do an exact comparison including leading and
-**                          trailing whitespace.
-**   --glob                 Treat PATTERN as a GLOB
-**   --keep                 Do not reset the testcase.  More .check commands
-**                          will follow.
-**   --notglob              Output should not match PATTERN
-**   --show                 Write testcase output to the screen, for debugging.
+**   --any            PATTERN is a substring within the test output
+**   --exact          PATTERN matches the entire test output, byte for byte
+**   --glob           PATTERN is a GLOB matching entire test output
+**   --keep           Do not reset the test output.  More .check commands
+**                    will follow.
+**   --not            Pass if the test output does *not* match PATTERN
+**   --notglob        Shorthand for "--not --glob"
+**   --regexp         PATTERN is a regular expression matching any part of
+**                    of the test output
+**   --show           Write test output to the screen, for debugging.
 */
 static int dotCmdCheck(ShellState *p){
   int nArg = p->dot.nArg;            /* Number of arguments */
@@ -9750,6 +9759,7 @@ static int dotCmdCheck(ShellState *p){
   char *zPattern = 0;                /* Actual test pattern */
   int eCheck = 0;                    /* 1: --glob,  2: --notglob,  3: --exact */
   int isOk;                          /* True if results are OK */
+  int bNot = 0;                      /* Invert the sense of the test */
   sqlite3_int64 iStart = p->lineno;  /* Line number of .check statement */
 
   if( p->mIf!=0 ){
@@ -9776,14 +9786,21 @@ static int dotCmdCheck(ShellState *p){
       }
       bKeep = 1;
     }else if( z[0]=='-'
-          && (k = pickStr(&z[1],0,"glob","notglob","exact",""))>=0
+          && (k = pickStr(&z[1],0,
+         /*  0       1          2        3         4      5   */
+            "glob", "notglob", "exact", "regexp", "any", "not", ""))>=0
     ){
-      if( eCheck && eCheck!=k+1 ){
+      if( k==5 ){
+        bNot = !bNot;
+      }else if( eCheck==0 || eCheck==k+1 ){
+        eCheck = k+1;
+      }else{
+        output_reset(p);
         dotCmdError(p, i, "incompatible with prior options",0);
         return 1;
       }
-      eCheck = k+1;
     }else if( zCheck ){
+      output_reset(p);
       dotCmdError(p, i, "unknown option", 0);
       return 1;
     }else{
@@ -9791,8 +9808,7 @@ static int dotCmdCheck(ShellState *p){
     }
   }
   if( zCheck==0 ){
-    dotCmdError(p, 0, "no PATTERN specified", 0);
-    return 1;
+    zCheck = "";  /* No pattern string defaults to mean no output */
   }
   if( sqlite3_str_length(cli_output_capture) ){
     zTest = sqlite3_str_value(cli_output_capture);
@@ -9811,37 +9827,63 @@ static int dotCmdCheck(ShellState *p){
   }
   shell_check_oom(zPattern);
   switch( eCheck ){
-    case 1: {
+    case 1:           /* --glob */
+    case 2: {         /* --notglob */
       char *zGlob = sqlite3_mprintf("*%s*", zPattern);
       isOk = testcase_glob(zGlob, zTest)!=0;
+      if( eCheck==2 ) isOk = !isOk;
       sqlite3_free(zGlob);
       break;
     }
-    case 2: {
-      char *zGlob = sqlite3_mprintf("*%s*", zPattern);
-      isOk = testcase_glob(zGlob, zTest)==0;
-      sqlite3_free(zGlob);
-      break;
-    }
-    case 3: {
+    case 3: {         /* --exact */
       isOk = cli_strcmp(zTest,zPattern)==0;
       break;
     }
-    default: {
-      /* Skip leading and trailing \n and \r on both pattern and test output */
+    case 4: {         /* --regexp */
+      ReCompiled *pRe = 0;
+      const char *zErr = re_compile(&pRe, zPattern, 1000, 0);
+      if( zErr ){
+        re_free(pRe);
+        output_reset(p);
+        dotCmdError(p, 0, "bad regular expression: %s", zErr);
+        return 1;
+      }
+      shell_check_oom(pRe);
+      isOk = re_match(pRe, (const unsigned char*)zTest, -1);
+      re_free(pRe);
+      break;
+    }
+    case 5: {         /* --any */
+      isOk = strstr(zTest,zPattern)!=0;
+      break;
+    }
+    default: {        /* default matching rule */
+      /* Skip leading and trailing whitespace on both pattern and test output.
+      ** Treat \n as a single space */
       const char *z1 = zPattern;
       const char *z2 = zTest;
       size_t n1, n2;
-      while( z1[0]=='\n' || z1[0]=='\r' ) z1++;
+      while( IsSpace(z1[0]) ) z1++;
       n1 = strlen(z1);
-      while( n1>0 && (z1[n1-1]=='\n' || z1[n1-1]=='\r') ) n1--;
-      while( z2[0]=='\n' || z2[0]=='\r' ) z2++;
+      while( n1>0 && IsSpace(z1[n1-1]) ) n1--;
+      while( IsSpace(z2[0]) ) z2++;
       n2 = strlen(z2);
-      while( n2>0 && (z2[n2-1]=='\n' || z2[n2-1]=='\r') ) n2--;
-      isOk = n1==n2 && memcmp(z1,z2,n1)==0;
+      while( n2>0 && IsSpace(z2[n2-1]) ) n2--;
+      if( n1!=n2 ){
+        isOk = 0;
+      }else if( memcmp(z1,z2,n1)==0 ){
+        isOk = 1;
+      }else{
+        size_t ii;
+        for(ii=n1; ii<n2; ii++){
+          if( z1[ii]!=z2[ii] && !IsSpace(z1[ii]) && !IsSpace(z2[ii]) ) break;
+        }
+        if( ii==n2 ) isOk = 1;
+      }
       break;
     }
   }
+  if( bNot ) isOk = !isOk;
   if( !isOk ){
     static const char zDL[] = "\342\225\255\342\224\200";
     static const char zDR[] = "\342\224\200\342\225\256";
@@ -13006,6 +13048,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
           int ii, jj;                /* Loop counters */
           int nOff;                  /* Number of disabled optimizations */
           const char *zName;         /* Name of an optimization */
+          int bQuiet = 0;            /* Suppress output echo */
 
           sqlite3_test_control(SQLITE_TESTCTRL_GETOPT, p->db, &curOpt);
           newOpt = curOpt;
@@ -13024,6 +13067,11 @@ static int do_meta_command(const char *zLine, ShellState *p){
             }
             if( useLabel ){
               if( sqlite3_optimization_mask(zLabel,&m)==SQLITE_NOTFOUND ){
+                if( strcmp(zLabel,"q")==0 ){
+                  /* Special -q option suppresses output */
+                  bQuiet = 1;
+                  continue;
+                }
                 cli_printf(stderr,
                     "Error: no such optimization: \"%s\"\n", zLabel);
                 cli_puts("Should be one of: All", stderr);
@@ -13045,29 +13093,31 @@ static int do_meta_command(const char *zLine, ShellState *p){
           if( curOpt!=newOpt ){
             sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,p->db,newOpt);
           }
-          for(ii=nOff=0, m=1; ii<64; ii++, m <<= 1){
-            if( m & newOpt ) nOff++;
-          }
-          if( nOff<12 ){
-            cli_puts("+All", p->out);
-            for(ii=0, m=1; ii<64; ii++, m <<= 1){
-              if( (newOpt & m)!=0 
-               && (zName = sqlite3_optimization_name(m))!=0
-              ){
-                cli_printf(p->out, " -%s", zName);
+          if( !bQuiet ){
+            for(ii=nOff=0, m=1; ii<64; ii++, m <<= 1){
+              if( m & newOpt ) nOff++;
+            }
+            if( nOff<12 ){
+              cli_puts("+All", p->out);
+              for(ii=0, m=1; ii<64; ii++, m <<= 1){
+                if( (newOpt & m)!=0 
+                 && (zName = sqlite3_optimization_name(m))!=0
+                ){
+                  cli_printf(p->out, " -%s", zName);
+                }
+              }
+            }else{
+              cli_puts("-All", p->out);
+              for(ii=0, m=1; ii<64; ii++, m <<= 1){
+                if( (newOpt & m)==0
+                 && (zName = sqlite3_optimization_name(m))!=0
+                ){
+                  cli_printf(p->out, " +%s", zName);
+                }
               }
             }
-          }else{
-            cli_puts("-All", p->out);
-            for(ii=0, m=1; ii<64; ii++, m <<= 1){
-              if( (newOpt & m)==0
-               && (zName = sqlite3_optimization_name(m))!=0
-              ){
-                cli_printf(p->out, " +%s", zName);
-              }
-            }
+            cli_puts("\n", p->out);
           }
-          cli_puts("\n", p->out);
           rc2 = isOk = 3;
           break;
         }
