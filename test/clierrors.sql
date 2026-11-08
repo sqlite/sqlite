@@ -16,6 +16,8 @@
 #   ./sqlite3 test/clierrors.sql
 #
 #
+.open :memory:
+.mode -reset test
 .testcase 100
 .import file table extra
 .check --glob <<END

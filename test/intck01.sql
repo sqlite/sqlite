@@ -13,6 +13,8 @@
 #
 # Bug report sqlite.org/forum/forumpost/efc9bc9cb3
 #
+.open :memory:
+.dbconfig defensive off
 .testcase 100
 .mode quote
 .intck register

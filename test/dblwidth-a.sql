@@ -5,6 +5,8 @@
 **
 ** https://sqlite.org/forum/forumpost/008ac80276
 */
+.open :memory:
+.mode -reset test
 .testcase 100
 .mode box
 CREATE TABLE data(word TEXT, description TEXT);

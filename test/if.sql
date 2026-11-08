@@ -25,6 +25,7 @@
 # ".check", so that a failure does not cause the rest of this script
 # to be skipped.
 #
+.open :memory:
 
 # The following tests must come before any SQL statement, so that
 # the database connection has not yet been opened.
@@ -800,7 +801,7 @@ OUTER
 .print 760-c
 EOF
 .else
-.check --keep --glob "if.sql:802: .else without a .if"
+.check --keep --glob "*if.sql:#: .else without a .if"
 .check --glob "760-c"
 
 #############################################################################

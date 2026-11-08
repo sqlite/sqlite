@@ -73,27 +73,26 @@ do_clitest overflow1.sql
 do_clitest fkey08.sql
 do_clitest fkey09.sql
 do_clitest dump.sql
-ifcapable vtab {
-  do_clitest misc01.sql
-}
+do_clitest misc01.sql
 do_clitest dotcmd01.sql
 do_clitest import01.sql
-do_clitest intck01.sql --unsafe-testing
+do_clitest intck01.sql
+do_clitest fptest01.sql
+
 set probe $testdir/probe.txt
 forcedelete $probe
 set f [open $probe wb]
 puts -nonewline $f xyzzy
 close $f
-do_clitest safemode.sql --safe
-do_clitest cliparse.sql --test-parse
-do_clitest fptest01.sql
+do_clitest safemode.clitest --safe
+do_clitest shell-parse.clitest --test-parse
 unset -nocomplain ::env(SQLITE_PS1)
 unset -nocomplain ::env(SQLITE_PS2)
-do_clitest shell-prompt.sql
+do_clitest shell-prompt.clitest
 ifcapable vtab&load_ext {
   set srcfile [file dir $testdir]/ext/misc/fossildelta.c
   if {[build_loadable fossildelta $srcfile]} {
-    do_clitest fossildelta.sql
+    do_clitest fossildelta.clitest
   }
 }
 

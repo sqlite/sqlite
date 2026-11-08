@@ -70,6 +70,7 @@ SELECT count(*) FROM c;
 # sqlite3's .recover output can smuggle shell commands into the next
 # sqlite3 run
 #
+.if capable('vtab')
 .testcase 400
 .open --hexdb
 | size 8192 pagesize 4096 filename unk.db
@@ -101,6 +102,7 @@ CREATE TABLE t1(a,b,c);
 PRAGMA writable_schema = off;
 COMMIT;
 END
+.endif /* capable('vtab') */
 
 .if NOT capable('LIKE_DOESNT_MATCH_BLOBS')
 # 959866cfe4ec0e16 2026-11-06T00:25:13Z 
@@ -185,6 +187,7 @@ SELECT c1, c0 FROM t0 NOT INDEXED
 # generate_series(0,32,5) ORDER BY rowid DESC LIMIT 3 returns 10, 5, 0
 # instead of 30, 25, 20
 #
+.if capable('vtab');
 .open :memory:
 .mode -reset test
 .testcase 600
@@ -202,6 +205,7 @@ SELECT value FROM generate_series(0,32,5) ORDER BY value DESC LIMIT 3;
 .testcase 630
 SELECT rowid, value FROM generate_series(0,12,5);
 .check '0,0 5,5 10,10'
+.endif /* capable('vtab') */
 
 # b4a8844d427ec7ef 2026-11-04T20:30:26Z
 # Indexed GLOB with a prefix ending in U+07FF returns non-matching rows

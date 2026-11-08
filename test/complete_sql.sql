@@ -16,6 +16,8 @@
 #   ./sqlite3 test/complete_sql.sql
 #
 #
+.open :memory:
+.mode -reset test
 .testcase 100
 .mode line --limits off
 SELECT shell_complete_sql('CREATE TABLE t1(a) /*') AS out;

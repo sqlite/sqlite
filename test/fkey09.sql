@@ -37,6 +37,7 @@
 #   ./sqlite3 test/fkey09.sql
 #
 #
+.open :memory:
 .mode list
 .if NOT capable('fkey')
 .exit

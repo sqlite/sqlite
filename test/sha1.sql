@@ -13,6 +13,7 @@
 #
 # Test cases for the sha1(), sha1b() functions.
 #
+.open :memory:
 .mode list -reset
 .testcase 100
 SELECT sha1('this is a test');

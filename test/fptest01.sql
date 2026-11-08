@@ -33,6 +33,7 @@
 # query result is all cases that do not round-trip without change,
 # and so the query result should be an empty set.
 #
+.open :memory:
 .testcase 100
 .mode list
 WITH

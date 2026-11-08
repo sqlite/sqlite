@@ -13,6 +13,7 @@
 #
 # Test cases for the .imposter command.
 #
+.open :memory:
 .mode box -reset
 .testcase 100
 CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c INT);

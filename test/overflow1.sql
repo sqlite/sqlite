@@ -1,5 +1,5 @@
 # Bug 2026-10-15T04:34:08Z
-
+.open :memory:
 .mode list -limits off
 .null NULL
 

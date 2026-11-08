@@ -14,6 +14,7 @@
 # Test cases for the oversized patterns in the REGEXP extension found
 # at ext/misc/regexp.c.
 #
+.open :memory:
 .mode list
 .testcase 100
 --                       0         1         2         3         4

@@ -13,7 +13,8 @@
 #
 # Test cases for the .dump CLI command
 #
-
+.open :memory:
+.mode -reset test
 
 .if NOT capable('fkey') OR NOT capable('vtab')
 .testcase setup

@@ -154,6 +154,7 @@ Added 2 rows with 0 errors using 3 lines of input
 END
 
 .testcase 160
+.mode -reset box
 DROP TABLE t1;
 .import -csv -schema TEMP <<END t2
 "x"

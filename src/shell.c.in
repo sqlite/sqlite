@@ -5108,6 +5108,7 @@ static int isScriptFile(const char *z, int bLeaveUninit){
   }
   if( sqlite3_strlike("%.sql",z,0)==0 ) return 1;
   if( sqlite3_strlike("%.txt",z,0)==0 ) return 1;
+  if( sqlite3_strlike("%.clitest",z,0)==0 ) return 1;
   return 0;
 }
 
