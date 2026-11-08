@@ -1120,7 +1120,7 @@ void sqlite3Fts5ConfigErrmsg(Fts5Config *pConfig, const char *zFmt, ...){
   va_start(ap, zFmt);
   zMsg = sqlite3_vmprintf(zFmt, ap);
   if( pConfig->pzErrmsg ){
-    assert( *pConfig->pzErrmsg==0 );
+    sqlite3_free(*pConfig->pzErrmsg);
     *pConfig->pzErrmsg = zMsg;
   }else{
     sqlite3_free(zMsg);
