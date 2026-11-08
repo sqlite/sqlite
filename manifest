@@ -1,5 +1,5 @@
-C Rename\sCLI\stests\sthat\srequire\sspecial\soptions\sfrom\s*.sql\sto\s*.clitest.\nAdjust\sall\sremaining\s*.sql\stests\sso\sthat\sthey\scan\sall\sbe\srun\stogether\nusing\s"sqlite3\stest/*.sql".
-D 2026-11-08T16:51:59.659
+C JS:\sinternal\scleanups\sand\smicro-optimizations\sin\sthe\sC/JS\sstruct\sglue.
+D 2026-11-08T19:41:26.361
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -702,7 +702,7 @@ F ext/wasm/fiddle/fiddle.js 2a0984cc4a35e6889c0d84ee9bf853317d5545ddb3966dfb995b
 F ext/wasm/fiddle/index.c-pp.html 5fd1f462864710d1b00d27fc4bc6190cb846cc865d7cc93b99644423f2c4cc84
 F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73607dc54d290
 F ext/wasm/index.html 7b27bb7518558c58c518ac3b47220226f635fa11331bac98f4aaf0d63fc4b283
-F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js 145da2c24d8f58e92db8057db1827cd3c48e75c236adfb14e942f6a838334792
+F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js d426f0332a0e1fdc71fef3d32add2d80f9d51deae4c284790207147a3356f5a8
 F ext/wasm/jaccwabyt/jaccwabyt.md 4140e42e52b2108fb5b5e6e05f05d4609d42771943f86cd95969cf16457637de
 F ext/wasm/libcmpp.c a5bec47a754206aac2ffb45ba4adaec6af3b4fcc24c705c61a6f47893b72aef5
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
@@ -1215,7 +1215,7 @@ F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
 F test/fork-test.c 9ac2e6423a1d38df3d6be0e8ac15608b545de21e2b19d9d876254c5931b63edb
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
-F test/fossildelta.clitest 0040d1807fb4742b89679b22ca6827c48dc32500c91f14cccd4fafba21fe656e w test/fossildelta.sql
+F test/fossildelta.clitest 0040d1807fb4742b89679b22ca6827c48dc32500c91f14cccd4fafba21fe656e
 F test/fp-speed-1.c 34a2fe8dc30d0b24bb3e7c16efca0a30452287da6caff7dde86eef882db155a4
 F test/fp-speed-2.c 15830b061832bb51f68f0985cf7a06f4f5d49eb25cc399854f1ff60d6a878ee9
 F test/fpconv1.test f9fea411676e2b11ef06adc10c0406418bdaf442ff8eeaa81d38f2cb905fc04f
@@ -1665,7 +1665,7 @@ F test/rowvaluefault.test 963ae9cdaed30a85a29668dd514e639f3556cae903ee9f172ea972
 F test/rowvaluevtab.test cd9747bb3f308086944c07968f547ad6b05022e698d80b9ffbdfe09ce0b8da6f
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
-F test/safemode.clitest 8373efb03c49a9ceae81fa6d9216c69d7e8573351b273b3f82ae2c5ad9305f99 w test/safemode.sql
+F test/safemode.clitest 8373efb03c49a9ceae81fa6d9216c69d7e8573351b273b3f82ae2c5ad9305f99
 F test/savepoint.test 6e9804a17767f08432c7a5e738b9a8f4b891d243110b63d3a41d270d3d1378ec
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
@@ -1720,8 +1720,8 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell-parse.clitest 63094b15913bc2a83abdb85e26fdc46253ef46b77a18c0e76ad6b71ea0fcbd52 w test/cliparse.sql
-F test/shell-prompt.clitest 8a320a78812d75349bd5e1a95178f7ff1f2194bb4cceee572865d127c51684b3 w test/shell-prompt.sql
+F test/shell-parse.clitest 63094b15913bc2a83abdb85e26fdc46253ef46b77a18c0e76ad6b71ea0fcbd52
+F test/shell-prompt.clitest 8a320a78812d75349bd5e1a95178f7ff1f2194bb4cceee572865d127c51684b3
 F test/shell1.test 78de113d0c4918c44caa9e07deca97f5080158c4c857841f9f46597393e4783a
 F test/shell2.test 598f17feda8de7c6c7cec522a6eafbbfafee6766f85229a93f71f97c78b883b6
 F test/shell3.test 91efdd545097a61a1f72cf79c9ad5b49da080f3f10282eaf4c3c272cd1012db2
@@ -2306,8 +2306,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 85e50de017d28abc98890714528611d717c4b369e8a4a7128a5c27b07ff80878
-R a3495c327cf3710748c4fe6655e60636
-U drh
-Z 69a0a14d91ea97313147def19a46e855
+P 5b9cef877bd8255974276723a79b0e02c6d8b3ec35def545c07843c0f3be9f56
+R 56c920c8986d09bf42b07022ba99873d
+U stephan
+Z 7e5d79098d5c24b0ca3aebdfcf2dde53
 # Remove this line to create a well-formed Fossil manifest.

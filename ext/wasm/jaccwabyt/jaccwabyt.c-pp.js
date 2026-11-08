@@ -17,13 +17,12 @@
   - https://fossil.wanderinghorse.net/r/jaccwabyt
   - https://sqlite.org/src/dir/ext/wasm/jaccwabyt
 
-//#@ policy error
   This build was generated using:
 
+//#@ push policy error delimiter "@" "@"
   @c-pp::argv@
 
   by libcmpp @cmpp::version@
-//#@ policy off
 */
 //#savepoint begin
 //#define ? esm 0
@@ -43,12 +42,6 @@
 const Jaccwabyt = function StructBinderFactory(config){
 //#if not esm
   'use strict';
-/* ^^^^ it is recommended that clients move that object into wherever
-   they'd like to have it and delete the globalThis-held copy.  This
-   API does not require the global reference - it is simply installed
-   as a convenience for connecting these bits to other co-developed
-   code before it gets removed from the global namespace.
-*/
 //#/if
 
   const LOGPREFIX = '@__FILE__@:';
@@ -57,23 +50,29 @@ const Jaccwabyt = function StructBinderFactory(config){
   const toss = (...args)=>{
     throw new Error(LOGPREFIX+" "+args.join(' '))
   };
-
+  const nu = (...args)=>Object.assign(Object.create(null),...args);
+  config = nu(config);
+  for(const k of ['alloc','dealloc']){
+    if( !(config[k] instanceof Function) ){
+      toss("Config option '"+k+"' must be a function.");
+    }
+  }
   const error = config.logger?.error
         || ((...args)=>console.error(LOGPREFIX,...args));
   {
     let h = config.heap;
     if( h instanceof WebAssembly.Memory ){
-      h = function(){return new Uint8Array(this.buffer)}.bind(h);
-    }else if( !(h instanceof Function) ){
-      error("The bothersome StructBinderFactory config:",config);
+      let u;
+      config.heap = function(){
+        /* Update view when the heap grows. */
+        if( u?.length===this.byteLength ) return u;
+        return u = new Uint8Array(this.buffer);
+      }.bind(config.heap);
+    }else if( 1!==h?.()?.BYTES_PER_ELEMENT ){
+      error("The bothersome StructBinderFactory config:",config,
+            "heap =",h?.());
       toss("config.heap must be WebAssembly.Memory instance or",
-           "a function which returns one.");
-    }
-    config.heap = h;
-  }
-  for(const k of ['alloc','dealloc']){
-    if( !(config[k] instanceof Function) ){
-      toss("Config option '"+k+"' must be a function.");
+           "a function which returns a Uint8Array/Int8Array view of one.");
     }
   }
   const SBF = StructBinderFactory;
@@ -115,26 +114,21 @@ const Jaccwabyt = function StructBinderFactory(config){
         : (v)=>toss("BigInt support is disabled in this build.");
   const __asPtrType = ('i32'==ptrIR) ? Number : __BigInt;
   const __NullPtr = __asPtrType(0);
-  const nu = (...args)=>Object.assign(Object.create(null),...args);
-  /**
-     Expects any number of numeric arguments, each one of either type
-     Number or BigInt. It sums them up (from an implicit starting
-     point of 0 or 0n) and returns them as a number of the same type
-     which target.asPtrType() uses.
-
-     This is a workaround for not being able to mix Number/BigInt in
-     addition/subtraction expressions (which we frequently need for
-     calculating pointer offsets).
-  */
-  const __ptrAdd = function(...args){
-    let rc = __NullPtr;
-    for( let i = 0; i < args.length; ++i ){
-      rc += __asPtrType(args[i]);
-    }
-    return rc;
-  };
-  const __ptrAddSelf = function(...args){
-    return __ptrAdd(this.pointer,...args);
+  const __ptrAdd = (4 === ptrSize)
+        ? function(a, b){
+          if(2 === arguments.length) return (Number(a || 0) + Number(b || 0)) | 0;
+          let rc = 0;
+          for(let i = 0; i < arguments.length; ++i) rc += Number(arguments[i] || 0);
+          return rc | 0;
+        }
+        : function(a, b){
+          if(2 === arguments.length) return BigInt(a || 0) + BigInt(b || 0);
+          let rc = 0n;
+          for(let i = 0; i < arguments.length; ++i) rc += BigInt(arguments[i] || 0);
+          return rc;
+        };
+  const __ptrAddSelf = function(){
+    return __ptrAdd(this.pointer,...arguments);
   };
 
   if(!SBF.debugFlags){
@@ -228,19 +222,16 @@ const Jaccwabyt = function StructBinderFactory(config){
       to the given SIG. */
   const sigDVGetter = function(s){
     switch(sigLetter(s)) {
-        case 'p': case 'P': case 's': {
-          switch(ptrSize){
-              case 4: return 'getInt32';
-              case 8: return affirmBigIntArray() && 'getBigInt64';
-          }
-          break;
-        }
-        case 'i': return 'getInt32';
-        case 'c': return 'getInt8';
-        case 'C': return 'getUint8';
-        case 'j': return affirmBigIntArray() && 'getBigInt64';
-        case 'f': return 'getFloat32';
-        case 'd': return 'getFloat64';
+      case 'p': case 'P': case 's':
+        return 4===ptrSize
+          ? 'getInt32'
+          : (affirmBigIntArray() && 'getBigInt64');
+      case 'i': return 'getInt32';
+      case 'c': return 'getInt8';
+      case 'C': return 'getUint8';
+      case 'j': return affirmBigIntArray() && 'getBigInt64';
+      case 'f': return 'getFloat32';
+      case 'd': return 'getFloat64';
     }
     toss("Unhandled DataView getter for signature:",s);
   };
@@ -249,19 +240,16 @@ const Jaccwabyt = function StructBinderFactory(config){
       to the given SIG. */
   const sigDVSetter = function(s){
     switch(sigLetter(s)){
-        case 'p': case 'P': case 's': {
-          switch(ptrSize){
-              case 4: return 'setInt32';
-              case 8: return affirmBigIntArray() && 'setBigInt64';
-          }
-          break;
-        }
-        case 'i': return 'setInt32';
-        case 'c': return 'setInt8';
-        case 'C': return 'setUint8';
-        case 'j': return affirmBigIntArray() && 'setBigInt64';
-        case 'f': return 'setFloat32';
-        case 'd': return 'setFloat64';
+      case 'p': case 'P': case 's':
+        return 4===ptrSize
+          ? 'setInt32'
+          : (affirmBigIntArray() && 'setBigInt64');
+      case 'i': return 'setInt32';
+      case 'c': return 'setInt8';
+      case 'C': return 'setUint8';
+      case 'j': return affirmBigIntArray() && 'setBigInt64';
+      case 'f': return 'setFloat32';
+      case 'd': return 'setFloat64';
     }
     toss("Unhandled DataView setter for signature:",s);
   };
@@ -611,10 +599,8 @@ const Jaccwabyt = function StructBinderFactory(config){
      throwing if not found. Returns its signature, either in this
      framework's native format or in Emscripten format.
   */
-  const __memberSignature = function f(obj,memberName,tossIfNotFNotFound=true){
-    if(!f._) f._ = (x)=>x.replace(/[^vipPsjrdcC]/g,"").replace(/[pPscC]/g,'i');
-    return __lookupMember(obj.structInfo, memberName, tossIfNotFNotFound)?.signature;
-  };
+  const __memberSignature = (obj,memberName,tossIfNotFNotFound=true)=>
+    __lookupMember(obj.structInfo, memberName, tossIfNotFNotFound)?.signature;
 
   /** Impl of X.memberKeys() for StructType and struct ctors. */
   const __structMemberKeys = rop(function(){
@@ -975,16 +961,16 @@ const Jaccwabyt = function StructBinderFactory(config){
     if(!f.cache){
       /* Cache all available getters/setters/set-wrappers for
          direct reuse in each accessor function. */
-      f.cache = {getters: {}, setters: {}, sw:{}};
-      const a = ['i','c','C','p','P','s','f','d','v()'];
+      f.cache = nu({getters: nu(), setters: nu(), sw:nu()});
+      const a = ['i','c','C','p','P','s','f','d'];
       if(bigIntEnabled) a.push('j');
-      a.forEach(function(v){
+      for(const v of a){
         f.cache.getters[v] = sigDVGetter(v) /* DataView[MethodName] values for GETTERS */;
         f.cache.setters[v] = sigDVSetter(v) /* DataView[MethodName] values for SETTERS */;
         f.cache.sw[v] = sigDVSetWrapper(v)  /* BigInt or Number ctor to wrap around values
                                            for conversion */;
-      });
-      f.sigCheck = function(obj, name, key,sig){
+      }
+      f.sigCheck = (obj, name, key,sig)=>{
         if(Object.prototype.hasOwnProperty.call(obj, key)){
           toss(obj.structName,'already has a property named',key+'.');
         }
@@ -1216,17 +1202,15 @@ const Jaccwabyt = function StructBinderFactory(config){
       }
       /*if( undefined===si.offset ){
         toss(structName,"description is missing its offset property.");
-      }*/
-      si.offset ??= 0;
-    }else{
-      si.offset ??= 0;
+        }*/
     }
+    si.offset ??= 0;
     for( const e of Object.entries(si.members||{}) ){
       // Sanity checks of sizeof/offset info...
       const [k, v] = e;
       const m = ads(v);
       if(!m.members && !m.sizeof){
-        /* ^^^^ fixme: we need to recursively collect all sizeofs
+        /* fixme: we need ^^^^^^ to recursively collect all sizeofs
            before updating that. */
         m.sizeof = sigSize(m.signature);
         if(!m.sizeof){
@@ -1318,5 +1302,14 @@ export default Jaccwabyt;
 //#  /if
 //#else if not lexical-scoped
 globalThis.Jaccwabyt = Jaccwabyt;
+//#  if 0
+/* ^^^^ it is recommended that clients move that object into wherever
+   they'd like to have it and delete the globalThis-held copy.  This
+   API does not require the global reference - it is simply installed
+   as a convenience for connecting these bits to other co-developed
+   code before it gets removed from the global namespace.
+*/
+//#  /if
 //#/if
 //#savepoint rollback
+//#@ pop policy delimiter
