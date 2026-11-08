@@ -193,6 +193,9 @@ typedef uint32_t cmpp_flag32_t;
    it is invoked once for each entry and passed 3 arguments: the enum
    entry's full name (CMPP_RC_...), its integer value, and a terse
    informational string.
+
+   The values, aside from CMPP_RC_OK==0, are not fixed and may change
+   in any given build of this library.
 */
 #define cmpp_rc_e_map(E) \
   E(CMPP_RC_OK, 0,                                                      \
@@ -256,10 +259,10 @@ typedef uint32_t cmpp_flag32_t;
    for CMPP_RC_OK, which is guaranteed to always be 0 (and the API
    guarantees that no other code shall have a value of zero).
 
-   The only reasons numbers are hard-coded to the values is to
-   simplify debugging during development. Clients may use
-   cmpp_rc_cstr() to get some human-readable (or programmer-readable)
-   form for any given value in this enum.
+   The only reason numbers are hard-coded to the values is to simplify
+   debugging during development. Clients may use cmpp_rc_cstr() to get
+   some human-readable (or programmer-readable) form for any given
+   value in this enum.
 */
 enum cmpp_rc_e {
 #define E(N,V,H) N = V,
@@ -273,7 +276,7 @@ typedef enum cmpp_rc_e cmpp_rc_e;
    it's not a member of that enum.
 */
 char const * cmpp_rc_cstr(int rc);
-#define cmpp_rc_ucstr(RC) (unsigned char const*)cmpp_rc_cstr(RC)
+#define cmpp_rc_cstru(RC) (unsigned char const*)cmpp_rc_cstr(RC)
 
 /**
    CMPP_BITNESS specifies whether the library should use 32- or 64-bit
@@ -299,7 +302,8 @@ typedef uint32_t cmpp_size_t;
 
   Maintenance reminder: this type must remain 32-bits or risks
   breaking countless printf-style formatting uses, where it frequently
-  ends up being used with "%.*s".
+  ends up being used with "%.*s" (after normalization to a positive
+  value).
 */
 typedef int32_t cmpp_strlen_t;
 
@@ -661,6 +665,40 @@ CMPP_EXPORT int cmpp_undef_legacy(cmpp *pp, const char * zKey,
  */
 CMPP_EXPORT int cmpp_undefine(cmpp *pp, const char * zKey,
                               cmpp_strlen_t n);
+
+/**
+   Searches for a defined value with the key [zName,zName+nName) in
+   pp, using strlen(zName) if nName is negative.
+
+   If pp has error state when this is called, this function is a
+   no-op, returning that code and setting *got to false.
+
+   If found, it is appended to b (but it may have a length of 0, so b
+   might not actually be modified), *got is set to true, and 0 is
+   returned.
+
+   If it is not found, b is not modified and *got is set to false.
+
+   Whether it returns non-0 (an error) if the define is not found
+   depends on (A) enforceUndefPolicy and (B) cmpp_unpol_get():
+
+   - If enforceUndefPolicy policy is false then 0 is returned if no
+   entry is found.
+
+   - If cmpp_unpol_get() indicates that undefined values are not an
+   error, then 0 is returned.
+
+   - If cmpp_unpol_get() indicates that undefined values are an error
+   then a CMPP_RC_NOT_DEFINED error is set in pp and that code is
+   returned.
+
+   Results are undefined if any input pointer is NULL or otherwise
+   invalid.
+*/
+int cmpp_define_get(cmpp *pp, unsigned const char * zName,
+                    cmpp_strlen_t nName, cmpp_b * b,
+                    bool * got,
+                    bool enforceUndefPolicy);
 
 /**
    This works similarly to cmpp_define_v2() except that the new define
@@ -1801,8 +1839,8 @@ enum cmpp_tt_mask_e {
 };
 
 /**
-   cmpp token types, currently distinct from the public API's cmpp_tt_map
-   as we consolidate the two.
+   An X-macro specifying cmpp token type IDs. Invokes E(X,Y,Z) one
+   time for each entry.
 
    The first argument to E is the tail of the cmpp_tt_ ## TAIL part
    of the enum entry's name.  The second is the cmpp_tt_mask_id part
@@ -1938,12 +1976,12 @@ typedef struct cmpp_tizer cmpp_tizer;
 char const * cmpp_token_cstr3(cmpp_token const * t, cmpp_size_t * n, bool inner);
 
 int cmpp_token_strcmp(cmpp_token const * t, char const *z, cmpp_strlen_t n);
-#define cmpp_token_ustrcmp(T,Z,N) \
+#define cmpp_token_strcmpu(T,Z,N) \
   cmpp_token_strcmp((T),(unsigned char const *)(Z),(N))
 
 /** Convenience form of cmpp_token_cstr3() which casts the result to
     (unsigned char const *). */
-#define cmpp_token_ucstr3(T,NP,I) \
+#define cmpp_token_cstru3(T,NP,I) \
   (unsigned char const *)cmpp_token_cstr3((T),(NP),(I))
 
 /**
@@ -3494,8 +3532,8 @@ CMPP_EXPORT char const * cmpp_arg_cstr(cmpp_arg const *arg);
 */
 CMPP_EXPORT char const * cmpp_arg_cstr2(cmpp_arg const *arg, cmpp_size_t *n);
 
-#define cmpp_arg_ucstr(ARG) (unsigned char const*)cmpp_arg_cstr(ARG)
-#define cmpp_arg_ucstr2(ARG,N) (unsigned char const*)cmpp_arg_cstr2((ARG),(N))
+#define cmpp_arg_cstru(ARG) (unsigned char const*)cmpp_arg_cstr(ARG)
+#define cmpp_arg_cstr2u(ARG,N) (unsigned char const*)cmpp_arg_cstr2((ARG),(N))
 
 /**
    This is the core argument-parsing function used by the library's
@@ -4914,11 +4952,14 @@ CMPP_EXPORT void cmpp_dx_pos_restore(cmpp_dx * dx, cmpp_dx_pos const * pos);
    Returns, via its output parameters, the current name and input line
    number of dx's current directive. This is intended for use with
    synthesizing names such as those of embedded scripts. The *zName
-   bytes are owned by dx and are valid until it is destroyed.
+   bytes are owned by dx or a parent of it and are valid until it is
+   destroyed.
 
    Caveat: this specifically refers to the line holding the current
    directive, not any non-directive lines consumed since that
-   directive was captured.
+   directive was captured. That is: it is only valid in the context of
+   a cmpp_f() call, and only so long as the call does not call into
+   APIs which consume input from dx.
 */
 CMPP_EXPORT void cmpp_dx_src_pos_info(cmpp_dx const *dx, char const **zName,
                                       cmpp_size_t * lineNo);
@@ -4991,21 +5032,6 @@ CMPP_EXPORT bool cmpp_json_valid(cmpp *pp, unsigned char const *z,
 
 
 /**
-   Expects [z,z+n) to point to a single JSON value. If
-   cmpp_json_valid() returns true for the range, it is appended to be
-   as-is, else it is appended as a JSON-quoted string. Returns 0 on
-   success, non-0 (OOM or related range overflow) on error, updating
-   pp's error state if it returns non-0.
-
-   For cmpp_json_valid() purposes, a flags value of 3 (JSON/JSON5) is
-   used.
-*/
-CMPP_EXPORT int cmpp_b_append_json_value(cmpp *pp, cmpp_b *b,
-                                         unsigned char const *z,
-                                         cmpp_strlen_t n);
-
-
-/**
    Returns true if [z,z+n) begins with '[', ends with ']', and
    cmpp_json_valid() for the same range returns true. i.e. if it's a
    JSON-format list. Because this checks for '[' and ']' before
@@ -5023,6 +5049,42 @@ CMPP_EXPORT bool cmpp_json_is_list(cmpp *pp, unsigned char const *z,
 */
 CMPP_EXPORT bool cmpp_json_is_object(cmpp *pp, unsigned char const *z,
                                      cmpp_strlen_t n, bool allowJson5);
+
+/**
+   If [z,z+n) superficially looks like a JSON path, it is used as-is,
+   else it is transformed into "$[z]" if (1==mode) or "$.z" (if
+   0==mode). mode pneumonic: 0bjects and 1ists.
+
+   If n is negative, strlen() is used to calculate it.
+
+   The result is appended to b.  Returns 0 on success. On error pp's
+   error state will be updated.  This is a no-op if pp has error state
+   when it is is called.
+
+   Keys starting with "$[" are left as-is. Those in the form "$.X" are
+   transformed to "$[X]" so that they work with empty keys and keys
+   with spaces.
+
+   This performs no escaping of the key, so it should not contain
+   anything weird.
+*/
+CMPP_EXPORT int cmpp_json_key_to_path(cmpp *pp, int mode,
+                                      unsigned char const *z,
+                                      cmpp_strlen_t n, cmpp_b * b);
+/**
+   Assumes [z,z+n) is a JSON value suitable for passing to SQLite's
+   json() function. This transforms it into minified, canonicalized
+   JSON, appending it to b. Returns 0 on success and update's pp's
+   error state on error. Errors include malformed JSON. If called when
+   pp has error state, this is a no-op, returning that code.
+
+   If append is true then the result is appended to b, else this
+   passes b to cmpp_b_reuse() after fetching the canonicalized form.
+   If z is owned by b then append=false is the only legal option.
+*/
+CMPP_EXPORT int cmpp_json_canonicalize(cmpp *pp, unsigned char const *z,
+                                       cmpp_size_t n, cmpp_b *b,
+                                       bool append);
 
 /**
    Appends some form of [z,z+n) to str, using strlen() to calculate n
@@ -5093,7 +5155,7 @@ CMPP_EXPORT int cmpp_stmt_preparev(cmpp *pp, sqlite3_stmt **pStmt,
    CMPP_RC_... code, because it's more useful that way (but also
    slightly confusing).
 */
-CMPP_EXPORT int cmpp_stmt_step(cmpp * const pp, sqlite3_stmt * const q,
+CMPP_EXPORT int cmpp_stmt_step(cmpp * const pp, sqlite3_stmt * q,
                                bool resetIt);
 
 /**
@@ -5104,7 +5166,15 @@ CMPP_EXPORT int cmpp_stmt_step(cmpp * const pp, sqlite3_stmt * const q,
    already set then pp's error state is updated and a non-0 value is
    returned.
 */
-CMPP_EXPORT int cmpp_stmt_reset(cmpp *pp, sqlite3_stmt * const q);
+CMPP_EXPORT int cmpp_stmt_reset(cmpp *pp, sqlite3_stmt *q);
+
+/**
+   Works like sqlite3_finalize(q) except that if that function returns
+   non-0 and pp has no error state, pp's error state is set to the
+   finalization error. Returns pp's current error state (whether this
+   function set it or not).
+*/
+CMPP_EXPORT int cmpp_stmt_finalize(cmpp *pp, sqlite3_stmt *q);
 
 /**
    Expects an SQLite result value. If it's SQLITE_OK, SQLITE_ROW, or
@@ -5166,13 +5236,45 @@ CMPP_EXPORT int cmpp_stmt_bind_textx(cmpp *pp, sqlite3_stmt *pStmt, int col,
                                      cmpp_finalizer_f finalizer);
 
 
+/**
+   Searches for the given word in the given Tcl-style "enum": a list
+   of words.
+
+   nWord is the byte length of word, or negative to use strlen().
+   cmpp_f() imlps with the cmpp_f_F_NO_INTERPOLATE flag MUST pass the
+   length when passing `word` values which come from cmpp_arg
+   instances.
+
+   nList has two forms: if it's negative then aList MUST be terminated
+   with a NULL entry and this function will stop at that entry. If
+   nList is positive, aList is assumed to have that many valid,
+   non-NULL entries.
+
+   On a match it returns the index of the match. On no match, returns
+   a negative value.
+
+   Achtung: this searches for exact matches, whereas cmpp_arg_isflag()
+   and friends check for both one or two leading dashes. Thus this
+   should not be used with flags unless the caller is okay with flags
+   requiring a fixed number of dash(es) or includes both forms in
+   aList. When word is not NUL-terminated, it is treated as if it were
+   at word[nWord] for purposes of determining whether an aList entry
+   is an exact match, to avoid prefix matches in that case.
+*/
+CMPP_EXPORT int cmpp_enum_search(char const *word,
+                                 cmpp_strlen_t nWord,
+                                 char const **aList,
+                                 cmpp_strlen_t nList);
+
+
+
 
 
 /**
    The current cmpp_api_thunk::apiVersion value.  See
    cmpp_api_thunk_map.
 */
-#define cmpp_api_thunk_version 20260929
+#define cmpp_api_thunk_version 20261004
 
 /**
    This stub object is provided for cmpp interface compatibility with
@@ -5182,6 +5284,14 @@ CMPP_EXPORT int cmpp_stmt_bind_textx(cmpp *pp, sqlite3_stmt *pStmt, int col,
 struct cmpp_api_thunk {
   uint32_t const thunkVersion;
 };
+
+#if !defined(cmpp_api_init)
+/**
+   cmpp_api_init() is a no-op when not including a file-local API
+   thunk.
+*/
+#  define cmpp_api_init(PP) (void)(PP)
+#endif /* CMPP_API_THUNK */
 
 #ifdef __cplusplus
 } /* extern "C" */
@@ -5349,8 +5459,11 @@ struct cmpp_api_thunk {
 
 #define cmpp__ListType_impl(T,MT) \
   int T ## _reserve(cmpp *pp,struct T *li, cmpp_size_t min) { \
-    return cmpp_array_reserve(pp, (void**)&li->list, min,     \
-                              &li->na, sizeof(MT));           \
+    void * p = li->list;                                         \
+    int const rc = cmpp_array_reserve(pp, &p, min,               \
+                                      &li->na, sizeof(MT));      \
+    li->list = p;                                                \
+    return rc;                                                   \
   }
 
 #define cmpp__LIST_T_empty_m {.list=0,.n=0,.na=0}
@@ -5717,10 +5830,14 @@ struct cmpp__dx_pimpl {
   */
   cmpp_dx_pos pos;
   /**
-     Currently input line.
+     Current #directive input line.
   */
   CmppDLine dline;
-  /** Number of active #savepoints. */
+  /**
+     Number of active #savepoints. Savepoints set via that directive
+     are, unlike #if and friends, associated with the current cmpp_dx
+     and are rolled back if they are not applied before the dx ends.
+  */
   unsigned nSavepoint;
   /** Current directive's args. Updated by the parsing and dispatching
       steps. */
@@ -5738,8 +5855,9 @@ struct cmpp__dx_pimpl {
   CmppLvlList dxLvl;
   struct {
     /**
-       A copy of this->d's input line which gets translated
-       slightly from its native form for futher processing.
+       A copy of this->d's input line which gets translated slightly
+       from its native form for futher processing.  e.g. removal of
+       backslash-escaping from newlines.
     */
     cmpp_b line;
     /**
@@ -6137,6 +6255,14 @@ struct cmpp__pimpl {
     E(jsonValid,                                       \
       /* beware of validation of json_valid() ?2 */    \
       "SELECT json_valid(?1,?2)")                      \
+    E(jsonSelf,                                        \
+      "SELECT json(?1)") /* a.k.a. ?1->'?' */          \
+    /*E(jsonOrQuoted,                                  \
+      "SELECT if("                                     \
+      "json_valid(?1,coalesce(?2,1)),"                 \
+      "json(?1),"                                      \
+      "?1)"                                            \
+    )*/                                                \
 
 #define E(N,S) sqlite3_stmt * N;
     CmppStmt_map(E)
@@ -6529,6 +6655,8 @@ CMPP_PRIVATE int cmpp__get(cmpp *pp, unsigned const char * zName,
    the unresolved key.
 
    Wonky return semantics.
+
+   The public-API variant is cmpp_define_get().
 */
 CMPP_PRIVATE int cmpp__get_b(cmpp *pp, unsigned const char * zName,
                              cmpp_strlen_t nName, cmpp_b * b,
@@ -7744,8 +7872,10 @@ static int cmpp__out_expand(cmpp * pp, cmpp_outputer * pOut,
   } zLeft = z
   for( ; z<zEnd && 0==ppCode; ++z ){
     zLeft = z;
+    pi->dx->pimpl->zErrPos = z;
     for( ;z<zEnd && 0==ppCode; ++z ){
     again:
+      pi->dx->pimpl->zErrPos = z;
       if( chEol==*z ){
         state = state_opening;
         continue;
@@ -8284,41 +8414,40 @@ int cmpp__get_int(cmpp *pp, unsigned const char * zName,
 }
 
 int cmpp__get_b(cmpp *pp, unsigned const char * zName,
-                cmpp_strlen_t nName, cmpp_b * os, bool enforceUndefPolicy){
+                cmpp_strlen_t nName, cmpp_b * b,
+                bool enforceUndefPolicy){
   int rc = 0;
   sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_defGet, false);
-  if( q ){
-    nName = cmpp__strlenu(zName, nName);
-    cmpp_stmt_bind_textx(pp, q, 1, zName, nName, SQLITE_STATIC);
-    int n = 0;
-    if(SQLITE_ROW == cmpp_stmt_step(pp, q, false)){
-      const unsigned char * z = sqlite3_column_text(q, 3);
-      n = sqlite3_column_bytes(q, 3);
-      cmpp_b_append4(pp, os, z, (cmpp_size_t)n);
+  if( !q ) return 0;
+  nName = cmpp__strlenu(zName, nName);
+  cmpp_stmt_bind_textx(pp, q, 1, zName, nName, SQLITE_STATIC);
+  int n = 0;
+  if(SQLITE_ROW == cmpp_stmt_step(pp, q, false)){
+    const unsigned char * z = sqlite3_column_blob(q, 3);
+    n = sqlite3_column_bytes(q, 3);
+    if( 0==cmpp_b_append4(pp, b, z, (cmpp_size_t)n) ){
       rc = 1;
-    }else{
-      if( enforceUndefPolicy ){
-        cmpp__affirm_undef_policy(pp, zName, nName);
-      }
-      rc = 0;
     }
-    cmpp_stmt_reset(pp, q);
-    g_debug(pp,1,("get-define [%.*s] ?= %d %.*s\n",
-                  nName, zName, rc, os->n, os->z));
+  }
+  cmpp_stmt_reset(pp, q);
+  g_debug(pp,1,("get-define [%.*s] ?= %d %.*s\n",
+                nName, zName, rc, b->n, b->z));
+  if( enforceUndefPolicy && !rc ){
+    cmpp__affirm_undef_policy(pp, zName, nName);
   }
   return rc;
 }
 
-#if 0
-int cmpp__get_b2(cmpp *pp, unsigned const char * zName,
-                 cmpp_strlen_t nName, cmpp_b * os, bool enforceUndefPolicy,
-                 bool *gotOne){
-  static bool nope;
-  *(gotOne ? gotOne : &nope) = cmpp__get_b(pp, zName, nName, os,
-                                           enforceUndefPolicy);
-  return ppCode;
+CMPP__EXPORT(int, cmpp_define_get)(
+  cmpp *pp, unsigned const char * zName,
+  cmpp_strlen_t nName, cmpp_b * b, bool * got,
+  bool enforceUndefPolicy
+){
+  *got = 0==pp->pimpl->err.code
+    ? !!cmpp__get_b(pp, zName, nName, b, enforceUndefPolicy)
+    : false;
+  return pp->pimpl->err.code;
 }
-#endif
 
 CMPP__EXPORT(int, cmpp_undef_legacy)(cmpp *pp, const char * zKey,
                                      unsigned int *nRemoved){
@@ -8359,7 +8488,8 @@ int cmpp__include_dir_add(cmpp *pp, const char * zDir, int priority,
          are equivalent.  The relavent code is in another tree,
          awaiting a decision on whether to import it or re-base cmpp
          on top of that library (which would, e.g., replace cmpp_b
-         with that one, which is more mature).
+         with that one, which is more mature). We currently normalize
+         '//' in CmppStmt_selPathSearch.
       */
       cmpp_stmt_bind_int(pp, q, 1, priority);
       cmpp_stmt_bind_textx(pp, q, 2, ustr_c(zDir), -1, SQLITE_STATIC);
@@ -8837,6 +8967,9 @@ int cmpp_array_reserve(cmpp *pp, void **list, cmpp_size_t nDesired,
   int rc = pp ? ppCode : 0;
   if( 0==rc && nDesired > *nAlloc ){
     cmpp_size_t const nA = nDesired < 10 ? 10 : nDesired;
+    if( nA > (cmpp_size_t)SIZE_MAX / sizeOfEntry ){
+      return cmpp_check_oom(pp, 0);
+    }
     void * const p = cmpp_mrealloc(*list, sizeOfEntry * nA);
     rc = cmpp_check_oom(pp, p);
     if( p ){
@@ -10114,15 +10247,14 @@ static void cmpp_dx__setup_include_path(cmpp_dx * dx){
   assert( dx->sourceName );
   enum { BufSize = 512 * 4 };
   unsigned char buf[BufSize] = {0};
-  unsigned char *z = &buf[0];
   cmpp_size_t n = cmpp__strlenu(dx->sourceName, -1);
   if( n > (unsigned)BufSize-1 ) return;
-  memcpy(z, dx->sourceName, n);
+  memcpy(buf, dx->sourceName, n);
   buf[n] = 0;
   cmpp_strlen_t i = n - 1;
   for( ; i > 0; --i ){
-    if( '/'==z[i] || '\\'==z[i] ){
-      z[i] = 0;
+    if( '/'==buf[i] || '\\'==buf[i] ){
+      buf[i] = 0;
       n = i;
       break;
     }
@@ -10378,16 +10510,32 @@ int cmpp_output_f_FILE( void * state,
 }
 
 int cmpp_output_f_fd( void * state, void const * src, cmpp_size_t n ){
+  if( !n ) return 0;
   int const fd = *((int*)state);
-  ssize_t const wn = write(fd, src, n);
-  return wn<0 ? cmpp_errno_rc(errno, CMPP_RC_IO) : 0;
+  while( n ){
+    ssize_t const wn = write(fd, src, n);
+    if( wn<0 ){
+      if( EINTR==errno ) continue;
+      return cmpp_errno_rc(errno, CMPP_RC_IO);
+    }else if( 0==wn ){
+      return CMPP_RC_IO;
+    }
+    src = (unsigned char const *)src + wn;
+    n -= (cmpp_size_t)wn;
+  }
+  return 0;
 }
 
 int cmpp_input_f_FILE( void * state, void * dest, cmpp_size_t * n ){
-  cmpp_FILE * f = state;
+  if( !*n ) return CMPP_RC_RANGE;
+  cmpp_FILE * f = (cmpp_FILE*) state;
   cmpp_size_t const rn = *n;
-  *n = (cmpp_size_t)fread(dest, 1, rn, f);
-  return *n==rn ? 0 : (feof(f) ? 0 : CMPP_RC_IO);
+  *n = (size_t)fread(dest, 1, rn, f);
+  if(*n==rn || feof(f)) return 0;
+  else{
+    int const eno = errno;
+    return eno ? cmpp_errno_rc(eno, CMPP_RC_IO) : CMPP_RC_IO;
+  }
 }
 
 int cmpp_input_f_fd( void * state, void * dest, cmpp_size_t * n ){
@@ -10519,42 +10667,24 @@ CMPP__EXPORT(void, cmpp_dx_pos_restore)(cmpp_dx * dx, cmpp_dx_pos const * pos){
 void cmpp__dx_append_script_info(cmpp_dx const * dx,
                                  sqlite3_str * const sstr){
   cmpp__dx_pi(dx);
-  unsigned char const *zB = 0;
-  unsigned char const *zE = 0;
-  unsigned char const *zErr = dpi->zErrPos;
-  cmpp__dx_input_range(dx, &zB, &zE);
-  //g_warn("Whole script:\n%.*s", (int)(zE-zB), zB);
-  assert( zB );
-  assert( zE );
-  assert( zB<=zE );
-  if( !zErr ){
-    if( dpi->pos.z>=zB && dpi->pos.z<zE ){
-      /* This is frequently past zEnd */
-      zErr = dpi->pos.z;
-    }else{
-      zErr = dpi->dline.zBegin;
-    }
-  }
   //g_warn("dpi->zErrPos: %p\n%.3s ...", dpi->zErrPos, dpi->zErrPos);
   //g_warn("dpi->pos.z: %p\n %.3s ...", dpi->pos.z, dpi->pos.z);
-  //g_warn("zErr: %p\n%.3s ...", zErr, zErr);
-  assert( (!zErr || (zErr>=zB && zErr<=zE))
-          && "Else we're pointing to incompatible sources");
-  cmpp_size_t const nl = zErr
-    ? 1 + cmpp_count_nl(zB, zE, zErr, NULL)
-    : dpi->dline.lineNo;
+  cmpp_size_t const nl = cmpp__dx_guess_lineno(dx, 0);
+  ///g_warn("nl=%d", (int)nl);
+  char const * zSrcName =
+    (dx->sourceName
+     && 0==strcmp("-", (char const *)dx->sourceName))
+    ? "<stdin>"
+    : (char const *)dx->sourceName;
   if( dx->d ){
-    sqlite3_str_appendf(sstr,  "%s @ %s:%d",
-                        dx->d->name.z,
-                        (dx->sourceName
-                         && 0==strcmp("-", (char const *)dx->sourceName))
-                        ? "<stdin>"
-                        : (char const *)dx->sourceName,
-                        (int)dpi->dline.lineNo);
-  }
-  if( nl != dpi->dline.lineNo ){
-    /* Input position past the directive line. */
-    sqlite3_str_appendf(sstr, " from line %" CMPP_SIZE_T_PFMT, nl);
+    sqlite3_str_appendf(sstr,  "%s @%s:%d", dx->d->name.z,
+                        zSrcName, (int)dpi->dline.lineNo);
+    if( nl != dpi->dline.lineNo ){
+      /* Input position past the directive line. */
+      sqlite3_str_appendf(sstr, " from line %" CMPP_SIZE_T_PFMT, nl);
+    }
+  }else{
+    sqlite3_str_appendf(sstr,  "%s:%d", zSrcName, nl);
   }
 }
 
@@ -10680,6 +10810,7 @@ int cmpp_errfv(cmpp *pp, int rc, char const *zFmt, va_list va){
       }
       int nz = 0;
       char * const z = cmpp_sqlite3_str_finish(pp, sstr, &nz);
+      //g_warn("dx =%p zFmt=%s z=%s", pp->pimpl->dx, zFmt, z);
       if( !z ) goto oom;
 #if 0
       cmpp_b_append(&err->b, z, nz);
@@ -10932,6 +11063,38 @@ CMPP__EXPORT(bool,cmpp_json_is_object)(cmpp *pp,
   return cmpp__json_is_container(pp, '{', '}', z, n, allowJson5);
 }
 
+CMPP__EXPORT(int, cmpp_json_key_to_path)(cmpp *pp, int mode,
+                                         unsigned char const *z,
+                                         cmpp_strlen_t n, cmpp_b * bKey){
+  if( ppCode ) return ppCode;
+  n = cmpp__strlenu(z, n);
+  if( !n ){
+    return cmpp_b_append4(pp, bKey, mode
+                          ? "$[]"
+                          : "$.\0"/*illegal, but let SQLite report that*/,
+                          3);
+  }
+  if( '$'==z[0] && (1==n || (mode ? '['==z[1] : '.'==z[1])) ){
+    return cmpp_b_append4(pp, bKey, z, n);
+  }
+  /* This does not superficially look like a JSON path prefix, make it
+     look like one. */
+  unsigned char const * zz = 0;
+  cmpp_size_t nn = 0;
+  if( '$'==z[0] && '.'==z[1] ){
+    zz = z+2;
+    nn = n - 2;
+  }else{
+    zz = z;
+    nn = n;
+  }
+  cmpp_b_append(bKey, mode ? "$[" : "$.", 2);
+  cmpp_b_append(bKey, zz, nn);
+  if( mode ) cmpp_b_append_ch(bKey, ']');
+  if( bKey->errCode ) cmpp_err(pp, bKey->errCode, 0, 0);
+  return ppCode;
+}
+
 CMPP__EXPORT(void,cmpp_str_json_append)(cmpp *pp, sqlite3_str * str,
                                         unsigned char const * z,
                                         cmpp_strlen_t n){
@@ -10963,6 +11126,23 @@ CMPP__EXPORT(void,cmpp_str_json_append)(cmpp *pp, sqlite3_str * str,
   }
 }
 
+CMPP__EXPORT(int, cmpp_json_canonicalize)(cmpp *pp, unsigned char const *z,
+                                          cmpp_size_t n, cmpp_b *b,
+                                          bool append){
+  sqlite3_stmt * const q =
+    cmpp__stmt(pp, CmppStmt_jsonSelf, false);
+  if( !q ) return ppCode;
+  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
+  if( SQLITE_ROW==cmpp_stmt_step(pp, q, false) ){
+    z = sqlite3_column_blob(q,0);
+    n = sqlite3_column_bytes(q,0);
+    //g_warn("canon=%.*s", (int)n, z);
+    cmpp_b_append4(pp, append ? b : cmpp_b_reuse(b), z, n);
+  }
+  cmpp_stmt_reset(pp, q);
+  return ppCode;
+}
+
 void cmpp__dump_defines(cmpp *pp, cmpp_FILE * fp, int bIndent){
   sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_defSelAll, false);
   if( q ){
@@ -10980,6 +11160,24 @@ void cmpp__dump_defines(cmpp *pp, cmpp_FILE * fp, int bIndent){
     }
     cmpp_stmt_reset(pp, q);
   }
+}
+
+
+CMPP__EXPORT(int, cmpp_enum_search)(char const *word,
+                                    cmpp_strlen_t nWord,
+                                    char const **aList,
+                                    cmpp_strlen_t nList){
+  cmpp_size_t const nw = cmpp__strlen(word, nWord);
+  if( !nw ) return -1;
+  /* Don't bother with bsearch(). An LLM assures me that an O(N) is,
+     for this case, faster for "N approx. 16-32" on all modern systems
+     and "competitive with bsearch when N approx. 64" for 64-bit
+     platforms. */
+  for( int i = 0; nList<0 ? !!aList[i] : i<(int)nList; ++i ){
+    if( 0==strncmp(aList[i], word, nw)
+        && !aList[i][nw] ) return i;
+  }
+  return -1;
 }
 
 
@@ -11513,7 +11711,8 @@ static int cmpp_b__cmp_desc(const void *p1, const void *p2){
   if( eL==eR ) return 0;
   else if( !eL ) return 1;
   else if (!eR ) return -1;
-  return (int)(/*largest first*/eL->nAlloc - eR->nAlloc);
+  return /*largest first*/(eR->nAlloc > eL->nAlloc)
+    ? -1 : (eL->nAlloc < eR->nAlloc);
 }
 
 /**
@@ -11526,7 +11725,8 @@ static int cmpp_b__cmp_asc(const void *p1, const void *p2){
   if( eL==eR ) return 0;
   else if( !eL ) return 1;
   else if (!eR ) return -1;
-  return (int)(/*smallest first*/eR->nAlloc - eL->nAlloc);
+  return /*smallest first*/(eL->nAlloc - eR->nAlloc)
+    ? -1 : (eR->nAlloc < eL->nAlloc);
 }
 
 /**
@@ -12003,37 +12203,6 @@ CMPP__EXPORT(int,cmpp_b_cmp)(cmpp_b const * b, void const *p,
     : (b->n<nn ? -1 : 1/* prefix match: shortest first */);
 }
 
-CMPP__EXPORT(int,cmpp_b_append_json_value)(cmpp *pp, cmpp_b *b,
-                                           unsigned char const *z,
-                                           cmpp_strlen_t n){
-  int64_t j = 0;
-  int rc;
-  n = cmpp__strlenu(z, n);
-  if( cmpp_is_int64(z, n, &j) ){
-    rc = cmpp_b_append_i64(b, j);
-    if( rc ) cmpp_err(pp, rc, 0, 0);
-  }else if( cmpp_json_valid(pp, z, n, 3) ){
-    rc = cmpp_b_append4(pp, b, z, n);
-  }else {
-    sqlite3_str * const s = cmpp__sqlite3_str_new(pp);
-    if( s ){
-      sqlite3_str_appendf(s, "%J", z);
-      int nn = 0;
-      char * const zz = cmpp_sqlite3_str_finish(pp, s, &nn);
-      if( zz ){
-        rc = cmpp_b_append4(pp, b, zz, n);
-      }else{
-        rc = cmpp_err_has(pp);
-        assert( rc );
-      }
-      cmpp_mfree(zz);
-    }else{
-      rc = cmpp_err_has(pp);
-      assert( rc );
-    }
-  }
-  return rc;
-}
 
 #undef PC
 #undef WS
@@ -12137,6 +12306,16 @@ CMPP__EXPORT(int,cmpp_stmt_reset)(cmpp *pp, sqlite3_stmt * const q){
     }
   }
   return rc;
+}
+
+CMPP__EXPORT(int,cmpp_stmt_finalize)(cmpp *pp, sqlite3_stmt * const q){
+  if( q ){
+    int const rc = sqlite3_finalize(q);
+    if( rc && ppCode ){
+      cmpp_db_rc_v2(pp, rc, sqlite3_sql(q), -1);
+    }
+  }
+  return ppCode;
 }
 
 static inline int cmpp__stmt_is_sp(cmpp const * const pp,
@@ -17295,9 +17474,11 @@ int cmpp_module_load(cmpp * pp, char const * fname,
 **
 */
 #if 0
-#include "sqlite3ext.h"
+#  include "sqlite3ext.h"
+SQLITE_EXTENSION_INIT1
 #else
-#include "sqlite3.h"
+#  include "sqlite3.h"
+#  define SQLITE_EXTENSION_INIT2(X) (void)X
 #endif
 #include <assert.h>
 #include <string.h>
@@ -17361,6 +17542,7 @@ struct series_cursor {
   sqlite3_int64 iValue;      /* Current value */
   u8 bDesc;                  /* iStep is really negative */
   u8 bDone;                  /* True if stepped past last element */
+  u8 bLimit;                 /* There exists a limit clause */
 };
 
 /*
@@ -17425,7 +17607,7 @@ static int seriesConnect(
   rc = sqlite3_declare_vtab(db,
      "CREATE TABLE x(value,start hidden,stop hidden,step hidden)");
   if( rc==SQLITE_OK ){
-    pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+    pNew = *ppVtab = sqlite3_malloc64( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
     sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
@@ -17447,7 +17629,7 @@ static int seriesDisconnect(sqlite3_vtab *pVtab){
 static int seriesOpen(sqlite3_vtab *pUnused, sqlite3_vtab_cursor **ppCursor){
   series_cursor *pCur;
   (void)pUnused;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;
@@ -17472,10 +17654,10 @@ static int seriesNext(sqlite3_vtab_cursor *cur){
     pCur->bDone = 1;
   }else if( pCur->bDesc ){
     pCur->iValue = sub64(pCur->iValue, pCur->iStep);
-    assert( pCur->iValue>=pCur->iTerm );
+    assert( pCur->iValue>=pCur->iTerm || pCur->bLimit );
   }else{
     pCur->iValue = add64(pCur->iValue, pCur->iStep);
-    assert( pCur->iValue<=pCur->iTerm );
+    assert( pCur->iValue<=pCur->iTerm || pCur->bLimit );
   }
   return SQLITE_OK;
 }
@@ -17586,6 +17768,23 @@ static double seriesFloor(double r){
 }
 #endif
 
+/* Convert a floating point value to its closest integer.  Do so in
+** a way that avoids 'outside the range of representable values' warnings
+** from UBSAN.
+*/
+static sqlite3_int64 seriesRealToI64(double r){
+  if( r<-9223372036854774784.0 ) return SMALLEST_INT64;
+  if( r>+9223372036854774784.0 ) return LARGEST_INT64;
+  return (sqlite3_int64)r;
+}
+
+/* Return true if the type of the value is TEXT or BLOB.
+*/
+static int seriesIsTextOrBlob(sqlite3_value *pVal){
+  int eType = sqlite3_value_type(pVal);
+  return eType==SQLITE_TEXT || eType==SQLITE_BLOB;
+}
+
 /*
 ** This method is called to "rewind" the series_cursor object back
 ** to the first row of output.  This method is always called at least
@@ -17695,20 +17894,30 @@ static int seriesFilter(
     if( idxNum & 0x40 ){
       iOffset = sqlite3_value_int64(argv[iArg++]);
     }
+    if( iLimit>0 ) pCur->bLimit = 1;
   }
 
   /* Narrow the range of iMin and iMax (the minimum and maximum outputs)
   ** based on equality and inequality constraints on the "value" column.
+  **
+  ** The "value" column has no affinity, so a TEXT or BLOB operand X is
+  ** not converted into a number.  Every INTEGER is less than any TEXT
+  ** or BLOB, so "value=X", "value>X" and "value>=X" are never true and
+  ** "value<X" and "value<=X" are always true.  The type must be checked
+  ** before sqlite3_value_numeric_type(), which would convert a TEXT
+  ** value such as '3' into a number.
   */
   if( idxNum & 0x3380 ){
     if( idxNum & 0x0080 ){    /* value=X */
-      if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+      if( seriesIsTextOrBlob(argv[iArg]) ){
+        goto series_no_rows;
+      }else if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
         double r = sqlite3_value_double(argv[iArg++]);
         if( r==seriesCeil(r)
          && r>=(double)SMALLEST_INT64
          && r<=(double)LARGEST_INT64
         ){
-          iMin = iMax = (sqlite3_int64)r;
+          iMin = iMax = seriesRealToI64(r);
         }else{
           goto series_no_rows;
         }
@@ -17716,15 +17925,21 @@ static int seriesFilter(
         iMin = iMax = sqlite3_value_int64(argv[iArg++]);
       }
     }else{
-      if( idxNum & 0x0300 ){  /* value>X or value>=X */
-        if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+      if( idxNum & 0x0300 ){  /* value>X (0x200) or value>=X (0x100) */
+        if( seriesIsTextOrBlob(argv[iArg]) ){
+          goto series_no_rows;
+        }else if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
-          if( r<(double)SMALLEST_INT64 ){
+          if( r<=(double)SMALLEST_INT64 ){
             iMin = SMALLEST_INT64;
-          }else if( (idxNum & 0x0200)!=0 && r==seriesCeil(r) ){
-            iMin = (sqlite3_int64)seriesCeil(r+1.0);
+          }else if( r>(double)LARGEST_INT64 ){
+            goto series_no_rows;
           }else{
-            iMin = (sqlite3_int64)seriesCeil(r);
+            iMin = seriesRealToI64(seriesCeil(r));
+            if( (idxNum & 0x0200)!=0 && r==seriesCeil(r) ){
+              if( iMin==LARGEST_INT64 ) goto series_no_rows;
+              iMin++;
+            }
           }
         }else{
           iMin = sqlite3_value_int64(argv[iArg++]);
@@ -17737,15 +17952,21 @@ static int seriesFilter(
           }
         }
       }
-      if( idxNum & 0x3000 ){   /* value<X or value<=X */
-        if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+      if( idxNum & 0x3000 ){   /* value<X (0x2000) or value<=X (0x1000) */
+        if( seriesIsTextOrBlob(argv[iArg]) ){
+          iArg++;   /* No upper bound */
+        }else if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
-          if( r>(double)LARGEST_INT64 ){
+          if( r>=(double)LARGEST_INT64 ){
             iMax = LARGEST_INT64;
-          }else if( (idxNum & 0x2000)!=0 && r==seriesFloor(r) ){
-            iMax = (sqlite3_int64)(r-1.0);
+          }else if( r<=(double)SMALLEST_INT64 ){
+            goto series_no_rows;
           }else{
-            iMax = (sqlite3_int64)seriesFloor(r);
+            iMax = seriesRealToI64(seriesFloor(r));
+            if( (idxNum & 0x2000)!=0 && r==seriesFloor(r) ){
+              if( iMax==SMALLEST_INT64 ) goto series_no_rows;
+              iMax--;
+            }
           }
         }else{
           iMax = sqlite3_value_int64(argv[iArg++]);
@@ -18008,6 +18229,25 @@ static int seriesBestIndex(
       aIdx[iCol] = i;
     }
   }
+  if( pIdxInfo->nOrderBy>=1 ){
+    int iOB = pIdxInfo->aOrderBy[0].iColumn;
+    if( iOB==SERIES_COLUMN_VALUE || iOB==SERIES_COLUMN_ROWID ){
+      /* The rowid is an alias for value, and both are unique, so the
+      ** series can be generated in the requested order regardless of any
+      ** subsequent ORDER BY terms. */
+      if( pIdxInfo->aOrderBy[0].desc ){
+        idxNum |= 0x08;
+      }else{
+        idxNum |= 0x10;
+      }
+      pIdxInfo->orderByConsumed = 1;
+    }else{
+      /* The core will sort the output, so it needs to see every row.
+      ** A LIMIT or OFFSET applied here would discard rows before the sort */
+      idxNum &= ~0x60;
+      aIdx[3] = aIdx[4] = -1;
+    }
+  }
   if( aIdx[3]==0 ){
     /* Ignore OFFSET if LIMIT is omitted */
     idxNum &= ~0x60;
@@ -18043,14 +18283,6 @@ static int seriesBestIndex(
     ** the preferred case */
     pIdxInfo->estimatedCost = (double)(2 - ((idxNum&4)!=0));
     pIdxInfo->estimatedRows = 1000;
-    if( pIdxInfo->nOrderBy>=1 && pIdxInfo->aOrderBy[0].iColumn==0 ){
-      if( pIdxInfo->aOrderBy[0].desc ){
-        idxNum |= 0x08;
-      }else{
-        idxNum |= 0x10;
-      }
-      pIdxInfo->orderByConsumed = 1;
-    }
   }else if( (idxNum & 0x21)==0x21 ){
     /* We have start= and LIMIT */
     pIdxInfo->estimatedRows = 2500;
@@ -18110,7 +18342,7 @@ int sqlite3_series_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
-  (void)pApi;
+  SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( sqlite3_libversion_number()<3008012 && pzErrMsg!=0 ){
     *pzErrMsg = sqlite3_mprintf(
