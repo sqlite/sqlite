@@ -35,13 +35,16 @@ verify its integrity, there are hints on how to do that in the
 
 The preferred way to ask questions or make comments about SQLite is to
 visit the [SQLite Forum](https://sqlite.org/forum) at
-<https://sqlite.org/forum/>.  Anonymous postings are permitted. For
-bug reports, please use the [SQLite bugs
+<https://sqlite.org/forum/>.  Anonymous postings are permitted.
+Do <u>not</u> send bug reports to the main SQLite Forum.
+To report bugs, post a message on the [SQLite bugs
 forum](https://sqlite.org/bugs) at <https://sqlite.org/bugs>.
 
-If you think you have found a bug that has security implications and
-you do not want to report it on the public forum, you can send a private
-email to drh at sqlite dot org.
+If you think you have found a bug that has security implications, report
+it to the SQLite bugs forum anyhow.  If you really don't want to do that,
+you can instead send a private email to drh at sqlite dot org.  However,
+unsolicited messages sent to that email address are liable to be
+copy/pasted onto the SQLite bugs forum anyhow.
 
 ## Public Domain
 

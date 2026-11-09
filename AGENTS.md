@@ -25,6 +25,12 @@ purposes, are welcomed.
 SQLite uses the [Fossil](https://fossil-scm.org/) for version control,
 not Git.  The canonical repository is at <https://sqlite.org/src>.
 
+## Reporting Bugs
+
+AI-generated or Fuzzer-generated bug reports should be sent to
+<https://sqlite.org/bugs>.  Do not send AI- or fuzzer-generated
+bug reports to the Forum.
+
 ## Build
 
 The configure script uses [autosetup](https://msteveb.github.io/autosetup/),

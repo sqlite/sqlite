@@ -1,14 +1,14 @@
-C When\sa\sVALUES\sclause\sis\spart\sof\sa\scompound\sSELECT,\sdo\snot\signore\scollation\ssequences\sattached\sto\srows\sor\sSELECTs\sto\sthe\sright\sof\sthe\sfirst\sVALUES\srow.\sReport\s[bugs:/info/2026-11-03T02:16:35Z\s|\s2026-11-03T02:16:35Z].
-D 2026-11-09T17:36:04.629
+C Update\sREADME.md\sand\sAGENTS.md\sto\stry\sto\smake\sit\sclearer\sthat\sbug\sreports\nshould\sgo\sto\sthe\sbugs\sforum\sand\snot\sto\sthe\smain\sforum.
+D 2026-11-09T17:42:26.054
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F AGENTS.md 2e766f0d9af6ba4865f4144d17541c746adf3298d23d5c90a73b9029e801e2d0
+F AGENTS.md f62e19d680671994b4a332b317dbc05bb243a75b5968200d6fcca7cb5e3d5c1a
 F LICENSE.md 3aa673c9c864ea8ee3ac46c7a52d270543a8fb8e1dd7e7b02df8f41dca1b80b6
 F Makefile.in b9e64c91cf8bea2305e1ca88bd3eb022afa93963a8561ea8290c65d4fafec03e
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc cda120522c95a99d5f5d640e14bb977a08756882eb4654416fa5670792c71a87
-F README.md b261d8e17a18fd45c55172d5ccead58455a9b5fe35f30d39e516338973578375
+F README.md f0c758436af182e1307afed58e54aeb2757a8c56e20be876a190200b09368b2e
 F VERSION 80115ed2da2f1a67c6ab9e67c3931a85d37c003bfe7b38989258624219ca6663
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
@@ -2307,8 +2307,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1fea2d9c18fc5f84b1c98a3aa95895a67851a3fbc901144e7ebba05408e2eb47
-R 9e781364a46a5abef7a3c116fbede5ee
-U dan
-Z c1487fa88f6535d1e68f45362d61a542
+P 4d8d52d6544fa45ad0da3d9cb749a896e8b5ba420c91072c31d570938ed8669d
+R 655f04d8fc5dcb8189d894c3d54f2b49
+U drh
+Z 6a4b531bdeb43fc249739c5478d9e2e9
 # Remove this line to create a well-formed Fossil manifest.
