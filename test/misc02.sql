@@ -71,13 +71,13 @@ INSERT INTO t1 VALUES(1, 2, '5.0', NULL)
 SELECT c FROM t1;
 .check matched
 
-.testcase 300
+.testcase 320
 UPDATE t1 SET c='start';
 INSERT INTO t1 VALUES(2, 1, '5.0', NULL) ON CONFLICT(u) DO UPDATE SET c=excluded.b;
 SELECT typeof(c), c FROM t1;
 .check integer|5
 
-.testcase 310
+.testcase 330
 INSERT INTO t1 VALUES(2, 1, '5.0', NULL)
   ON CONFLICT(u) DO UPDATE SET c='matched' WHERE excluded.b=5;
 SELECT c FROM t1;

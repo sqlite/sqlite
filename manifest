@@ -1,5 +1,5 @@
-C More\scommentary\son\sthe\soperation\sof\sthe\scapable()\sfunction\sthat\sis\sbuilt\ninto\sthe\sCLI.
-D 2026-11-09T21:20:56.217
+C Fix\sduplicate\stest\snumbers\sin\sa\stest\sscript.\s\sNo\scode\schanges.
+D 2026-11-09T23:49:26.816
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1524,7 +1524,7 @@ F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc01.sql 0ea658b7d7f2f5adb9be4a6a48254511677cc39ee03076cb51f37694f5c9445f
-F test/misc02.sql fb03c699ffbdd6f08b5189f4bb6f977b77eec127de45fd0439155cdb91af71dd
+F test/misc02.sql 0dbd9d21f345fb8cab17d1c1ef612b33e60cf30780b2b28bed931648fac7b35f
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2307,8 +2307,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ab6f3665f960aa1270f1f780548159da7aae7920443ac680f552ce85b5f479ee
-R 0d3a12fda2a6ea52b13f60d477ac7398
+P 7d156a5fd301ac45fb23b5aa3cffe42fa0406819d22ced1162948d8488374f27
+R 65af2e670b1fbc0557b0e2f3d7b2ad1f
 U drh
-Z fdb91efdeceac6b5dd94bd139a581a66
+Z 9b4058754185c05f1207ce95acabf163
 # Remove this line to create a well-formed Fossil manifest.
