@@ -1,5 +1,5 @@
-C Updates\sto\stestrunner.tcl\sso\sthat\sit\sruns\seach\stest/*.sql\sscript\sas\sa\nseparate\sjob.
-D 2026-11-09T00:59:11.143
+C Experimental:\sjson_each()\sand\sjson_tree()\sescape\sa\sdouble-quote,\sand\sa\sbackslash\sin\sa\sTEXTRAW\slabel,\swhen\sbuilding\sthe\sfullkey\sand\spath\scolumns.\sAI-assisted\sproof\sof\sconcept\sfor\shttps://sqlite.org/bugs/forumpost/53eb99b97a30\sby\sClaude\sFable\s5.1\s(xhigh)\sunder\sCodex\sFleet\sSupervisor\soversight.\sjsonAppendPathName()\scopied\sthe\sstored\slabel\stext\sbetween\squotes\swithout\sescaping,\sso\sa\sdouble-quote\sstored\sunescaped\sin\sa\sTEXT5\slabel\sfrom\sa\ssingle-quoted\sJSON5\sstring,\sor\sin\sa\sTEXTRAW\slabel\sfrom\san\sunquoted\spath\slabel,\sproduced\sa\spath\sthat\sthe\spath\sparser\scould\snot\sread\sback.\sAdd\stests\sto\sjson502.test.\sBased\son\strunk\s1fea2d9c18.\sPrivate\slocal\sbranch;\smaintainer\sreview\srequired.
+D 2026-11-09T02:57:37.329
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -770,7 +770,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 5cb15147c8583d0fc4748e1c12ea6f38c9deaeefa147a4d8d379fd9bc81fee9a
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 482d853c980f4765f045bbea3ab095067a52cd57f47e357f9f17aa7c7fff793f
-F src/json.c d41b857b17320b7df48a8bd24e811a542003e701ca966b43c3cade2973746d9f
+F src/json.c f087f440825472ca360e9c5ce0bd894612c1ad77508b96bf7084731bc92199cc
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c c6c1cce7e0bff84544eb73fbedb2d04287779601594c1e13b04913d38596559e
 F src/main.c b6b19825675b04e297a67b293b111e60e6eb2da66c55f803f6f712193a53239b
@@ -1455,7 +1455,7 @@ F test/json107.test 59054e815c8f6b67d634d44ace421cf975828fb5651c4460aa66015c8e19
 F test/json108.test eab1859b19138ee03acd4415751308fc3849943c669a06b515bba658b96b55c3
 F test/json109.test 441cea5d73c24a1a34d284101740dfae5a082237c048c8a66b03aeebe5e3643e
 F test/json501.test 278c636a2600ade099b0d078e42999d5b36a6de5a4dc93fd0ce44a9a051f8e22
-F test/json502.test 4ef68e4f272dfb083d4cbceb4e9e51d67ec1186a185e0c13637c50a4dc2f9796
+F test/json502.test 8985f04aca88caeedfe7585d5c2020919fd20ca1ce5b80dcb48e3eff383da656
 F test/jsonb01.test 42419c8080af5660cdfd3fddec322d28bdbc244d9800ee9569091d455f1c0dea
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c 6e0228409ea7ca0497dad503fbd109badb5e59545d131014b6aaac68b56f484a
@@ -2306,8 +2306,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b90856289c715f05716ffd15c4304a6574cc2be7919aa3521018bab80a591852
-R 0e92234f1f0949d0a9c91851c06039d8
-U drh
-Z aa9ec4bfbe7687718d5f66d944a10f97
+P 1fea2d9c18fc5f84b1c98a3aa95895a67851a3fbc901144e7ebba05408e2eb47
+R 7c898b73d0fc032d976696a11432811b
+T *branch * experiment-53eb99b97a30
+T *sym-experiment-53eb99b97a30 *
+T -sym-trunk *
+U karl
+Z 24178ae393e7e6aa3d4e10edf4e6dbbc
 # Remove this line to create a well-formed Fossil manifest.

@@ -77,4 +77,57 @@ do_execsql_test 5.3 {
   SELECT JSON_SET('{}', '$."\"Key"', 1);
 } {{{"\"Key":1}}}
 
+
+# 2026-11-08 https://sqlite.org/bugs/forumpost/53eb99b97a30
+# The fullkey and path columns of json_each() and json_tree() must escape
+# a double-quote inside a label, and a backslash inside a TEXTRAW label,
+# so that the reported path reads back as the same element.  Labels from
+# single-quoted JSON5 strings and from unquoted path labels store those
+# characters unescaped.
+#
+ifcapable vtab {
+  do_execsql_test 6.1 {
+    SELECT fullkey, json_extract('{''a"b'':1}', fullkey)
+      FROM json_each('{''a"b'':1}');
+  } {{$."a\"b"} 1}
+  do_execsql_test 6.2 {
+    SELECT fullkey, json_extract('{"a\"b":1}', fullkey)
+      FROM json_each('{"a\"b":1}');
+  } {{$."a\"b"} 1}
+  do_execsql_test 6.3 {
+    SELECT fullkey, path FROM json_tree('{''a"b'':{"c":[1]}}');
+  } {$ $ {$."a\"b"} $ {$."a\"b".c} {$."a\"b"} {$."a\"b".c[0]} {$."a\"b".c}}
+  do_execsql_test 6.4 {
+    SELECT fullkey, json_extract('{''"'':1,''"a"'':2}', fullkey)
+      FROM json_each('{''"'':1,''"a"'':2}');
+  } {{$."\""} 1 {$."\"a\""} 2}
+  do_execsql_test 6.5 {
+    -- TEXTRAW labels created by an unquoted path label in jsonb_set()
+    SELECT fullkey, json_extract(jsonb_set('{}','$.a"b',1), fullkey)
+      FROM json_each(jsonb_set('{}','$.a"b',1));
+  } {{$."a\"b"} 1}
+  do_execsql_test 6.6 {
+    SELECT fullkey, json_extract(jsonb_set('{}','$.a\b',1), fullkey)
+      FROM json_each(jsonb_set('{}','$.a\b',1));
+  } {{$."a\\b"} 1}
+  do_execsql_test 6.7 {
+    -- Labels with stored escape sequences are unchanged
+    SELECT fullkey, json_extract('{''a\''b'':1}', fullkey)
+      FROM json_each('{''a\''b'':1}');
+  } {{$."a\'b"} 1}
+  do_execsql_test 6.8 {
+    SELECT fullkey FROM json_each('{"a\nb":1,"a\\b":2,"a.b":3,"":4,ab:5}');
+  } {{$."a\nb"} {$."a\\b"} {$."a.b"} {$.""} $.ab}
+  do_execsql_test 6.9 {
+    -- A TEXT5 label that stores \" (made by a quoted path label) and one
+    -- that stores an escaped backslash followed by an unescaped quote
+    SELECT fullkey, json_extract(jsonb_set('{}','$."a\"b"',1), fullkey)
+      FROM json_each(jsonb_set('{}','$."a\"b"',1));
+  } {{$."a\"b"} 1}
+  do_execsql_test 6.10 {
+    SELECT fullkey, json_extract('{''a\\"b'':1}', fullkey)
+      FROM json_each('{''a\\"b'':1}');
+  } {{$."a\\\"b"} 1}
+}
+
 finish_test

@@ -5482,7 +5482,27 @@ static void jsonAppendPathName(JsonEachCursor *p){
       }
     }
     if( needQuote ){
-      jsonPrintf(sz+4,&p->path,".\"%.*s\"", sz, z);
+      /* Escape an unescaped '"' in the label, and any '\\' in a TEXTRAW
+      ** label, so that the path reads back as this label.  A '"' is stored
+      ** unescaped in a TEXT5 label that came from a single-quoted JSON5
+      ** string, and both '"' and '\\' are stored unescaped in a TEXTRAW
+      ** label that came from an unquoted path label.  Escape sequences
+      ** already stored in TEXTJ and TEXT5 labels are copied unchanged;
+      ** the path parser and jsonLabelCompare() understand them. */
+      u8 eLabel = p->sParse.aBlob[p->i] & 0x0f;
+      u32 iStart = 0;
+      jsonAppendRawNZ(&p->path, ".\"", 2);
+      for(i=0; i<sz; i++){
+        if( z[i]=='\\' && eLabel!=JSONB_TEXTRAW ){
+          i++;  /* Skip the escaped character */
+        }else if( z[i]=='"' || z[i]=='\\' ){
+          jsonAppendRaw(&p->path, &z[iStart], i-iStart);
+          jsonAppendChar(&p->path, '\\');
+          iStart = i;
+        }
+      }
+      jsonAppendRaw(&p->path, &z[iStart], sz-iStart);
+      jsonAppendChar(&p->path, '"');
     }else{
       jsonPrintf(sz+2,&p->path,".%.*s", sz, z);
     }
