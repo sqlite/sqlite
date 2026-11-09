@@ -1846,6 +1846,34 @@ static char *shellFakeSchema(
 ** Return true if the current build has capability X.  Return 0
 ** if X is not a capability or NULL if X is NULL.
 **
+** A build has capability X if any of the following are true:
+**
+**   (1)  A function named X exists.
+**   (2)  A module named X exists.
+**   (3)  A compile-time option X is used for the build.
+**
+** Comparison between X and the various items above is done
+** without to case.  So capable('generate_series') and
+** capable('GENERATE_SERIES') and capable('Generate_Series')
+** all work the same.
+**
+** There are also special names "vtab", "fkey", and "load_ext"
+** that return true as long as compile-time options
+** SQLITE_OMIT_VIRTUALTABLE, SQLITE_OMIT_FOREIGN_KEY, and
+** SQLITE_OMIT_LOAD_EXTENSION are omitted from the build,
+** respectively.  New special names may be added in the future.
+** Thus, for example, "capable('vtab')" means that the build
+** lacks SQLITE_OMIT_VIRTUALTABLE and hence does support
+** virtual tables.
+**
+** For other "OMIT" options (besides the three special ones noted
+** in the previous paragraph) you have to say something like
+** "capable('OMIT_EXPLAIN')".  And that function returns true
+** if the EXPLAIN capability is omitted.  It works like a
+** double-negative.  This is a bit confusing (hence the special
+** names for the common cases mentioned above) but it servicable
+** for the rare cases when it is needed.
+**
 ** This function is intended to be used with the ".if" command
 ** to bypass test cases that use features that are not part of
 ** the build.  Examples:
