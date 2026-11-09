@@ -103,4 +103,120 @@ do_execsql_test 1.5.2 {
 db close
 db2 close
 tvfs delete
+
+#-------------------------------------------------------------------------
+# Forum post 63ba0208a6 (2026-11-07).
+#
+# In wal2 mode, when a writer switches wal files in walRestartLog(), it
+# releases the exclusive locks taken by wal2RestartOk(), drops its old
+# read-lock and requests a new shared read-lock (slot 2 when switching to
+# file 0, slot 3 when switching to file 1). A concurrent PASSIVE checkpointer
+# working from a stale wal-index header may think it should checkpoint the
+# file just switched to, and lock slots 1 and 2 (or 3 and 4) exclusively in
+# wal2CheckpointOk(). If it does so while the writer holds neither slot of
+# that pair, the writer's request for the new read-lock fails with
+# SQLITE_BUSY, which is returned from COMMIT without the busy-handler ever
+# being invoked.
+#
+# The stale checkpointer is modelled by the testvfs xShmLock callback below.
+# Once the writer has taken its restart locks (the point after which the
+# wal-index header changes), the callback tracks the read-lock slots held
+# by the writer. If at any point the writer holds neither slot of the
+# checkpointer's pair, the "checkpointer" is assumed to grab them both, and
+# any subsequent request by the writer for a lock on either of them fails
+# with SQLITE_BUSY.
+#
+reset_db
+proc busy_handler {n} { incr ::nBusyHandler ; return 0 }
+
+proc vfs_callback {func file name lock} {
+  lassign $lock ofst n op mode
+  if {$op=="lock"} {
+    if {$::bCkpt} {
+      for {set i $ofst} {$i<$ofst+$n} {incr i} {
+        if {[lsearch $::aPair $i]>=0} {
+          incr ::nInject
+          return SQLITE_BUSY
+        }
+      }
+    }
+    for {set i $ofst} {$i<$ofst+$n} {incr i} { set ::aHeld($i) $mode }
+    if {$::bArmed && $ofst==$::iRestart && $n==3 && $mode=="exclusive"} {
+      set ::bArmed 0
+      set ::bWindow 1
+    }
+  } else {
+    for {set i $ofst} {$i<$ofst+$n} {incr i} { unset -nocomplain ::aHeld($i) }
+    if {$::bWindow && !$::bCkpt} {
+      set bFree 1
+      foreach i $::aPair { if {[info exists ::aHeld($i)]} { set bFree 0 } }
+      if {$bFree} { set ::bCkpt 1 }
+    }
+  }
+  return SQLITE_OK
+}
+
+# 2.1.*: switch from wal file 1 to wal file 0. Restart locks on slots 1-3
+#        (shm lock offsets 4-6). Stale checkpointer wants slots 1 and 2
+#        (offsets 4,5). The writer's new read-lock is slot 2 (offset 5).
+# 2.2.*: switch from wal file 0 to wal file 1. Restart locks on slots 2-4
+#        (offsets 5-7). Stale checkpointer wants slots 3 and 4
+#        (offsets 6,7). The writer's new read-lock is slot 3 (offset 6).
+foreach {tn iRestart aPair nPrep} {
+  1   4 {4 5}   0
+  2   5 {6 7}   1
+} {
+  reset_db
+  db close
+  testvfs tvfs
+  sqlite3 db test.db -vfs tvfs
+  db busy busy_handler
+
+  do_execsql_test 2.$tn.0 {
+    PRAGMA journal_mode = wal2;
+    PRAGMA journal_size_limit = 1;
+    PRAGMA wal_autocheckpoint = 0;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+  } {wal2 1 0}
+  db eval { PRAGMA wal_checkpoint }
+  for {set i 0} {$i<$nPrep} {incr i} {
+    db eval { INSERT INTO t1 VALUES(0, 0) ; PRAGMA wal_checkpoint }
+  }
+
+  array unset ::aHeld
+  set ::iRestart $iRestart
+  set ::aPair $aPair
+  set ::bArmed 1
+  set ::bWindow 0
+  set ::bCkpt 0
+  set ::nInject 0
+  set ::nBusyHandler 0
+  tvfs script vfs_callback
+  tvfs filter xShmLock
+
+  do_catchsql_test 2.$tn.1 {
+    BEGIN;
+      INSERT INTO t1 VALUES(3, 4);
+    COMMIT;
+  } {0 {}}
+
+  # Check that the wal file was switched ($::bWindow), that the stale
+  # checkpointer never blocked the writer ($::nInject) and that the 
+  # transaction was committed.
+  do_test 2.$tn.2 { 
+    list $::bWindow $::nInject [sqlite3_get_autocommit db]
+  } {1 0 1}
+
+  tvfs filter {}
+  catch { db eval ROLLBACK }
+  do_execsql_test 2.$tn.3 { 
+    PRAGMA integrity_check;
+    SELECT count(*) FROM t1 WHERE a=3;
+  } {ok 1}
+
+  db close
+  tvfs delete
+}
+
 finish_test
