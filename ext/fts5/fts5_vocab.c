@@ -51,6 +51,7 @@ struct Fts5VocabTable {
   Fts5Global *pGlobal;            /* FTS5 global object for this database */
   int eType;                      /* FTS5_VOCAB_COL, ROW or INSTANCE */
   unsigned bBusy;                 /* True if busy */
+  unsigned bUtf16;                /* True if db text encoding is UTF-16 */
 };
 
 struct Fts5VocabCursor {
@@ -150,6 +151,31 @@ static int fts5VocabDestroyMethod(sqlite3_vtab *pVtab){
 }
 
 /*
+** Set (*pbUtf16) to true if the text encoding of database connection db
+** is UTF-16 (either byte order), or to false otherwise.
+**
+** The FTS5 index stores terms as UTF-8 and visits them in memcmp() order
+** of that encoding. The BINARY collation compares text in the database
+** encoding, so the two orders agree only when that encoding is UTF-8.
+** If "PRAGMA encoding" returns no row (e.g. SQLITE_OMIT_UTF16 builds),
+** the encoding is assumed to be UTF-8.
+*/
+static int fts5VocabIsUtf16(sqlite3 *db, int *pbUtf16){
+  sqlite3_stmt *pStmt = 0;
+  int rc;
+  *pbUtf16 = 0;
+  rc = sqlite3_prepare_v2(db, "PRAGMA encoding", -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      const char *zEnc = (const char*)sqlite3_column_text(pStmt, 0);
+      if( zEnc && sqlite3_strnicmp(zEnc, "UTF-16", 6)==0 ) *pbUtf16 = 1;
+    }
+    rc = sqlite3_finalize(pStmt);
+  }
+  return rc;
+}
+
+/*
 ** This function is the implementation of both the xConnect and xCreate
 ** methods of the FTS3 virtual table.
 **
@@ -201,11 +227,15 @@ static int fts5VocabInitVtab(
     i64 nDb = strlen(zDb)+1; 
     i64 nTab = strlen(zTab)+1;
     int eType = 0;
+    int bUtf16 = 0;
     
     rc = fts5VocabTableType(zType, pzErr, &eType);
     if( rc==SQLITE_OK ){
       assert( eType>=0 && eType<ArraySize(azSchema) );
       rc = sqlite3_declare_vtab(db, azSchema[eType]);
+    }
+    if( rc==SQLITE_OK ){
+      rc = fts5VocabIsUtf16(db, &bUtf16);
     }
 
     nByte = sizeof(Fts5VocabTable) + nDb + nTab;
@@ -213,6 +243,7 @@ static int fts5VocabInitVtab(
     if( pRet ){
       pRet->pGlobal = (Fts5Global*)pAux;
       pRet->eType = eType;
+      pRet->bUtf16 = bUtf16;
       pRet->db = db;
       pRet->zFts5Tbl = (char*)&pRet[1];
       pRet->zFts5Db = &pRet->zFts5Tbl[nTab];
@@ -272,19 +303,24 @@ static int fts5VocabIsBinary(sqlite3_index_info *pInfo, int iCons){
 **
 ** are interpreted. Less-than and less-than-or-equal are treated 
 ** identically, as are greater-than and greater-than-or-equal.
+**
+** Terms are visited in memcmp() order of their UTF-8 encoding. That is
+** the BINARY collation order only if the database text encoding is also
+** UTF-8. For a UTF-16 database the range constraints and "ORDER BY term"
+** are left to the core, which compares in the database encoding.
+** Equality does not depend on the order and is always interpreted.
 */
 static int fts5VocabBestIndexMethod(
-  sqlite3_vtab *pUnused,
+  sqlite3_vtab *pVTab,
   sqlite3_index_info *pInfo
 ){
+  Fts5VocabTable *pTab = (Fts5VocabTable*)pVTab;
   int i;
   int iTermEq = -1;
   int iTermGe = -1;
   int iTermLe = -1;
   int idxNum = (int)pInfo->colUsed;
   int nArg = 0;
-
-  UNUSED_PARAM(pUnused);
 
   assert( (pInfo->colUsed & FTS5_VOCAB_COLUSED_MASK)==pInfo->colUsed );
 
@@ -293,6 +329,7 @@ static int fts5VocabBestIndexMethod(
     if( p->usable==0 ) continue;
     if( p->iColumn==0 && fts5VocabIsBinary(pInfo, i) ){    /* term column */
       if( p->op==SQLITE_INDEX_CONSTRAINT_EQ ) iTermEq = i;
+      if( pTab->bUtf16 ) continue;
       if( p->op==SQLITE_INDEX_CONSTRAINT_LE ) iTermLe = i;
       if( p->op==SQLITE_INDEX_CONSTRAINT_LT ) iTermLe = i;
       if( p->op==SQLITE_INDEX_CONSTRAINT_GE ) iTermGe = i;
@@ -322,8 +359,10 @@ static int fts5VocabBestIndexMethod(
   ** the "term" column (column 0). So if the user has requested this
   ** specifically - "ORDER BY term" or "ORDER BY term ASC" - set the
   ** sqlite3_index_info.orderByConsumed flag to tell the core the results
-  ** are already in sorted order.  */
-  if( pInfo->nOrderBy==1 
+  ** are already in sorted order. This is not done for a UTF-16 database,
+  ** where the BINARY order differs from the UTF-8 order of the index.  */
+  if( pTab->bUtf16==0
+   && pInfo->nOrderBy==1 
    && pInfo->aOrderBy[0].iColumn==0 
    && pInfo->aOrderBy[0].desc==0
   ){

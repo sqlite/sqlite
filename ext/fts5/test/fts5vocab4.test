@@ -1,0 +1,132 @@
+# 2026-11-09
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# fts5vocab tables in a UTF-16 database. The FTS5 index stores terms as
+# UTF-8 and visits them in memcmp() order of that encoding, which is the
+# BINARY collation order only when the database text encoding is UTF-8.
+# Range constraints on "term" and "ORDER BY term" must give the same
+# results as the same query against an ordinary table.
+# See https://sqlite.org/bugs/forumpost/b0c03988e894
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5vocab4
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+foreach {tn enc} {1 UTF-8 2 UTF-16le 3 UTF-16be} {
+  if {$enc!="UTF-8"} { ifcapable !utf16 { continue } }
+  reset_db
+
+  # Terms: aa apple b zoo U+0133,s U+FB00 U+1F600. In UTF-16le the BINARY
+  # order compares the low byte of each code unit first, so U+0133 sorts
+  # before 'a'. In UTF-16be only the surrogate pair (U+1F600) moves, to
+  # before U+E000..U+FFFF.
+  do_execsql_test $tn.0 "
+    PRAGMA encoding = '$enc';
+    CREATE VIRTUAL TABLE ft USING fts5(a, tokenize=ascii);
+    INSERT INTO ft VALUES('apple ' || char(0x133) || 's b aa zoo '
+                          || char(0xFB00) || ' ' || char(0x1F600));
+    CREATE VIRTUAL TABLE vr USING fts5vocab(ft, 'row');
+    CREATE VIRTUAL TABLE vc USING fts5vocab(ft, 'col');
+    CREATE VIRTUAL TABLE vi USING fts5vocab(ft, 'instance');
+    CREATE TABLE t(term TEXT);
+    INSERT INTO t SELECT term FROM vr;
+    PRAGMA encoding;
+    SELECT count(*) FROM t;
+  " [list $enc 7]
+
+  # Range and equality constraints on the term column must match the
+  # ordinary table. "ORDER BY +term" makes the core sort both results.
+  foreach {tn2 where} {
+    1  "term < 'b'"
+    2  "term <= 'b'"
+    3  "term > 'b'"
+    4  "term >= 'a' || char(0x100)"
+    5  "term > 'a' AND term < 'c'"
+    6  "term < 'a'"
+    7  "term = char(0x133) || 's'"
+    8  "term < char(0xFB00)"
+    9  "term >= char(0xFB00)"
+    10 "term BETWEEN 'b' AND char(0xFB00)"
+    11 "term = 'apple'"
+  } {
+    set expect [execsql "SELECT term FROM t WHERE $where ORDER BY +term"]
+    do_execsql_test $tn.1.$tn2 "
+      SELECT term FROM vr WHERE $where ORDER BY +term
+    " $expect
+    do_execsql_test $tn.2.$tn2 "
+      SELECT DISTINCT term FROM vc WHERE $where ORDER BY +term
+    " $expect
+    do_execsql_test $tn.3.$tn2 "
+      SELECT DISTINCT term FROM vi WHERE $where ORDER BY +term
+    " $expect
+  }
+
+  # ORDER BY term may only be consumed by the virtual table when the UTF-8
+  # order of the index is the BINARY order of the database.
+  do_execsql_test $tn.4.1 {
+    SELECT term FROM vr ORDER BY term
+  } [execsql {SELECT term FROM t ORDER BY term}]
+  do_execsql_test $tn.4.2 {
+    SELECT term FROM vr ORDER BY term LIMIT 3
+  } [execsql {SELECT term FROM t ORDER BY term LIMIT 3}]
+  do_execsql_test $tn.4.3 {
+    SELECT term FROM vc ORDER BY term
+  } [execsql {SELECT term FROM t ORDER BY term}]
+  do_execsql_test $tn.4.4 {
+    SELECT DISTINCT term FROM vi ORDER BY term
+  } [execsql {SELECT term FROM t ORDER BY term}]
+  do_execsql_test $tn.4.5 {
+    SELECT term FROM vr ORDER BY term DESC
+  } [execsql {SELECT term FROM t ORDER BY term DESC}]
+
+  # In a UTF-8 database the range constraint and the ORDER BY are still
+  # handled by the virtual table. In a UTF-16 database they are not.
+  if {$enc=="UTF-8"} {
+    do_eqp_test $tn.5.1 {
+      SELECT term FROM vr ORDER BY term
+    } {SCAN vr VIRTUAL TABLE INDEX 1:}
+    do_eqp_test $tn.5.2 {
+      SELECT term FROM vr WHERE term < 'b'
+    } {SCAN vr VIRTUAL TABLE INDEX 1025:}
+  } else {
+    do_eqp_test $tn.5.1 {
+      SELECT term FROM vr ORDER BY term
+    } {
+      QUERY PLAN
+      |--SCAN vr VIRTUAL TABLE INDEX 1:
+      `--USE TEMP B-TREE FOR ORDER BY
+    }
+    do_eqp_test $tn.5.2 {
+      SELECT term FROM vr WHERE term < 'b'
+    } {SCAN vr VIRTUAL TABLE INDEX 1:}
+  }
+  do_eqp_test $tn.5.3 {
+    SELECT term FROM vr WHERE term = 'b'
+  } {SCAN vr VIRTUAL TABLE INDEX 257:}
+
+  # The encoding is read again when the table is connected after reopening.
+  db close
+  sqlite3 db test.db
+  do_execsql_test $tn.6.1 {
+    SELECT term FROM vr WHERE term < 'b' ORDER BY +term
+  } [execsql {SELECT term FROM t WHERE term < 'b' ORDER BY +term}]
+  do_execsql_test $tn.6.2 {
+    SELECT term FROM vr ORDER BY term
+  } [execsql {SELECT term FROM t ORDER BY term}]
+}
+
+finish_test
