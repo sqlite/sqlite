@@ -2089,6 +2089,10 @@ static int jsonConvertTextToBlob(
     if( zJson[i] ){
       i += json5Whitespace(&zJson[i]);
       if( zJson[i] ){
+        /* Non-whitespace text follows a complete JSON value.  Record
+        ** where it starts so that json_error_position() reports it
+        ** instead of whatever offset the parser last stored in iErr. */
+        pParse->iErr = i;
         if( pCtx ) sqlite3_result_error(pCtx, "malformed JSON", -1);
         jsonParseReset(pParse);
         return 1;

@@ -1203,4 +1203,38 @@ do_execsql_test json101-26.2 {
   SELECT json_valid(x'CC141761133117621332176313331764133437656565',8);
 } {0}
 
+
+# 2026-11-08 https://sqlite.org/bugs/forumpost/370226230047
+# json_error_position() should point at non-whitespace text that follows
+# a complete JSON value, not at the offset of the parser's last recorded
+# error (which was 0, or the ']' or '}' that closed an empty container).
+#
+do_execsql_test json101-27.1 {
+  SELECT json_error_position('[1,2,3] x'),
+         json_error_position('{"a":[1,2]}x'),
+         json_error_position('[1,[]] x'),
+         json_error_position('{}x'),
+         json_error_position('[{}] x'),
+         json_error_position('1 x'),
+         json_error_position('1 2');
+} {9 12 8 3 6 3 3}
+do_execsql_test json101-27.2 {
+  -- Character position, not byte offset; trailing text after a comment
+  SELECT json_error_position('"'||char(233)||'" x'),
+         json_error_position('[1] /* c */x');
+} {5 12}
+do_execsql_test json101-27.3 {
+  -- Controls: an error inside the value, trailing whitespace or comments,
+  -- and JSONB input are unchanged.
+  SELECT json_error_position('[1,2,3 x'),
+         json_error_position('x'),
+         json_error_position(''),
+         json_error_position('[1] '),
+         json_error_position('[1] /* c */'),
+         json_error_position('[1] // c'),
+         json_error_position(jsonb('[1,2]')),
+         json_valid('[1,2,3] x',6),
+         json_valid('[1,[]] x',6);
+} {8 1 1 0 0 0 0 0 0}
+
 finish_test
