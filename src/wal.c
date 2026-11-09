@@ -2792,8 +2792,39 @@ static int wal2RestartOk(Wal *pWal, int iApp){
 
   return walLockExclusive(pWal, WAL_READ_LOCK(eLock), 3);
 }
-static void wal2RestartFinished(Wal *pWal, int iApp){
-  walUnlockExclusive(pWal, WAL_READ_LOCK(1 + (iApp==0)), 3);
+
+/*
+** This function is called by a writer that has just switched the current wal
+** file from wal file iApp to wal file !iApp. The caller holds the exclusive
+** locks taken by wal2RestartOk(pWal, iApp) and a shared lock on read-lock
+** slot pWal->readLock (iApp*3+1). This function releases all of those locks
+** and takes a shared lock on the new read-lock slot such that there is no
+** opportunity for a concurrent checkpointer to take an exclusive lock that
+** interferes with this connection taking the new shared-lock.
+*/
+static int wal2RestartFinished(Wal *pWal, int iApp){
+  int iNew = !iApp;
+  int iNewLock = iNew ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2;
+  int iHold = iNew ? WAL_LOCK_PART2 : WAL_LOCK_PART1;
+  int rc;
+
+  assert( WAL_LOCK_PART1==1 );
+  assert( WAL_LOCK_PART1_FULL2==2 );
+  assert( WAL_LOCK_PART2_FULL1==3 );
+  assert( WAL_LOCK_PART2==4 );
+  assert( pWal->readLock==iApp*3+1 );
+
+  /* wal2RestartOk() locked slots 1, 2 and 3 (iApp==1) or 2, 3 and 4
+  ** (iApp==0). In both cases, release slots 2 and 3, and keep slot iHold
+  ** until the new shared lock has been obtained. The old read-lock slot
+  ** (slot 4 if iApp==1, or slot 1 if iApp==0) is not part of the
+  ** checkpointer's pair, so it may be released first.  */
+  walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
+  walUnlockExclusive(pWal, WAL_READ_LOCK(WAL_LOCK_PART1_FULL2), 2);
+  pWal->readLock = iNewLock;
+  rc = walLockShared(pWal, WAL_READ_LOCK(iNewLock));
+  walUnlockExclusive(pWal, WAL_READ_LOCK(iHold), 1);
+  return rc;
 }
 
 /*
@@ -4773,10 +4804,7 @@ static int walRestartLog(Wal *pWal){
         sqlite3Put4byte((u8*)&pWal->hdr.aSalt[1], pWal->hdr.aFrameCksum[1]);
         walIndexWriteHdr(pWal);
         pInfo->nBackfill = 0;
-        wal2RestartFinished(pWal, iApp);
-        walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
-        pWal->readLock = iNew ? WAL_LOCK_PART2_FULL1 : WAL_LOCK_PART1_FULL2;
-        rc = walLockShared(pWal, WAL_READ_LOCK(pWal->readLock));
+        rc = wal2RestartFinished(pWal, iApp);
       }else if( rc==SQLITE_BUSY ){
         rc = SQLITE_OK;
       }
