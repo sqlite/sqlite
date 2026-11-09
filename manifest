@@ -1,5 +1,5 @@
-C Updates\sto\stestrunner.tcl\sso\sthat\sit\sruns\seach\stest/*.sql\sscript\sas\sa\nseparate\sjob.
-D 2026-11-09T00:59:11.143
+C Experimental\sAI-assisted\sproof\sof\sconcept\sfor\sBug\sForum\sdf6692fc080c:\sa\s'utc'\smodifier\sthat\sconverts\sthe\stime\sno\slonger\sdiscards\san\searlier\s'subsec'.\sClaude\sOpus\s5.5\shigh\sinvestigation\sand\scandidate\sunder\sCodex\sFleet\sSupervisor\soversight.\sBased\son\strunk\s1fea2d9c18.\sPrivate\slocal\sbranch;\smaintainer\sreview\srequired.
+D 2026-11-09T02:13:38.139
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -756,7 +756,7 @@ F src/build.c 28181dbf18d3b632906b132e1eceba0baa1b91d9d2a99fc11312f0cbde4817f5
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 7e922b672ea82f83822baad092a0d4fd9b0074d1be2fa7d15cceeb8792212b2c
 F src/complete.c f68f545b9c6c19e2e848672dc0e4da230072fedc335d8980b55242cc4cfa60da
-F src/date.c a55811d8e799ef76f3da9abf5a976dbe799208113f1da94ee25ae0aec2a14707
+F src/date.c 4cd7f5ca0e7da35c1c20a88a6639adb24c1b90e9819c73efb01f3753892d3022
 F src/dbpage.c ec8590c5e7a564cef28ca3c6156521316a4d26cb572a34841b0bcb26b67b3f97
 F src/dbstat.c 34d4e825fbf763640ce3dbc56910ab080495ef4a6efb48b2b1852a43d43763fc
 F src/delete.c f3f07c1fb6ac87fac2425d48fd40ecb2f24a4495a9966f5a939668d3576916c8
@@ -1112,7 +1112,7 @@ F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c47
 F test/cursorhint.test d8b93ac48dfdb2cf4284142710d63e860b6497afff2e9c525daf752a229e5b97
 F test/cursorhint2.test a10f29c0c52d4d73c19cf639f3c33cccbf5024bcf950fa48f2a8cdc14628b985
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
-F test/date.test 44385e98b072d7590aba7bb98ba8ee23d8d9b116ed0d80579bf07a30a1944537
+F test/date.test 2a39262ad784ea4dba9f1d00acdb406ed40ebd9cd24c50992e8f238922e425f9
 F test/date2.test 6344250abb5face9174778ec0a476e2baa97ad509df9eee81fbb1ec6933b7114
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test b5ad22baf7394e008ac59383840159daedd45be31dcf74a3b2450ec0e28955ce
@@ -2306,8 +2306,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b90856289c715f05716ffd15c4304a6574cc2be7919aa3521018bab80a591852
-R 0e92234f1f0949d0a9c91851c06039d8
-U drh
-Z aa9ec4bfbe7687718d5f66d944a10f97
+P 1fea2d9c18fc5f84b1c98a3aa95895a67851a3fbc901144e7ebba05408e2eb47
+R 51e162557517ba1010597f0d47f08e5d
+T *branch * experiment-date-subsec-utc-20261108
+T *sym-experiment-date-subsec-utc-20261108 *
+T -sym-trunk *
+U karl
+Z aebf9a49c3c94169bab82b1423a4f25d
 # Remove this line to create a well-formed Fossil manifest.

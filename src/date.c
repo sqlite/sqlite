@@ -908,6 +908,9 @@ static int parseModifier(
           i64 iGuess;               /* Guess at the corresponding utc time */
           int cnt = 0;              /* Safety to prevent infinite loop */
           i64 iErr;                 /* Guess is off by this much */
+          int bSubsec = p->useSubsec; /* EXPERIMENTAL (df6692fc080c): keep
+                                      ** an earlier "subsec" across the
+                                      ** memset() below */
 
           computeJD(p);
           iGuess = iOrigJD = p->iJD;
@@ -928,6 +931,7 @@ static int parseModifier(
           p->validJD = 1;
           p->isUtc = 1;
           p->isLocal = 0;
+          p->useSubsec = bSubsec;
         }
         rc = SQLITE_OK;
       }

@@ -394,6 +394,42 @@ do_execsql_test date-6.32 {
   SELECT datetime('2000-10-29 12:00:00Z', 'localtime','localtime');
 } {{2000-10-29 12:30:00}}
 
+# Forum post df6692fc080c (2026-11-05): a 'utc' modifier that converts
+# the time must not discard an earlier 'subsec'.  The result should not
+# depend on whether 'subsec' comes before or after 'utc'.
+# EXPERIMENTAL AI-assisted proof of concept.
+#
+do_execsql_test date-6.40 {
+  SELECT datetime('2000-10-29 12:30:00.123','subsec','utc'),
+         datetime('2000-10-29 12:30:00.123','utc','subsec');
+} {{2000-10-29 12:00:00.123} {2000-10-29 12:00:00.123}}
+do_execsql_test date-6.41 {
+  SELECT time('2000-10-29 12:30:00.123','subsecond','utc');
+} {12:00:00.123}
+do_execsql_test date-6.42 {
+  SELECT unixepoch('2000-10-29 12:30:00.123','subsec','utc'),
+         strftime('%s','2000-10-29 12:30:00.123','subsec','utc');
+} {972820800.123 972820800.123}
+do_execsql_test date-6.43 {
+  SELECT datetime('2000-10-29 12:00:00.123Z','subsec','localtime','utc');
+} {{2000-10-29 12:00:00.123}}
+do_execsql_test date-6.44 {
+  SELECT unixepoch('1969-12-31 23:59:59.500','subsec','utc');
+} {-1800.5}
+do_execsql_test date-6.45 {
+  SELECT datetime('2024-03-01 00:10:00.250','subsec','utc'),
+         datetime('2024-02-29 23:50:00.750','subsec','utc');
+} {{2024-02-29 23:40:00.250} {2024-03-01 00:20:00.750}}
+# Guards that already pass:  'utc' alone keeps whole seconds, and a
+# time that is already UTC is unchanged by 'utc'.
+do_execsql_test date-6.46 {
+  SELECT datetime('2000-10-29 12:30:00.123','utc'),
+         typeof(unixepoch('2000-10-29 12:30:00.123','utc'));
+} {{2000-10-29 12:00:00} integer}
+do_execsql_test date-6.47 {
+  SELECT datetime('2000-10-29 12:30:00.123Z','subsec','utc');
+} {{2000-10-29 12:30:00.123}}
+
 
 # Restore the use of the OS localtime_r() before going on...
 sqlite3_test_control SQLITE_TESTCTRL_LOCALTIME_FAULT 0
