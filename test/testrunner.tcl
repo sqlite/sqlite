@@ -359,6 +359,7 @@ switch -nocase -glob -- $tcl_platform(os) {
   }
 }
 set TRG(testfixture-fullpath) [file join $dir $TRG(testfixture)]
+set TRG(shell-fullpath) [file join $dir $TRG(shell)]
 set TRG(interp) [info nameofexec]
 #-------------------------------------------------------------------------
 
@@ -1413,6 +1414,57 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   }
 }
 
+# Add one job for each *.sql script in the test directory.  Each job runs
+# the script using the CLI:  "sqlite3 FILENAME".
+#
+# The $build argument is as for add_tcl_jobs.  If it is an empty string,
+# use the CLI in the current directory, trying to build it if it is missing.
+# Otherwise, use the CLI from that build, and depend on the placeholder job
+# "SHELL", which the caller must replace with a job that builds the CLI.
+#
+proc add_sql_jobs {build patternlist} {
+  global TRG
+
+  set topdir [file dirname $::testdir]
+  set depid ""
+  if {$build==""} {
+    set cli $TRG(shell-fullpath)
+  } else {
+    set cli [file join [lindex $build 1] $TRG(shell)]
+    set depid SHELL
+  }
+  if {[lindex $build 2]=="Valgrind"} {
+    set cli "valgrind -v --error-exitcode=1 $cli"
+  }
+
+  foreach f [lsort [glob -nocomplain -directory $::testdir *.sql]] {
+    set f [file normalize $f]
+    set displayname [string map [list $topdir/ {}] $f]
+    if {$build!=""} {
+      set displayname "[lindex $build 2] $displayname"
+    }
+
+    if {![job_matches_any_pattern $patternlist $displayname]} {
+      continue
+    }
+
+    if {$build=="" && ![file executable $TRG(shell-fullpath)]} {
+      puts "make $TRG(shell)"
+      catch {exec make $TRG(shell) >@stdout 2>@stderr}
+      if {![file executable $TRG(shell-fullpath)]} {
+        puts "Skipping *.sql tests because there is no $TRG(shell) to run them."
+        return
+      }
+    }
+
+    add_job                            \
+        -displaytype tcl               \
+        -displayname $displayname      \
+        -cmd "$cli --noinit $f .q"     \
+        -depid $depid
+  }
+}
+
 proc add_build_job {buildname target {postcmd ""} {depid ""}} {
   global TRG
 
@@ -1635,6 +1687,7 @@ proc add_devtest_jobs {lBld patternlist} {
   foreach b $lBld {
     set bld [add_build_job $b $TRG(testfixture)]
     add_tcl_jobs $bld veryquick $patternlist SHELL
+    add_sql_jobs $bld $patternlist
     add_fuzztest_jobs $b $patternlist
 
     if {[trdb one "SELECT EXISTS (SELECT 1 FROM jobs WHERE depid='SHELL')"]} {
@@ -1696,6 +1749,7 @@ proc add_jobs_from_cmdline {patternlist} {
       foreach c $clist {
         add_tcl_jobs "" $c $patternlist
       }
+      add_sql_jobs "" $patternlist
     }
 
     devtest -
@@ -1724,6 +1778,7 @@ proc add_jobs_from_cmdline {patternlist} {
         foreach c [trd_configs $TRG(platform) $b] {
           add_tcl_jobs $bld $c $patternlist SHELL
         }
+        add_sql_jobs $bld $patternlist
 
         foreach e [trd_extras $TRG(platform) $b] {
           if {$e=="fuzztest"} {
@@ -1768,8 +1823,12 @@ proc add_jobs_from_cmdline {patternlist} {
       must_be_testfixture
       if {[info exists ::testspec($first)]} {
         add_tcl_jobs "" $first [lrange $patternlist 1 end]
+        if {$first=="veryquick" || $first=="full"} {
+          add_sql_jobs "" [lrange $patternlist 1 end]
+        }
       } else {
         add_tcl_jobs "" full $patternlist
+        add_sql_jobs "" $patternlist
       }
     }
   }
@@ -1826,6 +1885,11 @@ proc mark_job_as_finished {jobid output state endtm} {
   if {$endtm>0} {
     set re {\y(\d+) errors out of (\d+) tests( on [^\n]+\n)?}
     if {[regexp $re $output all a b pltfm]} {
+      set nerr $a
+      set ntest $b
+    } elseif {[regexp {\y(\d+) tests? run with (\d+) errors?\y} $output \
+                      all b a]} {
+      # The summary line written by the CLI for *.sql test scripts
       set nerr $a
       set ntest $b
     }
