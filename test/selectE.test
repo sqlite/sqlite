@@ -235,6 +235,63 @@ do_execsql_test 5.5.2 {
   ORDER BY 1 COLLATE nocase
 } {2 2 3 3 4 4 5 5 9}
 
+#-------------------------------------------------------------------------
+# 2026-11-09: https://sqlite.org/bugs/forumpost/52e3f2057f81
+#
+# When a compound SELECT whose ORDER BY has a COLLATE clause is rewritten
+# by convertCompoundSelectToSubquery() as "SELECT * FROM (compound)
+# ORDER BY ...", the ORDER BY terms without COLLATE must still sort with
+# the collating sequence of the compound: that of the left-most term that
+# has one.  The columns of a compound subquery get that collating sequence.
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(c0 TEXT COLLATE NOCASE, c1 TEXT);
+  INSERT INTO t1 VALUES('a','1'),('B','2'),('c','3');
+}
+do_execsql_test 6.1 {
+  SELECT 'D','x' UNION SELECT c0,c1 FROM t1 ORDER BY 1 DESC;
+} {D x c 3 B 2 a 1}
+do_execsql_test 6.2 {
+  SELECT 'D','x' UNION SELECT c0,c1 FROM t1 ORDER BY 1 DESC, 2 COLLATE BINARY;
+} {D x c 3 B 2 a 1}
+do_execsql_test 6.3 {
+  SELECT c0,c1 FROM t1 UNION SELECT 'D','x' ORDER BY 1 DESC, 2 COLLATE BINARY;
+} {D x c 3 B 2 a 1}
+do_execsql_test 6.4 {
+  SELECT 'D','x' UNION ALL SELECT c0,c1 FROM t1
+   ORDER BY 1 DESC, 2 COLLATE BINARY;
+} {D x c 3 B 2 a 1}
+do_execsql_test 6.5 {
+  SELECT * FROM (SELECT 'D','x' UNION SELECT c0,c1 FROM t1) ORDER BY 1 DESC;
+} {D x c 3 B 2 a 1}
+do_execsql_test 6.6 {
+  SELECT 'A','9' UNION SELECT c0,c1 FROM t1 ORDER BY 1, 2 COLLATE BINARY;
+} {a 1 A 9 B 2 c 3}
+do_execsql_test 6.7 {
+  CREATE VIEW v1 AS SELECT 'D' AS x,'x' AS y UNION SELECT c0,c1 FROM t1;
+  SELECT * FROM v1 ORDER BY x DESC;
+} {D x c 3 B 2 a 1}
+do_execsql_test 6.8 {
+  WITH w(x,y) AS (SELECT 'D','x' UNION SELECT c0,c1 FROM t1)
+  SELECT * FROM w ORDER BY x DESC;
+} {D x c 3 B 2 a 1}
+do_execsql_test 6.9 {
+  SELECT 'D','x' UNION SELECT c0,c1 FROM t1
+   ORDER BY 1 COLLATE BINARY DESC, 2 COLLATE BINARY;
+} {c 3 a 1 D x B 2}
+do_execsql_test 6.10 {
+  SELECT 'D','x' UNION SELECT c0,c1 FROM t1
+   ORDER BY 1 DESC, 2 COLLATE BINARY LIMIT 2;
+} {D x c 3}
+do_execsql_test 6.11 {
+  SELECT 'D','x' INTERSECT SELECT c0,c1 FROM t1 ORDER BY 1 DESC, 2 COLLATE BINARY;
+} {}
+do_execsql_test 6.12 {
+  SELECT 'D','x' UNION ALL SELECT 'b','4' UNION SELECT c0,c1 FROM t1
+   ORDER BY 1 DESC, 2 COLLATE BINARY;
+} {D x c 3 B 2 b 4 a 1}
+
 finish_test
 
 

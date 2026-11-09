@@ -2391,6 +2391,10 @@ int sqlite3ColumnsFromExprList(
   return SQLITE_OK;
 }
 
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
+static CollSeq *multiSelectCollSeq(Parse*, Select*, int);
+#endif
+
 /*
 ** pTab is a transient Table object that represents a subquery of some
 ** kind (maybe a parenthesized subquery in the FROM clause of a larger
@@ -2483,6 +2487,18 @@ void sqlite3SubqueryColumnTypes(
       }
     }
     pColl = sqlite3ExprCollSeq(pParse, p);
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
+    if( pColl==0 && pSelect->pNext!=0 ){
+      /* For a compound SELECT, the column takes the collating sequence of
+      ** the left-most term that has one, exactly as multiSelectCollSeq()
+      ** chooses it for the ORDER BY and duplicate removal of the compound
+      ** itself.  Otherwise "SELECT * FROM (x UNION y) ORDER BY 1" and
+      ** "x UNION y ORDER BY 1" could sort differently, and so could a
+      ** compound rewritten by convertCompoundSelectToSubquery(). */
+      for(pS2=pSelect; pS2->pNext; pS2=pS2->pNext){}
+      pColl = multiSelectCollSeq(pParse, pS2, i);
+    }
+#endif
     if( pColl ){
       assert( pTab->pIndex==0 );
       sqlite3ColumnSetColl(db, pCol, pColl->zName);
