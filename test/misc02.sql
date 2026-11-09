@@ -90,3 +90,55 @@ INSERT INTO t2 VALUES(1, 'x', NULL);
 INSERT INTO t2 VALUES(1, 5, NULL) ON CONFLICT(a) DO UPDATE SET c=excluded.b;
 SELECT typeof(c), c FROM t2;
 .check text|5
+
+.if capable('rtree')
+# R-Tree: if a node blob exceeds SQLITE_LIMIT_LENGTH, nodeWrite() ignores
+# the SQLITE_TOOBIG from sqlite3_bind_blob() and stores a NULL node,
+# corrupting the table.
+#
+#   https://sqlite.org/bugs/forumpost/38492ae5dc
+#
+.open :memory:
+
+.testcase 500
+CREATE VIRTUAL TABLE rt USING rtree(id, x0, x1);
+INSERT INTO rt VALUES(1, 0, 10);
+.limit length 100
+INSERT INTO rt VALUES(2, 5, 6);
+.check -glob "*rror near line *: string or blob too big*"
+
+.testcase 510
+.limit length 1000000
+SELECT nodeno, typeof(data) FROM rt_node;
+SELECT * FROM rt;
+PRAGMA integrity_check;
+.check <<END
+1|blob
+1|0.0|10.0
+ok
+END
+.endif /* if capable('rtree') */
+
+.if capable('geopoly')
+# Geopoly: same problem as above for the _shape blob. A 200-vertex polygon is
+# 1207 bytes as JSON but 1604 bytes as a blob, so with a 1500 byte limit
+# the INSERT succeeds and silently stores a NULL _shape.
+#
+.open :memory:
+
+.testcase 600
+CREATE VIRTUAL TABLE gp USING geopoly();
+.limit length 1500
+WITH c(i) AS (VALUES(0) UNION ALL SELECT i+1 FROM c WHERE i<199)
+INSERT INTO gp(_shape)
+  SELECT '[' || group_concat('[' || (i%10) || ',' || (i/10%10) || ']')
+             || ',[0,0]]' FROM c;
+.check -glob "*rror near line *: string or blob too big*"
+
+.testcase 610
+.limit length 1000000
+SELECT count(*) FROM gp;
+.check 0
+.endif /* if capable('geopoly') */
+
+

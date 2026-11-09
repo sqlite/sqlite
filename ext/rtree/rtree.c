@@ -911,7 +911,9 @@ static int nodeWrite(Rtree *pRtree, RtreeNode *pNode){
     }else{
       sqlite3_bind_null(p, 1);
     }
-    sqlite3_bind_blob(p, 2, pNode->zData, pRtree->iNodeSize, SQLITE_STATIC);
+    rc = sqlite3_bind_blob(p, 2, pNode->zData, pRtree->iNodeSize,
+                           SQLITE_STATIC);
+    if( rc!=SQLITE_OK ) return rc;
     sqlite3_step(p);
     pNode->isDirty = 0;
     rc = sqlite3_reset(p);

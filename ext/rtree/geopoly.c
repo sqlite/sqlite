@@ -1752,7 +1752,8 @@ static int geopolyUpdate(
        && (p = geopolyFuncParam(0, pShape, &rc))!=0
        && rc==SQLITE_OK
       ){
-        sqlite3_bind_blob(pUp, 2, p->hdr, 4+8*p->nVertex, SQLITE_TRANSIENT);
+        rc = sqlite3_bind_blob(pUp, 2, p->hdr, 4+8*p->nVertex,
+                               SQLITE_TRANSIENT);
       }else{
         sqlite3_bind_value(pUp, 2, pShape);
       }
@@ -1763,7 +1764,7 @@ static int geopolyUpdate(
       nChange++;
       sqlite3_bind_value(pUp, jj+2, aData[jj+2]);
     }
-    if( nChange ){
+    if( rc==SQLITE_OK && nChange ){
       sqlite3_step(pUp);
       rc = sqlite3_reset(pUp);
     }
