@@ -55,3 +55,38 @@ VALUES('a'), ('A' COLLATE NOCASE) UNION SELECT 'A';
 .testcase 230
 VALUES('a' COLLATE NOCASE), ('A') UNION SELECT 'A';
 .check A
+
+.open :memory:
+
+.testcase 300
+CREATE TABLE t1(a INTEGER PRIMARY KEY, u INT UNIQUE, b INT, c);
+INSERT INTO t1 VALUES(1, 1, 0, 'start');
+INSERT INTO t1 VALUES(1, 2, '5.0', NULL) ON CONFLICT(a) DO UPDATE SET c=excluded.b;
+SELECT typeof(c), c FROM t1;
+.check integer|5
+
+.testcase 310
+INSERT INTO t1 VALUES(1, 2, '5.0', NULL)
+  ON CONFLICT(a) DO UPDATE SET c='matched' WHERE excluded.b=5;
+SELECT c FROM t1;
+.check matched
+
+.testcase 300
+UPDATE t1 SET c='start';
+INSERT INTO t1 VALUES(2, 1, '5.0', NULL) ON CONFLICT(u) DO UPDATE SET c=excluded.b;
+SELECT typeof(c), c FROM t1;
+.check integer|5
+
+.testcase 310
+INSERT INTO t1 VALUES(2, 1, '5.0', NULL)
+  ON CONFLICT(u) DO UPDATE SET c='matched' WHERE excluded.b=5;
+SELECT c FROM t1;
+.check matched
+
+# TEXT affinity: integer 5 should become text '5' in excluded.b
+.testcase 400
+CREATE TABLE t2(a INTEGER PRIMARY KEY, b TEXT, c);
+INSERT INTO t2 VALUES(1, 'x', NULL);
+INSERT INTO t2 VALUES(1, 5, NULL) ON CONFLICT(a) DO UPDATE SET c=excluded.b;
+SELECT typeof(c), c FROM t2;
+.check text|5

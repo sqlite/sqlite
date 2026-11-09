@@ -2295,6 +2295,12 @@ void sqlite3GenerateConstraintChecks(
           onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
         }else{
           onError = OE_Update;  /* DO UPDATE */
+          /* The excluded.* values used by the DO UPDATE must have
+          ** column affinity applied before the rowid conflict check. */
+          if( bAffinityDone==0 ){
+            sqlite3TableAffinity(v, pTab, regNewData+1);
+            bAffinityDone = 1;
+          }
         }
       }
       if( pUpsertClause!=pUpsert ){
