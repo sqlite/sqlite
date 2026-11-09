@@ -142,3 +142,59 @@ SELECT count(*) FROM gp;
 .endif /* if capable('geopoly') */
 
 
+
+# A declared column type of 16 or more characters that ends in "always"
+# (but not "generated always") should be recorded as declared.
+#
+#   https://sqlite.org/bugs/forumpost/b1d3b87a8c
+#
+.open :memory:
+.mode list
+
+.testcase 700
+CREATE TABLE t7(a longertypealways, b shorttypealways, c generatedalways);
+SELECT name, type FROM pragma_table_info('t7');
+.check <<END
+a|longertypealways
+b|shorttypealways
+c|generatedalways
+END
+
+.testcase 710
+CREATE TABLE t8(a integer        always) STRICT;
+.check -glob "*rror near line *: unknown datatype for t8.a: \"integer        always\"*"
+
+.testcase 720
+CREATE TABLE t9(a integergeneratedalways, b integer generatedalways,
+                c xgeneratedalways, d integer xgenerated always,
+                e xgenerated always, f integer generated always);
+SELECT name, type FROM pragma_table_info('t9');
+.check <<END
+a|integergeneratedalways
+b|integer generatedalways
+c|xgeneratedalways
+d|integer xgenerated always
+e|xgenerated always
+f|INTEGER
+END
+
+.testcase 730
+CREATE TABLE t10(a integergeneratedalways) STRICT;
+.check -glob "*rror near line *: unknown datatype for t10.a: \"integergeneratedalways\"*"
+
+# A generated column with no declared type must still have an empty
+# type. In a STRICT table it is rejected as missing a datatype.
+#
+.testcase 740
+CREATE TABLE t11(x INT, a generated always as (x+1),
+                 b GENERATED    ALWAYS AS (2));
+SELECT name, type FROM pragma_table_xinfo('t11');
+.check <<END
+x|INT
+a|
+b|
+END
+
+.testcase 750
+CREATE TABLE t12(x INT, a generated always as (x+1)) STRICT;
+.check -glob "*rror near line *: missing datatype for t12.a*"
