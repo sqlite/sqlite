@@ -620,6 +620,18 @@ static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
 }
 
 /*
+** Return true if any expression in the expression-list passed as the
+** only argument contains a COLLATE operator.
+*/
+static int exprListHasCollate(ExprList *pRow){
+  int ii;
+  for(ii=0; ii<pRow->nExpr; ii++){
+    if( ExprHasProperty(pRow->a[ii].pExpr, EP_Collate) ) return 1;
+  }
+  return 0;
+}
+
+/*
 ** This function is called by the parser for the second and subsequent
 ** rows of a multi-row VALUES clause. Argument pLeft is the part of
 ** the VALUES clause already parsed, argument pRow is the vector of values
@@ -668,7 +680,15 @@ static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
 **       because the complex rules SQLite uses (see function 
 **       sqlite3SubqueryColumnTypes() in select.c) to determine the effective
 **       affinity of such a column for all rows require access to all values in
-**       the column simultaneously. 
+**       the column simultaneously.
+**
+**    e) The new row, or the row that would become the first row of the
+**       co-routine, contains a COLLATE operator. This ensures that the
+**       columns of a co-routine never have a collation sequence (see
+**       multiSelectCollSeq() in select.c). Each explicit COLLATE in a VALUES
+**       clause is instead part of an ordinary SELECT in a UNION ALL
+**       compound, where it is available when the collation sequence for a
+**       compound SELECT column is determined.
 */
 Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 
@@ -677,6 +697,8 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
    || sqlite3ExprListIsConstant(pParse, pRow, 1)==0   /* condition (c) above */
    || (pLeft->pSrc->nSrc==0 &&
        exprListIsNoAffinity(pParse,pLeft->pEList)==0) /* condition (d) above */
+   || exprListHasCollate(pRow)                        /* condition (e) above */
+   || (pLeft->pSrc->nSrc==0 && exprListHasCollate(pLeft->pEList))
    || IN_SPECIAL_PARSE
   ){
     /* The co-routine method cannot be used. Fall back to UNION ALL. */
@@ -718,7 +740,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
         pRet->pSrc->nSrc = 1;
         pRet->pPrior = pLeft->pPrior;
         pRet->op = pLeft->op;
-        if( pRet->pPrior ) pRet->selFlags |= SF_Values;
+        pRet->selFlags |= SF_Values;
         pLeft->pPrior = 0;
         pLeft->op = TK_SELECT;
         assert( pLeft->pNext==0 );
@@ -944,7 +966,11 @@ void sqlite3Insert(
   ** single row (the common case) then keep that one row of values
   ** and discard the other (unused) parts of the pSelect object
   */
-  if( pSelect && (pSelect->selFlags & SF_Values)!=0 && pSelect->pPrior==0 ){
+  if( pSelect
+   && (pSelect->selFlags & SF_Values)!=0
+   && pSelect->pPrior==0
+   && pSelect->pSrc->nSrc==0
+  ){
     pList = pSelect->pEList;
     pSelect->pEList = 0;
     sqlite3SelectDelete(db, pSelect);

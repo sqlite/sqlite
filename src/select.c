@@ -2647,12 +2647,16 @@ static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
     pRet = 0;
   }
   assert( iCol>=0 );
-  /* iCol must be less than p->pEList->nExpr.  Otherwise an error would
+  /* iCol must be less than p->pEList->nExpr. Otherwise an error would
   ** have been thrown during name resolution and we would not have gotten
-  ** this far */
-  if( pRet==0 && ALWAYS(iCol<p->pEList->nExpr) ){
+  ** this far. If p is really a multi-row VALUES statement, it is guaranteed
+  ** not to have any collation sequences. So leave pRet set to 0 in this case */
+  if( pRet==0 && ALWAYS(iCol<p->pEList->nExpr)
+   && ((p->selFlags & SF_Values)==0 || p->pSrc->nSrc==0) /* multi-row VALUES */
+  ){
     pRet = sqlite3ExprCollSeq(pParse, p->pEList->a[iCol].pExpr);
   }
+
   return pRet;
 }
 
