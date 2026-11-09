@@ -1,0 +1,219 @@
+# 2026-11-09
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# fts5vocab reads PRAGMA encoding from xCreate and xConnect. If an
+# authorizer denies that pragma, or ignores it so that it returns no
+# row, the encoding is unknown. The table must still open, and range
+# constraints and ORDER BY term must be left to the core. Unknown is
+# never treated as UTF-8. A malfunctioning authorizer and a genuine
+# malloc failure still fail the constructor.
+#
+# See https://sqlite.org/bugs/forumpost/b0c03988e894
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5vocab5
+
+ifcapable !fts5 {
+  finish_test
+  return
+}
+if {[catch {db authorizer {}} msg]} {
+  finish_test
+  return
+}
+
+# Deny, ignore, or reject only PRAGMA encoding. Every other action is
+# allowed, including CREATE VIRTUAL TABLE and the queries under test.
+proc enc_auth {code arg1 args} {
+  if {$code eq "SQLITE_PRAGMA" && [string equal -nocase $arg1 encoding]} {
+    return $::enc_auth_rc
+  }
+  return SQLITE_OK
+}
+
+# do_eqp_test throws if the statement cannot be prepared. Record that as
+# a normal failure so a constructor error does not abandon the file.
+proc vocab5_eqp {name sql expected} {
+  set rc [catch {uplevel 1 [list do_eqp_test $name $sql $expected]} err]
+  if {$rc} {
+    do_test $name [list set x $err] {ok}
+  }
+}
+
+foreach {tn enc} {1 UTF-8 2 UTF-16le 3 UTF-16be} {
+  if {$enc ne "UTF-8"} { ifcapable !utf16 { continue } }
+  reset_db
+  db authorizer {}
+  execsql "PRAGMA encoding = '$enc'"
+  execsql {
+    CREATE VIRTUAL TABLE ft USING fts5(a, tokenize=ascii);
+    INSERT INTO ft VALUES('apple ' || char(0x133) || 's b aa '
+                          || char(0xFB00) || ' ' || char(0x1F600));
+    CREATE VIRTUAL TABLE vr USING fts5vocab(ft, row);
+    CREATE TABLE t(term TEXT);
+    INSERT INTO t SELECT term FROM vr;
+  }
+  set nterm [execsql {SELECT count(*) FROM t}]
+  set range [execsql {SELECT term FROM t WHERE term < 'b' ORDER BY term}]
+  set order [execsql {SELECT term FROM t ORDER BY term}]
+  set eq [execsql {SELECT term FROM t WHERE term = 'b'}]
+  execsql {DROP TABLE vr}
+
+  # Encoding is known. UTF-8 still consumes range and ORDER BY.
+  # UTF-16 leaves both to the core. Equality is always consumed.
+  execsql {CREATE VIRTUAL TABLE vr USING fts5vocab(ft, row)}
+  do_execsql_test $tn.none.range {
+    SELECT term FROM vr WHERE term < 'b' ORDER BY +term
+  } $range
+  do_execsql_test $tn.none.order {
+    SELECT term FROM vr ORDER BY term
+  } $order
+  do_execsql_test $tn.none.eq {
+    SELECT term FROM vr WHERE term = 'b'
+  } $eq
+  if {$enc eq "UTF-8"} {
+    vocab5_eqp $tn.none.plan.order {
+      SELECT term FROM vr ORDER BY term
+    } {SCAN vr VIRTUAL TABLE INDEX 1:}
+    vocab5_eqp $tn.none.plan.range {
+      SELECT term FROM vr WHERE term < 'b'
+    } {SCAN vr VIRTUAL TABLE INDEX 1025:}
+  } else {
+    vocab5_eqp $tn.none.plan.order {
+      SELECT term FROM vr ORDER BY term
+    } {
+      QUERY PLAN
+      |--SCAN vr VIRTUAL TABLE INDEX 1:
+      `--USE TEMP B-TREE FOR ORDER BY
+    }
+    vocab5_eqp $tn.none.plan.range {
+      SELECT term FROM vr WHERE term < 'b'
+    } {SCAN vr VIRTUAL TABLE INDEX 1:}
+  }
+  vocab5_eqp $tn.none.plan.eq {
+    SELECT term FROM vr WHERE term = 'b'
+  } {SCAN vr VIRTUAL TABLE INDEX 257:}
+
+  # DENY makes PRAGMA encoding fail with SQLITE_AUTH. IGNORE makes it
+  # succeed with no row. Both are unknown: the table opens, and the
+  # core applies the range and the sort. xConnect reads the encoding
+  # again after the database is reopened.
+  foreach {mode rcname} {deny SQLITE_DENY ignore SQLITE_IGNORE} {
+    # xConnect: the table was created while encoding could be read.
+    db authorizer {}
+    catch {execsql {CREATE VIRTUAL TABLE vr USING fts5vocab(ft, row)}}
+    db close
+    sqlite3 db test.db
+    db authorizer ::enc_auth
+    set ::enc_auth_rc $rcname
+    set conn_rc [catch {
+      execsql {SELECT term FROM vr WHERE term < 'b' ORDER BY +term}
+    } conn_msg]
+    do_test $tn.$mode.connect.range [list list $conn_rc $conn_msg] [list 0 $range]
+    if {$conn_rc==0} {
+      do_execsql_test $tn.$mode.connect.order {
+        SELECT term FROM vr ORDER BY term
+      } $order
+      do_execsql_test $tn.$mode.connect.eq {
+        SELECT term FROM vr WHERE term = 'b'
+      } $eq
+      vocab5_eqp $tn.$mode.connect.plan.order {
+        SELECT term FROM vr ORDER BY term
+      } {
+        QUERY PLAN
+        |--SCAN vr VIRTUAL TABLE INDEX 1:
+        `--USE TEMP B-TREE FOR ORDER BY
+      }
+      vocab5_eqp $tn.$mode.connect.plan.range {
+        SELECT term FROM vr WHERE term < 'b'
+      } {SCAN vr VIRTUAL TABLE INDEX 1:}
+      vocab5_eqp $tn.$mode.connect.plan.eq {
+        SELECT term FROM vr WHERE term = 'b'
+      } {SCAN vr VIRTUAL TABLE INDEX 257:}
+    }
+
+    # xCreate under the same authorizer.
+    db authorizer {}
+    execsql {DROP TABLE IF EXISTS vr}
+    db authorizer ::enc_auth
+    set ::enc_auth_rc $rcname
+    set create_rc [catch {
+      execsql {CREATE VIRTUAL TABLE vr USING fts5vocab(ft, row)}
+    } create_msg]
+    do_test $tn.$mode.create [list list $create_rc $create_msg] {0 {}}
+    if {$create_rc==0} {
+      do_execsql_test $tn.$mode.count {
+        SELECT count(*) FROM vr
+      } $nterm
+      do_execsql_test $tn.$mode.range {
+        SELECT term FROM vr WHERE term < 'b' ORDER BY +term
+      } $range
+      do_execsql_test $tn.$mode.order {
+        SELECT term FROM vr ORDER BY term
+      } $order
+      do_execsql_test $tn.$mode.eq {
+        SELECT term FROM vr WHERE term = 'b'
+      } $eq
+      vocab5_eqp $tn.$mode.plan.order {
+        SELECT term FROM vr ORDER BY term
+      } {
+        QUERY PLAN
+        |--SCAN vr VIRTUAL TABLE INDEX 1:
+        `--USE TEMP B-TREE FOR ORDER BY
+      }
+      vocab5_eqp $tn.$mode.plan.range {
+        SELECT term FROM vr WHERE term < 'b'
+      } {SCAN vr VIRTUAL TABLE INDEX 1:}
+      vocab5_eqp $tn.$mode.plan.eq {
+        SELECT term FROM vr WHERE term = 'b'
+      } {SCAN vr VIRTUAL TABLE INDEX 257:}
+    }
+    db authorizer {}
+  }
+
+  # Any authorizer return other than OK, DENY, or IGNORE becomes
+  # SQLITE_ERROR ("authorizer malfunction") before fts5 sees it.
+  # The constructor must fail and must not leave the table usable.
+  execsql {DROP TABLE IF EXISTS vr}
+  db authorizer ::enc_auth
+  set ::enc_auth_rc SQLITE_NOMEM
+  do_test $tn.bad.1 {
+    catchsql {CREATE VIRTUAL TABLE vr USING fts5vocab(ft, row)}
+  } {1 {authorizer malfunction}}
+  do_test $tn.bad.2 {
+    catchsql {SELECT count(*) FROM vr}
+  } {1 {no such table: vr}}
+  db authorizer {}
+}
+
+# A simulated malloc failure while creating the vocab table must surface
+# as "out of memory", not as a successful open. The sweep stops once an
+# iteration injects no fault, so a green run means faults were injected.
+if {[info commands sqlite3_memdebug_fail] ne ""} {
+  source $testdir/malloc_common.tcl
+  reset_db
+  db authorizer {}
+  execsql {
+    CREATE VIRTUAL TABLE ft USING fts5(a, tokenize=ascii);
+    INSERT INTO ft VALUES('apple b aa');
+  }
+  do_faultsim_test 9.oom -faults oom-transient -prep {
+    sqlite3_db_config_lookaside db 0 0 0
+    catch {db eval {DROP TABLE IF EXISTS vr}}
+  } -body {
+    db eval {CREATE VIRTUAL TABLE vr USING fts5vocab(ft, row)}
+  } -test {
+    faultsim_test_result {0 {}}
+  }
+}
+
+finish_test

@@ -1,5 +1,5 @@
-C Experimental:\sfts5vocab\srange\sconstraints\son\sterm\sand\sORDER\sBY\sterm\sare\sleft\sto\sthe\score\swhen\sthe\sdatabase\stext\sencoding\sis\sUTF-16.\sAI-assisted\sproof\sof\sconcept\sfor\shttps://sqlite.org/bugs/forumpost/b0c03988e894.\sThe\sFTS5\sindex\svisits\sterms\sin\smemcmp()\sorder\sof\stheir\sUTF-8\sencoding,\swhich\sis\sthe\sBINARY\scollation\sorder\sonly\sin\sa\sUTF-8\sdatabase;\sfts5VocabBestIndexMethod()\sconsumed\s<,\s<=,\s>,\s>=\sconstraints\sand\sset\sorderByConsumed\sregardless\sof\sthe\sencoding,\sso\sin\sa\sUTF-16\sdatabase\srange\squeries\sdropped\srows\sand\sORDER\sBY\sterm\sreturned\sUTF-8\sorder.\sRead\sPRAGMA\sencoding\sonce\sin\sxCreate/xConnect\sand\skeep\sequality\sconstraints.\sAdd\sext/fts5/test/fts5vocab4.test.
-D 2026-11-09T05:20:35.278
+C Experimental:\sfts5vocab\sleaves\srange\sconstraints\sand\sORDER\sBY\sterm\sto\sthe\score\swhen\sPRAGMA\sencoding\sis\sdenied,\signored,\sor\sotherwise\snot\sconfirmed\sUTF-8.\sAI-assisted\sproof\sof\sconcept\sfor\shttps://sqlite.org/bugs/forumpost/b0c03988e894.\sThe\sprevious\scandidate\sreturned\sSQLITE_AUTH\sfrom\sxCreate/xConnect\swhen\san\sauthorizer\sdenied\sPRAGMA\sencoding,\sso\sthe\svocab\stable\swould\snot\sopen,\sand\sit\streated\sa\smissing\spragma\srow\sas\sUTF-8,\sso\san\sauthorizer\sIGNORE\skept\sthe\swrong\sUTF-16\smemcmp\splans.\sEquality\sconstraints\sstay\sconsumed.\sSQLITE_NOMEM\sand\sany\sother\sprepare,\sstep,\sor\sfinalize\serror\sstill\sfails\sthe\sconstructor.\sAdd\sext/fts5/test/fts5vocab5.test.\n
+D 2026-11-09T07:07:04.698
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -123,7 +123,7 @@ F ext/fts5/fts5_test_tok.c 6021033bd4f4feffe8579efb6e1f58156ed462256bf99a2acdbd6
 F ext/fts5/fts5_tokenize.c 8c2f9267b43e74ce20df37d2aee3efe06fb2330a0d44628b489394c0ca17a6a3
 F ext/fts5/fts5_unicode2.c 536a6dae41d16edadd6a6b58c56e2ebbb133f0dfe757562a2edbcdc9b8362e50
 F ext/fts5/fts5_varint.c e64d2113f6e1bfee0032972cffc1207b77af63319746951bf1d09885d1dadf80
-F ext/fts5/fts5_vocab.c ab12ee845dfeaef7043d206fa36acc0c0a37e76ea16e991177babcb2d62fc0a4
+F ext/fts5/fts5_vocab.c 53acf391a7e9afdfd327fbae5e7aaa34c2fbd4dd29c05a28df3ddc056203941c
 F ext/fts5/fts5parse.y eb526940f892ade5693f22ffd6c4f2702543a9059942772526eac1fde256bb05
 F ext/fts5/mkportersteps.tcl 5acf962d2e0074f701620bb5308155fa1e4a63ba
 F ext/fts5/test/fts5_common.tcl c5aa7cf7148b6dcffb5b61520ae18212baf169936af734ab265143f59db328fe
@@ -278,6 +278,7 @@ F ext/fts5/test/fts5vocab.test 5afdfccb2e7732f5dfde521268fc5847e9a41bbebcb8ad0a3
 F ext/fts5/test/fts5vocab2.test 13591d6dea7b42f53113a1682247355630594b35f97a8739ee1866f0501b2ae1
 F ext/fts5/test/fts5vocab3.test ea646909dc746ecb9c9e16ca24059679038d797307f3c181cd13ca24ac4ee71c
 F ext/fts5/test/fts5vocab4.test 82ef2ad4909dddc310769d5cc3bd49ba31e06c916a7d2f58cdb346f746cb28e1
+F ext/fts5/test/fts5vocab5.test 1d406c26a834e92f8247f515da7b057260ca137be059b0f1b8873ab368825652
 F ext/fts5/tool/fts5cost.tcl 188a802e69422619c526698b92f0e5935f7d00b964e155bf4d5b4d4094989f60
 F ext/fts5/tool/fts5speed.tcl b0056f91a55b2d1a3684ec05729de92b042e2f85
 F ext/fts5/tool/fts5txt2db.tcl c0d43c8590656f8240e622b00957b3a0facc49482411a9fdc2870b45c0c82f9f
@@ -2307,11 +2308,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1fea2d9c18fc5f84b1c98a3aa95895a67851a3fbc901144e7ebba05408e2eb47
-R 98094445f5ccb57d257265b575e410e1
-T *branch * exp-fts5vocab-utf16-order-20261109
-T *sym-exp-fts5vocab-utf16-order-20261109 *
-T -sym-trunk *
+P 0cd9cf821f2ab29df501dc89ffbf3b60950ca44910ded68805c0ec89565eadd9
+R 93b646302cbfa217ebc2c8717c321172
+T *branch * exp-fts5vocab-encoding-auth-20261109
+T *sym-exp-fts5vocab-encoding-auth-20261109 *
+T -sym-exp-fts5vocab-utf16-order-20261109 *
 U karl
-Z 0fc267aec9da15644a5037a5a8ab1ae8
+Z 25bebd4b67a191b6deaf76de42e7a524
 # Remove this line to create a well-formed Fossil manifest.
