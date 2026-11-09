@@ -2486,9 +2486,8 @@ void sqlite3SubqueryColumnTypes(
         pCol->colFlags |= COLFLAG_HASTYPE;
       }
     }
-    pColl = sqlite3ExprCollSeq(pParse, p);
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
-    if( pColl==0 && pSelect->pNext!=0 ){
+    if( pSelect->pNext!=0 ){
       /* For a compound SELECT, the column takes the collating sequence of
       ** the left-most term that has one, exactly as multiSelectCollSeq()
       ** chooses it for the ORDER BY and duplicate removal of the compound
@@ -2497,8 +2496,11 @@ void sqlite3SubqueryColumnTypes(
       ** compound rewritten by convertCompoundSelectToSubquery(). */
       for(pS2=pSelect; pS2->pNext; pS2=pS2->pNext){}
       pColl = multiSelectCollSeq(pParse, pS2, i);
-    }
+    }else
 #endif
+    {
+      pColl = sqlite3ExprCollSeq(pParse, p);
+    }
     if( pColl ){
       assert( pTab->pIndex==0 );
       sqlite3ColumnSetColl(db, pCol, pColl->zName);
