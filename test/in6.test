@@ -116,4 +116,70 @@ do_execsql_test in6-3.130 {
     FROM t2 LEFT JOIN t1 ON a=x AND b in (null,0,10);
 } {NULL NULL NULL x '0' '0' '10' x '10' '10' '10' x}
 
+# 2026-11-04 https://sqlite.org/bugs/forumpost/4420a6b645f2
+# (Bug 2026-11-04T00:58:35Z)
+# The OP_IsNull bypass for the second and subsequent components of a
+# row-value IN operator was not retargeted past the OP_IfNoHope.  A NULL
+# in one of those components therefore ran OP_IfNoHope before the
+# OP_Affinity on the prefix registers, and the IN loop was abandoned on a
+# false-positive when the prefix value needed an affinity conversion.
+#
+reset_db
+do_execsql_test in6-3.140 {
+  CREATE TABLE t1(a, c);
+  INSERT INTO t1 VALUES('a',1),(NULL,0);
+  CREATE TABLE t2(x, y INT, z, w);
+  INSERT INTO t2 VALUES(1,1,'a',2);
+  CREATE INDEX i2 ON t2(y,x,z);
+  SELECT w, x, z FROM t2 WHERE y='1' AND (x,z) IN (SELECT c,a FROM t1);
+} {2 1 a}
+do_execsql_test in6-3.141 {
+  SELECT w, x, z FROM t2 NOT INDEXED
+   WHERE y='1' AND (x,z) IN (SELECT c,a FROM t1);
+} {2 1 a}
+do_execsql_test in6-3.142 {
+  SELECT w, x, z FROM t2 WHERE y=1 AND (x,z) IN (SELECT c,a FROM t1);
+} {2 1 a}
+do_execsql_test in6-3.143 {
+  SELECT w, x, z FROM t2 WHERE y='1' AND (x,z) IN (VALUES(1,'a'),(0,NULL));
+} {2 1 a}
+do_execsql_test in6-3.144 {
+  SELECT w, x, z FROM t2 WHERE y='3' AND (x,z) IN (SELECT c,a FROM t1);
+} {}
+do_execsql_test in6-3.145 {
+  SELECT t2.w, t2.x, t2.z FROM (SELECT 1 AS k) AS j
+    LEFT JOIN t2 ON y='1' AND (x,z) IN (SELECT c,a FROM t1);
+} {2 1 a}
+do_execsql_test in6-3.146 {
+  CREATE TABLE t3(x, y TEXT, z, w);
+  INSERT INTO t3 VALUES(1,'1','a',2);
+  CREATE INDEX i3 ON t3(y,x,z);
+  SELECT w, x, z FROM t3 WHERE y=1 AND (x,z) IN (SELECT c,a FROM t1);
+} {2 1 a}
+do_execsql_test in6-3.147 {
+  CREATE TABLE t4(x, y INT, z, w, v);
+  INSERT INTO t4 VALUES(1,1,'a',2,5);
+  CREATE INDEX i4 ON t4(y,x,z,w);
+  CREATE TABLE t5(a, c, d);
+  INSERT INTO t5 VALUES('a',1,2),(0,0,NULL);
+  SELECT v, x, z, w FROM t4 WHERE y='1' AND (x,z,w) IN (SELECT c,a,d FROM t5);
+} {5 1 a 2}
+do_execsql_test in6-3.148 {
+  CREATE TABLE t6(x, y INT, z, w INT);
+  INSERT INTO t6 VALUES(1,1,'a',2);
+  CREATE INDEX i6 ON t6(y,w,x,z);
+  SELECT w, x, z FROM t6
+   WHERE y='1' AND w='2' AND (x,z) IN (SELECT c,a FROM t1);
+} {2 1 a}
+do_execsql_test in6-3.149 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES('a',1),(NULL,2);
+  SELECT w, x, z FROM t2 WHERE y='1' AND (x,z) IN (SELECT c,a FROM t1);
+} {2 1 a}
+do_test in6-3.150 {
+  db eval {
+    EXPLAIN SELECT w, x, z FROM t2 WHERE y='1' AND (x,z) IN (SELECT c,a FROM t1);
+  }
+} {/IfNoHope/}
+
 finish_test

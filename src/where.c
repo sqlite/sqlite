@@ -7783,6 +7783,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( (pLoop->wsFlags & WHERE_IN_ABLE)!=0 && pLevel->u.in.nIn>0 ){
       struct InLoop *pIn;
       int j;
+      int k;
       for(j=pLevel->u.in.nIn, pIn=&pLevel->u.in.aInLoop[j-1]; j>0; j--, pIn--){
         assert( sqlite3VdbeGetOp(v, pIn->addrInTop+1)->opcode==OP_IsNull
                  || pParse->db->mallocFailed );
@@ -7813,6 +7814,16 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
               ** OP_IsNull also bypasses the OP_Affinity opcode that is
               ** required by OP_IfNoHope. */
               sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
+              /* Do the same for the OP_IsNull of the second and subsequent
+              ** components of a row-value IN.  Their InLoop entries follow
+              ** this one with eEndLoopOp==OP_Noop, and earlier passes
+              ** through this loop pointed their OP_IsNull at the OP_IfNoHope
+              ** just coded, which would then see the prefix registers before
+              ** OP_Affinity has run.  Bug 2026-11-04T00:58:35Z */
+              for(k=j; k<pLevel->u.in.nIn
+                    && pLevel->u.in.aInLoop[k].eEndLoopOp==OP_Noop; k++){
+                sqlite3VdbeJumpHere(v, pLevel->u.in.aInLoop[k].addrInTop+1);
+              }
             }
           }
           sqlite3VdbeAddOp2(v, pIn->eEndLoopOp, pIn->iCur, pIn->addrInTop);
