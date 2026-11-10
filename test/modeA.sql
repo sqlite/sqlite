@@ -486,7 +486,115 @@ SELECT 'ab'||char(7)||'cd'||char(8)||'ef' AS x;
 │ ef   │
 ╰──────╯
 END
-.mode line --titlelimit 3
+.mode line --titlelimit 3 --wrap 0 --escape auto
+
+# The nLineLimit and nTitleLimit fields of sqlite3_qrf_spec are 16-bit.
+# A large value for --linelimit or --titlelimit must not wrap around into
+# a small one.  Bug 2026-11-05T22:26:14Z.
+#
+.testcase 570
+.mode box --titlelimit 20
+SELECT 1 AS abcdefghij;
+.check <<END
+╭────────────╮
+│ abcdefghij │
+╞════════════╡
+│          1 │
+╰────────────╯
+END
+
+.testcase 571
+.mode box --titlelimit 65540
+SELECT 1 AS abcdefghij;
+.check <<END
+╭────────────╮
+│ abcdefghij │
+╞════════════╡
+│          1 │
+╰────────────╯
+END
+
+.testcase 572
+.mode box --linelimit 20
+SELECT 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭─────╮
+│  x  │
+╞═════╡
+│ abc │
+│ def │
+│ ghi │
+╰─────╯
+END
+
+.testcase 573
+.mode box --linelimit 65537
+SELECT 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭─────╮
+│  x  │
+╞═════╡
+│ abc │
+│ def │
+│ ghi │
+╰─────╯
+END
+
+# Values that do not fit in 32 bits, and values that wrap to a negative
+# 16-bit number.
+.testcase 574
+.mode box --titlelimit 4294967297 --linelimit 4294967297
+SELECT 1 AS abcdefghij, 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭────────────┬─────╮
+│ abcdefghij │  x  │
+╞════════════╪═════╡
+│          1 │ abc │
+│            │ def │
+│            │ ghi │
+╰────────────┴─────╯
+END
+
+.testcase 575
+.mode box --titlelimit 32769 --linelimit 32769
+SELECT 1 AS abcdefghij, 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭────────────┬─────╮
+│ abcdefghij │  x  │
+╞════════════╪═════╡
+│          1 │ abc │
+│            │ def │
+│            │ ghi │
+╰────────────┴─────╯
+END
+
+# The --limits option has the same problem.
+.testcase 576
+.mode box --limits 65537,0,65540
+SELECT 1 AS abcdefghij, 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭────────────┬─────╮
+│ abcdefghij │  x  │
+╞════════════╪═════╡
+│          1 │ abc │
+│            │ def │
+│            │ ghi │
+╰────────────┴─────╯
+END
+
+# Small values are unaffected.
+.testcase 577
+.mode box --titlelimit 4 --linelimit 1
+SELECT 1 AS abcdefghij, 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭──────┬─────╮
+│ a... │  x  │
+╞══════╪═════╡
+│    1 │ abc │
+│      │ ... │
+╰──────┴─────╯
+END
+.mode line --titlelimit 3 --linelimit 5
 
 # line --screenwidth and --colsep
 #

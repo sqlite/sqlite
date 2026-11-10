@@ -2390,6 +2390,21 @@ static void modeSetStr(char **az, const char *zNew){
 static int pickStr(const char *zArg, char **pzErr, ...);
 
 /*
+** Clamp a user-supplied value into the range 0..32767 or
+** 0..2147483647
+*/
+static short int modeClamp16(i64 x){
+  if( x<0 ) x = 0;
+  if( x>0x7fff ) x = 0x7fff;
+  return (short int)x;
+}
+static int modeClamp32(i64 x){
+  if( x<0 ) x = 0;
+  if( x>0x7fffffff ) x = 0x7fffffff;
+  return (int)x;
+}
+
+/*
 ** Change the limits on the display mode.  Return 0 on
 ** success.  Return non-zero if zArg is mis-formatted.
 **
@@ -2416,9 +2431,9 @@ static int modeSetLimit(ShellState *p, const char *zArg){
     int L, C, T = 0;
     int nNum = sscanf(zArg, "%d,%d,%d", &L, &C, &T);
     if( nNum<2 || L<0 || C<0 || T<0) return 1;
-    p->mode.spec.nLineLimit = L;
+    p->mode.spec.nLineLimit = modeClamp16(L);
     p->mode.spec.nCharLimit = C;
-    if( nNum==3 ) p->mode.spec.nTitleLimit = T;
+    if( nNum==3 ) p->mode.spec.nTitleLimit = modeClamp16(T);
   }
   return 0;
 }
@@ -8979,17 +8994,17 @@ static int dotCmdMode(ShellState *p){
       chng = 1;
     }else if( 0<=(k=pickStr(z,0,
                   "-charlimit","-linelimit","-titlelimit","-multiinsert","")) ){
-      int w;   /*  0            1            2             3 */
+      i64 w;   /*  0            1            2             3 */
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
       w = integerValue(azArg[++i]);
       switch( k ){
-        case 0:   p->mode.spec.nCharLimit = w;    break;
-        case 1:   p->mode.spec.nLineLimit = w;    break;
-        case 2:   p->mode.spec.nTitleLimit = w;   break;
-        default:  p->mode.spec.nMultiInsert = w;  break;
+        case 0:   p->mode.spec.nCharLimit = modeClamp32(w);   break;
+        case 1:   p->mode.spec.nLineLimit = modeClamp16(w);   break;
+        case 2:   p->mode.spec.nTitleLimit = modeClamp16(w);  break;
+        default:  p->mode.spec.nMultiInsert = modeClamp32(w); break;
       }
       chng = 1;
     }else if( 0<=(k=pickStr(z,0,"-tablename","-rowsep","-colsep","-null","")) ){
