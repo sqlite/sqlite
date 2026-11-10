@@ -1,5 +1,5 @@
-C Fix\sanother\sadverse\sinteraction\sbetween\souter\sjoin\sstrength\sreduction\sand\nquery\sflattening,\sas\sreported\sby\n[bugs:/info/2026-11-08T01:01:03Z|bug\s2026-11-08T01:01:03Z].\s\sAlso\sadd\nmore\stest\scases\sfor\sthe\sprevious\sstrength-reduction-flattening\sfix\nat\s[8d213d8a1dc2a1b6].
-D 2026-11-10T13:19:53.260
+C Remove\sa\sstray,\sobsolete\sbit\sof\sBig\sEndian\stest\scode.\sForum\sreport\s[forum:13cdfbb341|2026-11-05T12:25:12Z].
+D 2026-11-10T14:11:11.286
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1250,7 +1250,7 @@ F test/fts3conf.test c9cd45433b6787d48a43e84949aa2eb8b3b3d242bac7276731c1476290d
 F test/fts3corrupt.test 6732477c5ace050c5758a40a8b5706c8c0cccd416b9c558e0e15224805a40e57
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
 F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cdb764b491f
-F test/fts3corrupt4.test b0a69267a2a4aa76349364c9948ec5ad078562bce55675d6691563164e9ffbca
+F test/fts3corrupt4.test c9ad35ad5560b7d4d3ae895658bda743839d2f206d667f19da0ce6dbbe325f1d
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3corrupt6.test 9ea944e3cd17a36c64451059022fabff53bd338a43356d1f49264ce8aa9477ad
 F test/fts3corrupt7.test 49a4ef171a00b7807396c7ee6e88eb11346351551ba986d8484853a80fe887b2
@@ -2307,8 +2307,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 84b0327ef2e2dbc90326d849fd2a9c0242a834445b5ac7ed0371bf4d4fc78443
-R 5e2b3239aadfb5d5e66f2d589c46c97b
-U drh
-Z 16148c53e8412b248e44c3d0b9fa5132
+P 89066ca37cc8eeda6e88eab0f71190921f273e82032d082994db84d2ca893946
+R 6e25a35ed64ee67c7078ab7f0495835b
+U stephan
+Z 5b7e19ea3af40cf506a30c3a98921f2c
 # Remove this line to create a well-formed Fossil manifest.
