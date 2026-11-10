@@ -148,9 +148,9 @@ SELECT count(*) FROM gp;
 #
 #   https://sqlite.org/bugs/forumpost/b1d3b87a8c
 #
+.if capable('vtab')
 .open :memory:
 .mode list
-
 .testcase 700
 CREATE TABLE t7(a longertypealways, b shorttypealways, c generatedalways);
 SELECT name, type FROM pragma_table_info('t7');
@@ -198,3 +198,4 @@ END
 .testcase 750
 CREATE TABLE t12(x INT, a generated always as (x+1)) STRICT;
 .check -glob "*rror near line *: missing datatype for t12.a*"
+.endif /* capable('vtab') */
