@@ -2325,19 +2325,6 @@ u32 sqlite3ExprListFlags(const ExprList *pList){
 }
 
 /*
-** This is a SELECT-node callback for the expression walker that
-** always "fails".  By "fail" in this case, we mean set
-** pWalker->eCode to zero and abort.
-**
-** This callback is used by multiple expression walkers.
-*/
-int sqlite3SelectWalkFail(Walker *pWalker, Select *NotUsed){
-  UNUSED_PARAMETER(NotUsed);
-  pWalker->eCode = 0;
-  return WRC_Abort;
-}
-
-/*
 ** Check the input string to see if it is "true" or "false" (in any case).
 **
 **       If the string is....           Return

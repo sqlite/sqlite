@@ -519,7 +519,7 @@ static void clearOuterOnExpr(Expr *p, int iTable){
   memset(&w, 0, sizeof(w));
   w.u.iCur = iTable;
   w.xExprCallback = clearOuterOnExprCb;
-  w.xSelectCallback = sqlite3SelectWalkNoop;
+  w.xSelectCallback = 0;
   sqlite3WalkExpr(&w,p);
 }
 
