@@ -204,7 +204,7 @@ zulu_time:
 **
 ** Return 1 if there is a parsing error and 0 on success.
 */
-static int parseHhMmSs(const char *zDate, DateTime *p){
+static int parseHhMmSs(const char *zDate, DateTime *p, int bAllowTZ){
   int h, m, s;
   double ms = 0.0;
   if( getDigits(zDate, "20c:20e", &h, &m)!=2 ){
@@ -240,6 +240,7 @@ static int parseHhMmSs(const char *zDate, DateTime *p){
   p->h = h;
   p->m = m;
   p->s = s + ms;
+  if( !bAllowTZ && zDate[0] ) return 1;
   if( parseTimezone(zDate, p) ) return 1;
   return 0;
 }
@@ -359,7 +360,7 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
   if( neg ) Y = -Y;
   zDate += 10;
   while( sqlite3Isspace(*zDate) || 'T'==*(u8*)zDate ){ zDate++; }
-  if( parseHhMmSs(zDate, p)==0 ){
+  if( parseHhMmSs(zDate, p, 1)==0 ){
     if( p->h==24 ){
       int mxD = daysOfMonth(Y,M);
       p->h = 0;
@@ -450,7 +451,7 @@ static int parseDateOrTime(
   double r;
   if( parseYyyyMmDd(zDate,p)==0 ){
     return 0;
-  }else if( parseHhMmSs(zDate, p)==0 ){
+  }else if( parseHhMmSs(zDate, p, 1)==0 ){
     return 0;
   }else if( sqlite3StrICmp(zDate,"now")==0 && sqlite3NotPureFunc(context) ){
     return setDateTimeToCurrent(context, p);
@@ -1106,19 +1107,21 @@ static int parseModifier(
 
         DateTime tx;
         sqlite3_int64 day;
-        int nDay;              /* 1 for a shift of exactly 24:00 */
+        int is24hr;            /* 1 for a shift of exactly 24:00 */
         int bTimeOnly = z2==z; /* This is not the HH:MM tail of a
                                ** +/-YYYY-MM-DD HH:MM shift, whose own
                                ** nFloor must survive (e0fe679e7c) */
         if( !sqlite3Isdigit(*z2) ) z2++;
         memset(&tx, 0, sizeof(tx));
-        if( parseHhMmSs(z2, &tx) ) break;
-        nDay = tx.h==24 && tx.tz==0;
+        if( parseHhMmSs(z2, &tx, 0) ){
+          break;  /* HH:MM:SS.FFF failed to parse */
+        }
+        is24hr = tx.h==24;
         computeJD(&tx);
         tx.iJD -= 43200000;
         day = tx.iJD/86400000;
         tx.iJD -= day*86400000;
-        tx.iJD += nDay*(sqlite3_int64)86400000;
+        if( is24hr ) tx.iJD += (sqlite3_int64)86400000;
         if( z0=='-' ) tx.iJD = -tx.iJD;
         computeJD(p);
         clearYMD_HMS_TZ(p);

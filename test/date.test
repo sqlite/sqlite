@@ -791,23 +791,6 @@ datetest 24.10 {datetime('2000-01-01 00:00:00','+24:01')} {NULL}
 datetest 24.11 {datetime('2000-01-01 00:00:00','+24:00:00.5')} {NULL}
 datetest 24.12 {datetime('2024-01-31','+0000-01-00 24:00','floor')} \
                {2024-03-01 00:00:00}
-# A zero timezone suffix behaves like no suffix.  A non-zero suffix keeps
-# the historical (time - offset) modulo one day shift.
-datetest 24.13 {datetime('2000-01-01 00:00:00','+24:00Z')} {2000-01-02 00:00:00}
-datetest 24.14 {datetime('2000-01-01 00:00:00','-24:00+00:00')} \
-               {1999-12-31 00:00:00}
-datetest 24.15 {datetime('2000-01-01 00:00:00','+24:00+01:00')} \
-               {2000-01-01 23:00:00}
-datetest 24.16 {datetime('2000-01-01 00:00:00','-24:00-01:00')} \
-               {1999-12-31 23:00:00}
-datetest 24.17 {datetime('2000-01-01 00:00:00','24:00+05:30')} \
-               {2000-01-01 18:30:00}
-datetest 24.18 {datetime('2000-01-01 00:00:00','+0000-00-00 24:00-01:00')} \
-               {2000-01-01 01:00:00}
-datetest 24.19 {datetime('2024-01-31','+0000-01-00 24:00+01:00','floor')} \
-               {2024-02-29 23:00:00}
-datetest 24.20 {datetime('2000-01-01 00:00:00','+23:00-01:00')} \
-               {2000-01-01 00:00:00}
 
 # https://sqlite.org/bugs/forumpost/3cc3a0207e
 #
