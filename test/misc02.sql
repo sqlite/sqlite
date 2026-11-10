@@ -592,3 +592,23 @@ SELECT (SELECT v1.c0+1) FROM v1 CROSS JOIN (SELECT * FROM h0base) AS h0 RIGHT JO
 .testctrl opt +All -q
 SELECT (SELECT v1.c0+1) FROM v1 CROSS JOIN (SELECT * FROM h0base) AS h0 RIGHT JOIN h1 ON v1.c1=h1.c1 WHERE h0.a=0;
 .check 1
+
+# A row-value IN whose subquery has DISTINCT and LIMIT/OFFSET must not
+# lose rows when only some of its columns can drive an index.
+#
+#   https://sqlite.org/bugs/forumpost/51d85f8cae
+#
+.open :memory:
+CREATE TABLE t(a INT, b INT, c INT);
+INSERT INTO t VALUES(1,2,3),(2,1,3),(3,3,3);
+CREATE INDEX i1 ON t(b);
+CREATE TABLE s(p, q, r);
+INSERT INTO s VALUES(2,2,2),(1,2,3),(2,1,3),(3,3,3);
+
+.testcase 1300
+SELECT a,b,c FROM t WHERE (a,b,c) IN (SELECT DISTINCT p,q,r FROM s ORDER BY r, p LIMIT 2 OFFSET 1) ORDER BY a;
+.check "1,2,3\n2,1,3"
+
+.testcase 1310
+SELECT a,b,c FROM t NOT INDEXED WHERE (a,b,c) IN (SELECT DISTINCT p,q,r FROM s ORDER BY r, p LIMIT 2 OFFSET 1) ORDER BY a;
+.check "1,2,3\n2,1,3"
