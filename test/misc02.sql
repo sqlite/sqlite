@@ -742,3 +742,56 @@ SELECT count(*), 'ok' FROM c1570;
 ROLLBACK;
 PRAGMA foreign_keys=OFF;
 .check -glob "*"
+
+# A DELETE inside a transaction that fails with an FK error because a
+# BEFORE trigger with RAISE(IGNORE) blocks part of an ON DELETE CASCADE
+# must be rolled back, as it is in autocommit mode.
+#
+#   https://sqlite.org/bugs/forumpost/791eb054fd
+#
+.testcase 1600
+PRAGMA foreign_keys=ON;
+CREATE TABLE p1600(id INTEGER PRIMARY KEY);
+CREATE TABLE c1600(id INTEGER PRIMARY KEY,
+                   r REFERENCES p1600(id) ON DELETE CASCADE);
+INSERT INTO p1600 VALUES(1),(2),(3),(4);
+INSERT INTO c1600 VALUES(1,1),(2,2),(3,3),(4,4);
+CREATE TRIGGER t1600 BEFORE DELETE ON c1600 WHEN old.id=3 BEGIN
+  SELECT RAISE(IGNORE);
+END;
+BEGIN;
+DELETE FROM p1600;
+.check -glob "*rror near line *: FOREIGN KEY constraint failed*"
+
+.testcase 1610
+SELECT (SELECT count(*) FROM p1600), (SELECT count(*) FROM c1600);
+PRAGMA foreign_key_check;
+.check 4,4
+
+.testcase 1620
+COMMIT;
+.check -glob "*"
+
+# Same again with ON DELETE SET NULL and a BEFORE UPDATE trigger.
+.testcase 1630
+CREATE TABLE p1630(id INTEGER PRIMARY KEY);
+CREATE TABLE c1630(id INTEGER PRIMARY KEY,
+                   r REFERENCES p1630(id) ON DELETE SET NULL);
+INSERT INTO p1630 VALUES(1),(2),(3),(4);
+INSERT INTO c1630 VALUES(1,1),(2,2),(3,3),(4,4);
+CREATE TRIGGER t1630 BEFORE UPDATE ON c1630 WHEN old.id=3 BEGIN
+  SELECT RAISE(IGNORE);
+END;
+BEGIN;
+DELETE FROM p1630;
+.check -glob "*rror near line *: FOREIGN KEY constraint failed*"
+
+.testcase 1640
+SELECT (SELECT count(*) FROM p1630), (SELECT count(r) FROM c1630);
+PRAGMA foreign_key_check;
+.check 4,4
+
+.testcase 1650
+COMMIT;
+PRAGMA foreign_keys=OFF;
+.check -glob "*"

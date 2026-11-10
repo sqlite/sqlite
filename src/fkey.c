@@ -1008,6 +1008,23 @@ static int isSetNullAction(Parse *pParse, FKey *pFKey){
 }
 
 /*
+** Return true if the child table of FK constraint pFKey has one or
+** more BEFORE triggers that could interfere with the action (either
+** a CASCADE or SET NULL) caused by either a DELETE (if bUpdate==0)
+** or UPDATE (if bUpdate==1) of the parent table. Or false otherwise.
+*/
+static int fkBeforeTriggersExist(
+  Parse *pParse,                  /* Parse context */
+  FKey *pFKey,                    /* Foreign key constraint */
+  int bUpdate                     /* True for ON UPDATE, false ON DELETE */
+){
+  int mask = 0;
+  int op = (!bUpdate && pFKey->aAction[0]==OE_Cascade) ? TK_DELETE : TK_UPDATE;
+  sqlite3TriggersExist(pParse, pFKey->pFrom, op, 0, &mask);
+  return (mask & TRIGGER_BEFORE)!=0;
+}
+
+/*
 ** This function is called when inserting, deleting or updating a row of
 ** table pTab to generate VDBE code to perform foreign key constraint 
 ** processing for the operation.
@@ -1210,10 +1227,16 @@ void sqlite3FkCheck(
         if( (db->flags & SQLITE_FkNoAction) ) eAction = OE_None;
 
         fkScanChildren(pParse, pSrc, pTab, pIdx, pFKey, aiCol, regOld, 1);
-        /* If this is a deferred FK constraint, or a CASCADE or SET NULL
-        ** action applies, then any foreign key violations caused by
-        ** removing the parent key will be rectified by the action trigger.
-        ** So do not set the "may-abort" flag in this case.
+        /* If this is an immediate FK constraint, then foreign key violations 
+        ** caused by removing the parent key may cause an abort. 
+        **
+        ** Except - if a CASCADE or SET NULL action applies, then any such
+        ** foreign key violations will be rectified by the action trigger. So
+        ** do not set the "may-abort" flag in this case.
+        **
+        ** Except - if there are BEFORE triggers on the child table, then
+        ** one of them may use RAISE(IGNORE) to prevent the SET NULL or
+        ** CASCADE action from taking place. Do set the "may-abort" flag then.
         **
         ** Note 1: If the FK is declared "ON UPDATE CASCADE", then the
         ** may-abort flag will eventually be set on this statement anyway
@@ -1227,7 +1250,10 @@ void sqlite3FkCheck(
         ** child table to fire. In these cases the fk constraint counters
         ** might be set incorrectly if any OP_FkCounter related scans are 
         ** omitted.  */
-        if( !pFKey->isDeferred && eAction!=OE_Cascade && eAction!=OE_SetNull ){
+        if( !pFKey->isDeferred && (
+            (eAction!=OE_Cascade && eAction!=OE_SetNull)
+         || fkBeforeTriggersExist(pParse, pFKey, aChange!=0)
+        )){
           sqlite3MayAbort(pParse);
         }
       }
