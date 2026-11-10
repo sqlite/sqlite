@@ -199,3 +199,22 @@ END
 CREATE TABLE t12(x INT, a generated always as (x+1)) STRICT;
 .check -glob "*rror near line *: missing datatype for t12.a*"
 .endif /* capable('vtab') */
+
+# Forum post 2026-11-09T04:18:04Z sqlite.org/forum/forumpost/f19d79a00a
+# Correctly convert ridicuous AI-generated floating point literals.
+#
+.testcase 800
+SELECT CAST( format('0.%.1000000c125e+1000001','0') AS real );
+.check 1.25
+.testcase 801
+SELECT CAST( format('-125%.1000000c1e-1000001','0') AS real );
+.check -125.0
+.testcase 802
+SELECT 1.234e+1000000000000000000000000000000000000000000000000000000000000000000;
+.check Inf
+.testcase 803
+SELECT 1.234e-2000000000000000000000000000000000000000000000000000000000000000000;
+.check 0.0
+.testcase 804
+SELECT 0.0e+4000000000000000000000000000000000000000000000000000000000000000000;
+.check 0.0

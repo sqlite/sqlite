@@ -784,7 +784,7 @@ static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
 ** The (current) algorithm is adapted from the work of Ross Cox at
 ** https://github.com/rsc/fpfmt
 */
-static double sqlite3Fp10Convert2(u64 d, int p){
+static double sqlite3Fp10Convert2(u64 d, i64 p){
   int b, lp, e, adj, s;
   u32 pwr10l, mid1;
   u64 pwr10h, x, hi, lo, sticky, u, m;
@@ -882,7 +882,7 @@ int sqlite3AtoF(const char *zIn, double *pResult){
   const unsigned char *z = (const unsigned char*)zIn;
   int neg = 0;       /* True for a negative value */
   u64 s = 0;         /* mantissa */
-  int d = 0;         /* Value is s * pow(10,d) */
+  i64 d = 0;         /* Value is s * pow(10,d) */
   int mState = 0;    /* 1: digit seen 2: fp 4: hard-zero */
   unsigned v;        /* Value of a single digit */
 
@@ -960,14 +960,14 @@ int sqlite3AtoF(const char *zIn, double *pResult){
     }
     /* copy digits to exponent */
     if( (v = (unsigned)z[0] - '0')<10 ){
-      int exp = v;
+      u64 exp = v;
       z++;
       mState |= 2;
       while( (v = (unsigned)z[0] - '0')<10 ){
-        exp = exp<10000 ? (exp*10 + v) : 10000;
+        exp = exp*10 + v + (exp & (0xffULL<<32));
         z++;
       }
-      d += esign*exp;
+      d += esign*(exp & ((1ULL<<48)-1));
     }else{
       z--;  /* Leave z[0] at 'e' or '+' or '-',
             ** so that the return is 0 or -1 */
