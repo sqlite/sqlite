@@ -257,6 +257,76 @@ SELECT a AS 'abcd', b FROM t2 WHERE c=3;
   b: 2
 END
 
+# --titlelimit counts display width, not bytes
+#
+# ten two-byte characters fit within --titlelimit 10
+.testcase 541
+.mode box --titlelimit 10
+SELECT 1 AS 'abcdefghij', 2 AS 'éééééééééé';
+.check <<END
+╭────────────┬────────────╮
+│ abcdefghij │ éééééééééé │
+╞════════════╪════════════╡
+│          1 │          2 │
+╰────────────┴────────────╯
+END
+# nine characters fit
+.testcase 542
+.mode box --titlelimit 10
+SELECT 1 AS 'abcdefghi', 2 AS 'ééééééééé';
+.check <<END
+╭───────────┬───────────╮
+│ abcdefghi │ ééééééééé │
+╞═══════════╪═══════════╡
+│         1 │         2 │
+╰───────────┴───────────╯
+END
+# eleven characters are truncated to seven plus an ellipsis
+.testcase 543
+.mode box --titlelimit 10
+SELECT 1 AS 'abcdefghijk', 2 AS 'ééééééééééé';
+.check <<END
+╭────────────┬────────────╮
+│ abcdefg... │ ééééééé... │
+╞════════════╪════════════╡
+│          1 │          2 │
+╰────────────┴────────────╯
+END
+# multi-byte characters at the end of the title
+.testcase 544
+.mode box --titlelimit 10
+SELECT 1 AS 'éééééééééz', 2 AS 'zééééééééé';
+.check <<END
+╭────────────┬────────────╮
+│ éééééééééz │ zééééééééé │
+╞════════════╪════════════╡
+│          1 │          2 │
+╰────────────┴────────────╯
+END
+# three-byte characters
+.testcase 545
+.mode box --titlelimit 10
+SELECT 1 AS '€€€€€€€€€', 2 AS '€€€€€€€€€€';
+.check <<END
+╭───────────┬────────────╮
+│ €€€€€€€€€ │ €€€€€€€€€€ │
+╞═══════════╪════════════╡
+│         1 │          2 │
+╰───────────┴────────────╯
+END
+# double-width characters; truncation must account for their width
+.testcase 546
+.mode box --titlelimit 10
+SELECT 1 AS '安安安安安安', 2 AS 'a安安安安安安';
+.check <<END
+╭───────────┬────────────╮
+│ 安安安... │ a安安安... │
+╞═══════════╪════════════╡
+│         1 │          2 │
+╰───────────┴────────────╯
+END
+.mode line --titlelimit 3
+
 # line --screenwidth and --colsep
 #
 .testcase 550

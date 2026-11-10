@@ -1095,6 +1095,7 @@ static int qrfTitleLimit(char *zIn, int N){
   unsigned char *z = (unsigned char*)zIn;
   int n = 0;
   unsigned char *zEllipsis = 0;
+  int nEllipsis = 0;     /* Display width of the text before zEllipsis */
   while( 1 /*exit-by-break*/ ){
     if( z[0]<' ' ){
       int k;
@@ -1111,20 +1112,24 @@ static int qrfTitleLimit(char *zIn, int N){
         z++;
       }
     }else if( (0x80&z[0])==0 ){
-      if( n>=(N-3) && zEllipsis==0 ) zEllipsis = z;
+      if( n>=(N-3) && zEllipsis==0 ){ zEllipsis = z; nEllipsis = n; }
       if( n==N ){ z[0] = 0; break; }
       n++;
       z++;
     }else{
       int u = 0;
       int len = sqlite3_qrf_decode_utf8(z, &u);
-      if( n+len>(N-3) && zEllipsis==0 ) zEllipsis = z;
-      if( n+len>N ){ z[0] = 0; break; }
+      int w = sqlite3_qrf_wcwidth(u);   /* Display width, not byte count */
+      if( n+w>(N-3) && zEllipsis==0 ){ zEllipsis = z; nEllipsis = n; }
+      if( n+w>N ){ z[0] = 0; break; }
       z += len;
-      n += sqlite3_qrf_wcwidth(u);
+      n += w;
     }
   }
-  if( zEllipsis && N>=3 ) memcpy(zEllipsis,"...",4);
+  if( zEllipsis && N>=3 ){
+    memcpy(zEllipsis,"...",4);
+    n = nEllipsis + 3;   /* Width of the text kept plus the "..." */
+  }
   return n;
 }
 
