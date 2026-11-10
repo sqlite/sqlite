@@ -876,7 +876,7 @@ const installAsyncProxy = function(){
              The waitAsync() counterpart of this block can be used by
              both "opfs" and "opfs-wl", whereas this block can only be
              used by "opfs". Performance comparisons between the two
-             in high-contention tests have been indecisive.
+             in high-contention tests have been inconclusive.
           */
           if('not-equal'!==Atomics.wait(
             state.sabOPView, slotWhichOp, 0, state.asyncIdleWaitTime
