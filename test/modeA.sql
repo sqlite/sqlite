@@ -403,6 +403,91 @@ END
 .mode line --titlelimit 3
 .nullvalue ""
 
+# With "--escape off" a control character in a value is shown by the
+# columnar modes as a one-column Control Picture symbol.  Column widths
+# must count it as one column, so that the value is not wrapped.
+# Bug 2026-11-05T22:27:00Z.
+#
+.testcase 560
+.mode box --escape off
+SELECT 'a'||char(7)||'b' AS x;
+.check <<END
+╭─────╮
+│  x  │
+╞═════╡
+│ a␇b │
+╰─────╯
+END
+
+.testcase 561
+.mode box --escape symbol
+SELECT 'a'||char(7)||'b' AS x;
+.check <<END
+╭─────╮
+│  x  │
+╞═════╡
+│ a␇b │
+╰─────╯
+END
+
+.testcase 562
+.mode box --escape ascii
+SELECT 'a'||char(7)||'b' AS x;
+.check <<END
+╭──────╮
+│  x   │
+╞══════╡
+│ a^Gb │
+╰──────╯
+END
+
+.testcase 563
+.mode table --escape off
+SELECT 'a'||char(7)||'b' AS x, char(1)||'q'||char(2)||char(31) AS y;
+.check <<END
++-----+------+
+|  x  |  y   |
++-----+------+
+| a␇b | ␁q␂␟ |
++-----+------+
+END
+
+.testcase 564
+.mode column --escape off
+SELECT 'a'||char(7)||'b' AS x, 'xyz'||char(8) AS y;
+.check <<END
+ x    y
+---  ----
+a␇b  xyz␈
+END
+
+# A title wider than the value never wrapped, and still does not.
+.testcase 565
+.mode box --escape off --titlelimit 20
+SELECT 'a'||char(7)||'b' AS 'a long title';
+.check <<END
+╭──────────────╮
+│ a long title │
+╞══════════════╡
+│ a␇b          │
+╰──────────────╯
+END
+
+# Control characters combined with a width limit.
+.testcase 566
+.mode box --escape off --wrap 4
+SELECT 'ab'||char(7)||'cd'||char(8)||'ef' AS x;
+.check <<END
+╭──────╮
+│  x   │
+╞══════╡
+│ ab␇  │
+│ cd␈  │
+│ ef   │
+╰──────╯
+END
+.mode line --titlelimit 3
+
 # line --screenwidth and --colsep
 #
 .testcase 550

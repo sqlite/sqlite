@@ -741,6 +741,12 @@ static int qrfDisplayWidth(const char *zIn, sqlite3_int64 nByte, int *pnNL){
           nNL++;
           if( n>mx ) mx = n;
           n = 0;
+        }else{
+          /* Any other control character is shown by qrfAppendWithTabs()
+          ** as a one-column-wide Control Picture symbol, and is counted as
+          ** one column by qrfWrapLine().  Count it as one column here too,
+          ** so that columns are wide enough to hold it. */
+          n++;
         }
         z++;
       }
