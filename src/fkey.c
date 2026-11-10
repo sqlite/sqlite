@@ -1040,6 +1040,7 @@ void sqlite3FkCheck(
   int iDb;                        /* Index of database containing pTab */
   const char *zDb;                /* Name of database containing pTab */
   int isIgnoreErrors = pParse->disableTriggers;
+  int iPass;                      /* 0: immediate FKs, 1: deferred FKs */
 
   /* Exactly one of regOld and regNew should be non-zero. */
   assert( (regOld==0)!=(regNew==0) );
@@ -1053,106 +1054,116 @@ void sqlite3FkCheck(
   zDb = db->aDb[iDb].zDbSName;
 
   /* Loop through all the foreign key constraints for which pTab is the
-  ** child table (the table that the foreign key definition is part of).  */
-  for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pFKey->pNextFrom){
-    Table *pTo;                   /* Parent table of foreign key pFKey */
-    Index *pIdx = 0;              /* Index on key columns in pTo */
-    int *aiFree = 0;
-    int *aiCol;
-    int iCol;
-    int i;
-    int bIgnore = 0;
-
-    if( aChange 
-     && sqlite3_stricmp(pTab->zName, pFKey->zTo)!=0
-     && fkChildIsModified(pTab, pFKey, aChange, bChngRowid)==0 
-    ){
-      continue;
-    }
-
-    /* Find the parent table of this foreign key. Also find a unique index 
-    ** on the parent key columns in the parent table. If either of these 
-    ** schema items cannot be located, set an error in pParse and return 
-    ** early.  */
-    if( pParse->disableTriggers ){
-      pTo = sqlite3FindTable(db, pFKey->zTo, zDb);
-    }else{
-      pTo = sqlite3LocateTable(pParse, 0, pFKey->zTo, zDb);
-    }
-    if( !pTo || sqlite3FkLocateIndex(pParse, pTo, pFKey, &pIdx, &aiFree) ){
-      assert( isIgnoreErrors==0 || (regOld!=0 && regNew==0) );
-      if( !isIgnoreErrors || db->mallocFailed ) return;
-      if( pTo==0 ){
-        /* If isIgnoreErrors is true, then a table is being dropped. In this
-        ** case SQLite runs a "DELETE FROM xxx" on the table being dropped
-        ** before actually dropping it in order to check FK constraints.
-        ** If the parent table of an FK constraint on the current table is
-        ** missing, behave as if it is empty. i.e. decrement the relevant
-        ** FK counter for each row of the current table with non-NULL keys.
-        */
-        Vdbe *v = sqlite3GetVdbe(pParse);
-        int iJump = sqlite3VdbeCurrentAddr(v) + pFKey->nCol + 1;
-        for(i=0; i<pFKey->nCol; i++){
-          int iFromCol, iReg;
-          iFromCol = pFKey->aCol[i].iFrom;
-          iReg = sqlite3TableColumnToStorage(pFKey->pFrom,iFromCol) + regOld+1;
-          sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iJump); VdbeCoverage(v);
+  ** child table (the table that the foreign key definition is part of).
+  **
+  ** Immediate constraints are processed first, then deferred constraints
+  ** in a second pass. This is because immediate FK processing may halt
+  ** the VM, and in cases where there is no statement journal this needs
+  ** to happen before any deferred FKs are processed. */
+  for(iPass=0; iPass<2; iPass++){
+    for(pFKey=pTab->u.tab.pFKey; pFKey; pFKey=pFKey->pNextFrom){
+      Table *pTo;                   /* Parent table of foreign key pFKey */
+      Index *pIdx = 0;              /* Index on key columns in pTo */
+      int *aiFree = 0;
+      int *aiCol;
+      int iCol;
+      int i;
+      int bIgnore = 0;
+  
+      assert( pFKey->isDeferred==0 || pFKey->isDeferred==1 );
+      if( pFKey->isDeferred!=iPass ) continue;
+  
+      if( aChange
+       && sqlite3_stricmp(pTab->zName, pFKey->zTo)!=0
+       && fkChildIsModified(pTab, pFKey, aChange, bChngRowid)==0 
+      ){
+        continue;
+      }
+  
+      /* Find the parent table of this foreign key. Also find a unique index 
+      ** on the parent key columns in the parent table. If either of these 
+      ** schema items cannot be located, set an error in pParse and return 
+      ** early.  */
+      if( pParse->disableTriggers ){
+        pTo = sqlite3FindTable(db, pFKey->zTo, zDb);
+      }else{
+        pTo = sqlite3LocateTable(pParse, 0, pFKey->zTo, zDb);
+      }
+      if( !pTo || sqlite3FkLocateIndex(pParse, pTo, pFKey, &pIdx, &aiFree) ){
+        assert( isIgnoreErrors==0 || (regOld!=0 && regNew==0) );
+        if( !isIgnoreErrors || db->mallocFailed ) return;
+        if( pTo==0 ){
+          /* If isIgnoreErrors is true, then a table is being dropped. In this
+          ** case SQLite runs a "DELETE FROM xxx" on the table being dropped
+          ** before actually dropping it in order to check FK constraints.
+          ** If the parent table of an FK constraint on the current table is
+          ** missing, behave as if it is empty. i.e. decrement the relevant
+          ** FK counter for each row of the current table with non-NULL keys.
+          */
+          Vdbe *v = sqlite3GetVdbe(pParse);
+          int iJump = sqlite3VdbeCurrentAddr(v) + pFKey->nCol + 1;
+          for(i=0; i<pFKey->nCol; i++){
+            int iFromCol, iReg;
+            iFromCol = pFKey->aCol[i].iFrom;
+            iReg = sqlite3TableColumnToStorage(pFKey->pFrom,iFromCol)+regOld+1;
+            sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iJump); VdbeCoverage(v);
+          }
+          sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, -1);
         }
-        sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, -1);
+        continue;
       }
-      continue;
-    }
-    assert( pFKey->nCol==1 || (aiFree && pIdx) );
-
-    if( aiFree ){
-      aiCol = aiFree;
-    }else{
-      iCol = pFKey->aCol[0].iFrom;
-      aiCol = &iCol;
-    }
-    for(i=0; i<pFKey->nCol; i++){
-      if( aiCol[i]==pTab->iPKey ){
-        aiCol[i] = -1;
+      assert( pFKey->nCol==1 || (aiFree && pIdx) );
+  
+      if( aiFree ){
+        aiCol = aiFree;
+      }else{
+        iCol = pFKey->aCol[0].iFrom;
+        aiCol = &iCol;
       }
-      assert( pIdx==0 || pIdx->aiColumn[i]>=0 );
-#ifndef SQLITE_OMIT_AUTHORIZATION
-      /* Request permission to read the parent key columns. If the 
-      ** authorization callback returns SQLITE_IGNORE, behave as if any
-      ** values read from the parent table are NULL. */
-      if( db->xAuth ){
-        int rcauth;
-        char *zCol = pTo->aCol[pIdx ? pIdx->aiColumn[i] : pTo->iPKey].zCnName;
-        rcauth = sqlite3AuthReadCol(pParse, pTo->zName, zCol, iDb);
-        bIgnore = (rcauth==SQLITE_IGNORE);
+      for(i=0; i<pFKey->nCol; i++){
+        if( aiCol[i]==pTab->iPKey ){
+          aiCol[i] = -1;
+        }
+        assert( pIdx==0 || pIdx->aiColumn[i]>=0 );
+  #ifndef SQLITE_OMIT_AUTHORIZATION
+        /* Request permission to read the parent key columns. If the 
+        ** authorization callback returns SQLITE_IGNORE, behave as if any
+        ** values read from the parent table are NULL. */
+        if( db->xAuth ){
+          int rcauth;
+          char *zCol = pTo->aCol[pIdx ? pIdx->aiColumn[i] : pTo->iPKey].zCnName;
+          rcauth = sqlite3AuthReadCol(pParse, pTo->zName, zCol, iDb);
+          bIgnore = (rcauth==SQLITE_IGNORE);
+        }
+  #endif
       }
-#endif
+  
+      /* Take a shared-cache advisory read-lock on the parent table. Allocate 
+      ** a cursor to use to search the unique index on the parent key columns 
+      ** in the parent table.  */
+      sqlite3TableLock(pParse, iDb, pTo->tnum, 0, pTo->zName);
+      pParse->nTab++;
+  
+      if( regOld!=0 ){
+        /* A row is being removed from the child table. Search for the parent.
+        ** If the parent does not exist, removing the child row resolves an 
+        ** outstanding foreign key constraint violation. */
+        fkLookupParent(pParse, iDb, pTo, pIdx, pFKey, aiCol, regOld,-1,bIgnore);
+      }
+      if( regNew!=0 && !isSetNullAction(pParse, pFKey) ){
+        /* A row is being added to the child table. If a parent row cannot
+        ** be found, adding the child row has violated the FK constraint. 
+        **
+        ** If this operation is being performed as part of a trigger program
+        ** that is actually a "SET NULL" action belonging to this very 
+        ** foreign key, then omit this scan altogether. As all child key
+        ** values are guaranteed to be NULL, it is not possible for adding
+        ** this row to cause an FK violation.  */
+        fkLookupParent(pParse, iDb, pTo, pIdx, pFKey, aiCol, regNew,+1,bIgnore);
+      }
+  
+      sqlite3DbFree(db, aiFree);
     }
-
-    /* Take a shared-cache advisory read-lock on the parent table. Allocate 
-    ** a cursor to use to search the unique index on the parent key columns 
-    ** in the parent table.  */
-    sqlite3TableLock(pParse, iDb, pTo->tnum, 0, pTo->zName);
-    pParse->nTab++;
-
-    if( regOld!=0 ){
-      /* A row is being removed from the child table. Search for the parent.
-      ** If the parent does not exist, removing the child row resolves an 
-      ** outstanding foreign key constraint violation. */
-      fkLookupParent(pParse, iDb, pTo, pIdx, pFKey, aiCol, regOld, -1, bIgnore);
-    }
-    if( regNew!=0 && !isSetNullAction(pParse, pFKey) ){
-      /* A row is being added to the child table. If a parent row cannot
-      ** be found, adding the child row has violated the FK constraint. 
-      **
-      ** If this operation is being performed as part of a trigger program
-      ** that is actually a "SET NULL" action belonging to this very 
-      ** foreign key, then omit this scan altogether. As all child key
-      ** values are guaranteed to be NULL, it is not possible for adding
-      ** this row to cause an FK violation.  */
-      fkLookupParent(pParse, iDb, pTo, pIdx, pFKey, aiCol, regNew, +1, bIgnore);
-    }
-
-    sqlite3DbFree(db, aiFree);
   }
 
   /* Loop through all the foreign key constraints that refer to this table.

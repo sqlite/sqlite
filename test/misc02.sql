@@ -716,3 +716,29 @@ SELECT x.c, EXISTS(
   SELECT DISTINCT c>2 FROM t1550 WHERE t1550.b IS x.b LIMIT 1 OFFSET 1
 ) FROM t1550 AS x ORDER BY x.c;
 .check 1,0,2,0,3,0,4,0,5,0
+
+# A single-row INSERT ... VALUES that fails an immediate FK constraint
+# after a deferred FK on the same row has already been counted must not
+# leave the deferred-constraint counter incremented.
+#
+#   https://sqlite.org/bugs/forumpost/5f8d8118f7
+#
+.testcase 1570
+PRAGMA foreign_keys=ON;
+CREATE TABLE p1570(a INTEGER PRIMARY KEY);
+CREATE TABLE q1570(a INTEGER PRIMARY KEY);
+CREATE TABLE c1570(x REFERENCES p1570,
+                   y REFERENCES q1570 DEFERRABLE INITIALLY DEFERRED);
+BEGIN;
+INSERT INTO c1570 VALUES(1,1);
+.check -glob "*rror near line *: FOREIGN KEY constraint failed*"
+
+.testcase 1580
+COMMIT;
+SELECT count(*), 'ok' FROM c1570;
+.check 0,'ok'
+
+.testcase 1590
+ROLLBACK;
+PRAGMA foreign_keys=OFF;
+.check -glob "*"
