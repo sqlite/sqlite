@@ -656,3 +656,29 @@ CREATE TABLE t1480(c1 TEXT);
 INSERT INTO t1480 VALUES('a');
 SELECT count(*) FROM t1480 WHERE TRIM(c1,c1) IS (-693048757 IN ());
 .check 0
+
+# WHERE-clause constant propagation must not substitute a constant for
+# a no-affinity column on the LHS of a comparison whose RHS has TEXT
+# affinity. Here x=b compares with TEXT affinity, so x=1.0 must not
+# be used to rewrite x=b as 1.0=b.
+#
+#   https://sqlite.org/bugs/forumpost/e4bbd1c242
+#
+.testcase 1500
+CREATE TABLE t1500a(a INT);
+CREATE TABLE t1500b(b TEXT);
+INSERT INTO t1500a VALUES(1);
+INSERT INTO t1500b VALUES('1.0'),('1');
+WITH c AS MATERIALIZED (SELECT a+0 AS x FROM t1500a)
+  SELECT x, b FROM c, t1500b WHERE x=b AND x=1.0;
+.check 1,'1'
+
+.testcase 1510
+WITH c AS MATERIALIZED (SELECT a+0 AS x FROM t1500a)
+  SELECT x, b FROM c, t1500b WHERE b=x AND x=1.0;
+.check 1,'1'
+
+.testcase 1520
+SELECT x, b FROM (SELECT a+0 AS x FROM t1500a LIMIT 5), t1500b
+  WHERE x=b AND x=1.0;
+.check 1,'1'
