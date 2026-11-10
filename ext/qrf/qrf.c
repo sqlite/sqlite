@@ -1269,7 +1269,12 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
       break;
     }
     case SQLITE_NULL: {
-      sqlite3_str_appendall(pOut, p->spec.zNull);
+      if( p->spec.eText==QRF_TEXT_Html ){
+        /* The NULL text is user-supplied (--null) and must be escaped */
+        qrfEncodeText(p, pOut, p->spec.zNull);
+      }else{
+        sqlite3_str_appendall(pOut, p->spec.zNull);
+      }
       break;
     }
     case SQLITE_TEXT: {
@@ -2961,7 +2966,7 @@ qrf_reinit:
     }
     case QRF_STYLE_Html: {
       p->spec.eText = QRF_TEXT_Html;
-      p->spec.zNull = "null";
+      if( pSpec->zNull==0 ) p->spec.zNull = "null";
       break;
     }
     case QRF_STYLE_Insert: {

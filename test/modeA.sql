@@ -327,6 +327,82 @@ SELECT 1 AS '安安安安安安', 2 AS 'a安安安安安安';
 END
 .mode line --titlelimit 3
 
+# The --null option and the .nullvalue command must be honored by
+# ".mode html".  Bug 2026-11-05T22:27:46Z.
+#
+.testcase 550
+.mode html
+SELECT NULL AS n;
+.check <<END
+<tr>
+<th>n
+</tr>
+<tr>
+<td>null
+</tr>
+END
+
+.testcase 551
+.mode html --null XX
+SELECT NULL AS n;
+.check <<END
+<tr>
+<th>n
+</tr>
+<tr>
+<td>XX
+</tr>
+END
+
+.testcase 552
+.nullvalue YY
+SELECT NULL AS n;
+.check <<END
+<tr>
+<th>n
+</tr>
+<tr>
+<td>YY
+</tr>
+END
+
+.testcase 553
+.nullvalue
+SELECT NULL AS n;
+.check -glob "*sage: .nullvalue STRING*"
+
+# NULL text is HTML-escaped, and does not change how a string that
+# happens to look like the NULL text is rendered.
+.testcase 554
+.mode html --null <nil>
+SELECT NULL AS n, 'null' AS m;
+.check <<END
+<tr>
+<th>n
+<th>m
+</tr>
+<tr>
+<td>&lt;nil&gt;
+<td>null
+</tr>
+END
+
+# Switching to another mode and back restores the default for html.
+.testcase 555
+.mode list --null XX
+.mode html
+SELECT NULL AS n;
+.check <<END
+<tr>
+<th>n
+</tr>
+<tr>
+<td>null
+</tr>
+END
+.mode line --titlelimit 3
+.nullvalue ""
+
 # line --screenwidth and --colsep
 #
 .testcase 550
