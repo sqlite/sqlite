@@ -4040,7 +4040,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       pSel->pLimit->pLeft = pLimit;
     }
   }else{
-    /* If there is no pre-existing limit add a limit of 1 */
+    /* If there is no limit add a limit of 1. (tag-202611101908) */
     pLimit = sqlite3ExprInt32(pParse->db, 1);
     pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
   }

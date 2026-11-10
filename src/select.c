@@ -7954,7 +7954,10 @@ int sqlite3Select(
     /* Do not ignore DISTINCT for an EXISTS subquery with an OFFSET clause.
     ** In this case the OFFSET must be applied after duplicates are discarded,
     ** so the DISTINCT is required. */
-    if( pDest->eDest!=SRT_Exists || p->pLimit==0 || p->pLimit->pRight==0 ){
+    if( pDest->eDest!=SRT_Exists
+     || (ALWAYS(p->pLimit!=0) && p->pLimit->pRight==0)
+      /* ^^^^^^-- because tag-202611101908 and SRT_Exists set nowhere else */
+    ){
       p->selFlags &= ~(u32)SF_Distinct;
     }
   }
