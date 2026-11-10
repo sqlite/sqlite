@@ -350,6 +350,29 @@ static SQLITE_NOINLINE const char *indexInAffinityOk(
 }
 
 /*
+** pTerm is a WO_EQUIV term "X=Y" that whereScanNext() might use to add
+** Y to the equivalence class of X. Return true if any of the following
+** are true:
+**
+**   * Parameter zCollName is NULL, 
+**   * The collation sequence of pTerm is BINARY, or
+**   * The collation sequence of pTerm is zCollName.
+**
+** Otherwise return false.
+*/
+static int whereScanEquivCollOk(
+  Parse *pParse,
+  WhereTerm *pTerm,
+  const char *zCollName
+){
+  CollSeq *pColl;
+  if( zCollName==0 ) return 1;
+  pColl = sqlite3ExprCompareCollSeq(pParse, pTerm->pExpr);
+  if( sqlite3IsBinary(pColl) ) return 1;
+  return sqlite3StrICmp(pColl->zName, zCollName)==0;
+}
+
+/*
 ** Advance to the next WhereTerm that matches according to the criteria
 ** established when the pScan object was initialized by whereScanInit().
 ** Return NULL if there are no more matching WhereTerms.
@@ -382,6 +405,7 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aiCur)
            && (pX = whereRightSubexprIsColumn(pTerm->pExpr))!=0
+           && whereScanEquivCollOk(pWC->pWInfo->pParse, pTerm, pScan->zCollName)
           ){
             int j;
             for(j=0; j<pScan->nEquiv; j++){

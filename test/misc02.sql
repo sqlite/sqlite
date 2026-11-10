@@ -218,3 +218,41 @@ SELECT 1.234e-200000000000000000000000000000000000000000000000000000000000000000
 .testcase 804
 SELECT 0.0e+4000000000000000000000000000000000000000000000000000000000000000000;
 .check 0.0
+
+# A BINARY index on t2.c must not be used to look up a value carried
+# across the NOCASE equivalence t2.b=t2.c from t1.a=t2.b (BINARY).
+#
+#   https://sqlite.org/bugs/forumpost/f71ffd3ada
+#
+.open :memory:
+CREATE TABLE t1(a TEXT);
+CREATE TABLE t2(b TEXT COLLATE NOCASE, c TEXT COLLATE NOCASE);
+CREATE INDEX t2x ON t2(c COLLATE BINARY);
+INSERT INTO t1 VALUES('abc');
+INSERT INTO t2 VALUES('abc','ABC');
+
+.testcase 900
+SELECT * FROM t1, t2 WHERE t1.a=t2.b AND t2.b=t2.c;
+.check abc|abc|ABC
+
+.testcase 910
+SELECT count(*) FROM t1, t2 WHERE t1.a=t2.b AND t2.b=t2.c;
+.check 1
+
+.testcase 920
+SELECT * FROM t1, t2 NOT INDEXED WHERE t1.a=t2.b AND t2.b=t2.c;
+.check abc|abc|ABC
+
+# A BINARY equivalence t2.b=t2.c may still be followed to seek a
+# NOCASE index on t2.c.
+#
+.open :memory:
+CREATE TABLE t1(a TEXT);
+CREATE TABLE t2(b TEXT, c TEXT);
+CREATE INDEX t2z ON t2(c COLLATE NOCASE);
+INSERT INTO t1 VALUES('abc');
+INSERT INTO t2 VALUES('ABC','ABC'), ('abc','ABC'), ('xyz','xyz');
+
+.testcase 930
+SELECT * FROM t1, t2 WHERE t2.b=t2.c AND t2.b=t1.a COLLATE NOCASE;
+.check abc|ABC|ABC
