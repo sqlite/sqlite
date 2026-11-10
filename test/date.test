@@ -769,4 +769,91 @@ datetest 23.22 {datetime('2024-12-31 24:00:00')} {2025-01-01 00:00:00}
 # And Forum post 2026-10-17T12:57:32Z
 datetest 23.23 {datetime('-0001-12-31 24:00:00')} {0000-01-01 00:00:00}
 
+# https://sqlite.org/bugs/forumpost/7757ac1132
+#
+# A +/-HH:MM time shift of exactly 24:00 is accepted, so it shifts by one
+# whole day instead of silently doing nothing.
+#
+datetest 24.1 {datetime('2000-01-01 00:00:00','+24:00')} {2000-01-02 00:00:00}
+datetest 24.2 {datetime('2000-01-01 00:00:00','-24:00')} {1999-12-31 00:00:00}
+datetest 24.3 {datetime('2000-01-01 00:00:00','+24:00:00.000')} \
+               {2000-01-02 00:00:00}
+datetest 24.4 {datetime('2000-01-01 00:00:00','+0000-00-00 24:00')} \
+               {2000-01-02 00:00:00}
+datetest 24.5 {datetime('2000-01-01 00:00:00','-0000-00-00 24:00')} \
+               {1999-12-31 00:00:00}
+datetest 24.6 {datetime('2000-01-01 12:34:56','+24:00')} {2000-01-02 12:34:56}
+datetest 24.7 {datetime('2000-01-01 00:00:00','24:00')} {2000-01-02 00:00:00}
+datetest 24.8 {julianday('2000-01-01','+24:00')-julianday('2000-01-01','+1 day')} \
+               0.0
+datetest 24.9 {datetime('2000-01-01 00:00:00','+23:59')} {2000-01-01 23:59:00}
+datetest 24.10 {datetime('2000-01-01 00:00:00','+24:01')} {NULL}
+datetest 24.11 {datetime('2000-01-01 00:00:00','+24:00:00.5')} {NULL}
+datetest 24.12 {datetime('2024-01-31','+0000-01-00 24:00','floor')} \
+               {2024-03-01 00:00:00}
+
+# https://sqlite.org/bugs/forumpost/3cc3a0207e
+#
+# A day-of-month overflow in the input time-value is normalized in the
+# result even when a modifier such as "start of day" keeps the parsed
+# YYYY-MM-DD fields.
+#
+datetest 25.1 {date('2024-02-30','start of day')} {2024-03-01}
+datetest 25.2 {datetime('2024-02-30 10:00','start of day')} \
+               {2024-03-01 00:00:00}
+datetest 25.3 {date('2023-04-31','start of day')} {2023-05-01}
+datetest 25.4 {date('2024-02-30','subsec')} {2024-03-01}
+datetest 25.5 {datetime('2024-02-30','end of day')} {2024-03-01 23:59:59}
+datetest 25.6 {strftime('%F %j','2024-02-30','start of day')} {2024-03-01 061}
+datetest 25.7 {date('2024-02-29','start of day')} {2024-02-29}
+datetest 25.8 {date('2024-02-30')} {2024-03-01}
+datetest 25.9 {date('2024-02-30','start of day','floor')} {2024-02-29}
+
+# https://sqlite.org/bugs/forumpost/e0fe679e7c
+#
+# "floor" applies the day-of-month overflow of the preceding time-value or
+# time shift once.  A later "floor", or a modifier that moves the date to a
+# different calendar position, no longer applies that stale overflow.
+#
+datetest 26.1 {date('2024-01-31','+1 month','floor','floor')} {2024-02-29}
+datetest 26.2 {date('2024-01-31','+1 month','floor','floor','floor')} \
+               {2024-02-29}
+datetest 26.3 {date('2024-01-31','+1 month','start of month','floor')} \
+               {2024-03-01}
+datetest 26.4 {date('2024-01-31','+1 month','start of year','floor')} \
+               {2024-01-01}
+datetest 26.5 {date('2024-01-31','+1 month','end of year','floor')} \
+               {2024-12-31}
+datetest 26.6 {date('2024-01-31','+1 month','weekday 0','floor')} {2024-03-03}
+datetest 26.7 {date('2024-01-31','+1 month','+02:00','floor')} {2024-03-02}
+datetest 26.8 {date('2024-01-31','+1 month','+2 hours','floor')} {2024-03-02}
+datetest 26.9 {date('2024-02-29','+1 year','floor','floor')} {2025-02-28}
+datetest 26.10 {date('2024-02-31','floor','floor')} {2024-02-29}
+datetest 26.11 {date('2023-02-31','start of month','floor')} {2023-02-01}
+datetest 26.12 {date('2000-08-31','+0023-06-00','floor','floor')} {2024-02-29}
+datetest 26.13 {date('2024-01-31','+1 month','start of day','floor')} \
+               {2024-02-29}
+datetest 26.14 {date('2024-01-31','+1 month','subsec','floor')} {2024-02-29}
+datetest 26.15 {date('2024-01-31','+1 month','ceiling','ceiling')} {2024-03-02}
+datetest 26.16 {date('2024-01-31','+1 month','floor','ceiling')} {2024-02-29}
+datetest 26.17 {date('2024-01-31','+1 month','floor')} {2024-02-29}
+# A combined +/-YYYY-MM-DD HH:MM shift (including timediff() output) keeps
+# its own overflow for a following "floor".  Only a standalone +/-HH:MM
+# shift (signed or not) discards an earlier overflow.
+datetest 26.18 {datetime('2024-01-31','+0000-01-00 00:00','floor')} \
+               {2024-02-29 00:00:00}
+datetest 26.19 \
+   {datetime('2024-01-31',timediff('2024-02-15','2024-01-15'),'floor')} \
+   {2024-02-29 00:00:00}
+datetest 26.20 {datetime('2024-01-31 10:00','+0000-01-00 02:00','floor')} \
+               {2024-02-29 12:00:00}
+datetest 26.21 {datetime('2024-03-31','-0000-01-00 00:00','floor')} \
+               {2024-02-29 00:00:00}
+datetest 26.22 {datetime('2024-02-29','+0001-00-00 00:00','floor')} \
+               {2025-02-28 00:00:00}
+datetest 26.23 {datetime('2024-02-29','+00001-00-00 00:00:00.000','floor')} \
+               {2025-02-28 00:00:00}
+datetest 26.24 {date('2024-01-31','+1 month','-02:00','floor')} {2024-03-01}
+datetest 26.25 {date('2024-01-31','+1 month','02:00','floor')} {2024-03-02}
+
 finish_test
