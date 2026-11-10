@@ -769,7 +769,6 @@ datetest 23.22 {datetime('2024-12-31 24:00:00')} {2025-01-01 00:00:00}
 # And Forum post 2026-10-17T12:57:32Z
 datetest 23.23 {datetime('-0001-12-31 24:00:00')} {0000-01-01 00:00:00}
 
-# EXPERIMENTAL (AI-assisted proof of concept, not a maintainer change).
 # https://sqlite.org/bugs/forumpost/7757ac1132
 #
 # A +/-HH:MM time shift of exactly 24:00 is accepted, so it shifts by one
@@ -810,7 +809,6 @@ datetest 24.19 {datetime('2024-01-31','+0000-01-00 24:00+01:00','floor')} \
 datetest 24.20 {datetime('2000-01-01 00:00:00','+23:00-01:00')} \
                {2000-01-01 00:00:00}
 
-# EXPERIMENTAL (AI-assisted proof of concept, not a maintainer change).
 # https://sqlite.org/bugs/forumpost/3cc3a0207e
 #
 # A day-of-month overflow in the input time-value is normalized in the
@@ -828,7 +826,6 @@ datetest 25.7 {date('2024-02-29','start of day')} {2024-02-29}
 datetest 25.8 {date('2024-02-30')} {2024-03-01}
 datetest 25.9 {date('2024-02-30','start of day','floor')} {2024-02-29}
 
-# EXPERIMENTAL (AI-assisted proof of concept, not a maintainer change).
 # https://sqlite.org/bugs/forumpost/e0fe679e7c
 #
 # "floor" applies the day-of-month overflow of the preceding time-value or
