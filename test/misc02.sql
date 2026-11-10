@@ -612,3 +612,47 @@ SELECT a,b,c FROM t WHERE (a,b,c) IN (SELECT DISTINCT p,q,r FROM s ORDER BY r, p
 .testcase 1310
 SELECT a,b,c FROM t NOT INDEXED WHERE (a,b,c) IN (SELECT DISTINCT p,q,r FROM s ORDER BY r, p LIMIT 2 OFFSET 1) ORDER BY a;
 .check "1,2,3\n2,1,3"
+
+# An empty IN () list on the RHS of IS must evaluate to integer 0/1,
+# not be treated as IS FALSE / IS TRUE.
+#
+#   https://sqlite.org/bugs/forumpost/fb5f5b2dac
+#   https://sqlite.org/bugs/forumpost/fb2e7f646b
+#
+.testcase 1400
+SELECT 'one' IS (1 IN ()), 'one' IS (1 IN (SELECT 1 WHERE 0)), 'one' IS 0;
+.check 0,0,0
+
+.testcase 1410
+SELECT 2 IS (1 NOT IN ()), 2 IS 1;
+.check 0,0
+
+.testcase 1420
+SELECT '' IS 0, '' IS (0 IN ()), '' IS FALSE;
+.check 0,0,1
+
+.testcase 1430
+SELECT '' IS NOT 0, '' IS NOT (0 IN ()), '' IS NOT FALSE;
+.check 1,1,0
+
+.testcase 1440
+SELECT '' IS (length('') IN ()), 0 IS (0 IN ()), typeof(0 IN ());
+.check "0,1,'integer'"
+
+.testcase 1450
+SELECT (0 IN ()) + 1, (0 IN ()) = 0, CASE WHEN (0 IN ()) THEN 1 ELSE 0 END;
+.check 1,1,0
+
+.testcase 1460
+SELECT x'' IS (0 IN ()), x'' IS NOT (0 IN ());
+.check 0,1
+
+.testcase 1470
+SELECT '' IS (0 NOT IN ()), 'x' IS NOT (0 NOT IN ());
+.check 0,1
+
+.testcase 1480
+CREATE TABLE t1480(c1 TEXT);
+INSERT INTO t1480 VALUES('a');
+SELECT count(*) FROM t1480 WHERE TRIM(c1,c1) IS (-693048757 IN ());
+.check 0
