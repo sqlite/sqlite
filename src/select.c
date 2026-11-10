@@ -493,6 +493,37 @@ static void unsetJoinExpr(Expr *p, int iTable, int nullable){
 }
 
 /*
+** Tree walker expression callback for clearOuterOnExpr().
+**
+** If the Expr node is marked as coming from an outer join for
+** table pWalker->u.iCur, then clear its join markers completely.
+*/
+static int clearOuterOnExprCb(Walker *pWalker, Expr *p){
+  if( ExprHasProperty(p, EP_OuterON) && p->w.iJoin==pWalker->u.iCur ){
+    ExprClearProperty(p, EP_OuterON|EP_InnerON);
+  }
+  return WRC_Continue;
+}
+
+/*
+** Remove the EP_OuterON mark, without substituting EP_InnerON, from every
+** term of the expression tree p that is marked EP_OuterON with w.iJoin==iTable.
+** The resulting terms are ordinary WHERE-clause terms.
+**
+** This is used when table iTable was marked as an outer-join table only
+** because it was the left operand of a RIGHT JOIN (JT_LTORJ) and that
+** status has been removed by OUTER JOIN strength reduction.
+*/
+static void clearOuterOnExpr(Expr *p, int iTable){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.u.iCur = iTable;
+  w.xExprCallback = clearOuterOnExprCb;
+  w.xSelectCallback = sqlite3SelectWalkNoop;
+  sqlite3WalkExpr(&w,p);
+}
+
+/*
 ** This routine processes the join information for a SELECT statement.
 **
 **   *  A NATURAL join is converted into a USING join.  After that, we
@@ -7994,8 +8025,12 @@ int sqlite3Select(
           }
         }
         for(j=pTabList->nSrc-1; j>=0; j--){
-          pTabList->a[j].fg.jointype &= ~JT_LTORJ;
-          if( pTabList->a[j].fg.jointype & JT_RIGHT ) break;
+          SrcItem *pI2 = &pTabList->a[j];
+          pI2->fg.jointype &= ~JT_LTORJ;
+          if( (pI2->fg.jointype & (JT_LEFT|JT_RIGHT))==0 ){
+            clearOuterOnExpr(p->pWhere, pI2->iCursor);
+          }
+          if( pI2->fg.jointype & JT_RIGHT ) break;
         }
       }
     }

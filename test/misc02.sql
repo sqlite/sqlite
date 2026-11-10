@@ -256,3 +256,30 @@ INSERT INTO t2 VALUES('ABC','ABC'), ('abc','ABC'), ('xyz','xyz');
 .testcase 930
 SELECT * FROM t1, t2 WHERE t2.b=t2.c AND t2.b=t1.a COLLATE NOCASE;
 .check abc|ABC|ABC
+
+# Bug 2026-11-08T07:03:28Z sqlite.org/bugs/info/f1c96924c04b74b1
+# Unexpected FULL JOIN Result by Zhaokun Xiang
+#
+.open :memory:
+.mode test
+.testcase 1000
+CREATE TABLE rt0(c0 INT);
+CREATE TABLE vt1(c1 INT);
+INSERT INTO vt1 VALUES(1);
+CREATE TABLE v0(c0 INT);
+INSERT INTO v0 VALUES(1);
+.check
+.testcase 1001
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE s.c0 = 1
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
