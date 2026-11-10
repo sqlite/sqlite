@@ -1598,7 +1598,7 @@ void sqlite3AddColumn(Parse *pParse, Token sName, Token sType){
   ** with "generated always".  Check for this case and omit the surplus
   ** text. */
   if( sType.n>=16 && sqlite3_strnicmp(sType.z+(sType.n-6),"always",6)==0 ){
-    int nType = sType.n - 6;
+    u32 nType = sType.n - 6;
     while( ALWAYS(nType>0) && sqlite3Isspace(sType.z[nType-1]) ) nType--;
     if( nType>=9 && nType<(sType.n - 6)
      && sqlite3_strnicmp(sType.z+(nType-9),"generated",9)==0

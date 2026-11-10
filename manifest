@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\sscanning\sof\ssubqueries\sin\sthe\sprevious\scheck-in.\nMove\sthe\ssqlite3SelectWalkFail()\sroutine\sfrom\sexpr.c\sto\swalker.c\sfor\naesthetics.
-D 2026-11-10T12:29:11.388
+C Fix\sharmless\scompiler\swarning\sin\s[ab6f3665f960aa12].
+D 2026-11-10T12:52:28.733
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -752,7 +752,7 @@ F src/btmutex.c 8a6878fcbb95b37021e4ec20d72efeb197d1b114915af73239f1b1f638b3b844
 F src/btree.c 1215dba3b7ac4e9f87086f0661f1f14186207a9958fe56a25e01ed9fbd46f2f6
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d82
-F src/build.c 6707ef8367c1c9b9460801c56e8906478f4389ae5d0bc670ae760db09103137d
+F src/build.c 5528027b42d5af37000638fef24a38a9ac078cc684c18304daf6b63175a8c27d
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 7e922b672ea82f83822baad092a0d4fd9b0074d1be2fa7d15cceeb8792212b2c
 F src/complete.c f68f545b9c6c19e2e848672dc0e4da230072fedc335d8980b55242cc4cfa60da
@@ -2307,8 +2307,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8d213d8a1dc2a1b684cc5eee164623a33b288e54af4ab61939feeada977359d5
-R 783a0387092be1eada1c5e75196c78e5
+P ff612271ea1b05042faffbd33decabe69a7846498df62490afb435435724a56e
+R 4900beef24c8070ec2d04ffd380c320a
 U drh
-Z 01ed5a185f3f33b4ca184b1bf89f34d8
+Z 67b10ee2fc82326491cd8f4746262a89
 # Remove this line to create a well-formed Fossil manifest.
