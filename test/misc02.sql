@@ -283,3 +283,312 @@ SELECT vt1.c1
     FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
 WHERE vt1.c1 IS NOT NULL;
 .check 1
+
+# Bug 2026-11-08T01:01:03Z sqlite.org/bugs/info/1dc46f0ed986553a
+# RIGHT JOIN Drops a Matching Row After Nested FULL JOIN Flattening
+# By Zhaokun Xiang
+#
+.open :memory:
+.mode test
+.testcase 1100
+CREATE TABLE h0base(a INT);
+INSERT INTO h0base VALUES(0);
+CREATE VIEW v1(c0, c1) AS
+  SELECT 0, 0
+    FROM (
+      (SELECT 1 AS a WHERE 0) AS l
+      FULL JOIN (SELECT 1 AS c0) AS r ON 0
+    ) AS s;
+CREATE TABLE h1(c1 INT);
+INSERT INTO h1 VALUES(0);
+.check
+
+.testcase 1101
+.testctrl opt -Flatten -q
+SELECT ALL v1.c0
+  FROM v1
+       CROSS JOIN (SELECT * FROM h0base) AS h0
+       RIGHT JOIN h1 ON v1.c1 = h1.c1
+ WHERE h0.a = 0;
+.check 0
+
+.testcase 1102
+.testctrl opt +All -q
+SELECT ALL v1.c0
+  FROM v1
+       CROSS JOIN (SELECT * FROM h0base) AS h0
+       RIGHT JOIN h1 ON v1.c1 = h1.c1
+ WHERE h0.a = 0;
+.check 0
+
+# More tests for the 2026-11-08T07:03:28Z problem above: the term that
+# was marked as an ON-clause term of the flattened subquery can be any
+# kind of expression.
+#
+.open :memory:
+.mode test
+.testcase 1010
+CREATE TABLE rt0(c0 INT);
+CREATE TABLE vt1(c1 INT);
+INSERT INTO vt1 VALUES(1);
+CREATE TABLE v0(c0 INT);
+INSERT INTO v0 VALUES(1);
+.check
+
+.testcase 1011
+.testctrl opt -Flatten -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE CASE WHEN s.c0=1 THEN 1 ELSE 0 END
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1012
+.testctrl opt +All -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE CASE WHEN s.c0=1 THEN 1 ELSE 0 END
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1013
+.testctrl opt -Flatten -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE s.c0 IN (1,2)
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1014
+.testctrl opt +All -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE s.c0 IN (1,2)
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1015
+.testctrl opt -Flatten -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE s.c0 BETWEEN 1 AND 2
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1016
+.testctrl opt +All -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE s.c0 BETWEEN 1 AND 2
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1017
+.testctrl opt -Flatten -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE coalesce(s.c0,0)=1
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1018
+.testctrl opt +All -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE coalesce(s.c0,0)=1
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1019
+.testctrl opt -Flatten -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE (s.c0,1) = (1,1)
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1020
+.testctrl opt +All -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE (s.c0,1) = (1,1)
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1021
+.testctrl opt -Flatten -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE s.c0=1 AND CASE s.c0 WHEN 1 THEN 1 END
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+.testcase 1022
+.testctrl opt +All -q
+SELECT vt1.c1
+  FROM (
+    SELECT s.c0
+      FROM (
+        SELECT v0.c0
+          FROM v0 NATURAL FULL JOIN (SELECT NULL AS c0) AS r
+      ) AS s
+     WHERE s.c0=1 AND CASE s.c0 WHEN 1 THEN 1 END
+  ) AS a
+    CROSS JOIN vt1 ON 1
+    FULL OUTER JOIN (SELECT c0 FROM rt0) AS b ON 0
+WHERE vt1.c1 IS NOT NULL;
+.check 1
+
+# More tests for the 2026-11-08T01:01:03Z problem above.  When OUTER
+# JOIN strength reduction makes the left operand of a RIGHT JOIN a
+# plain inner-join operand, the TK_IF_NULL_ROW wrappers that the
+# flattener previously added must be removed.
+#
+.open :memory:
+.mode test
+.testcase 1200
+CREATE TABLE h0base(a INT);
+INSERT INTO h0base VALUES(0);
+CREATE TABLE h1(c1 INT);
+INSERT INTO h1 VALUES(0);
+CREATE VIEW v1(c0, c1) AS
+  SELECT 0, 0
+    FROM (
+      (SELECT 1 AS a WHERE 0) AS l
+      FULL JOIN (SELECT 1 AS c0) AS r ON 0
+    ) AS s;
+CREATE VIEW v2(c0, c1, c2) AS
+  SELECT 0, 0, s.c0
+    FROM (
+      (SELECT 1 AS a WHERE 0) AS l
+      FULL JOIN (SELECT 1 AS c0) AS r ON 0
+    ) AS s;
+.check
+
+.testcase 1201
+.testctrl opt -Flatten -q
+SELECT v2.c0+1, v2.c1 FROM v2 CROSS JOIN (SELECT * FROM h0base) AS h0 RIGHT JOIN h1 ON v2.c1=h1.c1 WHERE h0.a=0;
+.check 1,0
+
+.testcase 1202
+.testctrl opt +All -q
+SELECT v2.c0+1, v2.c1 FROM v2 CROSS JOIN (SELECT * FROM h0base) AS h0 RIGHT JOIN h1 ON v2.c1=h1.c1 WHERE h0.a=0;
+.check 1,0
+
+.testcase 1203
+.testctrl opt -Flatten -q
+SELECT v1.c0 FROM v1 JOIN (SELECT * FROM h0base) AS h0 RIGHT JOIN h1 ON v1.c1=h1.c1 AND h0.a=0 WHERE h0.a=0;
+.check 0
+
+.testcase 1204
+.testctrl opt +All -q
+SELECT v1.c0 FROM v1 JOIN (SELECT * FROM h0base) AS h0 RIGHT JOIN h1 ON v1.c1=h1.c1 AND h0.a=0 WHERE h0.a=0;
+.check 0
+
+.testcase 1205
+.testctrl opt -Flatten -q
+SELECT count(*), max(v1.c0) FROM v1 CROSS JOIN (SELECT * FROM h0base) AS h0 RIGHT JOIN h1 ON v1.c1=h1.c1 WHERE h0.a=0;
+.check 1,0
+
+.testcase 1206
+.testctrl opt +All -q
+SELECT count(*), max(v1.c0) FROM v1 CROSS JOIN (SELECT * FROM h0base) AS h0 RIGHT JOIN h1 ON v1.c1=h1.c1 WHERE h0.a=0;
+.check 1,0
+
+.testcase 1207
+.testctrl opt -Flatten -q
+SELECT (SELECT v1.c0+1) FROM v1 CROSS JOIN (SELECT * FROM h0base) AS h0 RIGHT JOIN h1 ON v1.c1=h1.c1 WHERE h0.a=0;
+.check 1
+
+.testcase 1208
+.testctrl opt +All -q
+SELECT (SELECT v1.c0+1) FROM v1 CROSS JOIN (SELECT * FROM h0base) AS h0 RIGHT JOIN h1 ON v1.c1=h1.c1 WHERE h0.a=0;
+.check 1

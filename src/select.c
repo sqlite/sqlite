@@ -3913,6 +3913,15 @@ static int multiSelectByMerge(
 ** have to add OP_IfNullRow in front of the OP_Integer that implements the
 ** "m" value of the subquery so that a NULL will be loaded instead of 59
 ** when processing a non-matched row of the left.
+**
+** ## Unwrap mode:
+**
+** If pEList is NULL, then the SubstContext is being used by
+** unwrapIfNullRow() to remove TK_IF_NULL_ROW wrappers instead of to
+** substitute column references.  In that mode, only the TK_IF_NULL_ROW
+** nodes with iTable==iTable are touched, each one being replaced by its
+** operand.  Column references are left alone and iNewTable must equal
+** iTable.
 */
 typedef struct SubstContext {
   Parse *pParse;            /* The parsing context */
@@ -3954,6 +3963,7 @@ static Expr *substExpr(
   }
   if( pExpr->op==TK_COLUMN
    && pExpr->iTable==pSubst->iTable
+   && pSubst->pEList!=0
    && !ExprHasProperty(pExpr, EP_FixedCol)
   ){
 #ifdef SQLITE_ALLOW_ROWID_IN_VIEW
@@ -4025,9 +4035,19 @@ static Expr *substExpr(
     }
   }else{
     if( pExpr->op==TK_IF_NULL_ROW && pExpr->iTable==pSubst->iTable ){
+      if( pSubst->pEList==0 ){
+        /* Unwrap mode.  See unwrapIfNullRow(). */
+        Expr *pInner = pExpr->pLeft;
+        pExpr->pLeft = 0;
+        sqlite3ExprDelete(pSubst->pParse->db, pExpr);
+        return substExpr(pSubst, pInner);
+      }
       pExpr->iTable = pSubst->iNewTable;
     }
-    if( pExpr->op==TK_AGG_FUNCTION && pExpr->op2>=pSubst->nSelDepth ){
+    if( pExpr->op==TK_AGG_FUNCTION
+     && pSubst->pEList!=0
+     && pExpr->op2>=pSubst->nSelDepth
+    ){
       pExpr->op2--;
     }
     pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
@@ -4086,6 +4106,34 @@ static void substSelect(
     }
   }while( doPrior && (p = p->pPrior)!=0 );
   pSubst->nSelDepth--;
+}
+
+/*
+** The flattener wraps each substituted expression in a TK_IF_NULL_ROW
+** operator when the subquery being flattened is on the NULL-able side of
+** an outer join.  The wrapper is keyed to the cursor iCur of the
+** (single-table) subquery.
+**
+** If OUTER JOIN strength reduction later determines that the table with
+** cursor iCur can no longer be a NULL row, then those wrappers are
+** unnecessary.  Worse, they are harmful if the FROM-clause term for iCur
+** is itself a subquery that is flattened later.  The flattener would
+** then renumber the wrappers to refer to the first table of that
+** subquery, and that table might legitimately be a NULL row (for example,
+** if it is the left operand of a FULL JOIN inside the subquery). The
+** substituted expressions would then be incorrectly forced to NULL.
+**
+** So when strength reduction removes the NULL-able status from the
+** table at iCur, remove all of the TK_IF_NULL_ROW wrappers for iCur from
+** the entire SELECT statement p.
+*/
+static void unwrapIfNullRow(Parse *pParse, Select *p, int iCur){
+  SubstContext x;
+  memset(&x, 0, sizeof(x));
+  x.pParse = pParse;
+  x.iTable = iCur;
+  x.iNewTable = iCur;
+  substSelect(&x, p, 0);
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
@@ -8029,6 +8077,7 @@ int sqlite3Select(
           pI2->fg.jointype &= ~JT_LTORJ;
           if( (pI2->fg.jointype & (JT_LEFT|JT_RIGHT))==0 ){
             clearOuterOnExpr(p->pWhere, pI2->iCursor);
+            unwrapIfNullRow(pParse, p, pI2->iCursor);
           }
           if( pI2->fg.jointype & JT_RIGHT ) break;
         }
