@@ -1285,13 +1285,13 @@ static void selectInnerLoop(
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, regResult+i);
       VdbeComment((v, "%s", p->pEList->a[i].zEName));
     }
-  }else if( eDest!=SRT_Exists ){
+  }else if( eDest!=SRT_Exists || hasDistinct ){
+    /* If the destination is an EXISTS(...) expression, the actual
+    ** values returned by the SELECT are only required if the query is
+    ** DISTINCT.  */
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
     ExprList *pExtra = 0;
 #endif
-    /* If the destination is an EXISTS(...) expression, the actual
-    ** values returned by the SELECT are not required.
-    */
     u8 ecelFlags;    /* "ecel" is an abbreviation of "ExprCodeExprList" */
     ExprList *pEList;
     if( eDest==SRT_Mem || eDest==SRT_Output || eDest==SRT_Coroutine ){
@@ -7951,7 +7951,12 @@ int sqlite3Select(
       testcase( pParse->earlyCleanup );
       p->pOrderBy = 0;
     }
-    p->selFlags &= ~(u32)SF_Distinct;
+    /* Do not ignore DISTINCT for an EXISTS subquery with an OFFSET clause.
+    ** In this case the OFFSET must be applied after duplicates are discarded,
+    ** so the DISTINCT is required. */
+    if( pDest->eDest!=SRT_Exists || p->pLimit==0 || p->pLimit->pRight==0 ){
+      p->selFlags &= ~(u32)SF_Distinct;
+    }
   }
   sqlite3SelectPrep(pParse, p, 0);
   if( pParse->nErr ){
