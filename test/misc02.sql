@@ -795,3 +795,14 @@ PRAGMA foreign_key_check;
 COMMIT;
 PRAGMA foreign_keys=OFF;
 .check -glob "*"
+
+# Bug 2026-11-04T20:19:36Z sqlite.org/bugs/info/311551f464e58d18
+# two-argument substr(X, -9223372036854775808) drops the last character of X
+#
+.mode test -quote relaxed
+.testcase 1700
+SELECT substr('abc',-100), substr('abc',-9223372036854775807);
+.check abc,abc
+.testcase 1701
+SELECT substr('abc',-9223372036854775808), substr(x'616263',-9223372036854775808);
+.check abc,x'616263'
