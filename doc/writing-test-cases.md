@@ -1,4 +1,4 @@
-# Hint For Writing Test Cases For SQLite
+# Hints For Writing Test Cases For SQLite
 
 ## SQL scripts that run using the "sqlite3" command-line interface (CLI)
 
