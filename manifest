@@ -1,9 +1,9 @@
-C Fix\sbugs\sin\sand\simprove\sthe\sinterface\sto\sthe\s".check"\scommand\sof\sthe\sCLI.
-D 2026-11-11T20:51:35.073
+C Improvements\sto\sthe\sAGENTS.md\sfile.
+D 2026-11-11T23:05:57.837
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F AGENTS.md 053ac03f392ee112d7780d5026b31f7c23bf937c3958df0c9ede51c96feef99c
+F AGENTS.md 3f501b99db15cf8fcadf82dc0f0663d51682376e9f3e40bab759a557e3797445
 F LICENSE.md 3aa673c9c864ea8ee3ac46c7a52d270543a8fb8e1dd7e7b02df8f41dca1b80b6
 F Makefile.in b9e64c91cf8bea2305e1ca88bd3eb022afa93963a8561ea8290c65d4fafec03e
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
@@ -2309,8 +2309,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 75757ed3a5fefb9d641f2d3b51c51907b00c3195dbb109a74be84158c21be57b
-R 807898ea492a8b25bd65bb6ac52dc726
+P 1a00748caf475548fb55d0362676746ad52c4dc58839dc78b412174000424522
+R 3b4ca29b06ad5a0c7542b79930a90710
 U drh
-Z f5545c4ef42f4d7671621d12b8ebebd4
+Z 50d4c285f43f1d3bddbd2ab6c31c5d71
 # Remove this line to create a well-formed Fossil manifest.
