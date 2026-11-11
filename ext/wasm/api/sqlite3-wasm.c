@@ -245,27 +245,24 @@
 /*
 ** A level of indirection for SQLITE_DISPOSAL_NOTIFIER (described
 ** below) so that we can redirect it from JS once the module is
-** loaded. We cannot(?)  reassign a native function from JS but we can
-** reassign a native function pointer member of a native struct.
+** loaded.
 */
-struct WasmDisposalNotifier {
-  /* See SQLITE_DISPOSAL_NOTIFIER, below. */
-  void (*callback)(int typeId,void const *p);
-};
-typedef struct WasmDisposalNotifier WasmDisposalNotifier;
+typedef void (*sqlite3__wasm_disposal_notifier_f)(int typeId, void const *p);
+
 /*
-** Singleton disposal notifier instance. Gets hooked up
-** by JS.
+** Global disposal notifier callback pointer. JS overwrites this.
 */
-static WasmDisposalNotifier sqlite3WasmDisposalNotifier = {0};
+static sqlite3__wasm_disposal_notifier_f sqlite3WasmDisposalNotifier = 0;
+
 /*
 ** Called by the JS layer to get the pointer to
 ** sqlite3WasmDisposalNotifier.
 */
-SQLITE_WASM_EXPORT2(WasmDisposalNotifier *,
-                    sqlite3__wasm_disposal_notifier,(void)){
+SQLITE_WASM_EXPORT2(sqlite3__wasm_disposal_notifier_f *,
+                    sqlite3__wasm_disposal_notifier, (void)){
   return &sqlite3WasmDisposalNotifier;
 }
+
 /*
 ** If SQLITE_DISPOSAL_NOTIFIER is defined, the core invokes it as:
 **
@@ -290,8 +287,8 @@ SQLITE_WASM_EXPORT2(WasmDisposalNotifier *,
 ** DB instance pointing to a stale pointer. Ditto for oo1.DB.Stmt.
 */
 #define SQLITE_DISPOSAL_NOTIFIER(T,P) \
-  if( (P) && sqlite3WasmDisposalNotifier.callback )\
-    sqlite3WasmDisposalNotifier.callback(T, P)
+  if( (P) && sqlite3WasmDisposalNotifier )\
+    sqlite3WasmDisposalNotifier(T, P)
 
 /*
 ** Which sqlite3.c we're using needs to be configurable to enable
@@ -1189,14 +1186,6 @@ SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_enum_json,(void)){
       M(xIntegrity,     "i(pppip)");
     } _StructBinder;
 #undef CurrentStruct
-
-#if defined(SQLITE_DISPOSAL_NOTIFIER)
-#define CurrentStruct WasmDisposalNotifier
-    StructBinder {
-      M(callback,       "v(ip)");
-    } _StructBinder;
-#undef CurrentStruct
-#endif
 
     /**
      ** Workaround: in order to map the various inner structs from

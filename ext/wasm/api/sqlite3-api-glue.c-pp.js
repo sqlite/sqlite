@@ -949,18 +949,9 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const j = wasm.cstrToJs(cJson);
     //sqlite3.config.error("cJson JSON length:",j.length);
     wasm.ctype = JSON.parse(j);
-
-    const WSN = wasm.ctype.structs.find(v=>v.name==='WasmDisposalNotifier');
-    if( WSN ){
+    if( wasm.exports.sqlite3__wasm_disposal_notifier ){
     /* Redirect the SQLITE_DISPOSAL_NOTIFIER callback installed by
-       sqlite3-wasm.c to JS by (A) creating a JS/C struct proxy which
-       wraps the C-side singleton instance of WasmDisposalNotifier and
-       (B) connecting our own function to its $callback method. */
-      const ctor = sqlite3.StructBinder(WSN);
-      const w = new ctor(
-        wasm.exports.sqlite3__wasm_disposal_notifier()
-        /* ^^^ ptr to the singleton WasmDisposalNotifier instance */
-      );
+       sqlite3-wasm.c to JS. */
       util.disposers = Object.assign(Object.create(null),{
         /* Lists of disposer callbacks which are passed the WASM pointer
            of an object which is currently being finalized from
@@ -974,24 +965,19 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       /* Map type IDs to names to simplify $callback() below. */
       util.disposers[1] = util.disposers.db;
       util.disposers[2] = util.disposers.stmt;
-      try {
-        w.$callback = wasm.installFunction("v(ip)", (tid,ptr)=>{
-          //sqlite3.config.debug("WasmDisposalNotifier:",tid,ptr);
-          const li = util.disposers[tid]
-                ?? toss("Internal bug: invalid disposal type ID",tid);
-          for(const d of li){
-            try{d(ptr)}
-            catch(e){
-              sqlite3.config.error("on-dispose handler type",
-                                   tid,"threw:",e,d);
-            }
+      const funcNr = wasm.installFunction("v(ip)", (tid,ptr)=>{
+        //sqlite3.config.debug("WasmDisposalNotifier:",tid,ptr);
+        const li = util.disposers[tid]
+              ?? toss("Internal bug: invalid disposal type ID",tid);
+        for(const d of li){
+          try{d(ptr)}
+          catch(e){
+            sqlite3.config.error("on-dispose handler type",
+                                 tid,"threw:",e,d);
           }
-        });
-      }finally{
-        w.dispose(/*only needed for the $callback assignment*/);
-        /* The irony that we permanently leak a function which is itself
-           responsible for cleanup is not lost on us. */
-      }
+        }
+      });
+      wasm.poke32(wasm.exports.sqlite3__wasm_disposal_notifier(), funcNr);
 //#if 0
       // Just for testing...
       util.disposers.stmt.push((p)=>sqlite3.config.warn("disposing stmt",p));
