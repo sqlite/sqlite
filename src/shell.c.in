@@ -10359,14 +10359,28 @@ static int dotCmdEqp(ShellState *p){
 ** Unsafe actions might be simply blocked, or the CLI might issue an error
 ** and exit immediately.
 **
-** CAUTION: If third-party extensions that have system side effects have
-** been loaded prior to the .safe command, the CLI has no knowledge of
-** those extensions and does not know to block them.  Unsafe actions might
-** still be possible using those third-party extension.
+** Safe mode does not prevent harm to database files that are already open.
+** An attacker can still delete content and even use commands like
+** "PRAGMA writable_schema=ON" to corrupt a database file that is already
+** open.  Safe mode only blocks access to other previously unopened files.
+**
+** CAUTION: If third-party extensions with system side effects have been
+** loaded prior to the .safe command, the CLI has no knowledge of those
+** extensions and does not know to block them.  Unsafe actions might still
+** be possible using those third-party extension.
 */
 static int dotCmdSafe(ShellState *p){
+  int i;
   p->bSafeMode = 1;
   p->bSafeModePersist = 1;
+  for(i=0; i<ArraySize(p->aAuxDb); i++){
+    sqlite3 *db = p->aAuxDb[i].db;
+    if( db==0 ) continue;
+    sqlite3_create_module(db, "fsdir", 0, 0);
+    sqlite3_create_function(db, "writefile", -1, 0, 0, 0, 0, 0);
+    sqlite3_create_module(db, "zipfile", 0, 0);
+    sqlite3_create_function(db, "zipfile", -1, 0, 0, 0, 0, 0);
+  }
   return 0;
 }
 

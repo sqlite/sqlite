@@ -2292,6 +2292,9 @@ static int zipfileRegister(sqlite3 *db){
     0                          /* xIntegrity */
   };
 
+  /* REMINDER: Changes here should also be reflected in the ".safe"
+  ** command of the CLI
+  */
   int rc = sqlite3_create_module(db, "zipfile"  , &zipfileModule, 0);
   if( rc==SQLITE_OK ) rc = sqlite3_overload_function(db, "zipfile_cds", -1);
   if( rc==SQLITE_OK ){
