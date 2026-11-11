@@ -807,6 +807,46 @@ SELECT substr('abc',-100), substr('abc',-9223372036854775807);
 SELECT substr('abc',-9223372036854775808), substr(x'616263',-9223372036854775808);
 .check abc,x'616263'
 
+# Bug sqlite.org/bugs/forumpost/93e321362f
+# A single-row REPLACE that deletes a row to resolve a UNIQUE conflict,
+# and then fails while computing a later index key, must roll back the
+# deletion when run inside a transaction.
+#
+.testcase 1800
+CREATE TABLE t1800(k INTEGER PRIMARY KEY, a, b);
+CREATE INDEX t1800b ON t1800(abs(b));
+CREATE UNIQUE INDEX t1800a ON t1800(a);
+INSERT INTO t1800 VALUES(1,1,1),(2,2,2);
+BEGIN;
+REPLACE INTO t1800(a,b) VALUES(1,-9223372036854775807-1);
+.check -glob "*rror near line *: integer overflow*"
+.testcase 1810
+SELECT * FROM t1800;
+.check "1,1,1\n2,2,2"
+.testcase 1820
+INSERT OR IGNORE INTO t1800 VALUES(1,1,1);
+UPDATE OR REPLACE t1800 SET a=1, b=-9223372036854775807-1 WHERE k=2;
+.check -glob "*rror near line *: integer overflow*"
+.testcase 1830
+SELECT * FROM t1800;
+COMMIT;
+.check "1,1,1\n2,2,2"
+
+# Same again, but the error is raised by the WHERE clause of a partial index.
+#
+.testcase 1840
+CREATE TABLE t1840(k INTEGER PRIMARY KEY, a, b);
+CREATE INDEX t1840b ON t1840(b) WHERE abs(b)>0;
+CREATE UNIQUE INDEX t1840a ON t1840(a);
+INSERT INTO t1840 VALUES(1,1,1),(2,2,2);
+BEGIN;
+REPLACE INTO t1840(a,b) VALUES(1,-9223372036854775807-1);
+.check -glob "*rror near line *: integer overflow*"
+.testcase 1850
+SELECT * FROM t1840;
+COMMIT;
+.check "1,1,1\n2,2,2"
+
 # Bug sqlite.org/bugs/forumpost/d5684dd903
 # A multi-row UPDATE or INSERT that fails inside an aggregate function must
 # roll back the rows it has already changed when run inside a transaction.

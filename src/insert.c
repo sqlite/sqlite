@@ -2460,6 +2460,14 @@ void sqlite3GenerateConstraintChecks(
     VdbeNoopComment((v, "prep index %s", pIdx->zName));
     iThisCur = iIdxCur+ix;
 
+    /* If an OE_Replace resolution earlier in the constraint checks may
+    ** have already deleted a conflicting row, and evaluating the partial
+    ** index WHERE clause or an indexed expression for this index might
+    ** raise an error, then a statement journal may be required to undo
+    ** the deletion.  */
+    if( seenReplace && (pIdx->pPartIdxWhere || pIdx->aColExpr) ){
+      sqlite3MultiWrite(pParse);
+    }
 
     /* Skip partial indices for which the WHERE clause is not true */
     if( pIdx->pPartIdxWhere ){
