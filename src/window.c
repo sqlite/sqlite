@@ -1418,6 +1418,7 @@ void sqlite3WindowCodeInit(Parse *pParse, Select *pSelect){
   pMWin = pSelect->pWin;
   v = sqlite3GetVdbe(pParse);
 
+  sqlite3MayAbort(pParse);
   sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pMWin->iEphCsr, nEphExpr);
   sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+1, pMWin->iEphCsr);
   sqlite3VdbeAddOp2(v, OP_OpenDup, pMWin->iEphCsr+2, pMWin->iEphCsr);

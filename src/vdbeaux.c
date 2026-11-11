@@ -794,6 +794,9 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
      || opcode==OP_VCreate
      || opcode==OP_ParseSchema
      || opcode==OP_Function || opcode==OP_PureFunc
+     || opcode==OP_AggStep || opcode==OP_AggInverse
+     || opcode==OP_AggFinal || opcode==OP_AggValue
+     || opcode==OP_VFilter || opcode==OP_VColumn
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull)
       && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))
      || (opcode==OP_MustBeInt && pOp->p2==0)

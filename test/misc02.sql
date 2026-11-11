@@ -806,3 +806,105 @@ SELECT substr('abc',-100), substr('abc',-9223372036854775807);
 .testcase 1701
 SELECT substr('abc',-9223372036854775808), substr(x'616263',-9223372036854775808);
 .check abc,x'616263'
+
+# Bug sqlite.org/bugs/forumpost/d5684dd903
+# A multi-row UPDATE or INSERT that fails inside an aggregate function must
+# roll back the rows it has already changed when run inside a transaction.
+#
+.testcase 1900
+CREATE TABLE t1900(k INTEGER PRIMARY KEY, b INT);
+INSERT INTO t1900 VALUES(1,1),(2,2),(3,3),(4,4);
+CREATE TABLE t1900b(k INT, x INT);
+INSERT INTO t1900b VALUES(1,100),(2,200),(3,9223372036854775807),(3,1),(4,400);
+BEGIN;
+UPDATE t1900 SET b=(SELECT sum(x) FROM t1900b WHERE t1900b.k=t1900.k);
+.check -glob "*rror near line *: integer overflow*"
+.testcase 1901
+SELECT * FROM t1900;
+COMMIT;
+.check "1,1\n2,2\n3,3\n4,4"
+
+# INSERT ... SELECT with the same correlated aggregate subquery.
+.testcase 1902
+CREATE TABLE t1900c(k, s);
+BEGIN;
+INSERT INTO t1900c
+  SELECT k, (SELECT sum(x) FROM t1900b WHERE t1900b.k=t1900.k) FROM t1900;
+.check -glob "*rror near line *: integer overflow*"
+.testcase 1903
+SELECT count(*) FROM t1900c;
+COMMIT;
+.check 0
+
+# INSERT ... SELECT with GROUP BY. The error occurs while finalizing the
+# aggregate for the second group, after the first group has been inserted.
+.testcase 1904
+CREATE TABLE t1900d(k, s);
+BEGIN;
+INSERT INTO t1900d SELECT k, sum(x) FROM t1900b GROUP BY k ORDER BY k;
+.check -glob "*rror near line *: integer overflow*"
+.testcase 1905
+SELECT count(*) FROM t1900d;
+COMMIT;
+.check 0
+
+# A window function.
+.testcase 1906
+CREATE TABLE t1900e(k, s);
+BEGIN;
+INSERT INTO t1900e SELECT k, sum(x) OVER (ORDER BY k) FROM t1900b;
+.check -glob "*rror near line *: integer overflow*"
+.testcase 1907
+SELECT count(*) FROM t1900e;
+COMMIT;
+.check 0
+
+# Bug sqlite.org/bugs/forumpost/83b29c74b2
+# A multi-row UPDATE or INSERT that fails inside json_each() or another
+# table-valued function must roll back the rows it has already changed
+# when run inside a transaction.
+#
+.testcase 1950
+CREATE TABLE t1950(k INTEGER PRIMARY KEY, j TEXT, n INT);
+INSERT INTO t1950 VALUES(1,'[1]',0),(2,'[1,2]',0),(3,'[1,2',0);
+BEGIN;
+UPDATE t1950 SET n=(SELECT count(*) FROM json_each(t1950.j));
+.check -glob "*rror near line *: malformed JSON*"
+.testcase 1951
+SELECT * FROM t1950;
+COMMIT;
+.check "1,[1],0\n2,[1,2],0\n3,[1,2,0"
+
+# INSERT ... SELECT from a join with json_each().
+.testcase 1952
+CREATE TABLE t1950b(v);
+BEGIN;
+INSERT INTO t1950b SELECT e.value FROM t1950, json_each(t1950.j) e;
+.check -glob "*rror near line *: malformed JSON*"
+.testcase 1953
+SELECT count(*) FROM t1950b;
+COMMIT;
+.check 0
+
+# json_tree().
+.testcase 1954
+UPDATE t1950 SET n=0;
+BEGIN;
+UPDATE t1950 SET n=(SELECT count(*) FROM json_tree(t1950.j));
+.check -glob "*rror near line *: malformed JSON*"
+.testcase 1955
+SELECT * FROM t1950;
+COMMIT;
+.check "1,[1],0\n2,[1,2],0\n3,[1,2,0"
+
+# pragma_table_info() with an unknown schema argument on the last row.
+.testcase 1956
+CREATE TABLE t1950c(k INTEGER PRIMARY KEY, s TEXT, n INT);
+INSERT INTO t1950c VALUES(1,'main',0),(2,'main',0),(3,'nosuchdb',0);
+BEGIN;
+UPDATE t1950c SET n=(SELECT count(*) FROM pragma_table_info('t1950c', s));
+.check -glob "*rror near line *: unknown database*"
+.testcase 1957
+SELECT * FROM t1950c;
+COMMIT;
+.check "1,main,0\n2,main,0\n3,nosuchdb,0"

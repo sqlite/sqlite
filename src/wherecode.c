@@ -1749,6 +1749,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int addrNotFound;
     int nConstraint = pLoop->nLTerm;
 
+    sqlite3MayAbort(pParse);
     iReg = sqlite3GetTempRange(pParse, nConstraint+2);
     addrNotFound = pLevel->addrBrk;
     for(j=0; j<nConstraint; j++){

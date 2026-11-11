@@ -6941,6 +6941,9 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   if( nReg==0 ) return;
   if( pParse->nErr ) return;
+  if( pAggInfo->nFunc ){
+    sqlite3MayAbort(pParse);
+  }
   sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->iFirstReg,
                     pAggInfo->iFirstReg+nReg-1);
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
