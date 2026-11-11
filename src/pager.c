@@ -6709,6 +6709,11 @@ int sqlite3PagerCommitPhaseOne(
             goto commit_phase_one_exit;
           }
           bBatch = 0;
+
+          /* The journal file was just created on disk. Sync it now before
+          ** any pages are written to the database file.  */
+          rc = syncJournal(pPager, 0);
+          if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
         }else{
           sqlite3OsClose(pPager->jfd);
         }

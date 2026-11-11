@@ -1,5 +1,5 @@
-C Minor\stypo\sfix.
-D 2026-11-11T14:43:41.741
+C If\san\serror\sduring\sa\sbatch-atomic-write\s(F2FS)\scommit\scauses\sSQLite\sto\sfall\sback\sto\sa\sregular\srollback\smode\scommit,\sensure\sthat\sthe\sdb\sfile\sis\ssynced\sto\sdisk\sbefore\sany\sdata\sis\swritten\sto\sdisk.\sReport\s[bugs:/info/2026-11-10T07:50:48Z\s|\s2026-11-10T07:50:48Z].
+D 2026-11-11T14:58:09.614
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -798,7 +798,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 3a197098579c23169d1db8ef93fe9b5131a8e4c489c7d157fe053c9e593f1831
 F src/os_win.c 74473c76517956865581f12e4afc06c09a499ea70002cf9cedb3316301138be8
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
-F src/pager.c ff3b999befa580535fb9897dfcf38b74c30b1ebe047dfc9db0daf7c248685917
+F src/pager.c f50bf390020a1ac466ccaab442c111f46fa1e6ee09a390f2eef322d6b44bfaad
 F src/pager.h 53cabc1fd881a9c078eab7db6c233bc0ed29d8938fc05585f0e75e80d905d308
 F src/parse.y aa4c941122ad16aa648434db4ea917188ad5d9f9ac0cb63c4ac56b7f044630ba
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -834,7 +834,7 @@ F src/test_backup.c a2bfd90d2ff2511b8635507bdb30fa9b605ade19c16b533066cae3077f5b
 F src/test_bestindex.c d75fad21369d80910238032bcf8d9ca1f2bffda13c1ceec63bfbb7f704448b15
 F src/test_blob.c 3a946319c1b062a58d249c67be099c3bc1ec52f2e6ba23b1867699f0b8189ac2
 F src/test_btree.c 28283787d32b8fa953eb77412ad0de2c9895260e4e5bd5a94b3c7411664f90d5
-F src/test_config.c 45b83ce7981fd01c58e85b67955bc6a344da5abfb4db1c3f2ba6dcc7adc85d83
+F src/test_config.c 8d3a19745df7f2f5b8a668b5934b838ed6e70e1fc5668f5e52ade3797fc95149
 F src/test_delete.c c854f15e8a23e35257d853a6af353134eea3bcb2967495b8c3fe1b4dcea809f3
 F src/test_demovfs.c 3efa2adf4f21e10d95521721687d5ca047aea91fa62dd8cc22ac9e5a9c942383
 F src/test_devsym.c 649434ed34d0b03fbd5a6b42df80f0f9a7e53f94dd1710aad5dd8831e91c4e86
@@ -865,7 +865,7 @@ F src/test_tclsh.c c01706ac60bd3176754d3ccd37da74c6ad97c2e14489f8ed71b497c1c0ac0
 F src/test_tclvar.c ae873248a0188459b1c16ca7cc431265dacce524399e8b46725c2b3b7e048424
 F src/test_thread.c 3edb4a5b5aeb1a6e9a275dccc848ac95acab7f496b3e9230f6d2d04953a2b862
 F src/test_vdbecov.c 5c426d9cd2b351f5f9ceb30cabf8c64a63bfcad644c507e0bd9ce2f6ae1a3bf3
-F src/test_vfs.c 772a5e35bfcfe233bf2e39778da730fa7f9dddd3c0ef6c594008ff4582c0bca6
+F src/test_vfs.c 332f1532260621be0ef31d3a08d57fb72e8cb2fdc7a63d42dc1f3573eff04882
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 85d8b9f05f78211c61e3739ab5db761d7118766d1916ae7f2764735106bc4e13
@@ -948,6 +948,7 @@ F test/atof1.test bd21c4a0e718ab1470de07a2a79f2544d7903be34feebcc80de04beee4807b
 F test/atof2.test 12912add57230495450e2fc94cb8ad1c9f3277f8843a3bc27079cae45c9782a1
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
+F test/atomic3.test d7608f6169a76eea34e345e72994cc6f9fff946e04673a9c68a2569f0bd11fc2
 F test/atrc.c c388fac43dbba05c804432a7135ae688b32e8f25818e9994ffba4b64cf60c27c
 F test/attach.test 12b2a9872c1ce20edf40289f00d82d13faae59ced522d98496ab06ad5c5e0a1c
 F test/attach2.test 6d1e3a457ce260d6fc8e5945c07fba6c76dc2aa90e1c701f067b50ee88f7315a
@@ -2308,8 +2309,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ea4c56756f374851eed7a1572e4f63a0024a020fbc933812fc9e2ca50f3c16ab
-R d58c77217a07cbe16561d03d0cbb2393
-U drh
-Z 66d1ba268569c846895ab3d001d962da
+P 1e2c11c32d25cf4af46ff015939aae258fa7a136080750896dec43c3c23ca261
+R 0eaf39d5ad6c09efe7399b15e9e489c4
+U dan
+Z e2093a5ab5c6edc633a87f8933335df7
 # Remove this line to create a well-formed Fossil manifest.
