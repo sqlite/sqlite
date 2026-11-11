@@ -977,7 +977,7 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
         }
       });
-      wasm.poke32(wasm.exports.sqlite3__wasm_disposal_notifier(), funcNr);
+      wasm.pokePtr(wasm.exports.sqlite3__wasm_disposal_notifier(), funcNr);
 //#if 0
       // Just for testing...
       util.disposers.stmt.push((p)=>sqlite3.config.warn("disposing stmt",p));
