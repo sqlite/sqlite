@@ -1,9 +1,9 @@
-C Fix\sCAST(TO\sNUMERIC)\sso\sthat\sit\scorrectly\sunderstand\sthe\sentire\nprefix\sin\sall\scircumstances.\n[bugs:/info/2026-11-04T20:34:18Z|Bug\s2026-11-04T20:34:18Z]
-D 2026-11-11T01:04:29.686
+C Updates\sto\sAGENTS.md\sbased\son\srecent\sexperience.
+D 2026-11-11T02:57:14.615
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F AGENTS.md f62e19d680671994b4a332b317dbc05bb243a75b5968200d6fcca7cb5e3d5c1a
+F AGENTS.md c4456e5bf41691b3eb726b1085c98ec826171a435a3009be2c0b3167dae385a9
 F LICENSE.md 3aa673c9c864ea8ee3ac46c7a52d270543a8fb8e1dd7e7b02df8f41dca1b80b6
 F Makefile.in b9e64c91cf8bea2305e1ca88bd3eb022afa93963a8561ea8290c65d4fafec03e
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
@@ -2307,8 +2307,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4ddf1761c0a0469fd0cfa9a724d700ee3158bdff48a75e6d4421e256b8045994
-R d915dea3cc2ba8b80e28e34be65f4447
+P e39098546092a080a1105cb4431241a95a3c781244e3172743f6dc8132ab8741
+R a490e9cb81aa35e4f342661d1195a9e0
 U drh
-Z 36b768e588467016f81e6b6bc94d79ba
+Z 6db8081628edfd1dcb777a150943baa5
 # Remove this line to create a well-formed Fossil manifest.

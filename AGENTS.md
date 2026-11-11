@@ -5,9 +5,7 @@ Guidance for AI coding agents working in this repository.
 ## Project nature
 
 SQLite is a self-contained, serverless SQL database engine written in C. The
-source is **public domain** — no copyright or license header should ever be
-added to any file. The blessing comment that appears at the top of each source
-file is intentional and should be preserved unchanged.
+source is **public domain**.
 
 SQLite does not accept pull requests without prior agreement and/or
 accompanying legal paperwork that places the pull request in the public domain.
@@ -15,21 +13,62 @@ However, the human SQLite developers will review a concise and well-written
 pull request as a proof-of-concept prior to reimplementing the changes
 themselves.
 
-SQLite does not accept agentic code.  However the project
-will accept agentic bug reports that include a reproducible test case.
-Ideally, a test case should be a script of SQL commands that is directly
-executable by the [CLI](https://sqlite.org/cli.html).
-Patches or pull requests demonstrating a possible fix, for documentation
-purposes, are welcomed.
+Agentic code is acceptable as long as nobody can tell that the code
+is agentic.  The code must looks as if was written by the original human
+authors of SQLite, with the same coding style, variable naming style,
+commenting style, and so forth.
 
 SQLite uses the [Fossil](https://fossil-scm.org/) for version control,
-not Git.  The canonical repository is at <https://sqlite.org/src>.
+not Git.  The GitHub repository for SQLite is a mirror and is not
+canonical.  The canonical repository is at <https://sqlite.org/src>.
+Check-ins can be referenced by hash prefix (ex: 192e4ee8f8091e95) or
+by timestamp (ex: 2026-11-09T17:42:26.054Z) or both.
+
+To send patches to the SQLite developers, the ideal format is a Fossil
+patch created using the
+"[fossil patch create](https://fossil-scm.org/home/help/patch)" command.
+The second best approach is an ordinary context diff.
 
 ## Reporting Bugs
 
 AI-generated or Fuzzer-generated bug reports should be sent to
 <https://sqlite.org/bugs>.  Do not send AI- or fuzzer-generated
 bug reports to the Forum.
+
+Bug reports should include a reproducible test case, preferrably
+SQL test script so that it can be run directly using the
+[CLI](https://sqlite.org/cli.html).  
+
+  *  Schematic of an SQL test script:
+
+> ~~~
+# Concise problem description
+.open :memory:
+.mode -reset list
+.testcase 100
+/* SQL statements go here */
+.check 'expected result'
+.testcase 110
+/* More SQL statements */
+.check <<--end-mark--
+multi-line
+expected
+result
+--end-mark--
+~~~
+
+   *  --glob and --regexp options are available to .check
+   *  Arguments quoted using '...' or  "..."
+   *  Repeat the ".testcase" through ".check" cycle as necessary
+   *  See source tree matching "test/\*.sql" for examples.
+
+If an SQL test case is not possible, the second
+best approach is a TCL script that can be run using
+testfixture.  See source tree files matching "test/\*.test" for examples.
+
+If a TCL script is not possible, provide a concise C program.
+
+Include suggested fixes and/or patches with bug reports, if possible.
 
 ## Build
 
@@ -49,7 +88,18 @@ make tclextension-install      # install TCL extension before running tests
 
 ## Testing
 
-Tests are TCL scripts run through the `testfixture` enhanced interpreter.
+Many historical tests are TCL scripts run via the `testfixture` enhanced
+TCL interpreter.  Newer tests are often written to be run by the
+SQLite command-line interpreter (CLI).  Call these "SQL tests".  SQL tests
+are preferred, when they are possible.  However, SQL tests have a limited
+control language of the (the 
+[CLI "dot-commands"](https://sqlite.org/cli.html#dotcmd)) can only interact
+with the SQL interface.  To run tests against C-language APIs or to writes
+loops that run tests repeatedly with varying parameter usually requires
+using TCL and testfixture, or a separate C program.
+
+Use the test/testrunner.tcl script as a supervisor to run collections
+of tests, including SQL tests, TCL scripts, and C test programs.
 
 ```bash
 # From the build directory:
@@ -62,8 +112,7 @@ test/testrunner.tcl fts5%      # pattern match
 grep '!' testrunner.log
 ```
 
-`make devtest` is the fastest way to run a representative subset. Always run
-at least `devtest` after any change to `src/`.
+`make test` is an easy way to run a representative subset.
 
 ## Architecture
 
@@ -110,6 +159,8 @@ Editing rules:
 - Assert liberally for invariants that must hold in correct code; use
   `ALWAYS(x)` / `NEVER(x)` for conditions that are logically always
   true/false but that the compiler cannot prove.
+- All code should match.  It should not be possible to identify the author
+  of a section of code based on its style.
 
 ## Extensions (`ext/`)
 
