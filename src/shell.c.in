@@ -6505,7 +6505,9 @@ static int testcase_glob(const char *zGlob, const char *z){
       }
       if( c==0 ){
         return 1;
-      }else if( c=='[' ){
+      }else if( c=='[' || c=='#' || IsSpace(c) ){
+        /* The next pattern element is not a literal character.  Try to
+        ** match it at each position in the remaining text. */
         while( *z && testcase_glob(zGlob-1,z)==0 ){
           z++;
         }
@@ -9805,31 +9807,68 @@ static char *captureHereDoc(ShellState *p, const char *zTerminator){
 }
 
 /*
+** Return a pointer to the first non-whitespace character in the input
+** string, or a pointer to the string terminator if the input contains
+** no non-whitespace characters.
+**
+** The number of bytes that follow, excluding trailing whitespace, is
+** written into *pN if pN!=0.
+*/
+static char *trimSpace(char *zIn, int *pN){
+  while( IsSpace(zIn[0]) ){ zIn++; }
+  if( pN ){
+    size_t n = strlen(zIn);
+    while( n>0 && IsSpace(zIn[n-1]) ){ n--; }
+    *pN = n;
+  }
+  return zIn;
+}
+
+/*
 ** DOT-COMMAND: .check
 ** USAGE: .check [OPTIONS] PATTERN
 **
-** Verify results of commands since the most recent .testcase command.
-** Restore output to the console, unless --keep is used.
+** Verify the output of all commands since the most recent .testcase
+** command.  Both stdout and stderr are captured and compared, so error
+** messages are part of the text being compared, however output from
+** the ".echo on" dot-command is not captured and is not part of the test
+** result.
 **
-** If PATTERN starts with "<<ENDMARK" then the actual pattern is taken from
-** subsequent lines of text up to the first line that begins with ENDMARK.
-** All pattern lines and the ENDMARK are discarded.
+** After checking the result, all captured output is discarded and
+** output starts going back to the console, unless --keep is used.
+**
+** If PATTERN is "<<ENDMARK" (for any ENDMARK) then the actual pattern is
+** taken from subsequent lines of text up to the first line that begins
+** with ENDMARK.
 **
 ** The default comparison algorithm is to ignore all leading and trailing
-** whitespace and to treat all interior whitespace characters as being
-** equal to one another.
+** whitespace and compare the pattern against the result byte-for-byte except
+** that whitespace characters are equal to other whitespace characters.
+** Thus if the pattern contains a space character and the result contains
+** a tab in the same spot, they would still compare equal.  The number of
+** whitespace characters must be the same in the pattern and the result.
+**
+** The --glob, --notglob, and --allglob comparisons are extended so that
+** "#" in the pattern matches a sequence of one or more digits with an
+** optional leading "+" or "-", and a space in the pattern matches a run
+** of one or more whitespace characters.
 **
 ** Options:
-**   --any            PATTERN is a substring within the test output
-**   --exact          PATTERN matches the entire test output, byte for byte
-**   --glob           PATTERN is a GLOB matching entire test output
-**   --keep           Do not reset the test output.  More .check commands
-**                    will follow.
-**   --not            Pass if the test output does *not* match PATTERN
-**   --notglob        Shorthand for "--not --glob"
-**   --regexp         PATTERN is a regular expression matching any part of
-**                    of the test output
-**   --show           Write test output to the screen, for debugging.
+**   --allglob      PATTERN is a GLOB matching the entire test output except
+**                  leading and trailing whitespace.
+**   --any          PATTERN is any substring within the test output.
+**   --exact        PATTERN matches the entire test output, byte for byte.
+**   --glob         PATTERN is a GLOB matching any substring of the test
+**                  output.  Leading and trailing whitespace on the PATTERN
+**                  is ignored.
+**   --keep         Do not reset the test output.  One or more .check commands
+**                  will follow and do additional tests.
+**   --not          Pass if the test output does *not* match PATTERN.
+**   --notglob      Shorthand for "--not --glob".
+**   --nowhere      Shorthand for "--not --any".
+**   --regexp       PATTERN is a regular expression matching any substring
+**                  of the test output.
+**   --show         Write test output to the screen, for debugging.
 */
 static int dotCmdCheck(ShellState *p){
   int nArg = p->dot.nArg;            /* Number of arguments */
@@ -9840,9 +9879,11 @@ static int dotCmdCheck(ShellState *p){
   int bKeep = 0;                     /* --keep option */
   char *zCheck = 0;                  /* PATTERN argument */
   char *zPattern = 0;                /* Actual test pattern */
-  int eCheck = 0;                    /* 1: --glob,  2: --notglob,  3: --exact */
+  char *zToFree = 0;                 /* allocated text to free */
+  int eCheck = 0;                    /* 0: default.  Else 1+index of option */
   int isOk = 0;                      /* True if results are OK */
   int bNot = 0;                      /* Invert the sense of the test */
+  int iPat = -1;                     /* Location of the pattern */
   sqlite3_int64 iStart = p->lineno;  /* Line number of .check statement */
 
   if( p->mIf!=0 ){
@@ -9870,10 +9911,10 @@ static int dotCmdCheck(ShellState *p){
       bKeep = 1;
     }else if( z[0]=='-'
           && (k = pickStr(&z[1],0,
-         /*  0       1          2        3         4      5   */
-            "glob", "notglob", "exact", "regexp", "any", "not", ""))>=0
+   /*  0      1       2        3     4         5         6         7 */
+      "glob","exact","regexp","any","nowhere","allglob","notglob","not",""))>=0
     ){
-      if( k==5 ){
+      if( k==7 ){
         bNot = !bNot;
       }else if( eCheck==0 || eCheck==k+1 ){
         eCheck = k+1;
@@ -9888,6 +9929,7 @@ static int dotCmdCheck(ShellState *p){
       return 1;
     }else{
       zCheck = azArg[i];
+      iPat = i;
     }
   }
   if( zCheck==0 ){
@@ -9905,30 +9947,44 @@ static int dotCmdCheck(ShellState *p){
     if( zPattern==0 ){
       zPattern = sqlite3_mprintf("");
     }
+    zToFree = zPattern;
   }else{
     zPattern = zCheck;
+    zToFree = 0;
   }
   shell_check_oom(zPattern);
   switch( eCheck ){
-    case 1:           /* --glob */
-    case 2: {         /* --notglob */
-      char *zGlob = sqlite3_mprintf("*%s*", zPattern);
+    case 6:           /* --allglob */
+    case 7:           /* --notglob */
+    case 1: {         /* --glob */
+      int nPat = 0;
+      char *zGlob;
+      zPattern = trimSpace(zPattern, &nPat);
+      zTest = trimSpace(zTest, 0);
+      if( eCheck==6 ){
+        zGlob = sqlite3_mprintf("%.*s", nPat, zPattern);
+      }else{
+        zGlob = sqlite3_mprintf("*%.*s*", nPat, zPattern);
+      }
+      shell_check_oom(zGlob);
       isOk = testcase_glob(zGlob, zTest)!=0;
-      if( eCheck==2 ) isOk = !isOk;
+      if( eCheck==7 ) isOk = !isOk;
       sqlite3_free(zGlob);
       break;
     }
-    case 3: {         /* --exact */
+    case 2: {         /* --exact */
       isOk = cli_strcmp(zTest,zPattern)==0;
       break;
     }
-    case 4: {         /* --regexp */
+    case 3: {         /* --regexp */
       ReCompiled *pRe = 0;
       const char *zErr = re_compile(&pRe, zPattern, 1000, 0);
       if( zErr ){
         re_free(pRe);
+        sqlite3_free(zToFree);
         output_reset(p);
-        dotCmdError(p, 0, "bad regular expression: %s", zErr);
+        p->nTestErr++;
+        dotCmdError(p, iPat, "bad regexp", "bad regular expression: %s", zErr);
         return 1;
       }
       shell_check_oom(pRe);
@@ -9936,32 +9992,37 @@ static int dotCmdCheck(ShellState *p){
       re_free(pRe);
       break;
     }
-    case 5: {         /* --any */
+    case 4: {         /* --any */
       isOk = strstr(zTest,zPattern)!=0;
       break;
     }
+    case 5: {         /* --nowhere */
+      isOk = strstr(zTest,zPattern)==0;
+      break;
+    }
     default: {        /* default matching rule */
-      /* Skip leading and trailing whitespace on both pattern and test output.
-      ** Treat \n as a single space */
-      const char *z1 = zPattern;
-      const char *z2 = zTest;
-      size_t n1, n2;
-      while( IsSpace(z1[0]) ) z1++;
-      n1 = strlen(z1);
-      while( n1>0 && IsSpace(z1[n1-1]) ) n1--;
-      while( IsSpace(z2[0]) ) z2++;
-      n2 = strlen(z2);
-      while( n2>0 && IsSpace(z2[n2-1]) ) n2--;
-      if( n1!=n2 ){
+      /* Ignore leading and trailing whitespace on both the pattern and the
+      ** test output.  Each interior whitespace character will compare equal
+      ** to exactly one other whitespace character. */
+      int nPat = 0;
+      int nTest = 0;
+      zPattern = trimSpace(zPattern, &nPat);
+      zTest = trimSpace(zTest, &nTest);
+      if( nPat!=nTest ){
         isOk = 0;
-      }else if( memcmp(z1,z2,n1)==0 ){
+      }else if( memcmp(zPattern, zTest, nPat)==0 ){
         isOk = 1;
       }else{
-        size_t ii;
-        for(ii=0; ii<n2; ii++){
-          if( z1[ii]!=z2[ii] && !IsSpace(z1[ii]) && !IsSpace(z2[ii]) ) break;
+        int ii;
+        isOk = 1;
+        for(ii=0; ii<nPat; ii++){
+          if( zPattern[ii]!=zTest[ii]
+           && !(IsSpace(zPattern[ii]) && IsSpace(zTest[ii]))
+          ){
+            isOk = 0;
+            break;
+          }
         }
-        if( ii==n2 ) isOk = 1;
       }
       break;
     }
@@ -9998,9 +10059,7 @@ static int dotCmdCheck(ShellState *p){
       sqlite3_fprintf(stderr, "Got:      [%s]\n", zTest);
     }
   }
-  if( zPattern!=zCheck ){
-    sqlite3_free(zPattern);
-  }
+  sqlite3_free(zToFree);
   if( !bKeep ){
     output_reset(p);
     p->zTestcase[0] = 0;

@@ -115,20 +115,17 @@ END
 
 .testcase 160
 .mode --null xyzzy -v
-.check -glob ' --null "xyzzy"'
+.check -any ' --null "xyzzy"'
 .testcase 170
 .mode -null abcde -v
-.check -glob ' --null "abcde"'
+.check -any ' --null "abcde"'
 
 # Test cases for the ".explain off" command
 .mode box -reset
 .testcase 180
 EXPLAIN SELECT * FROM t1;
-.check --not --glob *────* --keep
-.check --notglob *────* --keep
-.check --not --regexp ──── --keep
-.check --not --any ──── --keep
-.check --notglob "* id │ parent │ notused │ detail *" --keep
+.check --nowhere ──── --keep
+.check --nowhere " id │ parent │ notused │ detail " --keep
 .check --regexp '\bInit\b' --keep
 .check --any ' Init '
 .testcase 190
@@ -655,11 +652,11 @@ INSERT INTO t1 VALUES(1,2,3);
 .header on
 .mode csv
 SELECT * FROM t1;
-.check --glob a,b,c*
+.check --glob *a,b,c*
 
 .testcase 601
 SELECT 'abc',char(0x05,0x18,0x33),'xyz';
-.check --glob abc,"??3",xyz
+.check --glob *abc,"??3",xyz*
 
 .testcase 610
 .mode csv -reset

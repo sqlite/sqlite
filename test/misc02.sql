@@ -715,7 +715,7 @@ SELECT EXISTS(SELECT DISTINCT b FROM t1550 LIMIT 1 OFFSET 2),
 SELECT x.c, EXISTS(
   SELECT DISTINCT c>2 FROM t1550 WHERE t1550.b IS x.b LIMIT 1 OFFSET 1
 ) FROM t1550 AS x ORDER BY x.c;
-.check 1,0,2,0,3,0,4,0,5,0
+.check '1,0 2,0 3,0 4,0 5,0'
 
 # A single-row INSERT ... VALUES that fails an immediate FK constraint
 # after a deferred FK on the same row has already been counted must not
