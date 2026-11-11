@@ -1329,9 +1329,19 @@ static int recoverWriteSchema2(sqlite3_recover *p){
   if( pSelect ){
     while( sqlite3_step(pSelect)==SQLITE_ROW ){
       const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
-      int rc = recoverOneStmt(p->dbOut, zSql, 0);
+      const char *zTail = 0;
+      int rc = recoverOneStmt(p->dbOut, zSql, &zTail);
       if( rc==SQLITE_OK ){
+        char *pToFree = 0;
+        if( zTail && zTail[0] ){
+          /* Omit any extraneous text that follows the first SQL statement */
+          int n = (int)(zTail - zSql);
+          while( n>0 && (zSql[n-1]==';' || zSql[n-1]<=' ') ){ n--; }
+          pToFree = sqlite3_mprintf("%.*s", n, zSql);
+          zSql = pToFree;
+        }
         recoverSqlCallback(p, zSql);
+        sqlite3_free(pToFree);
       }else if( rc!=SQLITE_ERROR ){
         recoverDbError(p, p->dbOut);
       }

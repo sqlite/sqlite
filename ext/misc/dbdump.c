@@ -278,6 +278,30 @@ col_oom:
 }
 
 /*
+** Return a copy of the text z, obtained from sqlite3_malloc(), that is safe
+** to embed inside of a C-style comment in a script of SQL statements and
+** dot-commands.  Newlines and other control characters are changed to spaces,
+** and any end-of-comment sequence is broken up.  Otherwise, text taken from
+** an untrusted database (for example, a table name in an error message)
+** could terminate the comment and put arbitrary SQL, or a line that begins
+** with "." and so is interpreted as a dot-command, into the output.
+*/
+static char *safeCommentText(const char *z){
+  char *zOut = sqlite3_mprintf("%s", z ? z : "");
+  int i;
+  if( zOut==0 ) return 0;
+  for(i=0; zOut[i]; i++){
+    unsigned char c = (unsigned char)zOut[i];
+    if( c<' ' || c==0x7f ){
+      zOut[i] = ' ';
+    }else if( c=='/' && i>0 && zOut[i-1]=='*' ){
+      zOut[i] = ' ';
+    }
+  }
+  return zOut;
+}
+
+/*
 ** Send mprintf-formatted content to the output callback.
 */
 static void output_formatted(DState *p, const char *zFormat, ...){
@@ -568,8 +592,9 @@ static void output_sql_from_query(
   rc = sqlite3_prepare_v2(p->db, zSql, -1, &pSelect, 0);
   sqlite3_free(zSql);
   if( rc!=SQLITE_OK || !pSelect ){
-    output_formatted(p, "/**** ERROR: (%d) %s *****/\n", rc,
-                sqlite3_errmsg(p->db));
+    char *zMsg = safeCommentText(sqlite3_errmsg(p->db));
+    output_formatted(p, "/**** ERROR: (%d) %s *****/\n", rc, zMsg);
+    sqlite3_free(zMsg);
     p->nErr++;
     return;
   }
@@ -593,8 +618,9 @@ static void output_sql_from_query(
   }
   rc = sqlite3_finalize(pSelect);
   if( rc!=SQLITE_OK ){
-    output_formatted(p, "/**** ERROR: (%d) %s *****/\n", rc,
-                     sqlite3_errmsg(p->db));
+    char *zMsg = safeCommentText(sqlite3_errmsg(p->db));
+    output_formatted(p, "/**** ERROR: (%d) %s *****/\n", rc, zMsg);
+    sqlite3_free(zMsg);
     if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
   }
 }
@@ -620,7 +646,9 @@ static void run_schema_dump_query(
   sqlite3_exec(p->db, z, dump_callback, p, &zErr);
   sqlite3_free(z);
   if( zErr ){
-    output_formatted(p, "/****** %s ******/\n", zErr);
+    char *zMsg = safeCommentText(zErr);
+    output_formatted(p, "/****** %s ******/\n", zMsg);
+    sqlite3_free(zMsg);
     sqlite3_free(zErr);
     p->nErr++;
     zErr = 0;
