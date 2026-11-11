@@ -1,9 +1,9 @@
-C Still\smore\shardening\sagainst\ssmuggled\sshell\scommand\sattacks.
-D 2026-11-11T13:17:51.458
+C Add\sthe\sdoc/writing-test-cases.md\sdocument.\s\sImprovements\sto\sAGENTS.md.
+D 2026-11-11T14:38:01.230
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F AGENTS.md 555c8b90d3425e9b255375594da48dee9e2dfcc43cbf9ee4ef79de1909c22da7
+F AGENTS.md 053ac03f392ee112d7780d5026b31f7c23bf937c3958df0c9ede51c96feef99c
 F LICENSE.md 3aa673c9c864ea8ee3ac46c7a52d270543a8fb8e1dd7e7b02df8f41dca1b80b6
 F Makefile.in b9e64c91cf8bea2305e1ca88bd3eb022afa93963a8561ea8290c65d4fafec03e
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
@@ -69,6 +69,7 @@ F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
 F doc/vfs-shm.txt 1a55f3f0e7b6745931b117ba5c9df3640d7a0536f532ef0052563100f4416f86
 F doc/wal-lock.md 7db0cd61e2000b545b78ce89b0c2a9a8dd8d64c097839258ac10d7c5c4156ec1
+F doc/writing-test-cases.md c6f2f70079249fe6100416a7db7f8366c7150731fb0378c61aa3716defe3bf5d
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 9f4d6751981bf5dda7b7480f6f878659d032a47fe74d84f31f80fdc05d6cad78
@@ -2307,8 +2308,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d380b494c94b8c5f2fea005aa5317190c10cbd76b44f380ce3230eae29b1b63a
-R 8eb6e96d9f29aabeb743c0b6e42a2555
+P 8981033053d69c0a965525389971f6e5c248706d99eb14f32b386ece59d46fc5
+R 807665691091431cf2c3b05d82c8db09
 U drh
-Z e2cc37975b2ca396323a0f566652782b
+Z c73274bcae45bf4c68a41e10d0d1a007
 # Remove this line to create a well-formed Fossil manifest.

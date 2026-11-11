@@ -21,8 +21,6 @@ commenting style, and so forth.
 SQLite uses the [Fossil](https://fossil-scm.org/) for version control,
 not Git.  The GitHub repository for SQLite is a mirror and is not
 canonical.  The canonical repository is at <https://sqlite.org/src>.
-Check-ins can be referenced by hash prefix (ex: 192e4ee8f8091e95) or
-by timestamp (ex: 2026-11-09T17:42:26.054Z) or both.
 
 To send patches to the SQLite developers, the ideal format is a Fossil
 patch created using the
@@ -31,43 +29,11 @@ The second best approach is an ordinary context diff.
 
 ## Reporting Bugs
 
-AI-generated or Fuzzer-generated bug reports should be sent to
-<https://sqlite.org/bugs>.  Do not send AI- or fuzzer-generated
-bug reports to the Forum.
+Send bug reports to <https://sqlite.org/bugs>, not the SQLite user forum.
 
-Bug reports should include a reproducible test case, preferrably
-SQL test script so that it can be run directly using the
-[CLI](https://sqlite.org/cli.html).  
-
-  *  Schematic of an SQL test script:
-
-> ~~~
-# Concise problem description
-.open :memory:
-.mode -reset test
-.testcase 100
-/* SQL statements go here */
-.check 'expected result'
-.testcase 110
-/* More SQL statements */
-.check <<--end-mark--
-multi-line
-expected
-result
---end-mark--
-~~~
-
-   *  --glob and --regexp options are available to .check
-   *  Arguments quoted using '...' or  "..."
-   *  Repeat the ".testcase" through ".check" cycle as necessary
-   *  See source tree matching "test/\*.sql" for examples.
-   *  Run "./sqlite3 :memory: '.help COMMAND'" for built-in help
-
-If an SQL test case is not possible, the second
-best approach is a TCL script that can be run using
-testfixture.  See source tree files matching "test/\*.test" for examples.
-
-If a TCL script is not possible, provide a concise C program.
+Bug reports should include a reproducible test case, written according
+to the rules outlined at
+[doc/writing-test-cases.md](https://sqlite.org/src/doc/trunk/doc/writing-test-cases.md).
 
 Include suggested fixes and/or patches with bug reports, if possible.
 
@@ -89,31 +55,32 @@ make tclextension-install      # install TCL extension before running tests
 
 ## Testing
 
-Many historical tests are TCL scripts run via the `testfixture` enhanced
-TCL interpreter.  Newer tests are often written to be run by the
-SQLite command-line interpreter (CLI).  Call these "SQL tests".  SQL tests
-are preferred, when they are possible.  However, SQL tests have a limited
-control language of the (the 
-[CLI "dot-commands"](https://sqlite.org/cli.html#dotcmd)) can only interact
-with the SQL interface.  To run tests against C-language APIs or to writes
-loops that run tests repeatedly with varying parameter usually requires
-using TCL and testfixture, or a separate C program.
+Test cases in the SQLite source tree are written as SQL scripts, TCL
+scripts, or separate C programs.  There are many thousands of tests in
+the canonical source tree.
 
-Use the test/testrunner.tcl script as a supervisor to run collections
-of tests, including SQL tests, TCL scripts, and C test programs.
+Run individual SQL tests using the [CLI](https://sqlite.org/cli.html).
+Run individual TCL test scripts using the "testfixture" program.
+Use the test/testrunner.tcl script to run collections
+of tests, including SQL tests, TCL scripts, and C test programs,
+in parallel across multiple cores.
 
 ```bash
 # From the build directory:
-./testfixture test/main.test   # single test file
+./sqlite3 test/misc01.sql      # single SQL test script
+./testfixture test/main.test   # single TCL test script
 test/testrunner.tcl            # quick suite
 test/testrunner.tcl full       # full suite
 test/testrunner.tcl fts5%      # pattern match
-
-# Check for failures:
-grep '!' testrunner.log
 ```
 
-`make test` is an easy way to run a representative subset.
+Check for failures from testrunner.tcl using:
+
+  *  `grep '!' testrunner.log`
+  *  `test/testrunner.tcl errors`
+  *  `test/testrunner.tcl errors -v`
+
+"`make test`" is an easy way to run a reasonably complete subset of tests.
 
 ## Architecture
 
