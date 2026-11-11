@@ -552,4 +552,21 @@ ifcapable vtab {
   } {44.0 55}
 }
 
+# 2026-11-04 https://sqlite.org/bugs/info/e4142666fcb0429a
+# A UTF16 string with a well-formed numeric prefix followed by a character
+# of U+0100 or above must convert the same as in UTF8.
+#
+reset_db
+do_execsql_test cast-11.0 {
+  PRAGMA encoding='UTF-16le';
+  CREATE TABLE t1(x TEXT);
+  INSERT INTO t1 VALUES('1.5'||char(0x20AC)),('2e3'||char(0x20AC)),
+                       ('12'||char(0x20AC)),('1.5x'),('1.5'||char(0xe9));
+  SELECT CAST(x AS NUMERIC), typeof(CAST(x AS NUMERIC)), x+0, CAST(x AS REAL)
+    FROM t1;
+} {1.5 real 1.5 1.5 2000 integer 2000.0 2000.0 12 integer 12 12.0 1.5 real 1.5 1.5 1.5 real 1.5 1.5}
+do_execsql_test cast-11.1 {
+  PRAGMA encoding;
+} {UTF-16le}
+
 finish_test

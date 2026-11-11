@@ -710,7 +710,11 @@ static SQLITE_NOINLINE int sqlite3MemRealValueRCSlowPath(
       assert( j<=n/2 );
       zCopy[j] = 0;
       rc = sqlite3AtoF(zCopy, pValue);
-      if( i<n ) rc = -100;
+      if( i<n && rc>0 ){
+        /* Only a prefix was converted. Adjust rc to match would
+        ** sqlite3AtoF() would have done. */
+        rc |= -16;
+      }
       sqlite3DbFree(pMem->db, zCopy);
     }
     return rc;
