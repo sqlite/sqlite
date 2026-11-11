@@ -261,7 +261,7 @@ SELECT * FROM t1, t2 WHERE t2.b=t2.c AND t2.b=t1.a COLLATE NOCASE;
 # Unexpected FULL JOIN Result by Zhaokun Xiang
 #
 .open :memory:
-.mode test
+.mode quote
 .testcase 1000
 CREATE TABLE rt0(c0 INT);
 CREATE TABLE vt1(c1 INT);
@@ -289,7 +289,7 @@ WHERE vt1.c1 IS NOT NULL;
 # By Zhaokun Xiang
 #
 .open :memory:
-.mode test
+.mode quote
 .testcase 1100
 CREATE TABLE h0base(a INT);
 INSERT INTO h0base VALUES(0);
@@ -326,7 +326,7 @@ SELECT ALL v1.c0
 # kind of expression.
 #
 .open :memory:
-.mode test
+.mode quote
 .testcase 1010
 CREATE TABLE rt0(c0 INT);
 CREATE TABLE vt1(c1 INT);
@@ -533,7 +533,7 @@ WHERE vt1.c1 IS NOT NULL;
 # flattener previously added must be removed.
 #
 .open :memory:
-.mode test
+.mode quote
 .testcase 1200
 CREATE TABLE h0base(a INT);
 INSERT INTO h0base VALUES(0);
@@ -799,7 +799,7 @@ PRAGMA foreign_keys=OFF;
 # Bug 2026-11-04T20:19:36Z sqlite.org/bugs/info/311551f464e58d18
 # two-argument substr(X, -9223372036854775808) drops the last character of X
 #
-.mode test -quote relaxed
+.mode quote -quote relaxed
 .testcase 1700
 SELECT substr('abc',-100), substr('abc',-9223372036854775807);
 .check abc,abc

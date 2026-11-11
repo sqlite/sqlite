@@ -279,7 +279,7 @@ SELECT c1, c0 FROM t0 NOT INDEXED
 #
 .if capable('vtab');
 .open :memory:
-.mode -reset test
+.mode -reset quote
 .testcase 600
 SELECT value FROM generate_series(0,32,5) ORDER BY rowid DESC;
 .check '30 25 20 15 10 5 0'
@@ -302,7 +302,7 @@ SELECT rowid, value FROM generate_series(0,12,5);
 # in a UTF-16be
 #
 .open :memory:
-.mode -reset test -quote off
+.mode -reset quote -quote off
 .testcase 700
 PRAGMA encoding='UTF-16be';
 CREATE TABLE t1(id INT, x TEXT);
@@ -366,7 +366,7 @@ SELECT id, hex(x) FROM t1 WHERE +x GLOB :p3;
 # CASE statements.)
 #
 .open :memory:
-.mode -reset test -quote off
+.mode -reset quote -quote off
 .testcase 800
 CREATE TABLE t2(a TEXT);
 CREATE TABLE t0(a TEXT);
@@ -395,7 +395,7 @@ FROM t2 FULL OUTER JOIN t0
 # test 901 was a bit wonky.
 #
 .open :memory:
-.mode -reset test -quote relaxed
+.mode -reset quote -quote relaxed
 .testcase 900
 CREATE TABLE t1(x,y);
 CREATE INDEX t1x ON t1(x);
