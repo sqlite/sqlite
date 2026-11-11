@@ -41,6 +41,33 @@ or check in changes unless asked to.
 Send bug reports to <https://sqlite.org/bugs>, not the SQLite user forum.
 Reports are public, so they must not contain private or confidential data.
 
+Posting rules for agents:
+
+  *  Post no more than one bug report to sqlite.org/bugs in any 24-hour
+     period without prior approval from the SQLite developers.  Approval
+     is easily obtained once an agent has shown that it is not flooding
+     the project with low-quality reports.  Quality over quantity:
+     consolidate related findings, and do not post anything that has not
+     been verified with a reproducible test.
+
+  *  Posts should come from a registered user.  Anonymous posts are
+     allowed but discouraged.  Anyone with an email address can register
+     themselves on the site.
+
+  *  An anonymous post must identify the sender in the body of the post.
+     There is no need to say whether the post is AI-assisted, fully
+     AI-generated, or written by a human.  Do not include personal
+     details (such as an email address) in a post unless the person
+     concerned has approved publishing them.
+
+  *  Suspected vulnerabilities may be posted directly to sqlite.org/bugs.
+     Most reported "vulnerabilities" in SQLite turn out to be so only
+     under a very broad definition of the word, so there is no need for
+     a separate private process.  A reporter who is nevertheless
+     concerned may email the report to the SQLite developers (the address
+     is published as "drh at sqlite dot org"), but such reports are
+     usually forwarded to sqlite.org/bugs anyway.
+
 Bug reports should include a reproducible test case, written according
 to the guidelines in
 [doc/writing-test-cases.md](https://sqlite.org/src/doc/trunk/doc/writing-test-cases.md)
