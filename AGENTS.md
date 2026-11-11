@@ -44,7 +44,7 @@ SQL test script so that it can be run directly using the
 > ~~~
 # Concise problem description
 .open :memory:
-.mode -reset list
+.mode -reset test
 .testcase 100
 /* SQL statements go here */
 .check 'expected result'
@@ -61,6 +61,7 @@ result
    *  Arguments quoted using '...' or  "..."
    *  Repeat the ".testcase" through ".check" cycle as necessary
    *  See source tree matching "test/\*.sql" for examples.
+   *  Run "./sqlite3 :memory: '.help COMMAND'" for built-in help
 
 If an SQL test case is not possible, the second
 best approach is a TCL script that can be run using
