@@ -88,7 +88,24 @@ SELECT count(*) FROM c;
 |      0: 0d 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00   ................
 | end unk.db
 .recover
-.check <<END
+.check <<**END-TEST**
+.dbconfig defensive off
+.safe
+BEGIN;
+PRAGMA writable_schema = on;
+PRAGMA foreign_keys = off;
+PRAGMA encoding = 'UTF-8';
+PRAGMA page_size = '4096';
+PRAGMA auto_vacuum = '0';
+PRAGMA user_version = '0';
+PRAGMA application_id = '0';
+CREATE TABLE t1(a,b,c);
+PRAGMA writable_schema = off;
+COMMIT;
+**END-TEST**
+.testcase 401
+.recover --unsafe
+.check <<**END-TEST**
 .dbconfig defensive off
 BEGIN;
 PRAGMA writable_schema = on;
@@ -101,7 +118,7 @@ PRAGMA application_id = '0';
 CREATE TABLE t1(a,b,c);
 PRAGMA writable_schema = off;
 COMMIT;
-END
+**END-TEST**
 .endif /* capable('vtab') */
 
 .if NOT capable('LIKE_DOESNT_MATCH_BLOBS')

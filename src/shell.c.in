@@ -4710,9 +4710,13 @@ static const char *(azHelp[]) = {
   "   --lost-and-found TABLE   Alternative name for the lost-and-found table",
   "   --no-rowids              Do not attempt to recover rowid values",
   "                            that are not also INTEGER PRIMARY KEYs",
+  "   --unsafe                 Do not issue the \".safe\" command in output",
 #endif
 #ifndef SQLITE_SHELL_FIDDLE
   ".restore ?DB? FILE       Restore content of DB (default \"main\") from FILE",
+#endif
+  ".safe                    Put the CLI into \"safe mode\"",
+#ifndef SQLITE_SHELL_FIDDLE
   ".save ?OPTIONS? FILE     Write database to FILE (an alias for .backup ...)",
 #endif
   ".scanstats on|off|est    Turn sqlite3_stmt_scanstatus() metrics on or off",
@@ -7931,6 +7935,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   const char *zLAF = "lost_and_found";
   int bFreelist = 1;              /* 0 if --ignore-freelist is specified */
   int bRowids = 1;                /* 0 if --no-rowids */
+  int bUnsafe = 0;                /* 1 if --unsafe */
   sqlite3_recover *p = 0;
   int i = 0;
 
@@ -7957,6 +7962,9 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
     }else
     if( n<=10 && memcmp("-no-rowids", z, n)==0 ){
       bRowids = 0;
+    }else
+    if( n<=7 && memcmp("-unsafe", z, n)==0 ){
+      bUnsafe = 1;
     }
     else{
       cli_printf(stderr,"unexpected option: %s\n", azArg[i]);
@@ -7977,6 +7985,7 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
   sqlite3_recover_config(p, SQLITE_RECOVER_FREELIST_CORRUPT,(void*)&bFreelist);
 
   cli_printf(pState->out, ".dbconfig defensive off\n");
+  if( !bUnsafe ) cli_printf(pState->out, ".safe\n");
   sqlite3_recover_run(p);
   if( sqlite3_recover_errcode(p)!=SQLITE_OK ){
     const char *zErr = sqlite3_recover_errmsg(p);
@@ -10325,6 +10334,42 @@ static int dotCmdEqp(ShellState *p){
   return 0;
 }
 
+
+/*
+** DOT-COMMAND: .safe
+** USAGE: .safe
+**
+** This command puts the CLI into "safe mode".  This command cannot be
+** undone.  The only way to restore full capabilities is to exit and
+** restart the CLI.
+**
+** Safe mode restricts SQL statements and dot-commands so that no
+** changes may be made to the filesystem other than writing to database
+** files that are already open.
+**
+**    *  The .open command is blocked unless the database is ":memory:"
+**       or the --hexdb option is used.
+**    *  The ATTACH command of SQL may not be used
+**    *  SQL functions with side effects (ex: writefile()) are blocked.
+**    *  The ".shell" and ".system" dot-commands are blocked.
+**    *  Dot-command like ".archive", ".backup", ".load", ".log", ".save"
+**       are blocked.
+**    *  Other commands with deleterious side effects are blocked.
+**
+** Unsafe actions might be simply blocked, or the CLI might issue an error
+** and exit immediately.
+**
+** CAUTION: If third-party extensions that have system side effects have
+** been loaded prior to the .safe command, the CLI has no knowledge of
+** those extensions and does not know to block them.  Unsafe actions might
+** still be possible using those third-party extension.
+*/
+static int dotCmdSafe(ShellState *p){
+  p->bSafeMode = 1;
+  p->bSafeModePersist = 1;
+  return 0;
+}
+
 /*
 ** Enlarge the space allocated in p->dot so that it can hold more
 ** than nArg parsed command-line arguments.
@@ -10338,7 +10383,6 @@ static void parseDotRealloc(ShellState *p, int nArg){
   p->dot.abQuot = realloc(p->dot.abQuot,p->dot.nAlloc);
   shell_check_oom(p->dot.abQuot);
 }
-
 
 /*
 ** Parse input line zLine up into individual arguments.  Retain the
@@ -12126,6 +12170,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
     close_db(pSrc);
   }else
 #endif /* !defined(SQLITE_SHELL_FIDDLE) */
+
+  if( c=='s' && cli_strcmp(azArg[0], "safe")==0 ){
+    rc = dotCmdSafe(p);
+  }else
 
   if( c=='s' &&
      (cli_strncmp(azArg[0], "scanstats",  n)==0 ||

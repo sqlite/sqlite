@@ -47,8 +47,8 @@ proc recover_with_opts {opts} {
   set sql [read $fd]
   close $fd
 
-  # Remove the ".dbconfig defensive off" line
-  set sql [string map {".dbconfig defensive off" ""} $sql]
+  # Remove the ".dbconfig defensive off" and ".safe" lines
+  set sql [string map {".dbconfig defensive off" "" ".safe" ""} $sql]
 
   forcedelete test.db2
   sqlite3 db2 test.db2
