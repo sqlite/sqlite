@@ -144,6 +144,16 @@ Check for failures from testrunner.tcl using:
   *  `test/testrunner.tcl errors`
   *  `test/testrunner.tcl errors -v`
 
+Test scripts create their database and journal files (`test.db`, etc.)
+in the current directory.  Two scripts running at the same time in the
+same directory will corrupt each other's results and produce spurious
+failures.  To run several scripts concurrently, give each its own empty
+working directory and run it from there, for example
+`mkdir run1 && cd run1 && ../testfixture ../test/main.test`.
+`test/testrunner.tcl` already does this for the jobs it starts.  Do not
+start a second `testfixture`, or rebuild it, while one is running in the
+same directory.
+
 "`make test`" (a synonym for "`make devtest`") is an easy way to run a
 reasonably complete subset of tests.  After changing anything under `src/`,
 run at least `make devtest` before submitting a patch.  Report only the test
