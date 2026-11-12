@@ -1,5 +1,5 @@
-C Apply\sa\ssigned\sint\soverflow\sfix\sfrom\supstream/downstream\s[https://fossil-scm.org/home/info/e196b5f8dd4cc870|Fossil\scheck-in\se196b5f8dd4]\sto\sthe\sfossildelta\sextension.
-D 2026-11-12T19:53:03.756
+C Updates\sto\sthe\sdoc/writing-test-cases.md\sdocument.
+D 2026-11-12T20:06:57.183
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -69,7 +69,7 @@ F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
 F doc/vfs-shm.txt 1a55f3f0e7b6745931b117ba5c9df3640d7a0536f532ef0052563100f4416f86
 F doc/wal-lock.md 7db0cd61e2000b545b78ce89b0c2a9a8dd8d64c097839258ac10d7c5c4156ec1
-F doc/writing-test-cases.md 24d40bb6207f62b560d8778762317949684bf73cf17c41fded0e247bf15f8b41
+F doc/writing-test-cases.md 002f05b301d813a23a481cfcbdb9d5d478ae40597137ba035071c57120c3eea7
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 9f4d6751981bf5dda7b7480f6f878659d032a47fe74d84f31f80fdc05d6cad78
@@ -2309,8 +2309,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c82b41a9c6623630a0cd175feaffcd42e89a84a1645c7878c425a0689ba3c060
-R a3d440b59d4da43756acd709c8f367d7
-U stephan
-Z 73cc5c3b1b6425938a31c617928a3619
+P 6f32df658d7f25d15b45e8a9fb99eb2074e3626cfacdecdf3ba957ad5319428e
+R fefb0ac041d2764d22451650ab3fd925
+U drh
+Z 03f368f0e65c84e7ceee5c6d85213775
 # Remove this line to create a well-formed Fossil manifest.
