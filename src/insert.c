@@ -3152,6 +3152,9 @@ static int xferOptimization(
   if( pSelect->pSrc->a[0].fg.isSubquery ){
     return 0;   /* FROM clause cannot contain a subquery */
   }
+  if( pSelect->pSrc->a[0].fg.isIndexedBy ){
+    return 0;   /* FROM clause cannot have an INDEXED BY clause */
+  }
   if( pSelect->pWhere ){
     return 0;   /* SELECT may not have a WHERE clause */
   }

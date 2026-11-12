@@ -981,3 +981,20 @@ COMMIT;
 SELECT * FROM p1961, c1961;
 .check "5,five,5"
 .open :memory:
+
+# INSERT INTO d SELECT * FROM s INDEXED BY no_such_index must fail with
+# "no such index", even when the transfer optimization would otherwise
+# apply.
+#
+#   https://sqlite.org/bugs/forumpost/8291e732fa
+#
+.open :memory:
+.testcase 1970
+CREATE TABLE s1970(a, b);
+CREATE TABLE d1970(a, b);
+INSERT INTO s1970 VALUES(1,2);
+INSERT INTO d1970 SELECT * FROM s1970 INDEXED BY no_such_index;
+.check -glob "*rror near line *: no such index: no_such_index*"
+.testcase 1971
+SELECT count(*) FROM d1970;
+.check 0
