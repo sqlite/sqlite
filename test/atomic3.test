@@ -1,0 +1,134 @@
+# 2026-11-11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing that if a batch-atomic commit fails
+# with SQLITE_IOERR and SQLite falls back to a legacy rollback-journal
+# commit, the journal file is synced before any database pages are
+# overwritten.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix atomic3
+
+ifcapable !batchatomicwrite {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  PRAGMA journal_mode = delete;
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES(1, randomblob(800));
+  INSERT INTO t1 VALUES(2, randomblob(800));
+} {delete}
+db close
+
+# Create a testvfs named "batvfs" that: 
+# 
+#   * Claims to support batch-atomic-writes, but
+#   * Always returns SQLITE_IOERR to a BEGIN_ATOMIC_WRITE xFileControl, and
+#   * Populates global variable ::ba_log with a log of all xWrite and 
+#     xSync calls made.
+#
+proc ba_vfs_callback {method file args} {
+  if {$method=="xFileControl"} {
+    if {[lindex $args 0]=="BEGIN_ATOMIC_WRITE"} { return SQLITE_IOERR }
+    return SQLITE_OK
+  }
+  lappend ::ba_log $method [file tail $file]
+  return SQLITE_OK
+}
+testvfs batvfs
+batvfs devchar batch_atomic
+batvfs script ba_vfs_callback
+batvfs filter {xFileControl xWrite xSync}
+
+# Write a transaction to the db via "batvfs". Then check that after the
+# attempt to do an atomic write failed, SQLite created, populated and synced 
+# the journal file before writing any pages to the db.
+#
+sqlite3 db test.db -vfs batvfs
+do_execsql_test 1.1 { SELECT count(*) FROM t1 } 2
+set ::ba_log [list]
+do_execsql_test 1.2 { UPDATE t1 SET y = randomblob(800) } {}
+
+# Find the first write to the database file and the first sync of the
+# journal file. The journal sync must come first.
+#
+set iDbWrite -1           ;# Index of first write to db.
+set iJrnlSync -1          ;# Index of first sync of journal file,
+
+set i 0
+foreach {m f} $::ba_log {
+  if {$iDbWrite<0 && $m=="xWrite" && $f=="test.db"} { set iDbWrite $i }
+  if {$iJrnlSync<0 && $m=="xSync" && $f=="test.db-journal"} {set iJrnlSync $i}
+  incr i
+}
+do_test 1.3 {
+  expr {$iJrnlSync>=0 && $iJrnlSync<$iDbWrite}
+} 1
+do_execsql_test 1.4 { PRAGMA integrity_check } ok
+
+db close
+batvfs delete
+
+#-------------------------------------------------------------------------
+# Test a successful batch-atomic commit. Create a testvfs named "batvfs2"
+# that claims to support batch-atomic-writes and reports success for
+# BEGIN_ATOMIC_WRITE and COMMIT_ATOMIC_WRITE. Check that the transaction
+# is committed without writing to or syncing a journal file.
+#
+proc ba_vfs_callback2 {method file args} {
+  if {$method=="xFileControl"} {
+    set op [lindex $args 0]
+    if {$op=="BEGIN_ATOMIC_WRITE" || $op=="COMMIT_ATOMIC_WRITE"} {
+      return SQLITE_OMIT
+    }
+    return SQLITE_OK
+  }
+  lappend ::ba_log $method [file tail $file]
+  return SQLITE_OK
+}
+testvfs batvfs2
+batvfs2 devchar batch_atomic
+batvfs2 script ba_vfs_callback2
+batvfs2 filter {xFileControl xWrite xSync}
+
+sqlite3 db test.db -vfs batvfs2
+set ::ba_log [list]
+do_execsql_test 2.1 {
+  UPDATE t1 SET y = randomblob(800);
+  INSERT INTO t1 VALUES(3, randomblob(800));
+} {}
+
+do_test 2.2 {
+  set nDbWrite 0
+  set nJrnl 0
+  foreach {m f} $::ba_log {
+    if {$m=="xWrite" && $f=="test.db"} { incr nDbWrite }
+    if {$f=="test.db-journal"} { incr nJrnl }
+  }
+  list [expr {$nDbWrite>0}] $nJrnl
+} {1 0}
+
+do_execsql_test 2.3 { PRAGMA integrity_check } ok
+db close
+
+sqlite3 db test.db
+do_execsql_test 2.4 {
+  SELECT count(*) FROM t1;
+  PRAGMA integrity_check;
+} {3 ok}
+db close
+batvfs2 delete
+
+finish_test
