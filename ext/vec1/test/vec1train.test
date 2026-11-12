@@ -222,5 +222,32 @@ do_execsql_test 8.1 {
 
 } [expr 8*4096*4 + 24]
 
+#-------------------------------------------------------------------------
+# Train on a data set consisting of many copies of a single vector.
+#
+reset_db
+vec1_load db
+
+do_execsql_test 9.0 {
+  CREATE TABLE one(v);
+  INSERT INTO one VALUES(random_vector(16));
+  CREATE TABLE t1(v);
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1000
+  ) INSERT INTO t1 SELECT (SELECT v FROM one) FROM s;
+}
+
+do_execsql_test 9.1 {
+  SELECT length( vec1_train(v, '{nbucket: 8}') ) FROM t1;
+} [expr 8*16*4 + 24]
+
+do_execsql_test 9.2 {
+  CREATE VIRTUAL TABLE v1 USING vec1(a);
+  INSERT INTO v1 SELECT v FROM t1;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(a, '{quantizer:"pq", codesize: 8}') FROM v1
+  ));
+}
+
 finish_test
 

@@ -2944,7 +2944,7 @@ static int vec1Ann1KMeans(
     ** training set using the current codebook is greater than
     ** VEC1_PQ_KMEANS_STOPVAL (which might be say 0.999) times that of the
     ** previous iteration, end the loop now.  */
-    if( iIter>0 && (fTotal / fPrevTotal)>=VEC1_PQ_KMEANS_STOPVAL ){
+    if( iIter>0 && fTotal>=(fPrevTotal * VEC1_PQ_KMEANS_STOPVAL) ){
       iIter = VEC1_PQ_KMEANS_NITER;
     }
     fPrevTotal = fTotal;

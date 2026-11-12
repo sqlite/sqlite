@@ -1,5 +1,5 @@
-C When\sprocessing\sa\s"DEFAULT\sCAST(const\sAS\stype)"\sclause,\sapply\sthe\scast\sto\s"type"\sbefore\sthe\saffinity\sof\sthe\scolumn,\snot\safter.\sReport\s[bugs:/info/2026-11-04T20:33:32Z\s|\s2026-11-04T20:33:32Z].
-D 2026-11-12T15:19:26.059
+C Avoid\sa\spotential\sFP\sdivide-by-zero\scondition\sin\svec1\straining.\sReport\s[bugs:/info/2026-11-12T08:53:13Z\s|\s2026-11-12T08:53:13Z].
+D 2026-11-12T15:39:04.841
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -642,7 +642,7 @@ F ext/vec1/test/vec1round.test b38735c7e5b0af833505cc639d60816cfca2143b7461a1b44
 F ext/vec1/test/vec1scalar.test bf2acbf26a2e9b2494de5e55f049045ae7da4a0352ddeafa6d6bdfd7e6d5a909
 F ext/vec1/test/vec1stream.test 54f325ef75508f2b1ff82d883ac1c12bb4494f652468ef195b736c97640c34a7
 F ext/vec1/test/vec1stream2.test ad0aa9dc70fdccd46b31d6c19352387a04394bb631437a1bc9e169292cc797de
-F ext/vec1/test/vec1train.test c921ea34720284130fcac636e6209a70c77d2289585c4273b9a441cd35943d76
+F ext/vec1/test/vec1train.test a3eb41da85050beb9928e2d037077844b6bf9f2b6744b35c92f1df2e253eb3de
 F ext/vec1/test/vec1update.test 77d5b85b859393f0d8fbc2f556a75c06bee7b23a19b5af7c3c40dc443f811e65
 F ext/vec1/test/vec1update2.test 4fb868f051df89a35f7e58725699259150292fe972253088f3feb10ee7c50945
 F ext/vec1/test/vec1version.test 7d17cc84c0a3c8706080abb3484bad8a6eb118c8d4946c7846cde5c4e6cfc89e
@@ -650,7 +650,7 @@ F ext/vec1/tool/vec1_algo_test.c 2777488a8b9ab9545732562c93988aa2424d7afd8b4895d
 F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b62631b480c2d2d
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c bb81548dc83451a9981df07937a59bbc1257bd92d3d54ef73fb1876a8694f07c
+F ext/vec1/vec1.c de33d11affa682b3dfa44220a06f167679465447cec7b719cfd711ea22b6d75f
 F ext/wasm/GNUmakefile c473e80726750df9b044b6e68d8aac12e21ef2814d636bec9ec724b23e1afeae
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md a84fffbb50568f135ac19f121978b80473068ceee7075501ce2e64a62bb64df0
@@ -2309,8 +2309,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a1f417e5b5dad1bc4243f4efe2a69fd12b3d91fd86e673b985e66fc6e9ac5fee
-R 981b9a9704a73e37beb95db07036dc50
+P 30bf896242327b8e3780ff28640f7cb7d034a6487cb19c92c481a68bacd53942
+R e5a4665e898cdc716a6b4c54ff9ec816
 U dan
-Z 2eb269ad5252f7c51b7c7d0fce2bc85f
+Z 9c4a887110575eb001509160d09d5a9b
 # Remove this line to create a well-formed Fossil manifest.
