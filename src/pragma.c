@@ -1879,10 +1879,9 @@ void sqlite3Pragma(
           ** in this case. */
           mxCol = sqlite3PrimaryKeyIndex(pTab)->nColumn-1;
         }
-        if( mxCol>=0 ){
-          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, mxCol, 3);
-          sqlite3VdbeTypeofColumn(v, 3);
-        }
+        assert( mxCol>=0 );
+        sqlite3VdbeAddOp3(v, OP_Column, iDataCur, mxCol, 3);
+        sqlite3VdbeTypeofColumn(v, 3);
 
         if( !isQuick ){
           if( pPk ){

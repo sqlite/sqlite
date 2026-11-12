@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sdoc/writing-test-cases.md\sdocument.
-D 2026-11-12T20:06:57.183
+C Fix\sa\sbranch\sthat\sbecame\salways\strue\sdue\sto\s[c82b41a9c6623630].\nChange\sit\sinto\san\sassert().
+D 2026-11-12T20:50:07.383
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -804,7 +804,7 @@ F src/parse.y aa4c941122ad16aa648434db4ea917188ad5d9f9ac0cb63c4ac56b7f044630ba
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 00c5797ddf546ee0fe2828d7f75d1afbf1b40ba054f362905326c5ccca15e60c
 F src/pcache1.c e5e548a11c4c417c781351413905141139cc1d8d8449a0e618d0a438a64da477
-F src/pragma.c fa846385cf285c586d036f400c78c9e2b01d41ba1424b357353f765cc89aeb20
+F src/pragma.c 407dd15620cef0d1f2bf54b190536b7cde9895b53635d9705c4a507128b917d2
 F src/prepare.c 159e1710a9d5e8890ee4f8c3b554d8b12027782b26e4230ebfbaf3a9303a4fa9
 F src/printf.c 9c8125a248bbe566f9bac63fb5df40709b0e0ce4d398efe474b5f0115e2525b7
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
@@ -2309,8 +2309,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6f32df658d7f25d15b45e8a9fb99eb2074e3626cfacdecdf3ba957ad5319428e
-R fefb0ac041d2764d22451650ab3fd925
+P 717227135055f848038d38abb35db85cd95588b2dd90898b2266f38e1becc4a1
+R c0786b9ba047056753c1b05f6edc7184
 U drh
-Z 03f368f0e65c84e7ceee5c6d85213775
+Z 39ab97327bbd47d61a9266ef78408b2f
 # Remove this line to create a well-formed Fossil manifest.
