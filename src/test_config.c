@@ -241,6 +241,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "atomicwrite", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+  Tcl_SetVar2(interp, "sqlite_options", "batchatomicwrite","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "batchatomicwrite","0",TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_ENABLE_GEOPOLY
   Tcl_SetVar2(interp, "sqlite_options", "geopoly", "1", TCL_GLOBAL_ONLY);
 #else

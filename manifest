@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.44.6.
-D 2026-03-05T01:38:19.583
+C If\san\serror\sduring\sa\sbatch-atomic-write\s(F2FS)\scommit\scauses\sSQLite\sto\sfall\sback\sto\sa\sregular\srollback\smode\scommit,\sensure\sthat\sthe\sdb\sfile\sis\ssynced\sto\sdisk\sbefore\sany\sdata\sis\swritten\sto\sdisk.\sReport\s[bugs:/info/2026-11-10T07:50:48Z\s|\s2026-11-10T07:50:48Z].
+D 2026-11-12T19:28:59.076
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -712,7 +712,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 085610579629d469f7325cced82856ade34ba221c31a0cf034aedd009544ad41
 F src/os_win.c 6ff43bac175bd9ed79e7c0f96840b139f2f51d01689a638fd05128becf94908a
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c d19325084b4ada4a9139175c6c09d5534bb63a8017c85fe542dee08602794637
+F src/pager.c 1fb624e1c21d40bfd60aa4aabf44ddaafbe496f33e59effa0723c5498d8db3e9
 F src/pager.h f4d33fec8052603758792045493423b8871a996da2d0973927b7d36cd6070473
 F src/parse.y 020d80386eb216ec9520549106353c517d2bbc89be28752ffdca649a9eaf56ec
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
@@ -749,7 +749,7 @@ F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c f6af1e41cb7901edafb065a8198e4a0192dd42432b642d038965be5e628dec12
 F src/test_blob.c ae4a0620b478548afb67963095a7417cd06a4ec0a56adb453542203bfdcb31ce
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
-F src/test_config.c 5fa77ee6064ba546e144c4fea870c5ede2c54314616f81485c6a9c4192100c75
+F src/test_config.c 6d56bc701e64478e7dc27c54ee04ef7f89ae333668f92901f7f384397c5c6f8f
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c 38a459d1c78fd9afa770445b224c485e079018d6ac07332ff9bd07b54d2b8ce9
 F src/test_devsym.c 649434ed34d0b03fbd5a6b42df80f0f9a7e53f94dd1710aad5dd8831e91c4e86
@@ -780,7 +780,7 @@ F src/test_tclsh.c 3ff5d188a72f00807425954ea3b493dfd3a4b890ecc6700ea83bad2fd1332
 F src/test_tclvar.c 3273f9d59395b336e381b53cfc68ec6ebdaada4e93106a2e976ffb0550504e1c
 F src/test_thread.c 7ddcf0c8b79fa3c1d172f82f322302c963d923cdb503c6171f3c8081586d0b01
 F src/test_vdbecov.c f60c6f135ec42c0de013a1d5136777aa328a776d33277f92abac648930453d43
-F src/test_vfs.c 193c18da3dbf62a0e33ae7a240bbef938a50846672ee947664512b77d853fe81
+F src/test_vfs.c df44de9b97a1a1721c6d85517491b42c2a41a52ae6c6bfdeaf07a216eef09fee
 F src/test_vfstrace.c a2ea82df2ed8927e9eba49bdba1aa1aeb1dcb13dbf6558cff036da813031de9a
 F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca2486ac1
 F src/test_windirent.h da2e5b73c32d09905fbdd00f27cd802212a32a58ead882736fe4f5eb775ebc50
@@ -867,6 +867,7 @@ F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test f2765d7fdc1348ae58b279d096d301a208e46da623213877b2ba580dc2768975
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
+F test/atomic3.test d7608f6169a76eea34e345e72994cc6f9fff946e04673a9c68a2569f0bd11fc2
 F test/atrc.c c388fac43dbba05c804432a7135ae688b32e8f25818e9994ffba4b64cf60c27c
 F test/attach.test 54f8e49e88d0de48f6428267a678465863d2b8f72320612f35bd5c02e240bc2f
 F test/attach2.test 6d1e3a457ce260d6fc8e5945c07fba6c76dc2aa90e1c701f067b50ee88f7315a
@@ -2144,8 +2145,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2af8439a0c22c652a7cdb051f9a54371b4e26c9bbf136d51a143a1f3f0e41390
-R b94795a4523f4ad04c7ecec29840bd7a
-U drh
-Z 4aeb4af731c9827ff488c68865ce3860
+P 863c171b76cd36e0c71662d4a50d84da531cc7fbead893d02459577febdf6396
+Q +75ad951b1b868a7682af189e8e9082a518b673ab707cca13111a7c60d4a44b94
+R a20addc59539a4b0c945638cb37d03f0
+U dan
+Z 2deaf825855d3dabfececa26b99406e6
 # Remove this line to create a well-formed Fossil manifest.
