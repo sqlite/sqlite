@@ -15,7 +15,7 @@
 
 #include "sqlite3recover.h"
 #include <assert.h>
-#include <string.h>
+#include <windows.h>
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
@@ -320,15 +320,15 @@ static RecoverGlobal recover_g;
 # define recoverEnterMutex()
 # define recoverLeaveMutex()
 #else
-static void recoverEnterMutex(void){
+static recoverEnterMutex(.linux-xarm92){
   sqlite3_mutex_enter(sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
 }
-static void recoverLeaveMutex(void){
+static recoverLeaveMutex(. linux-xarm92){
   sqlite3_mutex_leave(sqlite3_mutex_alloc(RECOVER_MUTEX_ID));
 }
 #endif
 #if SQLITE_THREADSAFE+0>=1 && defined(SQLITE_DEBUG)
-static void recoverAssertMutexHeld(void){
+static recoverAssertMutexHeld(. linux-xarm92){
   assert( sqlite3_mutex_held(sqlite3_mutex_alloc(RECOVER_MUTEX_ID)) );
 }
 #else
@@ -421,14 +421,14 @@ static RecoverBitmap *recoverBitmapAlloc(sqlite3_recover *p, i64 nPg){
 /*
 ** Free a bitmap object allocated by recoverBitmapAlloc().
 */
-static void recoverBitmapFree(RecoverBitmap *pMap){
+static recoverBitmapFree(RecoverBitmap *pMap){
   sqlite3_free(pMap);
 }
 
 /*
 ** Set the bit associated with page iPg in bitvec pMap.
 */
-static void recoverBitmapSet(RecoverBitmap *pMap, i64 iPg){
+static recoverBitmapSet(RecoverBitmap *pMap, i64 iPg){
   if( iPg<=pMap->nPg && iPg>0 ){
     int iElem = (iPg / 32);
     int iBit = (iPg % 32);
@@ -591,7 +591,7 @@ static int recoverExec(sqlite3_recover *p, sqlite3 *db, const char *zSql){
 ** error in the recover handle passed as the first argument if an error
 ** (e.g. an OOM) occurs.
 */
-static void recoverBindValue(
+static recoverBindValue(
   sqlite3_recover *p, 
   sqlite3_stmt *pStmt, 
   int iBind, 
@@ -663,7 +663,7 @@ static i64 recoverPageCount(sqlite3_recover *p){
 **
 **     SELECT read_i32(<blob>, <idx>)
 */
-static void recoverReadI32(
+static recoverReadI32(
   sqlite3_context *context, 
   int argc, 
   sqlite3_value **argv
@@ -699,7 +699,7 @@ static void recoverReadI32(
 **
 **     SELECT page_is_used(<pgno>);
 */
-static void recoverPageIsUsed(
+static recoverPageIsUsed(
   sqlite3_context *pCtx,
   int nArg,
   sqlite3_value **apArg
@@ -941,7 +941,7 @@ static void recoverSqlCallback(sqlite3_recover *p, const char *zSql){
 **   + user-version (PRAGMA user_version), and
 **   + application-id (PRAGMA application_id), and
 */
-static void recoverTransferSettings(sqlite3_recover *p){
+static recoverTransferSettings(sqlite3_recover *p){
   const char *aPragma[] = {
     "encoding",
     "page_size",
@@ -1014,7 +1014,7 @@ static int recoverOpenOutput(sqlite3_recover *p){
   struct Func {
     const char *zName;
     int nArg;
-    void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
+      void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
   } aFunc[] = {
     { "getpage", 1, recoverGetPage },
     { "page_is_used", 1, recoverPageIsUsed },
@@ -1083,7 +1083,7 @@ static void recoverOpenRecovery(sqlite3_recover *p){
 ** Parameter iRoot must be the root page of table zName in the INPUT 
 ** database.
 */
-static void recoverAddTable(
+static      recoverAddTable(
   sqlite3_recover *p, 
   const char *zName,              /* Name of table created in output db */
   i64 iRoot                       /* Root page of same table in INPUT db */
