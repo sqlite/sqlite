@@ -10164,7 +10164,7 @@ static int dotCmdStats(ShellState *p){
 **
 ** Start a new test case identified by NAME.  All output
 ** through the next ".check" command is captured for comparison. See the
-** ".check" command for additional informatioon.
+** ".check" command for additional information.
 **
 ** Options:
 **   --error-prefix TEXT       Change error message prefix text to TEXT
@@ -14973,7 +14973,11 @@ int SQLITE_CDECL main(int argc, char **argv){
     char *z;
     z = argv[i];
     if( z[0]!='-' || i>nOptsEnd ){
-      if( data.aAuxDb->zDbFilename==0 && !bTestMode && !isScriptFile(z,1) ){
+      if( data.aAuxDb->zDbFilename==0
+       && !bTestMode
+       && (z[0]!='.' || !(z[1]>='a' && z[1]<='z'))
+       && !isScriptFile(z,1)
+      ){
         data.aAuxDb->zDbFilename = z;
       }else{
         /* Excess arguments are interpreted as SQL (or dot-commands) and
