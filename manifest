@@ -1,5 +1,5 @@
-C Avoid\sa\spotential\sFP\sdivide-by-zero\scondition\sin\svec1\straining.\sReport\s[bugs:/info/2026-11-12T08:53:13Z\s|\s2026-11-12T08:53:13Z].
-D 2026-11-12T15:39:04.841
+C Avoid\sinteger\soverflows\swhen\scalculating\sDESC\sRANGE\swindows.\sReport\s[bugs:/info/2026-11-04T20:35:05Z\s|\s2026-11-04T20:35:05Z].
+D 2026-11-12T16:22:14.624
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -896,7 +896,7 @@ F src/where.c 9bc5cc879fedab477a8acdac4418270f6cd5c7a1131735de29eb57343e9b8c93
 F src/whereInt.h 5d739acb94bf1fdf6edd502a919e3dcf2d340dda63cc1827304e119ea878f6f3
 F src/wherecode.c 7b7eb20352f5a626421aafbb868f363a9d9c770b91520e6cababbbd1da4566b8
 F src/whereexpr.c 851b7f36e234b8ab362b6ded6798dc1001bfbe636691598d450ace7dbb0b84dd
-F src/window.c 09d90a4b3f22bfdf70f969bed464e3e01ac21590db206f6600016c29ffcdb520
+F src/window.c 201db0371c7ae32bc3a6c192c7b1539b6a5528d08aea3eeffaec7659b2b1194e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
 F test/affinity3.test 9b7d1133e11d5edd7805573c4ab6f3ba73b0b74a1f280d5b130d4bf3506a93ff
@@ -1526,7 +1526,7 @@ F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc01.sql 773e9e074dffb3cabe4e51a8c649228d28b73965af1e36c257c52b2e04029f11
-F test/misc02.sql 1ad50b3f1e2e9483a65b3f66e96fe87502b2ee1cfdb49df72fe2bf0121e16028
+F test/misc02.sql 33d7b9e57f4f7f3249eda8a2ed9a39acf9e5dfd2e812803d4161bd3d80793bd8
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2309,8 +2309,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 30bf896242327b8e3780ff28640f7cb7d034a6487cb19c92c481a68bacd53942
-R e5a4665e898cdc716a6b4c54ff9ec816
+P 60cf9357e8a60bc1de92068ed10e090cf432552f8040ba9f0294155051416347
+R 94bae99bc71528ec0fc37990de611902
 U dan
-Z 9c4a887110575eb001509160d09d5a9b
+Z 114edf8e59933a237bdf5c0fef355ede
 # Remove this line to create a well-formed Fossil manifest.
