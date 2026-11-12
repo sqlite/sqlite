@@ -835,4 +835,36 @@ do_test incrblob-10.6.2 {
 } {1}
 catch { close $::blob }
 
+# If a ROLLBACK changes the column that a read-only handle is open on so
+# that it no longer holds a blob, the next read fails.  The failure must be
+# reported through sqlite3_errcode() and sqlite3_errmsg() as well as by
+# the return code.
+#
+do_test incrblob-10.7.1 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  execsql {
+    CREATE TABLE t7(id INTEGER PRIMARY KEY, d1 BLOB, d2);
+    INSERT INTO t7 VALUES(1, x'50', 5);
+    BEGIN;
+    UPDATE t7 SET d2 = x'7071727374';
+  }
+  set ::blob [db incrblob -readonly t7 d2 1]
+  fconfigure $::blob -translation binary
+  sqlite3_blob_read $::blob 0 5
+} {pqrst}
+do_test incrblob-10.7.2 {
+  execsql ROLLBACK
+  list [catch {sqlite3_blob_read $::blob 0 5} msg] $msg
+} {1 SQLITE_ERROR}
+do_test incrblob-10.7.3 {
+  list [sqlite3_errcode db] [sqlite3_errmsg db]
+} {SQLITE_ERROR {cannot open value of type integer}}
+do_test incrblob-10.7.4 {
+  # The handle has been invalidated by the failed refresh.
+  list [catch {sqlite3_blob_read $::blob 0 5} msg] $msg [sqlite3_errcode db]
+} {1 SQLITE_ABORT SQLITE_ABORT}
+catch { close $::blob }
+
 finish_test

@@ -1,5 +1,5 @@
-C Improved\sincrblob\srecovery\swhen\sthe\scontent\sof\sthe\srow\sit\sis\sreading\sis\nchange\sby\sROLLBACK.
-D 2026-11-12T16:27:43.712
+C Provide\san\serror\smessage\swhen\sa\sROLLBACK\schanges\scontent\sout\sfrom\sunder\nan\sactive\sincrblob\sand\schanges\sthat\scontent\sinto\ssomething\san\sincrblob\ncannot\sread.
+D 2026-11-12T18:56:13.063
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -882,7 +882,7 @@ F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 581b112c6a763a5871ae1d2b948c5288e749d03c7e3829ebce2738402fe21074
 F src/vdbeapi.c 1602b12cae241e086779290985c67f0c843a534cc75bb9eceb4ffa6afd850516
 F src/vdbeaux.c 85ba9a281315da54496583ad615195e144bb4a12baf53be43117cad40b724c9d
-F src/vdbeblob.c 1f14dd0be40cd2081011c6e983a7fc09370b1237c7c56df8aaed2c2dabb2378c
+F src/vdbeblob.c 40ca30a10499e804be0df669a13c53e48529c7f390676b4a224627998ac1dab9
 F src/vdbemem.c b282c23ad1bc0d3ff192177f7c32ea6549ab33b32e6d3409e922973bd6cea4db
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
 F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b41
@@ -1370,7 +1370,7 @@ F test/in4.test 6630816b7e59b7bd336b0a95cbf831dcf046d35b10ea987d6e69d223735f1887
 F test/in5.test 4fd79c70dfa0681313e8cdca07f5ff0400bdc0e20f808a5c59eaef1e4b48082a
 F test/in6.test f5f40d6816a8bb7c784424b58a10ac38efb76ab29127a2c17399e0cbeeda0e4b
 F test/in7.test f1ea10fada5d6b83b3d8b06b9f1dba7045b6f45d72417f9027218e8dea4864c9
-F test/incrblob.test ba652b744840b933a834ba366aef00fafdd4c286911f75c5cca589f0752e1be1
+F test/incrblob.test 7413a415e8d2fe8ffdcde03168b497a8a6baf7f8d85f61521dc73dd5c22e944f
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
 F test/incrblob3.test 67621a04b3084113bf38ce03797d70eca012d9d8f948193b8f655df577b0da6f
 F test/incrblob4.test a8d6b5ff04055fcec747a50b78485ebf4fcd80074e0b3cedbe952bde346da54a
@@ -2309,8 +2309,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 78c82f18e32c9da4404177a25c34c03c5bbc59877b6e23772060f6c4b3516e40
-R ac7b4eaf6471db72b96e3c9f276bc6f4
+P dad573697153e114c71023e48c7d281c0043aeab9f6a8f756f8ef8952f003587
+R f77841e725ee85b1c8b21084adec26da
 U drh
-Z 6ad6f0a66c51fa25a1210ec9ab344c9b
+Z 2f34935cdbd5c95544526f8a90c57b1e
 # Remove this line to create a well-formed Fossil manifest.

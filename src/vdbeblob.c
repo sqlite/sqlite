@@ -422,13 +422,15 @@ static SQLITE_NOINLINE int blobReadWriteRetry(
   }else{
     rc = blobSeekToRow(p, iRow, &zErr);
   }
-  sqlite3DbFree(db, zErr);
   assert( rc==SQLITE_OK || p->pStmt==0 );
   if( rc==SQLITE_OK ){
+    sqlite3DbFree(db, zErr);
     p->bRetry = 1;
     rc = blobReadWrite((sqlite3_blob*)p,z,n,iOffset,xCall);
     p->bRetry = 0;
   }else{
+    sqlite3ErrorWithMsg(db, rc, (zErr ? "%s" : (char*)0), zErr);
+    sqlite3DbFree(db, zErr);
     rc = sqlite3ApiExit(db, rc);
   }
   sqlite3_mutex_leave(db->mutex);
