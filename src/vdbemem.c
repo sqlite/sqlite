@@ -1857,7 +1857,7 @@ static int valueFromExpr(
     u8 aff;
     assert( !ExprHasProperty(pExpr, EP_IntValue) );
     aff = sqlite3AffinityType(pExpr->u.zToken,0);
-    rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
+    rc = valueFromExpr(db, pExpr->pLeft, enc, SQLITE_AFF_BLOB, ppVal, pCtx);
     testcase( rc!=SQLITE_OK );
     if( *ppVal ){
 #ifdef SQLITE_ENABLE_STAT4

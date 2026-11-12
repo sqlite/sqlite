@@ -998,3 +998,26 @@ INSERT INTO d1970 SELECT * FROM s1970 INDEXED BY no_such_index;
 .testcase 1971
 SELECT count(*) FROM d1970;
 .check 0
+
+# A CAST() expression used as an ALTER TABLE ADD COLUMN default must
+# evaluate to the same value for rows that existed before the ALTER as
+# for rows inserted afterwards.
+#
+#   https://sqlite.org/bugs/forumpost/ef0897eb6f
+#
+.open :memory:
+.testcase 1980
+CREATE TABLE t1980(a);
+INSERT INTO t1980 VALUES(1);
+ALTER TABLE t1980 ADD COLUMN c1 DEFAULT (CAST('1e5' AS INTEGER));
+ALTER TABLE t1980 ADD COLUMN c2 DEFAULT (CAST(1.0 AS NUMERIC));
+INSERT INTO t1980(a) VALUES(2);
+SELECT a, c1, c2, typeof(c2) FROM t1980 ORDER BY a;
+.check "1,1,1.0,real 2,1,1.0,real"
+.testcase 1981
+CREATE TABLE t1981(a);
+INSERT INTO t1981 VALUES(1);
+ALTER TABLE t1981 ADD COLUMN c1 DEFAULT (CAST('9.2233720368547758e18' AS INTEGER));
+INSERT INTO t1981(a) VALUES(2);
+SELECT a, c1 FROM t1981 ORDER BY a;
+.check "1,9 2,9"
