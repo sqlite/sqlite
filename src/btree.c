@@ -5385,28 +5385,34 @@ int sqlite3BtreePayload(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 ** This variant of sqlite3BtreePayload() works even if the cursor has not
 ** in the CURSOR_VALID state.  It is only used by the sqlite3_blob_read()
 ** interface.
+**
+** If the cursor has to be restored to its saved position, then SQLITE_MOVED
+** is returned and no data is read.  The content of the row might have changed
+** while the cursor position was saved, so the caller needs to recompute the
+** size and offset of the data it is reading before it tries again.  If the
+** row no longer exists, SQLITE_ABORT is returned.
 */
 #ifndef SQLITE_OMIT_INCRBLOB
-static SQLITE_NOINLINE int accessPayloadChecked(
-  BtCursor *pCur,
-  u32 offset,
-  u32 amt,
-  void *pBuf
-){
+static SQLITE_NOINLINE int accessPayloadChecked(BtCursor *pCur){
   int rc;
   if ( pCur->eState==CURSOR_INVALID ){
     return SQLITE_ABORT;
   }
   assert( cursorOwnsBtShared(pCur) );
   rc = btreeRestoreCursorPosition(pCur);
-  return rc ? rc : accessPayload(pCur, offset, amt, pBuf, 0);
+  if( rc ) return rc;
+  if( pCur->eState!=CURSOR_VALID ){
+    /* The row is gone, and the cursor was restored onto a neighbor. */
+    return SQLITE_ABORT;
+  }
+  return SQLITE_MOVED;
 }
 int sqlite3BtreePayloadChecked(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   if( pCur->eState==CURSOR_VALID ){
     assert( cursorOwnsBtShared(pCur) );
     return accessPayload(pCur, offset, amt, pBuf, 0);
   }else{
-    return accessPayloadChecked(pCur, offset, amt, pBuf);
+    return accessPayloadChecked(pCur);
   }
 }
 #endif /* SQLITE_OMIT_INCRBLOB */
