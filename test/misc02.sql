@@ -1046,3 +1046,59 @@ SELECT o, count(*) OVER (
   ORDER BY o ASC RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
 ) FROM t1990 ORDER BY o DESC;
 .check "5,2 -9223372036854775807,1 -9223372036854775808,0"
+
+# PRAGMA integrity_check must judge the datatype of every column correctly,
+# even after problems have been reported for earlier columns of the same row.
+#
+#   https://sqlite.org/bugs/forumpost/358073c2fa
+#
+.open :memory:
+.dbconfig defensive off
+.testcase 2000
+CREATE TABLE t2000(a, b, c);
+INSERT INTO t2000 VALUES(1, '2', '3');
+CREATE TABLE t2001(a, b, c);
+INSERT INTO t2001 VALUES(1, '2', 3);
+PRAGMA writable_schema=ON;
+UPDATE sqlite_schema SET sql='CREATE TABLE t2000(a TEXT, b INT, c INT)'
+ WHERE name='t2000';
+UPDATE sqlite_schema SET sql='CREATE TABLE t2001(a TEXT, b INT, c INT DEFAULT ''x'')'
+ WHERE name='t2001';
+PRAGMA writable_schema=RESET;
+PRAGMA integrity_check(t2000);
+.check <<END
+NUMERIC value in t2000.a
+TEXT value in t2000.b
+TEXT value in t2000.c
+END
+.testcase 2001
+PRAGMA integrity_check(t2001);
+.check <<END
+NUMERIC value in t2001.a
+TEXT value in t2001.b
+END
+
+# The integrity_check prefetch of the right-most column must be correct
+# when a VIRTUAL generated column precedes the INTEGER PRIMARY KEY.
+#
+#   https://sqlite.org/bugs/forumpost/a8b0a1e18e
+#
+.open :memory:
+.testcase 2010
+CREATE TABLE t2010(v AS (1) VIRTUAL, x INTEGER PRIMARY KEY, c INT DEFAULT 'x');
+INSERT INTO t2010(x,c) VALUES(1, 5);
+PRAGMA integrity_check(t2010);
+.check ok
+
+# On a WITHOUT ROWID table, a PRIMARY KEY column repeated with a different
+# collation is stored twice in the record, so the record holds more fields
+# than there are non-VIRTUAL columns. The integrity_check prefetch must
+# still read the right-most field.
+#
+.open :memory:
+.testcase 2020
+CREATE TABLE t2020(a, b INT DEFAULT 'x', PRIMARY KEY(a, a COLLATE nocase))
+  WITHOUT ROWID;
+INSERT INTO t2020 VALUES('A', 5);
+PRAGMA integrity_check(t2020);
+.check ok
