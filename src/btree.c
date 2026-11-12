@@ -5402,15 +5402,25 @@ static SQLITE_NOINLINE int accessPayloadChecked(
   }
   assert( cursorOwnsBtShared(pCur) );
   rc = btreeRestoreCursorPosition(pCur);
-  return rc ? rc : accessPayload(pCur, offset, amt, pBuf, 0);
+  if( rc ) return rc;
+  if( pCur->eState!=CURSOR_VALID ){
+    /* The row is gone, and the cursor was restored onto a neighbor. */
+    return SQLITE_ABORT;
+  }
+  return sqlite3BtreePayloadChecked(pCur, offset, amt, pBuf);
 }
 int sqlite3BtreePayloadChecked(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
-  if( pCur->eState==CURSOR_VALID ){
-    assert( cursorOwnsBtShared(pCur) );
-    return accessPayload(pCur, offset, amt, pBuf, 0);
-  }else{
+  if( pCur->eState!=CURSOR_VALID ){
     return accessPayloadChecked(pCur, offset, amt, pBuf);
   }
+  assert( cursorOwnsBtShared(pCur) );
+  /* The size of the row might have changed.  Recompute it. */
+  if( pCur->info.nSize==0 ) getCellInfo(pCur);
+  if( (u64)offset+(u64)amt > (u64)pCur->info.nPayload ){
+    /* Size of the row has changed and the caller didn't notice. */
+    return SQLITE_ABORT;
+  }
+  return accessPayload(pCur, offset, amt, pBuf, 0);
 }
 #endif /* SQLITE_OMIT_INCRBLOB */
 
