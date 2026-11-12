@@ -338,7 +338,7 @@ SELECT id, hex(x) FROM t1 WHERE +x GLOB :p1;
 
 .testcase 730
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
-.check '5 0061FFFE 6 0061FFFE007A'
+.check '5,0061FFFE 6,0061FFFE007A'
 .testcase 731
 EXPLAIN QUERY PLAN
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
@@ -346,11 +346,11 @@ SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
 
 .testcase 740
 SELECT id, hex(x) FROM t1 WHERE +x GLOB :p2;
-.check '5 0061FFFE 6 0061FFFE007A'
+.check '5,0061FFFE 6,0061FFFE007A'
 
 .testcase 750
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
-.check '7 0061FFFF 8 0061FFFF007A'
+.check '7,0061FFFF 8,0061FFFF007A'
 .testcase 751
 EXPLAIN QUERY PLAN
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
@@ -358,7 +358,7 @@ SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
 
 .testcase 760
 SELECT id, hex(x) FROM t1 WHERE +x GLOB :p3;
-.check '7 0061FFFF 8 0061FFFF007A'
+.check '7,0061FFFF 8,0061FFFF007A'
 
 # Forum https://sqlite.org/forum/forumpost/c582aea277 2026-11-07T10:10:46Z
 # Incorrect FULL JOIN Result.
