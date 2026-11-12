@@ -948,3 +948,36 @@ UPDATE t1950c SET n=(SELECT count(*) FROM pragma_table_info('t1950c', s));
 SELECT * FROM t1950c;
 COMMIT;
 .check "1,main,0\n2,main,0\n3,nosuchdb,0"
+
+# Bug sqlite.org/bugs/forumpost/1a7eb564ec
+# An "INSERT INTO parent SELECT * FROM" statement must not use the xfer
+# optimization if FKs are enabled and "parent" is a parent table.
+#
+.testcase 1960
+PRAGMA foreign_keys=ON;
+CREATE TABLE p1960(a INTEGER PRIMARY KEY, b);
+CREATE TABLE c1960(x REFERENCES p1960(a) DEFERRABLE INITIALLY DEFERRED);
+CREATE TABLE s1960(a INTEGER PRIMARY KEY, b);
+INSERT INTO s1960 VALUES(5,'five');
+BEGIN;
+INSERT INTO c1960 VALUES(5);
+INSERT INTO p1960 SELECT * FROM s1960;
+COMMIT;
+SELECT * FROM p1960, c1960;
+.check "5,five,5"
+
+.open :memory:
+.testcase 1961
+CREATE TABLE p1961(a PRIMARY KEY, b) WITHOUT ROWID;
+CREATE TABLE c1961(x REFERENCES p1961(a));
+CREATE TABLE s1961(a PRIMARY KEY, b) WITHOUT ROWID;
+INSERT INTO s1961 VALUES(5,'five');
+PRAGMA foreign_keys=ON;
+PRAGMA defer_foreign_keys=ON;
+BEGIN;
+INSERT INTO c1961 VALUES(5);
+INSERT INTO p1961 SELECT * FROM s1961;
+COMMIT;
+SELECT * FROM p1961, c1961;
+.check "5,five,5"
+.open :memory:

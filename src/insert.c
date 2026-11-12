@@ -3319,15 +3319,17 @@ static int xferOptimization(
   }
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-  /* Disallow the transfer optimization if the destination table contains
-  ** any foreign key constraints.  This is more restrictive than necessary.
-  ** But the main beneficiary of the transfer optimization is the VACUUM
-  ** command, and the VACUUM command disables foreign key constraints.  So
-  ** the extra complication to make this rule less restrictive is probably
-  ** not worth the effort.  Ticket [6284df89debdfa61db8073e062908af0c9b6118e]
-  */
+  /* Disallow the transfer optimization if foreign key processing is
+  ** enabled and the destination table is either the child or the parent
+  ** of any foreign key constraint.  This is more restrictive than
+  ** necessary.  But the main beneficiary of the transfer optimization is
+  ** the VACUUM command, and the VACUUM command disables foreign key
+  ** constraints.  So the extra complication to make this rule less
+  ** restrictive is probably not worth the effort. Ticket 
+  ** [6284df89debdfa61db8073e062908af0c9b6118e] and bugs forum post 
+  ** [2026-11-04T20:24:15Z].  */
   assert( IsOrdinaryTable(pDest) );
-  if( (db->flags & SQLITE_ForeignKeys)!=0 && pDest->u.tab.pFKey!=0 ){
+  if( sqlite3FkRequired(pParse, pDest, 0, 0) ){
     return 0;
   }
 #endif
