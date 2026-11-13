@@ -1115,3 +1115,54 @@ CREATE TABLE t2030(k, w DEFAULT (0.5 IS TRUE), y DEFAULT (2 IS TRUE),
 INSERT INTO t2030(k) VALUES(1);
 SELECT w, y, z, v FROM t2030;
 .check 1,1,1,0
+
+# A VALUES view used twice in a self-join. The second reference must not
+# reuse a materialization of the first in which unused columns were
+# replaced by NULL.
+#
+#   https://sqlite.org/bugs/forumpost/c227cc0f81
+#
+.open :memory:
+.testcase 2040
+.mode list
+CREATE VIEW v2040(c0, c1) AS VALUES(-0.5, '0'), (NULL, '1');
+SELECT a.c1, b.c1, quote(b.c0) FROM v2040 a, v2040 b;
+.check <<END
+0|0|-0.5
+0|1|NULL
+1|0|-0.5
+1|1|NULL
+END
+
+# Same problem with a UNION ALL view whose head (right-most) SELECT
+# has a literal NULL in a column the first reference does not use.
+#
+.testcase 2041
+CREATE TABLE t2041(x, y);
+INSERT INTO t2041 VALUES(-0.5, '0');
+CREATE VIEW v2041(c0, c1) AS SELECT x, y FROM t2041 UNION ALL SELECT NULL, '1';
+SELECT a.c1, b.c1, quote(b.c0) FROM v2041 a, v2041 b;
+.check <<END
+0|0|-0.5
+0|1|NULL
+1|0|-0.5
+1|1|NULL
+END
+
+# Three-way UNION ALL view, literal NULL only in the head SELECT.
+#
+.testcase 2042
+CREATE VIEW v2042(c0, c1) AS
+  SELECT x, y FROM t2041 UNION ALL SELECT 7, '2' UNION ALL SELECT NULL, '1';
+SELECT a.c1, b.c1, quote(b.c0) FROM v2042 a, v2042 b ORDER BY 1, 2;
+.check <<END
+0|0|-0.5
+0|1|NULL
+0|2|7
+1|0|-0.5
+1|1|NULL
+1|2|7
+2|0|-0.5
+2|1|NULL
+2|2|7
+END

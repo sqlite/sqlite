@@ -5590,9 +5590,14 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
       if( pY->op==TK_NULL ) continue;
       pY->op = TK_NULL;
       ExprClearProperty(pY, EP_Skip|EP_Unlikely);
-      pX->selFlags |= SF_PushDown;
       nChng++;
     }
+  }
+  if( nChng ){
+    /* If there were any changes, mark the SELECT as modified. This is
+    ** to let isSelfJoinView() know not to allow another reference to this
+    ** view to use the existing materialization. */
+    pSub->selFlags |= SF_PushDown;
   }
   return nChng;
 }
