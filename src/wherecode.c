@@ -762,6 +762,7 @@ static SQLITE_NOINLINE void codeINTerm(
                          sizeof(pLevel->u.in.aInLoop[0])*pLevel->u.in.nIn);
   pIn = pLevel->u.in.aInLoop;
   if( pIn ){
+    int lblNull = sqlite3VdbeMakeLabel(pParse);
     int iMap = 0;               /* Index in aiMap[] */
     pIn += i;
     for(i=iEq; i<pLoop->nLTerm; i++){
@@ -773,9 +774,10 @@ static SQLITE_NOINLINE void codeINTerm(
           int iCol = aiMap ? aiMap[iMap++] : 0;
           pIn->addrInTop = sqlite3VdbeAddOp3(v,OP_Column,iTab, iCol, iOut);
         }
-        sqlite3VdbeAddOp1(v, OP_IsNull, iOut); VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_IsNull, iOut, lblNull); VdbeCoverage(v);
         if( i==iEq ){
           pIn->iCur = iTab;
+          pIn->lblNull = lblNull;
           pIn->eEndLoopOp = bRev ? OP_Prev : OP_Next;
           if( iEq>0 ){
             pIn->iBase = iTarget - i;

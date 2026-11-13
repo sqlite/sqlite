@@ -7820,42 +7820,42 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       struct InLoop *pIn;
       int j;
       for(j=pLevel->u.in.nIn, pIn=&pLevel->u.in.aInLoop[j-1]; j>0; j--, pIn--){
-        assert( sqlite3VdbeGetOp(v, pIn->addrInTop+1)->opcode==OP_IsNull
-                 || pParse->db->mallocFailed );
-        sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
-        if( pIn->eEndLoopOp!=OP_Noop ){
-          if( pIn->nPrefix ){
-            int bEarlyOut =
-                (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0
-                 && (pLoop->wsFlags & WHERE_IN_EARLYOUT)!=0;
-            if( pLevel->iLeftJoin ){
-              /* For LEFT JOIN queries, cursor pIn->iCur might have been
-              ** disabled by OP_NullRow.  This occurs for WHERE clauses such
-              ** as "a = ? AND b IN (...)", where the index is on (a, b).
-              ** When the OP_IfNullRow jump is taken, the pIn->iBase register
-              ** is NULLed out as a side effect.  But as that register is not
-              ** used when the jump is taken, the side-effect is harmless. */
-              sqlite3VdbeAddOp3(v, OP_IfNullRow, pIn->iCur,
-                  sqlite3VdbeCurrentAddr(v) + 2 + bEarlyOut, pIn->iBase);
-              VdbeCoverage(v);
-            }
-            if( bEarlyOut ){
-              sqlite3VdbeAddOp4Int(v, OP_IfNoHope, pLevel->iIdxCur,
-                  sqlite3VdbeCurrentAddr(v)+2,
-                  pIn->iBase, pIn->nPrefix);
-              VdbeCoverage(v);
-              /* Retarget the OP_IsNull against the left operand of IN so
-              ** it jumps past the OP_IfNoHope.  This is because the
-              ** OP_IsNull also bypasses the OP_Affinity opcode that is
-              ** required by OP_IfNoHope. */
-              sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
-            }
+        /* The second and subsequent components of a row-value IN operator
+        ** have eEndLoopOp==OP_Noop. Nothing to do for them.  */
+        if( pIn->eEndLoopOp==OP_Noop ) continue;
+
+        if( pIn->nPrefix ){
+          int bEarlyOut = (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0
+                       && (pLoop->wsFlags & WHERE_IN_EARLYOUT)!=0;
+          if( pLevel->iLeftJoin ){
+            /* For LEFT JOIN queries, cursor pIn->iCur might have been
+            ** disabled by OP_NullRow.  This occurs for WHERE clauses such
+            ** as "a = ? AND b IN (...)", where the index is on (a, b).
+            ** When the OP_IfNullRow jump is taken, the pIn->iBase register
+            ** is NULLed out as a side effect.  But as that register is not
+            ** used when the jump is taken, the side-effect is harmless. */
+            sqlite3VdbeAddOp3(v, OP_IfNullRow, pIn->iCur,
+                sqlite3VdbeCurrentAddr(v) + 2 + bEarlyOut, pIn->iBase);
+            VdbeCoverage(v);
           }
-          sqlite3VdbeAddOp2(v, pIn->eEndLoopOp, pIn->iCur, pIn->addrInTop);
-          VdbeCoverage(v);
-          VdbeCoverageIf(v, pIn->eEndLoopOp==OP_Prev);
-          VdbeCoverageIf(v, pIn->eEndLoopOp==OP_Next);
+          if( bEarlyOut ){
+            sqlite3VdbeAddOp4Int(v, OP_IfNoHope, pLevel->iIdxCur,
+                sqlite3VdbeCurrentAddr(v)+2,
+                pIn->iBase, pIn->nPrefix);
+            VdbeCoverage(v);
+          }
         }
+
+        /* The OP_IsNull opcodes that test the components of the RHS of the
+        ** IN operator jump directly here to the end-of-loop opcode. They
+        ** must jump past the OP_IfNoHope above, because they may also jump
+        ** past the OP_Affinity codes that prepare the key used by IfNoHope. */
+        sqlite3VdbeResolveLabel(v, pIn->lblNull);
+
+        sqlite3VdbeAddOp2(v, pIn->eEndLoopOp, pIn->iCur, pIn->addrInTop);
+        VdbeCoverage(v);
+        VdbeCoverageIf(v, pIn->eEndLoopOp==OP_Prev);
+        VdbeCoverageIf(v, pIn->eEndLoopOp==OP_Next);
         sqlite3VdbeJumpHere(v, pIn->addrInTop-1);
       }
     }

@@ -1219,3 +1219,148 @@ SELECT base64('<QUJD>');
 .testcase 2160
 SELECT base64('QUJD*QUJD');
 .check "x'414243414243'"
+
+# Bug 2026-11-04T00:58:35Z sqlite.org/bugs/forumpost/1ee5d08904
+# Wrong result: y='1' AND (x,z) IN (SELECT c,a FROM t1) via index on
+# (y,x,z) misses a row if t1.a has a NULL.  By Marius
+#
+.mode -reset quote
+.testcase 2200
+CREATE TABLE t2200a(a, c);
+INSERT INTO t2200a VALUES('a',1),(NULL,0);
+CREATE TABLE t2200b(x, y INT, z, w);
+INSERT INTO t2200b VALUES(1,1,'a',2);
+CREATE INDEX t2200bi ON t2200b(y,x,z);
+SELECT w, x, z FROM t2200b NOT INDEXED
+ WHERE y='1' AND (x,z) IN (SELECT c,a FROM t2200a);
+.check "2,1,'a'"
+.testcase 2210
+SELECT w, x, z FROM t2200b
+ WHERE y='1' AND (x,z) IN (SELECT c,a FROM t2200a);
+.check "2,1,'a'"
+
+# Further cases for bug 2026-11-04T00:58:35Z (forumpost/1ee5d08904).
+# A NULL in any column of a row of the IN subquery must not cause the
+# OP_IfNoHope early-out to run on prefix registers that have not had
+# affinity applied.
+#
+.mode -reset list
+.testcase 2220
+CREATE TABLE t2220r1(a, c);
+INSERT INTO t2220r1 VALUES('a',1),(NULL,0),(NULL,2);
+CREATE TABLE t2220t(x, y INT, z, w, v);
+INSERT INTO t2220t VALUES(1,1,'a',2,'v1'),(1,1,'b',3,'v2'),(2,1,'a',4,'v3');
+CREATE INDEX t2220t_yxz ON t2220t(y,x,z);
+SELECT v FROM t2220t WHERE y='1' AND (x,z) IN (SELECT c,a FROM t2220r1)
+ ORDER BY v;
+.check v1
+
+# IN loop runs in reverse (OP_Last/OP_Prev) on a DESC index.
+.testcase 2230
+CREATE TABLE t2230(x, y INT, z, w, v);
+INSERT INTO t2230 SELECT * FROM t2220t;
+CREATE INDEX t2230_d ON t2230(y, x DESC, z DESC);
+SELECT v FROM t2230 WHERE y='1' AND (x,z) IN (SELECT c,a FROM t2220r1);
+.check v1
+
+# Three-column row value, NULL in second or third column.
+.testcase 2240
+CREATE TABLE t2240(x, y INT, z, w, v);
+INSERT INTO t2240 SELECT * FROM t2220t;
+CREATE INDEX t2240_yxzw ON t2240(y,x,z,w);
+CREATE TABLE t2240r3(c, a, d);
+INSERT INTO t2240r3 VALUES(1,'a',2),(0,'a',NULL),(0,NULL,5),(1,'b',NULL),(1,'b',3);
+SELECT v FROM t2240 WHERE y='1' AND (x,z,w) IN (SELECT c,a,d FROM t2240r3)
+ ORDER BY v;
+.check <<END
+v1
+v2
+END
+
+# Two nested scalar IN loops on the same index, each with a NULL.
+.testcase 2250
+CREATE TABLE t2250s1(c); INSERT INTO t2250s1 VALUES(NULL),(1),(2);
+CREATE TABLE t2250s2(a); INSERT INTO t2250s2 VALUES(NULL),('a');
+SELECT v FROM t2220t
+ WHERE y='1' AND x IN (SELECT c FROM t2250s1) AND z IN (SELECT a FROM t2250s2)
+ ORDER BY v;
+.check <<END
+v1
+v3
+END
+
+# Scalar IN nested outside a row-value IN on the same index.
+.testcase 2260
+SELECT v FROM t2240
+ WHERE y='1' AND x IN (SELECT c FROM t2250s1)
+   AND (z,w) IN (SELECT a,d FROM t2240r3)
+ ORDER BY v;
+.check <<END
+v1
+v2
+END
+
+# LEFT JOIN.
+.testcase 2270
+CREATE TABLE t2270p(k); INSERT INTO t2270p VALUES(1),(2);
+SELECT k, v FROM t2270p LEFT JOIN t2220t
+    ON y='1' AND (x,z) IN (SELECT c,a FROM t2220r1)
+ ORDER BY k, v;
+.check <<END
+1|v1
+2|v1
+END
+.testcase 2280
+SELECT k, v FROM t2270p LEFT JOIN t2220t
+    ON y='1' AND (x,z) IN (SELECT c,a FROM t2220r1 WHERE c=k)
+ ORDER BY k, v;
+.check <<END
+1|v1
+2|
+END
+.testcase 2290
+SELECT k, v FROM t2270p LEFT JOIN t2220t
+    ON y=k||'' AND (x,z) IN (SELECT c,a FROM t2220r1)
+ ORDER BY k, v;
+.check <<END
+1|v1
+2|
+END
+
+# No prefix (nPrefix==0, so no OP_IfNoHope).
+.testcase 2300
+CREATE TABLE t2300(x, z); INSERT INTO t2300 VALUES(1,'a'),(0,NULL);
+CREATE INDEX t2300_xz ON t2300(x,z);
+SELECT x, z FROM t2300 WHERE (x,z) IN (SELECT c,a FROM t2220r1);
+.check 1|a
+
+# Two-column prefix, both needing affinity conversion.
+.testcase 2310
+CREATE TABLE t2310(x, y INT, z, w INT, v);
+INSERT INTO t2310 SELECT * FROM t2220t;
+CREATE INDEX t2310_ywxz ON t2310(y,w,x,z);
+SELECT v FROM t2310 WHERE y='1' AND w='2' AND (x,z) IN (SELECT c,a FROM t2220r1);
+.check v1
+
+# Cases adapted from the patch attached to forumpost/1ee5d08904.
+#
+# RHS of IN is a VALUES list rather than a subquery.
+.testcase 2320
+SELECT w, x, z FROM t2200b
+ WHERE y='1' AND (x,z) IN (VALUES(1,'a'),(0,NULL));
+.check 2|1|a
+
+# No index entry matches the prefix, so the early-out legitimately fires.
+.testcase 2330
+SELECT w, x, z FROM t2200b
+ WHERE y='3' AND (x,z) IN (SELECT c,a FROM t2200a);
+.check ""
+
+# Affinity conversion in the other direction: integer probe, TEXT column.
+.testcase 2340
+CREATE TABLE t2340(x, y TEXT, z, w);
+INSERT INTO t2340 VALUES(1,'1','a',2);
+CREATE INDEX t2340i ON t2340(y,x,z);
+SELECT w, x, z FROM t2340
+ WHERE y=1 AND (x,z) IN (SELECT c,a FROM t2200a);
+.check 2|1|a
