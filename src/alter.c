@@ -3230,7 +3230,7 @@ static void checkTypeFunc(
   if( rc==SQLITE_OK ){
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
       const char *zVal = (const char*)sqlite3_column_text(pStmt, 0);
-      if( zVal && sqlite3StrICmp(zVal, zType)!=0 ){
+      if( sqlite3_stricmp(zVal, zType)!=0 ){
         sqlite3_result_int(ctx, 1);
       }
     }
