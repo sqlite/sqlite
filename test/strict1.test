@@ -259,4 +259,140 @@ do_catchsql_test strict1-9.4.43 {
   INSERT INTO strict(k) VALUES(43);
 } {1 {cannot store TEXT value in BLOB column strict.c4}}
 
+#-------------------------------------------------------------------------
+# ALTER TABLE ADD COLUMN on a STRICT table should not need to scan the
+# entire table when the new column has no DEFAULT (or a NULL DEFAULT),
+# just as it does not for an ordinary table.
+#
+#   https://sqlite.org/bugs/forumpost/1ffb2dfd73
+#
+reset_db
+do_execsql_test strict1-10.0 {
+  CREATE TABLE t1(a TEXT, b TEXT) STRICT;
+  CREATE TABLE t2(a TEXT, b TEXT);
+  WITH c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<5000)
+    INSERT INTO t1 SELECT hex(randomblob(50)), i FROM c;
+  INSERT INTO t2 SELECT * FROM t1;
+}
+proc alter_page_fetches {sql} {
+  sqlite3_db_status db CACHE_HIT 1
+  sqlite3_db_status db CACHE_MISS 1
+  db eval $sql
+  expr {[lindex [sqlite3_db_status db CACHE_HIT 0] 1]
+      + [lindex [sqlite3_db_status db CACHE_MISS 0] 1]}
+}
+do_test strict1-10.1 {
+  expr {[alter_page_fetches {ALTER TABLE t2 ADD COLUMN c TEXT}] < 50}
+} 1
+do_test strict1-10.2 {
+  expr {[alter_page_fetches {ALTER TABLE t1 ADD COLUMN c TEXT}] < 50}
+} 1
+do_test strict1-10.3 {
+  expr {[alter_page_fetches {ALTER TABLE t1 ADD COLUMN d TEXT DEFAULT NULL}] < 50}
+} 1
+do_catchsql_test strict1-10.4 {
+  ALTER TABLE t1 ADD COLUMN e INT DEFAULT 'abc';
+} {1 {type mismatch on DEFAULT}}
+
+# Defaults that are converted losslessly by the column affinity are
+# acceptable. In particular, an integer default on a REAL column.
+#
+do_test strict1-10.4.1 {
+  expr {[alter_page_fetches {ALTER TABLE t1 ADD COLUMN r REAL DEFAULT 5}] < 50}
+} 1
+do_execsql_test strict1-10.4.2 {
+  ALTER TABLE t1 ADD COLUMN i INT DEFAULT '12';
+  ALTER TABLE t1 ADD COLUMN s TEXT DEFAULT 5;
+  SELECT r, typeof(r), i, typeof(i), s, typeof(s) FROM t1 LIMIT 1;
+  PRAGMA quick_check;
+} {5.0 real 12 integer 5 text ok}
+do_catchsql_test strict1-10.4.3 {
+  ALTER TABLE t1 ADD COLUMN x BLOB DEFAULT 'abc';
+} {1 {type mismatch on DEFAULT}}
+do_catchsql_test strict1-10.4.4 {
+  ALTER TABLE t1 ADD COLUMN x REAL DEFAULT 'abc';
+} {1 {type mismatch on DEFAULT}}
+
+# Adding a generated column to a STRICT table must check the computed
+# value of the new column against its declared type for every existing
+# row. This requires a full scan.
+#
+do_execsql_test strict1-10.5 {
+  CREATE TABLE t3(a ANY, b INT) STRICT;
+  INSERT INTO t3 VALUES(1, 1), (2, 2), ('x', 3);
+}
+do_test strict1-10.6 {
+  lindex [catchsql { ALTER TABLE t3 ADD COLUMN g1 INT AS (a) }] 0
+} 1
+do_execsql_test strict1-10.7 {
+  ALTER TABLE t3 ADD COLUMN g2 INT AS (b+1);
+  ALTER TABLE t3 ADD COLUMN g3 ANY AS (a);
+  SELECT a, g2, g3 FROM t3;
+} {1 2 1 2 3 2 x 4 x}
+do_catchsql_test strict1-10.8 {
+  INSERT INTO t3(a, b) VALUES(4, 'y');
+} {1 {cannot store TEXT value in INT column t3.b}}
+
+# A CHECK constraint added by ADD COLUMN must be verified against the
+# existing rows, for both STRICT and ordinary tables.
+#
+do_execsql_test strict1-10.9 {
+  CREATE TABLE t4(a INT, b TEXT) STRICT;
+  CREATE TABLE t5(a INT, b TEXT);
+  INSERT INTO t4 VALUES(1, 'one'), (2, 'two');
+  INSERT INTO t5 SELECT * FROM t4;
+}
+do_catchsql_test strict1-10.10 {
+  ALTER TABLE t4 ADD COLUMN c INT CHECK( c IS NOT NULL );
+} {1 {CHECK constraint failed}}
+do_catchsql_test strict1-10.11 {
+  ALTER TABLE t5 ADD COLUMN c INT CHECK( c IS NOT NULL );
+} {1 {CHECK constraint failed}}
+do_catchsql_test strict1-10.12 {
+  ALTER TABLE t4 ADD COLUMN c INT DEFAULT 5 CHECK( c>a+3 );
+} {1 {CHECK constraint failed}}
+do_execsql_test strict1-10.13 {
+  ALTER TABLE t4 ADD COLUMN c INT DEFAULT 5 CHECK( c>a );
+  ALTER TABLE t5 ADD COLUMN c INT DEFAULT 5 CHECK( c>a );
+  SELECT * FROM t4 UNION ALL SELECT * FROM t5;
+} {1 one 5 2 two 5 1 one 5 2 two 5}
+
+# A CHECK constraint that is already on the table, and not added by the
+# ADD COLUMN, does not require a scan.
+#
+do_execsql_test strict1-10.14 {
+  CREATE TABLE t6(a TEXT, b INT CHECK(b>0), CHECK(a!=b));
+  WITH c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<5000)
+    INSERT INTO t6 SELECT hex(randomblob(50)), i FROM c;
+}
+do_test strict1-10.15 {
+  expr {[alter_page_fetches {ALTER TABLE t6 ADD COLUMN c TEXT}] < 50}
+} 1
+
+# The single-row check of the DEFAULT type on a STRICT table is not
+# subject to the authorizer. Denying reads of the table does not
+# prevent the column from being added, or the type check from working.
+#
+ifcapable auth {
+  proc strict1_auth {code arg1 args} {
+    if {$code=="SQLITE_READ" && $arg1=="t7"} { return SQLITE_DENY }
+    return SQLITE_OK
+  }
+  do_execsql_test strict1-10.16 {
+    CREATE TABLE t7(a INT) STRICT;
+    INSERT INTO t7 VALUES(1);
+  }
+  db auth strict1_auth
+  do_execsql_test strict1-10.17 {
+    ALTER TABLE t7 ADD COLUMN b REAL DEFAULT 5;
+  }
+  do_catchsql_test strict1-10.18 {
+    ALTER TABLE t7 ADD COLUMN c INT DEFAULT 'x';
+  } {1 {type mismatch on DEFAULT}}
+  db auth {}
+  do_execsql_test strict1-10.19 {
+    SELECT a, b, typeof(b) FROM t7;
+  } {1 5.0 real}
+}
+
 finish_test

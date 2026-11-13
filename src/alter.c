@@ -492,6 +492,9 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
 
   v = sqlite3GetVdbe(pParse);
   if( v ){
+    int isStrict = pTab->tabFlags & TF_Strict;
+    int isGen = (pCol->colFlags & COLFLAG_GENERATED)!=0;
+
     /* Make sure the schema version is at least 3.  But do not upgrade
     ** from less than 3 to 4, as that will corrupt any preexisting DESC
     ** index.
@@ -508,10 +511,17 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     /* Reload the table definition */
     renameReloadSchema(pParse, iDb, INITFLAG_AlterAdd);
 
-    /* Verify that constraints are still satisfied */
+    /* Verify that constraints are still satisfied. This requires a scan
+    ** of the entire table if:
+    **
+    **   1) the new column has a CHECK constraint, or
+    **   2) the new column is a NOT NULL generated column, or
+    **   3) the table is STRICT and the new column is a generated column
+    **      with a type other than ANY.
+    */
     if( pNew->pCheck!=0
-     || (pCol->notNull && (pCol->colFlags & COLFLAG_GENERATED)!=0)
-     || (pTab->tabFlags & TF_Strict)!=0
+     || (pCol->notNull && isGen)
+     || (isStrict && isGen && pCol->eCType!=COLTYPE_ANY)
     ){
       pParse->colNamesSet = 1;
       sqlite3NestedParse(pParse,
@@ -526,6 +536,17 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
         " OR quick_check GLOB 'NULL*'"
         " OR quick_check GLOB 'non-* value in*'",
         zTab, zDb
+      );
+    }else if( pDflt && isStrict && pCol->eCType>COLTYPE_ANY ){
+      static const char *azTypeof[] = {
+        "any", "blob", "integer", "integer", "real", "text"
+      };
+      assert( pCol->eCType<=ArraySize(azTypeof) );
+      pParse->colNamesSet = 1;
+      sqlite3NestedParse(pParse,
+        "SELECT sqlite_fail('type mismatch on DEFAULT', 1)"
+        " WHERE sqlite_check_type(%Q, %Q, %Q, %Q)",
+        zDb, zTab, pCol->zCnName, azTypeof[pCol->eCType-1]
       );
     }
   }
@@ -3168,10 +3189,68 @@ void sqlite3AlterAddConstraint(
 }
 
 /*
+** The implementation of internal SQL function:
+**
+**   sqlite_check_type(DB, TAB, COL, TYPE)
+**
+** Read the value of column COL from the first row of table DB.TAB. Return
+** 1 if the table contains at least one row and typeof() of the value read
+** is not TYPE. Otherwise, return NULL.
+*/
+static void checkTypeFunc(
+  sqlite3_context *ctx,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(ctx);
+  const char *zDb = (const char*)sqlite3_value_text(argv[0]);
+  const char *zTab = (const char*)sqlite3_value_text(argv[1]);
+  const char *zCol = (const char*)sqlite3_value_text(argv[2]);
+  const char *zType = (const char*)sqlite3_value_text(argv[3]);
+  sqlite3_stmt *pStmt = 0;
+  char *zSql;
+  int rc;
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+  db->xAuth = 0;
+#endif
+
+  (void)NotUsed;
+  if( zDb==0 || zTab==0 || zCol==0 || zType==0 ) return;
+  zSql = sqlite3MPrintf(db,
+      "SELECT typeof(\"%w\") FROM \"%w\".\"%w\" LIMIT 1", zCol, zDb, zTab
+  );
+  if( zSql==0 ){
+    sqlite3_result_error_nomem(ctx);
+    return;
+  }
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  sqlite3DbFree(db, zSql);
+  if( rc==SQLITE_OK ){
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      const char *zVal = (const char*)sqlite3_column_text(pStmt, 0);
+      if( zVal && sqlite3StrICmp(zVal, zType)!=0 ){
+        sqlite3_result_int(ctx, 1);
+      }
+    }
+    rc = sqlite3_finalize(pStmt);
+  }
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error(ctx, sqlite3_errmsg(db), -1);
+    sqlite3_result_error_code(ctx, rc);
+  }
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
+}
+
+/*
 ** Register built-in functions used to help implement ALTER TABLE
 */
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
+    INTERNAL_FUNCTION(sqlite_check_type,     4, checkTypeFunc),
     INTERNAL_FUNCTION(sqlite_rename_column,  9, renameColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_table,   7, renameTableFunc),
     INTERNAL_FUNCTION(sqlite_rename_test,    7, renameTableTest),
