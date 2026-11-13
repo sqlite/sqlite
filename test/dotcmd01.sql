@@ -177,3 +177,13 @@ SELECT 'abcdefghi';
 .check --not --any 'x' --keep
 .check --any 'cde'
 .mode --reset quote
+
+# Bug 2026-11-13T12:52:21Z sqlite.org/bugs/info/4a5ca8d0693363ae
+# CLI: ".open --deserialize" with no FILE passes NULL to fopen() in readFile()
+# By: newwin01
+#
+.testcase 300
+CREATE TABLE t300(x);
+.open --deserialize
+.databases
+.check 'main: "" r/w'

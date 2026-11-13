@@ -4976,7 +4976,7 @@ static int process_input(ShellState *p, const char*);
 ** is undefined in this case.
 */
 static char *readFile(const char *zName, int *pnByte){
-  FILE *in = sqlite3_fopen(zName, "rb");
+  FILE *in = (zName && zName[0]) ? sqlite3_fopen(zName, "rb") : 0;
   long nIn;
   size_t nRead;
   char *pBuf;
