@@ -1166,3 +1166,29 @@ SELECT a.c1, b.c1, quote(b.c0) FROM v2042 a, v2042 b ORDER BY 1, 2;
 2|1|NULL
 2|2|7
 END
+
+# https://sqlite.org/bugs/forumpost/e42a88c983
+# Row-value comparison with a COLLATE on only its second element.
+# The first pair is compared using the column's NOCASE collation, so
+# a BINARY index on (a,b) must not be used to answer the constraint.
+#
+.testcase 2050
+CREATE TABLE t2050(a TEXT COLLATE NOCASE, b TEXT COLLATE NOCASE);
+INSERT INTO t2050 VALUES('B','a'),('C','a'),('b','c'),('c','B'),('b','A'),('a','z');
+SELECT a, b FROM t2050 NOT INDEXED WHERE (a,b) > ('b','B' COLLATE BINARY) ORDER BY 1, 2;
+.check <<END
+B|a
+b|c
+C|a
+c|B
+END
+
+.testcase 2051
+CREATE INDEX t2050bin ON t2050(a COLLATE BINARY, b COLLATE BINARY);
+SELECT a, b FROM t2050 WHERE (a,b) > ('b','B' COLLATE BINARY) ORDER BY 1, 2;
+.check <<END
+B|a
+b|c
+C|a
+c|B
+END

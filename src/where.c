@@ -436,7 +436,19 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
                   continue;
                 }
                 assert(pX->pLeft);
-                pColl = sqlite3ExprCompareCollSeq(pParse, pX);
+                if( pX->pLeft->op==TK_VECTOR ){
+                  /* A vector inequality such as (a,b)>(?,?). This term
+                  ** constrains only the first field, so the collation is
+                  ** that of the first pair of fields only. */
+                  Expr *pL = sqlite3VectorFieldSubexpr(pX->pLeft, 0);
+                  Expr *pR = sqlite3VectorFieldSubexpr(pX->pRight, 0);
+                  assert( pTerm->u.x.iField==0 );
+                  assert( pX->op>=TK_GT && pX->op<=TK_GE );
+                  if( ExprHasProperty(pX, EP_Commuted) ) SWAP(Expr*, pL, pR);
+                  pColl = sqlite3BinaryCompareCollSeq(pParse, pL, pR);
+                }else{
+                  pColl = sqlite3ExprCompareCollSeq(pParse, pX);
+                }
                 zCollName = pColl ? pColl->zName : sqlite3StrBINARY;
               }
 
