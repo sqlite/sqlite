@@ -2622,6 +2622,18 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
         pWalker->eCode = 0;
         return WRC_Abort;
       }
+      if( pWalker->eCode==4 || pWalker->eCode==5 ){
+        /* This is a DEFAULT expression. As it will never be name resolved,
+        ** attempt the the TK_IS -> TK_TRUTH transform here. */
+        Expr *pRight = sqlite3ExprSkipCollateAndLikely(pExpr->pRight);
+        if( ALWAYS(pRight) ){
+          if( pRight->op==TK_ID ) sqlite3ExprIdToTrueFalse(pRight);
+          if( pRight->op==TK_TRUEFALSE ){
+            pExpr->op2 = pExpr->op;
+            pExpr->op = TK_TRUTH;
+          }
+        }
+      }
       return WRC_Continue;
     case TK_VARIABLE:
       if( pWalker->eCode==5 ){

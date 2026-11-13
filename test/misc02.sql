@@ -1102,3 +1102,16 @@ CREATE TABLE t2020(a, b INT DEFAULT 'x', PRIMARY KEY(a, a COLLATE nocase))
 INSERT INTO t2020 VALUES('A', 5);
 PRAGMA integrity_check(t2020);
 .check ok
+
+# A DEFAULT expression of the form "x IS TRUE" or "x IS FALSE" must
+# evaluate the left operand as a boolean, as it does in a SELECT.
+#
+#   https://sqlite.org/bugs/forumpost/236747ce3c
+#
+.open :memory:
+.testcase 2030
+CREATE TABLE t2030(k, w DEFAULT (0.5 IS TRUE), y DEFAULT (2 IS TRUE),
+                   z DEFAULT ('abc' IS FALSE), v DEFAULT (2 IS NOT TRUE));
+INSERT INTO t2030(k) VALUES(1);
+SELECT w, y, z, v FROM t2030;
+.check 1,1,1,0
