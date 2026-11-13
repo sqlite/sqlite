@@ -3254,7 +3254,7 @@ static u32 jsonLookupStep(
         /* Already exists, so json_insert() is a no-op */
       }else if( pParse->eEdit==JEDIT_AINS ){
         /* json_array_insert() */
-        if( zPath[-1]!=']' ){
+        if( zPath[-1]!=']' || iLabel ){
           return JSON_LOOKUP_NOTARRAY;
         }else{
           jsonBlobEdit(pParse, iRoot, 0, pParse->aIns, pParse->nIns);
