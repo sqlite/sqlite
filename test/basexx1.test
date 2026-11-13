@@ -165,4 +165,38 @@ do_catchsql_test 119 {
   SELECT base85(zeroblob(2000_000_000))
 } {/1.*too big.*/}
 
+# Forum post 6cb8eb520bc3: whitespace inside a group of four base64
+# digits is ignored, and a group yields only the bytes its digits encode.
+do_execsql_test 120 {
+  SELECT hex(base64('Q UJD')), hex(base64('QU JD')), hex(base64('QUJ D'));
+} {414243 414243 414243}
+do_execsql_test 121 {
+  SELECT hex(base64('QU'||char(13,10)||'JD')),
+         hex(base64('QUJDQU'||char(10)||'JD')),
+         hex(base64('A A E C A w Q F B g c I')),
+         hex(base64('AAE CAw QFB gcI')),
+         hex(base64('AAECA'||char(10)||'wQFBg'||char(10)||'cI'));
+} {414243 414243414243 000102030405060708 000102030405060708 000102030405060708}
+
+# Trailing whitespace is ignored, however much of it there is.
+do_execsql_test 122 {
+  SELECT hex(base64('AAECAw  ')), hex(base64('AAECAw   ')),
+         hex(base64('AAECAw'||char(10,10,10))), hex(base64('AAECAwQ  '));
+} {00010203 00010203 00010203 0001020304}
+
+# A non-base64 character inside a group ends the decode, keeping only
+# the whole bytes encoded by the digits before it.
+do_execsql_test 123 {
+  SELECT hex(base64('Q!UJD')), hex(base64('QU!JD')), hex(base64('QUJ!D')),
+         hex(base64('QUJD!QUJD'));
+} {{} 41 4142 414243414243}
+
+# Pad characters are unchanged: they end a group and decoding may resume
+# after a complete padded group.
+do_execsql_test 124 {
+  SELECT hex(base64('QQ==')), hex(base64('QUI=')), hex(base64('QQ=')),
+         hex(base64('QQ==QUJD')), hex(base64('QQ= =')),
+         hex(base64(base64(x'41')||base64(x'4243')));
+} {41 4142 41 41414243 41 414243}
+
 finish_test

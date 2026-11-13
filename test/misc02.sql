@@ -1192,3 +1192,30 @@ b|c
 C|a
 c|B
 END
+
+# Bug 2026-11-05T22:30:27Z sqlite.org/bugs/info/6cb8eb520bc35e73
+# Wrong result: base64('QU JD') returns x'4140'; a space inside
+# a 4-character group alters the decoded bytes.  By Marius
+#
+.mode -reset quote
+.testcase 2100
+SELECT base64('QUJD');
+.check "x'414243'"
+.testcase 2110
+SELECT base64('QU JD');
+.check "x'414243'"
+.testcase 2120
+SELECT base64('Q UJD');
+.check "x'414243'"
+.testcase 2130
+SELECT base64('QUJ D');
+.check "x'414243'"
+.testcase 2140
+SELECT base64('QUJD QUJD');
+.check "x'414243414243'"
+.testcase 2150
+SELECT base64('<QUJD>');
+.check "x'414243'"
+.testcase 2160
+SELECT base64('QUJD*QUJD');
+.check "x'414243414243'"

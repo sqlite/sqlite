@@ -154,41 +154,58 @@ static char * skipNonB64( char *s, int nc ){
   return s;
 }
 
-/* Decode base64 text into a byte buffer. */
+/* Decode base64 text into a byte buffer.
+**
+** Whitespace is ignored wherever it appears, including inside a group
+** of four base64 digits.  A pad character fills one position of its
+** group with zero bits.  Any other non-base64 character inside a group
+** ends the decode.  Each group yields only the whole bytes encoded by
+** the base64 digits actually present in it.
+*/
 static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 && *pIn!=PAD_CHAR ){
     static signed char nboi[] = { 0, 0, 1, 2, 3 };
     char *pUse = skipNonB64(pIn, ncIn);
     unsigned long qv = 0L;
-    int nti, nbo, nac;
+    int nbo, nac = 0, ndg = 0;
     ncIn -= (pUse - pIn);
     pIn = pUse;
-    nti = (ncIn>4)? 4 : ncIn;
-    ncIn -= nti;
-    nbo = nboi[nti];
-    if( nbo==0 ) break;
-    for( nac=0; nac<4; ++nac ){
-      char c = (nac<nti)? *pIn++ : b64Numerals[0];
-      u8 bdp = BX_DV_PROTO(c);
-      switch( bdp ){
-      case ND:
-        /*  Treat dark non-digits as pad, but they terminate decode too. */
-        ncIn = 0;
-        deliberate_fall_through; /* FALLTHRU */
-      case WS:
-        /* Treat whitespace as pad and terminate this group.*/
-        nti = nac;
-        deliberate_fall_through; /* FALLTHRU */
-      case PC:
-        bdp = 0;
-        --nbo;
-        deliberate_fall_through; /* FALLTHRU */
-      default: /* bdp is the digit value. */
-        qv = qv<<6 | bdp;
-        break;
+    if( ncIn>=4 ){
+      /* Fast path: a complete group of four base64 digits. */
+      u8 d0 = BX_DV_PROTO(pIn[0]), d1 = BX_DV_PROTO(pIn[1]);
+      u8 d2 = BX_DV_PROTO(pIn[2]), d3 = BX_DV_PROTO(pIn[3]);
+      if( IS_BX_DIGIT(d0|d1|d2|d3) ){
+        qv = (unsigned long)d0<<18 | (unsigned long)d1<<12 | d2<<6 | d3;
+        pOut[0] = (qv>>16) & 0xff;
+        pOut[1] = (qv>>8) & 0xff;
+        pOut[2] = (qv) & 0xff;
+        pOut += 3;
+        pIn += 4;
+        ncIn -= 4;
+        continue;
       }
     }
+    /* Gather up to four group positions: digits and pad characters. */
+    while( nac<4 && ncIn>0 ){
+      u8 bdp = BX_DV_PROTO(*pIn);
+      if( IS_BX_DIGIT(bdp) ){
+        qv = qv<<6 | bdp;
+        ++nac;
+        ++ndg;
+      }else if( IS_BX_PAD(bdp) ){
+        qv <<= 6;
+        ++nac;
+      }else if( !IS_BX_WS(bdp) ){
+        /* Dark non-digits terminate the decode. */
+        ncIn = 0;
+        break;
+      }
+      ++pIn;
+      --ncIn;
+    }
+    qv <<= 6*(4-nac);
+    nbo = nboi[ndg];
     switch( nbo ){
     case 3:
       pOut[2] = (qv) & 0xff;
