@@ -1,5 +1,5 @@
-C Internal\scleanups\sand\sbug\sfixes\sin\sthe\sJS\spreprocessor.
-D 2026-11-13T20:43:04.356
+C Fix\sup\ssome\scorner\scases\sin\sjson_valid(...,8).\n[bugs:/info/2026-11-05T22:17:43Z|Bug\s2026-11-05T22:17:43Z]
+D 2026-11-13T21:19:44.759
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -771,7 +771,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 5cb15147c8583d0fc4748e1c12ea6f38c9deaeefa147a4d8d379fd9bc81fee9a
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c ad4d170d7abf6093b02399c38e9afc84fd9f1a4646a5fc7cdc10dec4a8b3ae38
-F src/json.c d41b857b17320b7df48a8bd24e811a542003e701ca966b43c3cade2973746d9f
+F src/json.c a9bd95664fdb8c504fafcb56c5deb190eb7dc04dc3ed3efe304811f42eddd0a7
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c c6c1cce7e0bff84544eb73fbedb2d04287779601594c1e13b04913d38596559e
 F src/main.c b6b19825675b04e297a67b293b111e60e6eb2da66c55f803f6f712193a53239b
@@ -2310,8 +2310,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e3336dbb4630c5615feba8235ee76318b3b54645f88d031e84b3bb0ab3f3309f
-R 417f0da44c248c180aea90bd90b43b4d
-U stephan
-Z 0e93a5ad7018131442118edc94c0f782
+P b3ff11d4052abf34e336cecfc19cff8058e72ea4ec12313dc6aa35f3ab7d21bb
+R de7583f8fbb50d3ecacb3c40b51095bb
+U drh
+Z 116e1aa6a7a8cdc39042fcb401c7703c
 # Remove this line to create a well-formed Fossil manifest.
