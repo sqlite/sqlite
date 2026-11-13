@@ -2989,11 +2989,13 @@ static int pragmaVtabFilter(
   int i, j;
   StrAccum acc;
   char *zSql;
+  int type0 = SQLITE_NULL;
 
   UNUSED_PARAMETER(idxNum);
   UNUSED_PARAMETER(idxStr);
   pragmaVtabCursorClear(pCsr);
   j = (pTab->pName->mPragFlg & PragFlg_Result1)!=0 ? 0 : 1;
+  if( argc>0 ) type0 = sqlite3_value_type(argv[0]);
   for(i=0; i<argc; i++, j++){
     const char *zText = (const char*)sqlite3_value_text(argv[i]);
     assert( j<ArraySize(pCsr->azArg) );
@@ -3012,7 +3014,11 @@ static int pragmaVtabFilter(
   }
   sqlite3_str_appendall(&acc, pTab->pName->zName);
   if( pCsr->azArg[0] ){
-    sqlite3_str_appendf(&acc, "=%Q", pCsr->azArg[0]);
+    if( type0<=SQLITE_FLOAT ){
+      sqlite3_str_appendf(&acc, "=%s", pCsr->azArg[0]);
+    }else{
+      sqlite3_str_appendf(&acc, "=%Q", pCsr->azArg[0]);
+    }
   }
   zSql = sqlite3StrAccumFinish(&acc);
   if( zSql==0 ) return SQLITE_NOMEM;
