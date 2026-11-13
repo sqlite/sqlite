@@ -1,5 +1,5 @@
-C Fix\sa\sbranch\sthat\sbecame\salways\strue\sdue\sto\s[c82b41a9c6623630].\nChange\sit\sinto\san\sassert().
-D 2026-11-12T20:50:07.383
+C Change\sthe\salthttpd\sport\snumber\sused\sby\sext/wasm/GNUmakefile\sbecause\sit's\scolliding\swith\slocal\sfossil\sservers.
+D 2026-11-13T08:57:02.572
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -651,7 +651,7 @@ F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
 F ext/vec1/vec1.c de33d11affa682b3dfa44220a06f167679465447cec7b719cfd711ea22b6d75f
-F ext/wasm/GNUmakefile c473e80726750df9b044b6e68d8aac12e21ef2814d636bec9ec724b23e1afeae
+F ext/wasm/GNUmakefile c0ec3c98a70f365a21aa047371b729d5b55e960dfc2959f24bdb8a15227385fe
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md a84fffbb50568f135ac19f121978b80473068ceee7075501ce2e64a62bb64df0
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2309,8 +2309,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 717227135055f848038d38abb35db85cd95588b2dd90898b2266f38e1becc4a1
-R c0786b9ba047056753c1b05f6edc7184
-U drh
-Z 39ab97327bbd47d61a9266ef78408b2f
+P 05ab86b918f55f725d221fd52fbd412742a847cf84066359f5fa088c6f2ea1bb
+R f3c3543d6178220adfeafc82dce72b9b
+U stephan
+Z 0d9223bee414a9bf4d3c20c349057508
 # Remove this line to create a well-formed Fossil manifest.
