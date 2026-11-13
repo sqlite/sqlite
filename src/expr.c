@@ -2828,26 +2828,148 @@ int sqlite3ExprIsSingleTableConstraint(
 
 
 /*
+** Return true if pExpr is a copy of a term of pGroupBy that sorts using
+** the BINARY collating sequence.
+*/
+static int exprIsBinaryGroupByTerm(
+  Parse *pParse,
+  Expr *pExpr,
+  ExprList *pGroupBy
+){
+  int i;
+  for(i=0; i<pGroupBy->nExpr; i++){
+    Expr *p = pGroupBy->a[i].pExpr;
+    if( sqlite3ExprCompare(0, pExpr, p, -1)<2 ){
+      CollSeq *pColl = sqlite3ExprNNCollSeq(pParse, p);
+      if( sqlite3IsBinary(pColl) ) return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+** Bits returned by exprScanOperand().
+*/
+#define GBOP_GROUPBY  0x01   /* The operand is a GROUP BY term */
+#define GBOP_INEXACT  0x02   /* That GROUP BY term might be a number */
+#define GBOP_NOAFF    0x04   /* That GROUP BY term has no affinity */
+#define GBOP_TEXT     0x08   /* The operand has TEXT affinity */
+
+/*
+** Inspect operand pOp of an operator and return a mask of GBOP_* bits that
+** describe it.  GBOP_GROUPBY is set if pOp is a GROUP BY term.  Then
+** GBOP_INEXACT is also set if that term might be a number, and GBOP_NOAFF
+** if it has no affinity.  GBOP_TEXT is set if pOp has TEXT affinity.
+*/
+static int exprScanOperand(Walker *pWalker, Expr *pOp){
+  int m = 0;
+  if( pOp ){
+    char aff = sqlite3ExprAffinity(pOp);
+    if( exprIsBinaryGroupByTerm(pWalker->pParse, pOp, pWalker->u.pGroupBy) ){
+      m |= GBOP_GROUPBY;
+      if( aff<=SQLITE_AFF_NONE ) m |= GBOP_NOAFF;
+      if( aff!=SQLITE_AFF_TEXT && pOp->op!=TK_CONCAT ) m |= GBOP_INEXACT;
+    }
+    if( aff==SQLITE_AFF_TEXT ) m |= GBOP_TEXT;
+  }
+  return m;
+}
+
+/*
+** pExpr is not itself a GROUP BY term.  Return true if it has an operand
+** that is a GROUP BY term, and the value of pExpr might depend on which
+** member of a group that operand was taken from.
+**
+** The rows of a group are equal in the GROUP BY sense but are not always
+** identical.  With the BINARY collating sequence, two values in the same
+** group can still differ in type: 1 and 1.0 (also -0.0 and 0.0) are in the
+** same group.  So typeof(x), length(x), x||'', x/2, x+1 and so forth can
+** have a different value for different rows of one group.  A GROUP BY
+** term that might be a number may therefore only be an operand of a
+** comparison, because comparisons treat values that are equal as
+** interchangeable, or of a logical operator.  A GROUP BY term that is
+** always TEXT or BLOB (the result of the || operator, or a column or CAST
+** with TEXT affinity) can be an operand of anything, since equal text
+** values are identical.
+**
+** The exception for comparisons is a comparison of a GROUP BY term that
+** has no affinity (an expression, not a column) against a TEXT operand.
+** TEXT affinity is applied to the term and converts 1 to '1' but 1.0 to
+** '1.0'.
+*/
+static int exprGroupByOperandUnsafe(Walker *pWalker, Expr *pExpr){
+  int bCmp = 0;       /* True for a comparison operator */
+  int bOther = 0;     /* True for any operator or function that is not a
+                      ** comparison or a logical operator */
+  int m = 0;          /* Union of the GBOP_* bits for all operands */
+  int i;
+
+  switch( pExpr->op ){
+    case TK_EQ:   case TK_NE:    case TK_LT:     case TK_LE:
+    case TK_GT:   case TK_GE:    case TK_IS:     case TK_ISNOT:
+    case TK_IN:   case TK_BETWEEN: {
+      testcase( pExpr->op==TK_EQ ); testcase( pExpr->op==TK_NE );
+      testcase( pExpr->op==TK_LT ); testcase( pExpr->op==TK_LE );
+      testcase( pExpr->op==TK_GT ); testcase( pExpr->op==TK_GE );
+      testcase( pExpr->op==TK_IS ); testcase( pExpr->op==TK_ISNOT );
+      testcase( pExpr->op==TK_IN ); testcase( pExpr->op==TK_BETWEEN );
+      bCmp = 1;
+      break;
+    }
+    case TK_ISNULL: case TK_NOTNULL: case TK_AND: case TK_OR: case TK_NOT: {
+      testcase( pExpr->op==TK_ISNULL );  testcase( pExpr->op==TK_NOTNULL );
+      testcase( pExpr->op==TK_AND );     testcase( pExpr->op==TK_OR );
+      testcase( pExpr->op==TK_NOT );
+      break;
+    }
+    default: {
+      bOther = 1;
+      break;
+    }
+  }
+  m |= exprScanOperand(pWalker, pExpr->pLeft);
+  m |= exprScanOperand(pWalker, pExpr->pRight);
+  assert( ExprUseXList(pExpr) );  /* Sub-selects were handled by the caller */
+  if( pExpr->x.pList ){
+    for(i=0; i<pExpr->x.pList->nExpr; i++){
+      m |= exprScanOperand(pWalker, pExpr->x.pList->a[i].pExpr);
+    }
+  }
+  if( (m & GBOP_GROUPBY)==0 ) return 0;
+
+  /* Any other operator or function is unsafe if it has an operand that
+  ** is a GROUP BY term that might be a number. */
+  if( bOther ) return (m & GBOP_INEXACT)!=0;
+
+  /* A comparison is unsafe if a GROUP BY operand without affinity is
+  ** compared against an operand with TEXT affinity. */
+  testcase( (m & (GBOP_NOAFF|GBOP_TEXT))==0 );
+  testcase( (m & (GBOP_NOAFF|GBOP_TEXT))==GBOP_NOAFF );
+  testcase( (m & (GBOP_NOAFF|GBOP_TEXT))==GBOP_TEXT );
+  return bCmp && (m & (GBOP_NOAFF|GBOP_TEXT))==(GBOP_NOAFF|GBOP_TEXT);
+}
+
+/*
 ** sqlite3WalkExpr() callback used by sqlite3ExprIsConstantOrGroupBy().
 */
 static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
   ExprList *pGroupBy = pWalker->u.pGroupBy;
-  int i;
 
   /* Check if pExpr is identical to any GROUP BY term. If so, consider
   ** it constant.  */
-  for(i=0; i<pGroupBy->nExpr; i++){
-    Expr *p = pGroupBy->a[i].pExpr;
-    if( sqlite3ExprCompare(0, pExpr, p, -1)<2 ){
-      CollSeq *pColl = sqlite3ExprNNCollSeq(pWalker->pParse, p);
-      if( sqlite3IsBinary(pColl) ){
-        return WRC_Prune;
-      }
-    }
+  if( exprIsBinaryGroupByTerm(pWalker->pParse, pExpr, pGroupBy) ){
+    return WRC_Prune;
   }
 
   /* Check if pExpr is a sub-select. If so, consider it variable. */
   if( ExprUseXSelect(pExpr) ){
+    pWalker->eCode = 0;
+    return WRC_Abort;
+  }
+
+  /* An operator applied to a GROUP BY term is constant only if its value
+  ** is the same for every member of a group. */
+  if( exprGroupByOperandUnsafe(pWalker, pExpr) ){
     pWalker->eCode = 0;
     return WRC_Abort;
   }
@@ -2863,16 +2985,25 @@ static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
 ** This routine is used to determine if a term of the HAVING clause can
 ** be promoted into the WHERE clause.  In order for such a promotion to work,
 ** the value of the HAVING clause term must be the same for all members of
-** a "group".  The requirement that the GROUP BY term must be BINARY
-** assumes that no other collating sequence will have a finer-grained
-** grouping than binary.  In other words (A=B COLLATE binary) implies
-** A=B in every other collating sequence.  The requirement that the
-** GROUP BY be BINARY is stricter than necessary.  It would also work
-** to promote HAVING clauses that use the same alternative collating
-** sequence as the GROUP BY term, but that is much harder to check,
-** alternative collating sequences are uncommon, and this is only an
-** optimization, so we take the easy way out and simply require the
-** GROUP BY to use the BINARY collating sequence.
+** a "group".  There are two requirements for this.
+**
+** (1) Members of a group are equal in the sense of the GROUP BY collating
+**     sequence, but need not be identical.  The requirement that the
+**     GROUP BY term be BINARY assumes that no other collating sequence
+**     will have a finer-grained grouping than binary.  In other words
+**     (A=B COLLATE binary) implies A=B in every other collating sequence.
+**     The requirement that the GROUP BY be BINARY is stricter than
+**     necessary.  It would also work to promote HAVING clauses that use the
+**     same alternative collating sequence as the GROUP BY term, but that
+**     is much harder to check, alternative collating sequences are
+**     uncommon, and this is only an optimization, so we take the easy way
+**     out and simply require the GROUP BY to use the BINARY collating
+**     sequence.
+**
+** (2) Even with BINARY, equal values can be distinguishable, as in the
+**     case of 1 and 1.0.  A GROUP BY term may therefore only be used as
+**     an operand of a comparison or logical operator.  See
+**     exprGroupByOperandUnsafe() for details.
 */
 int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
   Walker w;
