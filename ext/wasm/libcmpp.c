@@ -5,7 +5,7 @@
 
   ./c-pp -I. -I./src -Dsrcdir=./src -o libcmpp.c ./tool/libcmpp.c-pp.c
 
-  with libcmpp 2.0.x 4539e17f451054d2aeb6a5ffe3891af087fd8fa6cfae4e31d02e1fddfec69d46 @ 2026-09-30 09:12:44.230 UTC
+  with libcmpp 2.0.x e07fd9aca8774e8c6270f31fcfc7fa477c8991d71d4dca34607a48fe4c420463 @ 2026-11-10 22:06:23.225 UTC
 */
 #if !defined(NET_WANDERINGHORSE_LIBCMPP_C_INCLUDED)
 #define NET_WANDERINGHORSE_LIBCMPP_C_INCLUDED
@@ -20,13 +20,13 @@
 
   ./c-pp -I. -I./src -Dsrcdir=./src -o libcmpp.h ./tool/libcmpp.c-pp.h
 
-  with libcmpp 2.0.x 4539e17f451054d2aeb6a5ffe3891af087fd8fa6cfae4e31d02e1fddfec69d46 @ 2026-09-30 09:12:44.230 UTC
+  with libcmpp 2.0.x e07fd9aca8774e8c6270f31fcfc7fa477c8991d71d4dca34607a48fe4c420463 @ 2026-11-10 22:06:23.225 UTC
 */
 #define CMPP_PACKAGE_NAME "libcmpp"
 #define CMPP_LIB_VERSION "2.0.x"
-#define CMPP_LIB_VERSION_HASH "4539e17f451054d2aeb6a5ffe3891af087fd8fa6cfae4e31d02e1fddfec69d46"
-#define CMPP_LIB_VERSION_TIMESTAMP "2026-09-30 09:12:44.230 UTC"
-#define CMPP_LIB_CONFIG_TIMESTAMP "2026-09-30 09:14 GMT"
+#define CMPP_LIB_VERSION_HASH "e07fd9aca8774e8c6270f31fcfc7fa477c8991d71d4dca34607a48fe4c420463"
+#define CMPP_LIB_VERSION_TIMESTAMP "2026-11-10 22:06:23.225 UTC"
+#define CMPP_LIB_CONFIG_TIMESTAMP "2026-11-13 16:57 GMT"
 #define CMPP_VERSION CMPP_LIB_VERSION " " CMPP_LIB_VERSION_HASH " @ " CMPP_LIB_VERSION_TIMESTAMP
 #define CMPP_PLATFORM_EXT_DLL ".so"
 #define CMPP_MODULE_PATH ".:/usr/local/lib/cmpp"
@@ -2659,11 +2659,11 @@ enum cmpp_f_e {
      If cmpp_f_F_ARGS_RAW is used together with this flag then
      it works a bit differently:
 
-     - cmpp_f_args::argc will be set to the number of arguments
-       tokenized by the preprocessor (it has to do so to be able to
-       get to the point of calling the cmpp_f()). Because V4 includes
-       the name of the being-invoked directive or command as argument
-       0, argc will always be at least one.
+     - cmpp_f_args::argc will always be 1, accounting only for the
+       name of the being-invoked directive or command (which V4
+       always includes as argument 0). The preprocessor does not
+       tokenize the remaining arguments in this mode: that is left to
+       the cmpp_f() impl.
 
      - cmpp_f_args::argv will be NULL. Such cmpp_f() impls are
        expected to parse the arguments using (e.g.) cmpp_tizer with
@@ -11948,41 +11948,59 @@ static char * skipNonB64( char *s, int nc ){
   return s;
 }
 
-/* Decode base64 text into a byte buffer. */
+/* Decode base64 text into a byte buffer.
+**
+** Whitespace is ignored wherever it appears, including inside a group
+** of four base64 digits.  A pad character fills one position of its
+** group with zero bits.  Any other non-base64 character inside a group
+** ends the decode.  Each group yields only the whole bytes encoded by
+** the base64 digits actually present in it.
+*/
+/* src: https://sqlite.org/src/info/9de86d3f09325a0ffea */
 static uint8_t* fromBase64( char *pIn, int ncIn, uint8_t *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 && *pIn!=PAD_CHAR ){
     static signed char nboi[] = { 0, 0, 1, 2, 3 };
     char *pUse = skipNonB64(pIn, ncIn);
     unsigned long qv = 0L;
-    int nti, nbo, nac;
+    int nbo, nac = 0, ndg = 0;
     ncIn -= (pUse - pIn);
     pIn = pUse;
-    nti = (ncIn>4)? 4 : ncIn;
-    ncIn -= nti;
-    nbo = nboi[nti];
-    if( nbo==0 ) break;
-    for( nac=0; nac<4; ++nac ){
-      char c = (nac<nti)? *pIn++ : b64Numerals[0];
-      uint8_t bdp = BX_DV_PROTO(c);
-      switch( bdp ){
-      case ND:
-        /*  Treat dark non-digits as pad, but they terminate decode too. */
-        ncIn = 0;
-        deliberate_fall_through; /* FALLTHRU */
-      case WS:
-        /* Treat whitespace as pad and terminate this group.*/
-        nti = nac;
-        deliberate_fall_through; /* FALLTHRU */
-      case PC:
-        bdp = 0;
-        --nbo;
-        deliberate_fall_through; /* FALLTHRU */
-      default: /* bdp is the digit value. */
-        qv = qv<<6 | bdp;
-        break;
+    if( ncIn>=4 ){
+      /* Fast path: a complete group of four base64 digits. */
+      u8 d0 = BX_DV_PROTO(pIn[0]), d1 = BX_DV_PROTO(pIn[1]);
+      u8 d2 = BX_DV_PROTO(pIn[2]), d3 = BX_DV_PROTO(pIn[3]);
+      if( IS_BX_DIGIT(d0|d1|d2|d3) ){
+        qv = (unsigned long)d0<<18 | (unsigned long)d1<<12 | d2<<6 | d3;
+        pOut[0] = (qv>>16) & 0xff;
+        pOut[1] = (qv>>8) & 0xff;
+        pOut[2] = (qv) & 0xff;
+        pOut += 3;
+        pIn += 4;
+        ncIn -= 4;
+        continue;
       }
     }
+    /* Gather up to four group positions: digits and pad characters. */
+    while( nac<4 && ncIn>0 ){
+      u8 bdp = BX_DV_PROTO(*pIn);
+      if( IS_BX_DIGIT(bdp) ){
+        qv = qv<<6 | bdp;
+        ++nac;
+        ++ndg;
+      }else if( IS_BX_PAD(bdp) ){
+        qv <<= 6;
+        ++nac;
+      }else if( !IS_BX_WS(bdp) ){
+        /* Dark non-digits terminate the decode. */
+        ncIn = 0;
+        break;
+      }
+      ++pIn;
+      --ncIn;
+    }
+    qv <<= 6*(4-nac);
+    nbo = nboi[ndg];
     switch( nbo ){
     case 3:
       pOut[2] = (qv) & 0xff;
@@ -13062,6 +13080,7 @@ static int cmpp__dx_err_just_once(cmpp_dx *dx, cmpp_arg const *arg){
                          arg->z);
 }
 
+
 /* No-op cmpp_f() impl. */
 static void cmpp_f_noop(cmpp_f_args const * args){
   (void)args;
@@ -13541,7 +13560,7 @@ static void cmpp_f_once(cmpp_f_args const * args){
   cmpp_d const * const d = args->d;
   assert(d);
   assert(d->closer);
-  if( dx->args.arg0 ){
+  if( args->argc>1 ){
     cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                     "Expecting no arguments");
     return;
@@ -14050,8 +14069,7 @@ static void cmpp_f_stderr(cmpp_f_args const * args){
 */
 static void cmpp_f_at(cmpp_f_args const * args){
   cmpp_dx * const dx = args->dx;
-  cmpp_arg const * arg = dx->args.arg0;
-  if( !arg ){
+  if( args->argc<2 ){
     cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                     "Expecting arguments.");
     return;
@@ -14067,7 +14085,8 @@ static void cmpp_f_at(cmpp_f_args const * args){
   cmpp_arg const * argDelimC = 0 /* @token@ closer */;
   cmpp__pi(args->pp);
   cmpp_atpol_e polNew = cmpp_atpol_get(args->pp);
-  for( ; arg; arg = arg ? arg->next : NULL ){
+  for( unsigned i = 1; i < args->argc; ++i ){
+    cmpp_arg const * arg = args->argv[i];
     //g_warn("arg=%s", arg->z);
     if( !checkedCallForm ){
       assert( args->isDxCall );
@@ -14090,22 +14109,23 @@ static void cmpp_f_at(cmpp_f_args const * args){
         goto end;
       }else{
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                        "In call form, '%s' expects one of "
-                        "'policy' or delimiter'.");
+                     "In call form, '%s' expects one of "
+                     "'policy' or delimiter'.",
+                     args->d->name.z);
       }
       goto end;
     }/* checkedCallForm */
     if( !argDelimC && op_none==op ){
       /* Look for push|pop. */
       if( cmpp_arg_equals_c(arg, "pop") ){
-        arg = arg->next;
-        if( !arg ){
+        if( ++i==args->argc ){
           cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                           "'pop' expects arguments of 'policy' "
                           "and/or 'delimiter' and/or 'both'.");
           goto end;
         }
-        for( ; arg; arg = arg->next ){
+        for( ; i < args->argc; ++i ){
+          arg = args->argv[i];
           if( 0==(pop_policy & popWhich)
               && cmpp_arg_equals_c(arg, "policy") ){
             popWhich |= pop_policy;
@@ -14117,11 +14137,11 @@ static void cmpp_f_at(cmpp_f_args const * args){
             popWhich |= pop_both;
           }else{
             cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                            "Invalid argument to 'pop': ", arg->z);
+                         "Invalid argument to 'pop': %s",
+                         arg->z);
             goto end;
           }
         }
-        assert( !arg );
         op = op_pop;
         break;
       }/* pop */
@@ -14138,12 +14158,12 @@ static void cmpp_f_at(cmpp_f_args const * args){
       /* Fall through */
     }/* !argDelimC && op_none==op */
     if( !gotPolicy && cmpp_arg_equals_c(arg, "policy") ){
-      arg = arg->next;
-      if( !arg ){
+      if( ++i==args->argc ){
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "'policy' requires a policy name argument.");
         goto end;
       }
+      arg = args->argv[i];
       polNew = cmpp_atpol_from_str(NULL, (char const*)arg->z);
       if( cmpp_atpol_invalid==polNew ){
         cmpp_atpol_from_str(args->pp, (char const*)arg->z)
@@ -14156,19 +14176,19 @@ static void cmpp_f_at(cmpp_f_args const * args){
     }
     if( !argDelimC && cmpp_arg_equals_c(arg, "delimiter") ){
       assert( !argDelimO && !argDelimC );
-      argDelimO = arg->next;
-      argDelimC = argDelimO ? argDelimO->next : NULL;
-      if( !argDelimC ){
+      if( i+2>=args->argc ){
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "'delimiter' requires two arguments.");
         goto end;
       }
-      arg = argDelimC->next;
+      argDelimO = args->argv[++i];
+      argDelimC = args->argv[++i];
+      if( op_none==op ) op = op_set;
       continue;
     }
     if( op_pop!=op ){
       if( cmpp_arg_equals_c(arg,"<<") ){
-        if( arg->next ) {
+        if( i+1<args->argc ) {
           cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                           "'%s' must be the final argument.",
                           arg->z);
@@ -14238,8 +14258,7 @@ static void cmpp_f_at(cmpp_f_args const * args){
       bool const pushedDelim = NULL!=argDelimC;
       assert( args->d->closer );
       cmpp_dx_consume(dx, NULL, &args->d->closer, 1,
-                      cmpp_dx_consume_F_PROCESS_OTHER_D)
-        /* !Invalidates argDelimO and argDelimC! */;
+                      cmpp_dx_consume_F_PROCESS_OTHER_D);
       popcheck(pi->policy.at);
       cmpp_atpol_pop(args->pp);
       if( pushedDelim ) cmpp_atdelim_pop(args->pp);
@@ -14480,19 +14499,19 @@ end:
 
 static void cmpp_f_delimiter(cmpp_f_args const * args){
   cmpp_dx * const dx = args->dx;
-  cmpp_arg const * arg = dx->args.arg0;
   enum ops { op_none, op_set, op_push, op_pop };
   enum ops op = op_none;
   cmpp_arg const * argD = 0;
   bool doHeredoc = false;
-  for( ; arg; arg = arg->next ){
+  for( unsigned i = 1; i < args->argc; ++i ){
+    cmpp_arg const * const arg = args->argv[i];
     if( op_none==op ){
       /* Look for push|pop. */
       if( cmpp_arg_equals_c(arg, "push") ){
         op = op_push;
         continue;
       }else if( cmpp_arg_equals_c(arg, "pop") ){
-        if( arg->next ){
+        if( i+1<args->argc ){
           cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                           "'pop' expects no arguments.");
           return;
@@ -14511,7 +14530,7 @@ static void cmpp_f_delimiter(cmpp_f_args const * args){
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "'%s' is not legal in [call] form.", arg->z);
         return;
-      }else if( arg->next ){
+      }else if( i+1<args->argc ){
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "'%s' must be the final argument.", arg->z);
           return;
@@ -14539,11 +14558,12 @@ static void cmpp_f_delimiter(cmpp_f_args const * args){
       ? NULL
       : (char const*)argD->z;
     if( op_push==op ){
-      cmpp_delimiter_push(args->pp, (char const*)argD->z);
+      /* Includes the doHeredoc case. */
+      cmpp_delimiter_push(args->pp, z);
     }else{
       assert( op_set==op );
-      if( doHeredoc ) cmpp_delimiter_push(args->pp, z);
-      else cmpp_delimiter_set(args->pp, z);
+      assert( !doHeredoc );
+      cmpp_delimiter_set(args->pp, z);
     }
   }
   if( !cmpp_err_has(dx->pp) ){
@@ -14998,14 +15018,15 @@ static void cmpp_f_arg(cmpp_f_args const * args){
   cmpp_dx * const dx = args->dx;
   cmpp_flag32_t a2bFlags = cmpp_arg_interpolate_BRACE_CALL;
   bool trimL = false, trimR = false;
-  cmpp_arg const * arg = dx->args.arg0;
-  if( !dx->args.argc ){
+  if( args->argc<2 ){
     cmpp_dx_errf(dx, CMPP_RC_MISUSE, "Expecting an argument.");
     return;
   }
-  //g_warn("argc=%d", dx->args.argc);
+  //g_warn("argc=%u", args->argc);
   cmpp_b * const b = cmpp_b_borrow(args->pp);
-  for( ; arg && !cmpp_err_has(args->pp); arg = arg->next ){
+  if( !b ) return;
+  for( unsigned i = 1; i < args->argc && !cmpp_err_has(args->pp); ++i ){
+    cmpp_arg const * const arg = args->argv[i];
 #define FLAG(X)if( cmpp_arg_isflag_c(arg, X) )
     FLAG("-raw") {
       a2bFlags = cmpp_arg_interpolate_FORCE_STRING;
@@ -15053,7 +15074,7 @@ static void cmpp_f_join(cmpp_f_args const * args){
   bool addNl = !args->isDxCall;
   int n = 0;
   if( !b || !bSep ) goto end;
-  if( !dx->args.argc ){
+  if( args->argc<2 ){
     cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                     "%s%s expects ?flags? ...args",
                     cmpp_dx_delim(dx), args->d->name.z);
@@ -15061,22 +15082,22 @@ static void cmpp_f_join(cmpp_f_args const * args){
   }
   cmpp_b_append_ch(bSep, ' ');
   cmpp_check_oom(args->pp, bSep->z);
-  for( cmpp_arg const * arg = dx->args.arg0; arg
+  for( unsigned i = 1; i < args->argc
          && !b->errCode
          && !bSep->errCode
          && !cmpp_err_has(args->pp);
-       arg = arg->next ){
+       ++i ){
+    cmpp_arg const * const arg = args->argv[i];
 #define FLAG(X)if( cmpp_arg_isflag_c(arg, X) )
     FLAG("-s"){
-      if( !arg->next ){
+      if( ++i==args->argc ){
         cmpp_errf(args->pp, CMPP_RC_MISUSE,
                   "Missing SEPARATOR argument to -s.");
         break;
       }
-      cmpp_arg_interpolate(args->pp, arg->next,
+      cmpp_arg_interpolate(args->pp, args->argv[i],
                     cmpp_b_reuse(bSep),
                     cmpp_arg_interpolate_BRACE_CALL);
-      arg = arg->next;
       /* FIXME: unescape bSep */
       continue;
     }
@@ -15189,39 +15210,28 @@ missing_arg:
 }
 
 /**
-   #cmp LHS op RHS
+   #cmp LHS RHS
+
+   Emits -1, 0, or 1 if the (expanded) LHS is less than, equal to,
+   or greater than the (expanded) RHS, as per strcmp().
 */
 static void cmpp_f_cmp(cmpp_f_args const * args){
   cmpp_b * const bL = cmpp_b_borrow(args->pp);
   cmpp_b * const bR = cmpp_b_borrow(args->pp);
   cmpp_flag32_t a2bFlags = cmpp_arg_interpolate_BRACE_CALL;
-  if( !bL || !!bR ) goto end;
-  for( cmpp_arg const * arg = args->dx->args.arg0; arg
-         && !cmpp_err_has(args->pp);
-       arg = arg->next ){
-    if( !bL->z ){
-      cmpp_arg_interpolate(args->pp, arg, bL, a2bFlags);
-      continue;
-    }
-    if( !bR->z ){
-      cmpp_arg_interpolate(args->pp, arg, bR, a2bFlags);
-      continue;
-    }
-    break;
-  }
-
-  if( cmpp_err_has(args->pp) ) goto end;
-  if( !bL->z || !bR->z ){
+  if( !bL || !bR ) goto end;
+  if( 3!=args->argc ){
     cmpp_errf(args->pp, CMPP_RC_MISUSE, "Usage: LHS RHS");
     goto end;
   }
-  assert( bL->z );
-  assert( bR->z );
-  char cbuf[20];
-  int const cmp = strcmp((char*)bL->z, (char*)bR->z);
-  int const n = snprintf(cbuf, sizeof(cbuf), "%d", cmp);
-  assert(n>0);
-  cmpp_out_raw(args->pp, cbuf, (cmpp_size_t)n);
+  if( cmpp_arg_interpolate(args->pp, args->argv[1], bL, a2bFlags)
+      || cmpp_arg_interpolate(args->pp, args->argv[2], bR, a2bFlags) ){
+    goto end;
+  }
+  int const cmp = strcmp(bL->z ? (char const*)bL->z : "",
+                         bR->z ? (char const*)bR->z : "");
+  char const * const z = cmp<0 ? "-1" : (cmp ? "1" : "0");
+  cmpp_out_raw(args->pp, z, strlen(z));
 
 end:
   cmpp_b_return(args->pp, bL);
@@ -15241,6 +15251,7 @@ static void cmpp_f_base64(cmpp_f_args const * args){
   for( unsigned i = 1; i < args->argc; ++i ){
     cmpp_arg const * arg = args->argv[i];
 #define M(STR) cmpp_arg_equals_c(arg, STR)
+    /* -d/-decode is TODO, pending only an actual use case. */
     if( M("-comma") ) comma = true;
     else if( M("-quote") ) quote = true;
     else if( M("-f") || M("-file")
@@ -15350,7 +15361,6 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
 #define CF(X) cmpp_f_F_ ## X
 #define F_A_RAW CF(ARGS_RAW)
 #define F_A_V4 CF(ARGS_V4)
-#define F_A_LIST CF(ARGS_LIST)
 #define F_EXPR CF(ARGS_LIST) | CF(NOT_SIMPLIFY)
 #define F_UNSAFE cmpp_f_F_NOT_IN_SAFEMODE
 #define F_NC cmpp_f_F_NO_CALL
@@ -15421,16 +15431,16 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
     DREG(N, OPENER, OFLAGS, CLOSER, CFLAGS);      \
   } (void)0
 
-  M_IF_CORE("@",                cmpp_f_at,           F_A_LIST,
+  M_IF_CORE("@",                cmpp_f_at,           F_A_V4,
                                 cmpp_f_dangling_closer, 0);
-  M_IF_CORE("arg",              cmpp_f_arg,          F_A_LIST, 0, 0);
+  M_IF_CORE("arg",              cmpp_f_arg,          F_A_V4, 0, 0);
   M_IF_CORE("assert",           cmpp_f_expr,         F_EXPR, 0, 0);
   M_IF_CORE("base64",           cmpp_f_base64,       F_A_V4,
                                 cmpp_f_dangling_closer, 0);
-  M_IF_CORE("cmp",              cmpp_f_cmp,          F_A_LIST, 0, 0);
+  M_IF_CORE("cmp",              cmpp_f_cmp,          F_A_V4, 0, 0);
   M_IF_CORE("define",           cmpp_f_define,       F_A_V4,
                                 cmpp_f_dangling_closer, 0);
-  M_IF_CORE("delimiter",        cmpp_f_delimiter,    F_A_LIST,
+  M_IF_CORE("delimiter",        cmpp_f_delimiter,    F_A_V4,
                                 cmpp_f_dangling_closer, 0);
   M_IF_CORE("error",            cmpp_f_error,        F_A_RAW, 0, 0);
   M_IF_CORE("eval",             cmpp_f_eval,         F_A_V4,
@@ -15438,8 +15448,8 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
   M_IF_CORE("expand",           cmpp_f_expand,       F_A_V4,
                                 cmpp_f_dangling_closer, 0);
   M_IF_CORE("expr",             cmpp_f_expr,         F_EXPR, 0, 0);
-  M_IF_CORE("join",             cmpp_f_join,         F_A_LIST, 0, 0);
-  M_IF_CORE("once",             cmpp_f_once,         F_A_LIST | F_NC,
+  M_IF_CORE("join",             cmpp_f_join,         F_A_V4, 0, 0);
+  M_IF_CORE("once",             cmpp_f_once,         F_A_V4 | F_NC,
                                 cmpp_f_dangling_closer, 0);
   M_IF_CORE("pragma",           cmpp_f_pragma,       F_A_V4, 0, 0);
   M_IF_CORE("savepoint",        cmpp_f_savepoint,    F_A_V4, 0, 0);
@@ -15447,7 +15457,8 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
   M_IF_CORE("sum",              cmpp_f_sum,          F_A_V4, 0, 0);
   M_IF_CORE("undef",            cmpp_f_undef,        F_A_V4, 0, 0);
   M_IF_CORE("undefined-policy", cmpp_f_undef_policy, F_A_V4, 0, 0);
-  M_IF_CORE("//",               cmpp_f_noop,         F_A_RAW, 0, 0);
+  M_IF_CORE("//",               cmpp_f_noop,         F_A_V4 | F_A_RAW,
+                                0, 0);
   M_IF_CORE("file",             cmpp_f_file,
                                 F_A_V4 | F_UNSAFE, 0, 0);
 
@@ -15537,7 +15548,6 @@ end:
 #undef DREG0
 #undef F_EXPR
 #undef F_A_RAW
-#undef F_A_LIST
 #undef F_A_V4
 #undef F_UNSAFE
 #undef F_NC
@@ -16587,7 +16597,7 @@ CMPP__EXPORT(int,cmpp_arg_parse)(
                  (unsigned)(zOutEnd-*pzOut));
   }else{
     cmpp__squiggly_strip_lead(tok);
-    pOut->n = tok->n;
+    pOut->n = tok->nInner;
     memcpy(zo, tok->zInner, tok->nInner);
     zo += tok->nInner;
     *zo++ = 0;

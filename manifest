@@ -1,5 +1,5 @@
-C Avoid\sapplying\sRealAffinity\sto\sa\sUSING\scolumn\sof\sa\sFULL\sJOIN\ssubquery\sif\sit\sis\smaterialized.\sReport\s[bugs:/info/2026-10-26T12:56:39Z\s|\s2026-10-26T12:56:39Z].
-D 2026-11-13T20:14:23.366
+C Internal\scleanups\sand\sbug\sfixes\sin\sthe\sJS\spreprocessor.
+D 2026-11-13T20:43:04.356
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -705,7 +705,7 @@ F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73
 F ext/wasm/index.html 7b27bb7518558c58c518ac3b47220226f635fa11331bac98f4aaf0d63fc4b283
 F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js d426f0332a0e1fdc71fef3d32add2d80f9d51deae4c284790207147a3356f5a8
 F ext/wasm/jaccwabyt/jaccwabyt.md 4140e42e52b2108fb5b5e6e05f05d4609d42771943f86cd95969cf16457637de
-F ext/wasm/libcmpp.c a3bbf4a338eac1545bec74a9188e37e2aa946e0fc5ba27685a64a8bcd62a3650
+F ext/wasm/libcmpp.c 3dcc412e1c6bfb45e626ab24f66d39921a4e63bcea476eb6101a5e12a18be011
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
 F ext/wasm/mkwasmbuilds.c a012ba85adc4dea9cc6a6ed6ffb1d127ceda6bcc8e18cd0a118bf4d6e9049caa
 F ext/wasm/module-symbols.html 482af6937959c7099594a5b4e1e9aa8e807cdf7f67fa9a1ac41d6744b3342513
@@ -2310,8 +2310,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 88a08083d7316b76d361624a44eae460d491535c123727e6a1fbb40e9e77b980
-R a7df019425d7df30e32c73e7a0e9158d
-U dan
-Z 597acb3c72ddd7b3b56a45af13109594
+P e3336dbb4630c5615feba8235ee76318b3b54645f88d031e84b3bb0ab3f3309f
+R 417f0da44c248c180aea90bd90b43b4d
+U stephan
+Z 0e93a5ad7018131442118edc94c0f782
 # Remove this line to create a well-formed Fossil manifest.
