@@ -73,11 +73,16 @@ char sqlite3ExprAffinity(const Expr *pExpr){
           pExpr->pLeft->x.pSelect->pEList->a[pExpr->iColumn].pExpr
       );
     }
-    if( op==TK_VECTOR
-     || (op==TK_FUNCTION && pExpr->affExpr==SQLITE_AFF_DEFER)
-    ){
+    if( op==TK_VECTOR ){
       assert( ExprUseXList(pExpr) );
       return sqlite3ExprAffinity(pExpr->x.pList->a[0].pExpr);
+    }
+    if( op==TK_FUNCTION && pExpr->affExpr==SQLITE_AFF_DEFER ){
+      /* The USING column of a FULL JOIN: coalesce(L.x, R.x). Use the
+      ** affinity of L.x, except that REAL becomes NUMERIC, since the
+      ** value may come from R.x and so need not be REAL.  */
+      char aff = sqlite3ExprAffinity(pExpr->x.pList->a[0].pExpr);
+      return aff==SQLITE_AFF_REAL ? SQLITE_AFF_NUMERIC : aff;
     }
     if( ExprHasProperty(pExpr, EP_Skip|EP_IfNullRow) ){
       assert( pExpr->op==TK_COLLATE

@@ -1364,3 +1364,56 @@ CREATE INDEX t2340i ON t2340(y,x,z);
 SELECT w, x, z FROM t2340
  WHERE y=1 AND (x,z) IN (SELECT c,a FROM t2200a);
 .check 2|1|a
+
+# https://sqlite.org/bugs/forumpost/26213fdfb9
+#
+# The USING column of a FULL JOIN must not acquire REAL affinity from
+# the left-hand table when read back through a non-flattened subquery.
+.testcase 2400
+CREATE TABLE t2400a(a REAL);
+CREATE TABLE t2400b(a);
+INSERT INTO t2400b VALUES(9007199254740993);
+SELECT a FROM t2400a FULL JOIN t2400b USING(a);
+.check 9007199254740993
+
+.testcase 2410
+SELECT a FROM (SELECT DISTINCT a FROM t2400a FULL JOIN t2400b USING(a));
+.check 9007199254740993
+
+.testcase 2420
+WITH c(x) AS MATERIALIZED (SELECT a FROM t2400a FULL JOIN t2400b USING(a))
+SELECT x, typeof(x) FROM c;
+.check 9007199254740993|integer
+
+.testcase 2430
+CREATE TABLE t2430 AS SELECT a FROM t2400a FULL JOIN t2400b USING(a);
+SELECT a, typeof(a) FROM t2430;
+.check 9007199254740993|integer
+
+# USING column read back through a non-flattened subquery. A value from
+# the REAL left-hand table is REAL, values from the right-hand table keep
+# their original type.
+.testcase 2440
+CREATE TABLE t2440a(a REAL);
+CREATE TABLE t2440b(a);
+INSERT INTO t2440a VALUES(1);
+INSERT INTO t2440b VALUES(2), (9007199254740993);
+SELECT a, typeof(a) FROM (SELECT DISTINCT a FROM t2440a FULL JOIN t2440b USING(a));
+.check <<END
+1.0|real
+2|integer
+9007199254740993|integer
+END
+
+# Comparing the USING column with text still finds the matching rows.
+.testcase 2450
+SELECT a FROM t2440a FULL JOIN t2440b USING(a) WHERE a='2';
+.check 2
+
+.testcase 2460
+SELECT a FROM t2440a FULL JOIN t2440b USING(a) WHERE a='9007199254740993';
+.check 9007199254740993
+
+.testcase 2470
+SELECT a FROM t2440a FULL JOIN t2440b USING(a) WHERE a='1';
+.check 1.0
