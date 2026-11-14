@@ -342,4 +342,16 @@ do_execsql_test 10.2 {
   SELECT pageno, pgoffset FROM dbstat
 } {1 0  2 1024  3 2048  4 3072  5 4096}
 
+# Bug 2026-11-04T00:51:37Z sqlite.org/bugs/forumpost/da8670f547
+#
+reset_db
+do_execsql_test 11.0 {
+  PRAGMA page_size=65536;
+  CREATE TABLE t1(x);
+}
+register_dbstat_vtab db
+do_execsql_test 11.1 {
+  SELECT unused>65000, pgsize FROM dbstat WHERE name='t1';
+} {1 65536}
+
 finish_test
