@@ -5,7 +5,7 @@
 
   ./c-pp -I. -I./src -Dsrcdir=./src -o libcmpp.c ./tool/libcmpp.c-pp.c
 
-  with libcmpp 2.0.x 5b35e14cbfc8ad5202f92e74c5722848594f4321d4db824286a0c99587919ff4 @ 2026-11-14 10:01:36.163 UTC
+  with libcmpp 2.0.x 8d8c04a3fafae2f13182be91e517a5a7d0a2d93da3232d7b0fbaeaff2f2e5b09 @ 2026-11-14 20:55:04.664 UTC
 */
 #if !defined(NET_WANDERINGHORSE_LIBCMPP_C_INCLUDED)
 #define NET_WANDERINGHORSE_LIBCMPP_C_INCLUDED
@@ -20,13 +20,13 @@
 
   ./c-pp -I. -I./src -Dsrcdir=./src -o libcmpp.h ./tool/libcmpp.c-pp.h
 
-  with libcmpp 2.0.x 5b35e14cbfc8ad5202f92e74c5722848594f4321d4db824286a0c99587919ff4 @ 2026-11-14 10:01:36.163 UTC
+  with libcmpp 2.0.x 8d8c04a3fafae2f13182be91e517a5a7d0a2d93da3232d7b0fbaeaff2f2e5b09 @ 2026-11-14 20:55:04.664 UTC
 */
 #define CMPP_PACKAGE_NAME "libcmpp"
 #define CMPP_LIB_VERSION "2.0.x"
-#define CMPP_LIB_VERSION_HASH "5b35e14cbfc8ad5202f92e74c5722848594f4321d4db824286a0c99587919ff4"
-#define CMPP_LIB_VERSION_TIMESTAMP "2026-11-14 10:01:36.163 UTC"
-#define CMPP_LIB_CONFIG_TIMESTAMP "2026-11-14 13:15 GMT"
+#define CMPP_LIB_VERSION_HASH "8d8c04a3fafae2f13182be91e517a5a7d0a2d93da3232d7b0fbaeaff2f2e5b09"
+#define CMPP_LIB_VERSION_TIMESTAMP "2026-11-14 20:55:04.664 UTC"
+#define CMPP_LIB_CONFIG_TIMESTAMP "2026-11-14 22:23 GMT"
 #define CMPP_VERSION CMPP_LIB_VERSION " " CMPP_LIB_VERSION_HASH " @ " CMPP_LIB_VERSION_TIMESTAMP
 #define CMPP_PLATFORM_EXT_DLL ".so"
 #define CMPP_MODULE_PATH ".:/usr/local/lib/cmpp"
@@ -1703,6 +1703,13 @@ CMPP_EXPORT void cmpp_b_unescape(cmpp_b * b);
 CMPP_EXPORT bool cmpp_b_chomp(cmpp_b * b);
 
 /**
+   Trims leading and trailing spaces and newlines from b in place.
+   Adjusts b->n appropriately and NUL-terminates b if it adjusts
+   anything. This is a no-op if !b->n.
+*/
+CMPP_EXPORT void cmpp_b_trim(cmpp_b * b);
+
+/**
    Counts the number of newlines between [zBegin,zPos).  zBegin must
    be <= zEnd. zPos must be >= zBegin and <= zEnd. This function may
    assert() that the preconditions are met.
@@ -2528,10 +2535,10 @@ struct cmpp_arg {
      "3".
 
      In non-cmpp_itch invocations of cmpp_f() this is currently always
-     0 but The Plan is to eventually offer the ability for directives
-     to opt-in to interpolations which most directives already
-     currently use. That would save significant amounts of code for
-     some directives.
+     0. When Itch invokes a directive which has the
+     cmpp_f_F_ITCH_CALLABLE flag, this is set, and
+     cmpp_arg_interpolate() uses it in place of its own
+     interpolation rules.
 
      This buffer is owned by this object but the very simple cmpp_arg
      lifetime model makes it perfectly legal do one of the following
@@ -2671,7 +2678,10 @@ enum cmpp_f_e {
        back into the original source bytes, backslash-escaped newlines
        and all.
   */
-  cmpp_f_F_ARGS_V4        = 0x40,
+  cmpp_f_F_ARGS_V4        = 0x04
+  /* This was 0x40 until 2026-11-14, colliding with
+     cmpp_f_F_ENFORCE_ARITY. That went unnoticed because all built-in
+     directives have an arity of -1. */,
 
   /**
      Indicates that the cmpp_f() should not be available if the cmpp
@@ -3698,11 +3708,13 @@ enum cmpp_arg_interpolate_e {
    */
   cmpp_arg_interpolate_UNESCAPE      = 0x10,
 #endif
-#if 0
-  /* Going to need this for porting the expression
-     builder from itch to the core. */
+  /**
+     If set, arguments with a ttype of cmpp_tt_GroupParen are
+     evaluated as expressions (see README.md's "Expression Rules")
+     and their integer result is emitted in decimal form. Without
+     this flag, their inner text is emitted as-is.
+  */
   cmpp_arg_interpolate_PARENS_EXPR    = 0x20,
-#endif
 
   /**
      TODO? cmpp_arg_interpolate_UNESCAPE to run it through
@@ -3722,9 +3734,15 @@ enum cmpp_arg_interpolate_e {
 
    Returns 0 on success and all that.
 
-   If b is NULL then: (A) if arg->interp is not NULL then it is reused
-   as the target else (B) return CMPP_RC_MISUSE and update's pp's
-   error state with a description of the problem.
+   If arg->interp is not NULL then the argument has already been
+   interpolated by the context which set it up (e.g. a cmpp_itch
+   interpreter calling a cmpp_f_F_ITCH_CALLABLE directive). In that
+   case the contents of arg->interp are appended to b as-is, the
+   flags are ignored, and a NULL b is a no-op.
+
+   If b is NULL and arg->interp is NULL then this returns
+   CMPP_RC_MISUSE and updates pp's error state with a description of
+   the problem.
 
    See: cmpp_atpol_get(), cmpp_atpol_set()
 
@@ -5024,7 +5042,6 @@ CMPP_EXPORT bool cmpp_is_int64(unsigned char const *z, unsigned n,
 CMPP_EXPORT bool cmpp_json_valid(cmpp *pp, unsigned char const *z,
                                  cmpp_strlen_t n, int flags);
 
-
 /**
    Returns true if [z,z+n) begins with '[', ends with ']', and
    cmpp_json_valid() for the same range returns true. i.e. if it's a
@@ -5081,24 +5098,141 @@ CMPP_EXPORT int cmpp_json_canonicalize(cmpp *pp, unsigned char const *z,
                                        bool append);
 
 /**
-   Appends some form of [z,z+n) to str, using strlen() to calculate n
-   if n is negative:
-
-   - 0==n: append "" (and empty JSON string).
-
-   - cmpp_json_valid(z,n) is true: append the bytes as-is.
-
-   - Else append n bytes of z as a JSON-format string using
-     sqlite3_str_appendf()'s `%J` formatter.
-
-   This returns void because that's how sqlite3_str's APIs work.  It
-   will only fail if str gets "too big" (the limits of which varies by
-   str's source but all of which are arguably out of scope for
-   cmpp-sized inputs and outputs).
+   Container types for the cmpp_json_...() APIs. The values match
+   the mode argument of cmpp_json_key_to_path().
 */
-void cmpp_str_json_append(cmpp *pp, sqlite3_str * str,
-                          unsigned char const * z,
-                          cmpp_strlen_t n);
+enum cmpp_json_e {
+  /** A JSON object. */
+  cmpp_json_OBJECT = 0,
+  /** A JSON array, a.k.a. list. */
+  cmpp_json_LIST = 1
+};
+
+/*
+  The following cmpp_json_...() APIs work on lists and objects held
+  as JSON text. All of them share these conventions:
+
+  - type is one of the cmpp_json_e values.
+
+  - If n (or a similar length argument) is negative, strlen() is used
+    to calculate it.
+
+  - Input containers may be JSON or JSON5. Output containers are
+    canonical JSON.
+
+  - Values are stored in containers using the following rules, so
+    that they come back out exactly as they went in (with the
+    caveats noted):
+
+    - Text which starts with [ or { and is valid JSON or JSON5 is
+      stored as a container (so containers can nest). It comes back
+      out as canonical JSON.
+
+    - Text which is an integer in canonical form (no leading zeros or
+      +, within the int64 range) is stored as a JSON integer.
+
+    - Everything else, including the empty string and the words
+      null, true and false, is stored as a JSON string.
+
+  - A JSON null which is already in a container comes back out as an
+    empty string.
+
+  - Errors in the inputs (e.g. the container is not of the requested
+    type, is malformed, or a key is not a legal JSON path) are
+    reported via err, if it is not NULL, else via pp. Allocation and
+    db-level errors are always reported via pp. Callers which pass a
+    non-NULL err can treat errors reported there as recoverable.
+    err is not cleared on success.
+
+  - They return 0 on success, else the code of the reported error.
+
+  - They are no-ops, returning pp's error code, if pp has error state
+    when they are called.
+*/
+
+/**
+   Returns 0 if [z,z+n) is a container of the given type, else
+   reports a CMPP_RC_TYPE error.
+*/
+CMPP_EXPORT int cmpp_json_check(cmpp *pp, cmpp_errinfo *err, int type,
+                                unsigned char const *z, cmpp_strlen_t n);
+
+/**
+   Sets *pOut to the number of entries in container [z,z+n).
+*/
+CMPP_EXPORT int cmpp_json_length(cmpp *pp, cmpp_errinfo *err, int type,
+                                 unsigned char const *z, cmpp_strlen_t n,
+                                 int64_t *pOut);
+
+/**
+   Replaces out's contents with the value at the given key of
+   container [z,z+n). The key is converted to a JSON path by
+   cmpp_json_key_to_path(). A missing entry results in an empty
+   value. z may be owned by out.
+*/
+CMPP_EXPORT int cmpp_json_get(cmpp *pp, cmpp_errinfo *err, int type,
+                              unsigned char const *z, cmpp_strlen_t n,
+                              unsigned char const *zKey,
+                              cmpp_strlen_t nKey,
+                              cmpp_b *out);
+
+/**
+   Sets the given key of container c, which is modified in place, to
+   [zVal,zVal+nVal). The key is converted to a JSON path by
+   cmpp_json_key_to_path(), and the key "$" is an error. For lists,
+   the key "#" appends.
+
+   Caveat: setting a list index past its end is a silent no-op
+   (inherited from SQLite's json_set()).
+*/
+CMPP_EXPORT int cmpp_json_set(cmpp *pp, cmpp_errinfo *err, int type,
+                              cmpp_b *c,
+                              unsigned char const *zKey,
+                              cmpp_strlen_t nKey,
+                              unsigned char const *zVal,
+                              cmpp_strlen_t nVal);
+
+/**
+   Appends [zVal,zVal+nVal) to list, which is modified in place.
+*/
+CMPP_EXPORT int cmpp_json_append(cmpp *pp, cmpp_errinfo *err,
+                                 cmpp_b *list,
+                                 unsigned char const *zVal,
+                                 cmpp_strlen_t nVal);
+
+/**
+   Replaces out's contents with the entries [iFrom,iTo) of list
+   [z,z+n). If iTo is negative, the slice extends to the end of the
+   list. A negative iFrom is a CMPP_RC_RANGE error. z may be owned by
+   out.
+*/
+CMPP_EXPORT int cmpp_json_slice(cmpp *pp, cmpp_errinfo *err,
+                                unsigned char const *z, cmpp_strlen_t n,
+                                int64_t iFrom, int64_t iTo,
+                                cmpp_b *out);
+
+/**
+   Callback type for cmpp_json_each(). It gets the key (for lists,
+   the index) and value of one container entry. The bytes are only
+   valid for the duration of the call. A non-0 return value stops
+   the iteration and is returned from cmpp_json_each().
+*/
+typedef int (*cmpp_json_each_f)(void *state,
+                                unsigned char const *zKey,
+                                cmpp_size_t nKey,
+                                unsigned char const *zVal,
+                                cmpp_size_t nVal);
+
+/**
+   Calls callback(state,...) for each entry of container [z,z+n), in
+   order of their keys. Returns 0 on success, else the code of a
+   reported error, else the callback's non-0 result (which is not
+   reported anywhere: it's the callback's job to report errors). The
+   callback may recurse into this function.
+*/
+CMPP_EXPORT int cmpp_json_each(cmpp *pp, cmpp_errinfo *err, int type,
+                               unsigned char const *z, cmpp_strlen_t n,
+                               cmpp_json_each_f callback, void *state);
 
 /**
    A proxy for sqlite3_prepare_v2() which uses pp's database, supports
@@ -6133,6 +6267,30 @@ struct cmpp__pimpl {
 #define CMPP__SAVEPOINT_NAME "_cmpp_"
 
     /**
+       An SQL expression which converts the text (or NULL) value P
+       (e.g. "?3") into the value to store in a JSON list or
+       object. This is the one place which defines that rule:
+
+       - NULL (which cmpp_stmt_bind_textx() uses for empty strings)
+         becomes an empty JSON string.
+       - Text which starts with [ or { and is valid JSON or JSON5 is
+         inserted as a (canonicalized) JSON container.
+       - Text which is an integer in canonical form (no leading
+         zeros, no +, within int64 range) is inserted as a JSON
+         integer.
+       - Everything else is inserted as a JSON string, so that it
+         round-trips exactly. e.g. null, true, 1e3, Infinity, 007
+         and "x" (with its quotes) are all strings.
+    */
+#define CMPP__JSON_VALUE(P)                                   \
+      "CASE WHEN " P " IS NULL THEN ''"                         \
+      " WHEN substr(" P ",1,1) IN ('[','{')"                    \
+      " AND json_valid(" P ",2) THEN json(" P ")"               \
+      " WHEN CAST(CAST(" P " AS INTEGER) AS TEXT)=" P           \
+      " THEN CAST(" P " AS INTEGER)"                            \
+      " ELSE " P " END"
+
+    /**
        One entry for each distinct query used by cmpp: E(X,SQL), where
        X is the member's name and SQL is its SQL.
     */
@@ -6251,12 +6409,24 @@ struct cmpp__pimpl {
       "SELECT json_valid(?1,?2)")                      \
     E(jsonSelf,                                        \
       "SELECT json(?1)") /* a.k.a. ?1->'?' */          \
-    /*E(jsonOrQuoted,                                  \
-      "SELECT if("                                     \
-      "json_valid(?1,coalesce(?2,1)),"                 \
-      "json(?1),"                                      \
-      "?1)"                                            \
-    )*/                                                \
+    E(jsonGet,                                         \
+      "SELECT ?1->>?2")                                \
+    E(jsonLength,                                      \
+      "SELECT count(*) FROM json_each(?1)")            \
+    E(jsonSet,                                         \
+      "SELECT json_set(?1,?2,"                         \
+      CMPP__JSON_VALUE("?3") ")")                      \
+    E(jsonAppend,                                      \
+      "SELECT json_insert(?1,'$[#]',"                  \
+      CMPP__JSON_VALUE("?2") ")")                      \
+    E(jsonSlice,                                       \
+      "SELECT json_group_array(value)"                 \
+      " FROM json_each(?1) WHERE"                      \
+      " cast(key as integer) BETWEEN ?2 AND (?3-1)")   \
+    E(jsonSliceFrom,                                   \
+      "SELECT json_group_array(value)"                 \
+      " FROM json_each(?1) WHERE"                      \
+      " cast(key as integer) >= ?2")                   \
 
 #define E(N,S) sqlite3_stmt * N;
     CmppStmt_map(E)
@@ -6562,28 +6732,24 @@ CMPP_PRIVATE int cmpp__bind_arg(cmpp *pp, sqlite3_stmt * q,
                                 int bindNdx, cmpp_arg const * aVal);
 
 /**
-   Helper for #query's bind X part, where aGroup is that X.
+   Helper for #query's bind X part, where aGroup is that X:
 
-   A wrapper around cmpp__bind_arg(). Requires aGroup->ttype to be
-   either cmpp_TT_GroupBrace or cmpp_TT_GroupSquiggly and to have
-   non-empty content. cmpp_TT_GroupBrace treats it as a list of values
-   to bind. cmpp_TT_GroupSquiggly expects sets of 3 tokens per stmt
-   column in one of these forms:
+   - {:name -> value ...}: binds by name. The names include their
+     ':', '$', or '@' prefix. Values are resolved as for
+     cmpp__bind_arg().
 
-   :bindName -> value
-   $bindName -> value
+   - {value ...}: binds by index. Each value is passed to
+     cmpp__bind_arg().
 
-   Each LHS refers to a same-named binding in q's SQL, including the
-   ':' or '$' prefix. (SQLite supports an '@' prefix but we did not
-   historically allow it here to avoid confusion with the now-defunct
-   cmpp_TT_StringAt tokens.)
+   - Anything else is resolved via cmpp_arg_interpolate() and must
+     produce a JSON list (bound by index) or object (bound by name,
+     with keys lacking a ':', '$', or '@' prefix getting a '$'
+     prefix). As a migration aid for the pre-2026-11-14 bind [a b c]
+     syntax, a [...] whose first word is not a directive name is
+     reported as an error which suggests {...}.
 
-   Each bound value is passed to cmpp__bind_arg() for processing.
-
-   On success, each aGroup entry is bound to q. On error q's state is
+   On success, each entry is bound to q. On error q's state is
    unspecified. Returns ppCode.
-
-   See cmpp__bind_arg() for notes about the bind data type.
 */
 CMPP_PRIVATE int cmpp__bind_group(cmpp *pp, sqlite3_stmt * const q,
                                   cmpp_arg const * const aGroup);
@@ -11127,137 +11293,6 @@ CMPP__EXPORT(bool, cmpp_simple_truth)(unsigned char const *z,
   }
 }
 
-CMPP__EXPORT(bool, cmpp_json_valid)(cmpp *pp, unsigned char const *z,
-                                    cmpp_strlen_t n, int flags){
-  bool rv = false;
-  n = cmpp__strlenu(z, n);
-  if( n && flags>0 && flags<16 ){
-    /* ^^^^ json_valid() is picky about its flags argument.  We skip
-       processing for that case because it can put pp into an error
-       state which the caller is not likely to check for because who
-       would after such an innocuous function? */
-    sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_jsonValid, false);
-    if( q ){
-      cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
-      cmpp_stmt_bind_int(pp, q, 2, flags);
-      if( SQLITE_ROW==cmpp_stmt_step(pp, q, false) ){
-        rv = 0!=sqlite3_column_int(q, 0);
-      }
-      cmpp_stmt_reset(pp, q);
-    }
-  }
-  return rv;
-}
-
-static inline bool cmpp__json_is_container(cmpp * const pp,
-                                           char opener,
-                                           char closer,
-                                           unsigned char const * const z,
-                                           cmpp_strlen_t n, bool allowJson5){
-  n = cmpp__strlenu(z, n);
-  return (
-    n>1
-    && z[0]==(unsigned char)opener
-    && z[n-1]==(unsigned char)closer
-  ) ? (
-    n==2
-    ? true
-    : cmpp_json_valid(pp, z, n, allowJson5 ? 3 : 1)
-  ) : false;
-}
-
-CMPP__EXPORT(bool,cmpp_json_is_list)(cmpp *pp,
-                                     unsigned char const * const z,
-                                     cmpp_strlen_t n, bool allowJson5){
-  return cmpp__json_is_container(pp, '[', ']', z, n, allowJson5);
-}
-
-CMPP__EXPORT(bool,cmpp_json_is_object)(cmpp *pp,
-                                       unsigned char const * const z,
-                                       cmpp_strlen_t n, bool allowJson5){
-  return cmpp__json_is_container(pp, '{', '}', z, n, allowJson5);
-}
-
-CMPP__EXPORT(int, cmpp_json_key_to_path)(cmpp *pp, int mode,
-                                         unsigned char const *z,
-                                         cmpp_strlen_t n, cmpp_b * bKey){
-  if( ppCode ) return ppCode;
-  n = cmpp__strlenu(z, n);
-  if( !n ){
-    return cmpp_b_append4(pp, bKey, mode
-                          ? "$[]"
-                          : "$.\0"/*illegal, but let SQLite report that*/,
-                          3);
-  }
-  if( '$'==z[0] && (1==n || (mode ? '['==z[1] : '.'==z[1])) ){
-    return cmpp_b_append4(pp, bKey, z, n);
-  }
-  /* This does not superficially look like a JSON path prefix, make it
-     look like one. */
-  unsigned char const * zz = 0;
-  cmpp_size_t nn = 0;
-  if( '$'==z[0] && '.'==z[1] ){
-    zz = z+2;
-    nn = n - 2;
-  }else{
-    zz = z;
-    nn = n;
-  }
-  cmpp_b_append(bKey, mode ? "$[" : "$.", 2);
-  cmpp_b_append(bKey, zz, nn);
-  if( mode ) cmpp_b_append_ch(bKey, ']');
-  if( bKey->errCode ) cmpp_err(pp, bKey->errCode, 0, 0);
-  return ppCode;
-}
-
-CMPP__EXPORT(void,cmpp_str_json_append)(cmpp *pp, sqlite3_str * str,
-                                        unsigned char const * z,
-                                        cmpp_strlen_t n){
-  n = cmpp__strlenu(z, n);
-  if( !n ){
-    sqlite3_str_append(str, "\"\"", 2);
-    return;
-  }
-  int64_t j;
-  if( cmpp_is_int64(z, n, &j) ){
-    sqlite3_str_appendf(str, "%lld", j);
-  }else{
-    /* If it's JSON then append it as-is, don't escape it.  We
-       "could" handle ints here but it's much faster to do them
-       above. */
-    //g_warn("arg %d: %.*s", (int)i, (int)n, z);
-    if( cmpp_json_valid(pp, z, n, 1) ){
-      /* Using any json_valid() flags which allow json5 will end
-         up generating JSON5 output, which we don't want here
-         because it would probably give us headaches everywhere
-         else. e.g. [list new a b c] would result in [a, b, c]
-         instead of ["a", "b", "c"]. */
-      //g_warn("is-valid 1: %.*s", (int)n, z);
-      sqlite3_str_append(str, (char *)z, (int)n);
-    }else{
-      //g_warn("is-valid 0: %.*s", (int)n, z);
-      sqlite3_str_appendf(str, "%.*J", (int)n, z);
-    }
-  }
-}
-
-CMPP__EXPORT(int, cmpp_json_canonicalize)(cmpp *pp, unsigned char const *z,
-                                          cmpp_size_t n, cmpp_b *b,
-                                          bool append){
-  sqlite3_stmt * const q =
-    cmpp__stmt(pp, CmppStmt_jsonSelf, false);
-  if( !q ) return ppCode;
-  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
-  if( SQLITE_ROW==cmpp_stmt_step(pp, q, false) ){
-    z = sqlite3_column_blob(q,0);
-    n = sqlite3_column_bytes(q,0);
-    //g_warn("canon=%.*s", (int)n, z);
-    cmpp_b_append4(pp, append ? b : cmpp_b_reuse(b), z, n);
-  }
-  cmpp_stmt_reset(pp, q);
-  return ppCode;
-}
-
 void cmpp__dump_defines(cmpp *pp, cmpp_FILE * fp, int bIndent){
   sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_defSelAll, false);
   if( q ){
@@ -12337,6 +12372,20 @@ CMPP__EXPORT(int,cmpp_b_cmp)(cmpp_b const * b, void const *p,
 }
 
 
+/**
+   Trims leading and trailing spaces and newlines from b in place.
+*/
+CMPP__EXPORT(void,cmpp_b_trim)(cmpp_b * const b){
+  if( !b->n ) return;
+  unsigned char const * z = b->z;
+  unsigned char const * zEnd = b->z + b->n;
+  cmpp_skip_snl(&z, zEnd);
+  cmpp_skip_snl_trailing(z, &zEnd);
+  b->n = (cmpp_size_t)(zEnd - z);
+  if( b->n && z!=b->z ) memmove(b->z, z, b->n);
+  b->z[b->n] = 0;
+}
+
 #undef PC
 #undef WS
 #undef ND
@@ -13345,7 +13394,10 @@ static void cmpp_f_define(cmpp_f_args const * args){
               }
             }
             if( cmpp_arg_interpolate(args->pp, arg, os,
-                              cmpp_arg_interpolate_BRACE_CALL) ) break;
+                                     cmpp_arg_interpolate_BRACE_CALL
+                                     | cmpp_arg_interpolate_PARENS_EXPR) ){
+              break;
+            }
             cmpp_b * const which = (ba && ba->n) ? ba : os;
             if( which==ba && os->n ){
               if( ba->n ) cmpp_b_append4(dx->pp, ba, aAppend->z, aAppend->n);
@@ -13354,7 +13406,13 @@ static void cmpp_f_define(cmpp_f_args const * args){
             int n = nChomp;
             while( n-- && cmpp_b_chomp(which) ){}
             cmpp__define2(dx->pp, aKey->z, aKey->n, which->z, which->n,
-                          arg->ttype);
+                          /* The stored type reflects the result
+                             type, not the token type. */
+                          (cmpp_tt_GroupParen==arg->ttype)
+                          ? cmpp_tt_IntDec
+                          : ((cmpp_tt_GroupBrace==arg->ttype)
+                             ? cmpp_tt_AnyType
+                             : arg->ttype));
             if( 0 ){
               g_warn("aKey=%u z=[%.*s]\n", aKey->n, (int)aKey->n, aKey->z);
               g_warn("nExp=%u z=[%.*s]\n", which->n, (int)which->n, which->z);
@@ -13397,45 +13455,16 @@ static void cmpp_f_define(cmpp_f_args const * args){
         }
         aKey = 0;
         break;
-      case cmpp_tt_GroupParen:{
+      case cmpp_tt_GroupParen:
+      case cmpp_tt_GroupBrace:
         if( !aKey ){
           cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                          "(...) is not permitted as a key.");
+                       "%s is not permitted as a key.",
+                       cmpp_tt_GroupParen==arg->ttype ? "(...)" : "[...]");
           break;
         }
-        checkIsDefined(aKey);
-        int64_t d = 0;
-        if( 0==cmpp__expr_eval_paren(args->pp, arg, &d) ){
-          char exprBuf[32] = {0};
-          cmpp_size_t nVal =
-            (cmpp_size_t)snprintf(&exprBuf[0],
-                                  sizeof(exprBuf), "%" PRIi64, d);
-          assert(nVal>0);
-          cmpp__define2(dx->pp, aKey->z, aKey->n,
-                        ustr_c(&exprBuf[0]), nVal,
-                        cmpp_tt_IntDec);
-        }
-        break;
-      }
-      case cmpp_tt_GroupBrace:{
-        if( !aKey ){
-          cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                          "[...] is not permitted as a key.");
-          break;
-        }
-        checkIsDefined(aKey);
-        cmpp_b * const b = cmpp_b_borrow(dx->pp);
-        if( b && 0==cmpp_call_str(dx->pp, arg->z, arg->n, b, 0) ){
-          int n = nChomp;
-          while( n-- && cmpp_b_chomp(b) ){}
-          cmpp__define2(dx->pp, aKey->z, aKey->n,
-                        b->z, b->n, cmpp_tt_AnyType);
-        }
-        cmpp_b_return(dx->pp, b);
-        break;
-      }
+        goto handle_value;
       default:
-        // TODO: treat (...) as an expression
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "Unhandled arg type %s: %s",
                         cmpp__tt_cstr2(arg->ttype, true), arg->z);
@@ -13476,30 +13505,25 @@ static void cmpp_f_undef(cmpp_f_args const * args){
                 "Expecting one or more arguments");
     return;
   }
-  cmpp_size_t n = 0;
-  char const * z;
+  cmpp_b * const b = cmpp_b_borrow(args->pp);
+  if( !b ) return;
   for( unsigned i = 1; i < args->argc && 0==dxppCode; ++i ){
     cmpp_arg const * arg = args->argv[i];
-    z = cmpp_arg_cstr2(arg, &n);
-    if( 0 ){
-      g_stderr("  %s: %s %p n=%d %.*s\n", args->d->name.z,
-               cmpp__tt_cstr2(arg->ttype, true), arg->z,
-               (int)arg->n, (int)arg->n, arg->z);
-    }
-    if( cmpp_tt_Word==arg->ttype ){
-#if 0
-      /* Too strict? */
-      if( 0==cmpp__legal_key_check(dx->pp, z, n, false) ) {
-        cmpp_undefine(dx->pp, (char const *)z);
-      }
-#else
-      cmpp_undefine(dx->pp, z, n);
-#endif
-    }else{
+    if( !arg->interp && cmpp_tt_Word!=arg->ttype ){
+      /* Preprocessor input requires a define name, not some other
+         token type. Callers which pre-interpolated (Itch) may pass
+         any token type. */
       cmpp_errf(dx->pp, CMPP_RC_MISUSE, "Invalid arg for %s: %s",
                 args->d->name.z, arg->z);
+      break;
+    }
+    if( 0==cmpp_arg_interpolate(args->pp, arg, cmpp_b_reuse(b),
+                                cmpp_arg_interpolate_NO_DEFINES)
+        && b->n ){
+      cmpp_undefine(dx->pp, (char const *)b->z, b->n);
     }
   }
+  cmpp_b_return(args->pp, b);
 }
 
 /* Impl. for #eval. */
@@ -14777,11 +14801,8 @@ int cmpp__consume_sql_args(cmpp *pp, cmpp_f_args const *args,
     cmpp_arg const *pN = nextArg;
     if( pN && cmpp_arg_equals_c(pN, "bind") ){
       pN = nextArg;
-      if( !pN || (
-            cmpp_tt_GroupSquiggly!=pN->ttype
-            && cmpp_tt_GroupBrace!=pN->ttype
-          ) ){
-        return serr("Expecting {...} or [...] after 'bind'.");
+      if( !pN ){
+        return serr("Expecting an argument after 'bind'.");
       }
       *pBind = pN;
     }else{
@@ -14820,42 +14841,139 @@ static int cmpp_kav_each_f_query__bind(
   return ppCode;
 }
 
+/** State for the cmpp_json_each_f() impls used by #query's bind. */
+typedef struct {
+  cmpp * pp;
+  sqlite3_stmt * q;
+  int ndx;
+  cmpp_b * bKey;
+} CmppQueryBind;
+
+/** cmpp_json_each_f() impl for binding a JSON list's entries. */
+static int cmpp__query_bind_list_f(void *state,
+                                   unsigned char const *zKey,
+                                   cmpp_size_t nKey,
+                                   unsigned char const *zVal,
+                                   cmpp_size_t nVal){
+  CmppQueryBind * const qb = state;
+  (void)zKey; (void)nKey;
+  return cmpp_stmt_bind_textn(qb->pp, qb->q, ++qb->ndx, zVal, nVal);
+}
+
+/**
+   cmpp_json_each_f() impl for binding a JSON object's entries. Keys
+   which do not start with ':', '$', or '@' get a '$' prefix, so that
+   {"a":1} binds to $a.
+*/
+static int cmpp__query_bind_obj_f(void *state,
+                                  unsigned char const *zKey,
+                                  cmpp_size_t nKey,
+                                  unsigned char const *zVal,
+                                  cmpp_size_t nVal){
+  CmppQueryBind * const qb = state;
+  cmpp * const pp = qb->pp;
+  cmpp_b * const b = cmpp_b_reuse(qb->bKey);
+  if( !nKey || (':'!=zKey[0] && '$'!=zKey[0] && '@'!=zKey[0]) ){
+    cmpp_b_append_ch(b, '$');
+  }
+  if( cmpp_b_append4(pp, b, zKey, nKey) ) return ppCode;
+  int const bindNdx =
+    sqlite3_bind_parameter_index(qb->q, (char const*)b->z);
+  if( !bindNdx ){
+    return cmpp_errf(pp, CMPP_RC_RANGE, "Invalid bind name: %s", b->z);
+  }
+  return cmpp_stmt_bind_textn(pp, qb->q, bindNdx, zVal, nVal);
+}
+
+/**
+   If aCall is a [...] whose first word is not a directive name, this
+   reports an error suggesting {...} instead, because [a b c] was the
+   bind-list syntax before [...] became a call there. Returns ppCode.
+*/
+static int cmpp__query_bind_call_check(cmpp * const pp,
+                                       cmpp_arg const * const aCall){
+  unsigned char const * z = aCall->z;
+  unsigned char const * const zEnd = z + aCall->n;
+  cmpp__delim const * const delim = cmpp__pp_delim(pp);
+  cmpp_skip_snl(&z, zEnd);
+  if( (cmpp_size_t)(zEnd-z) > delim->open.n
+      && 0==memcmp(z, delim->open.z, delim->open.n) ){
+    z += delim->open.n;
+  }
+  unsigned char const * zW = z;
+  while( zW<zEnd && !cmpp_isspace(*zW) ) ++zW;
+  char zName[128];
+  cmpp_size_t const nName = (cmpp_size_t)(zW - z);
+  if( !nName || nName>=sizeof(zName) ) return ppCode;
+  memcpy(zName, z, nName);
+  zName[nName] = 0;
+  if( !cmpp__d_search3(pp, zName, cmpp__d_search3_F_ALL) && !ppCode ){
+    cmpp_errf(pp, CMPP_RC_MISUSE,
+              "bind [%s ...] is a function call, but '%s' is not a "
+              "directive. Lists of values to bind are written as "
+              "{...}, e.g. bind {a b c}.", zName, zName);
+  }
+  return ppCode;
+}
+
 int cmpp__bind_group(cmpp * const pp, sqlite3_stmt * const q,
                      cmpp_arg const * const aGroup){
   if( ppCode ) return ppCode;
   if( cmpp_tt_GroupSquiggly==aGroup->ttype ){
-    return cmpp_kav_each(
-      pp, aGroup->z, aGroup->n,
-      cmpp_kav_each_f_query__bind, q,
-      cmpp_kav_each_F_NOT_EMPTY
-      | cmpp_kav_each_F_CALL_VAL
-      | cmpp_kav_each_F_PARENS_EXPR
-    );
-  }
-  if( cmpp_tt_GroupBrace!=aGroup->ttype ){
-    return cmpp_errf(pp, CMPP_RC_MISUSE,
-                        "Expecting {...} or [...] "
-                        "for SQL binding list.");
-  }
-  int bindNdx = 0;
-  cmpp_args args = cmpp_args_empty;
-  cmpp_args_parse(pp, &args, aGroup->z, aGroup->n, 0);
-  if( !args.argc && !ppCode ){
-    cmpp_errf(pp, CMPP_RC_RANGE,
-                 "Empty SQL bind list is not permitted.");
-    /* Keep going so we can clean up a partially-parsed args. */
-  }
-  for( cmpp_arg const * aVal = args.arg0;
-       !ppCode && aVal;
-       aVal = aVal->next ){
-    ++bindNdx;
-    if( 0 ){
-      g_warn("bind #%d %s <<%s>>", bindNdx,
-             cmpp__tt_cstr2(aVal->ttype, true), aVal->z);
+    /* {:k -> v ...} or {v1 v2 ...} */
+    cmpp_args args = cmpp_args_empty;
+    cmpp_args_parse(pp, &args, aGroup->z, aGroup->n, 0);
+    if( !args.argc && !ppCode ){
+      cmpp_errf(pp, CMPP_RC_RANGE,
+                "Empty SQL bind list is not permitted.");
+      /* Keep going so we can clean up a partially-parsed args. */
+    }else if( !ppCode
+              && args.arg0->next
+              && cmpp_tt_ThinArrowR==args.arg0->next->ttype ){
+      cmpp_args_cleanup(&args);
+      return cmpp_kav_each(
+        pp, aGroup->z, aGroup->n,
+        cmpp_kav_each_f_query__bind, q,
+        cmpp_kav_each_F_NOT_EMPTY
+        | cmpp_kav_each_F_CALL_VAL
+        | cmpp_kav_each_F_PARENS_EXPR
+      );
     }
-    cmpp__bind_arg(pp, q, bindNdx, aVal);
+    int bindNdx = 0;
+    for( cmpp_arg const * aVal = args.arg0;
+         !ppCode && aVal;
+         aVal = aVal->next ){
+      cmpp__bind_arg(pp, q, ++bindNdx, aVal);
+    }
+    cmpp_args_cleanup(&args);
+    return ppCode;
   }
-  cmpp_args_cleanup(&args);
+  /* Anything else must resolve to a JSON list or object. */
+  if( cmpp_tt_GroupBrace==aGroup->ttype
+      && cmpp__query_bind_call_check(pp, aGroup) ){
+    return ppCode;
+  }
+  cmpp_b * const b = cmpp_b_borrow(pp);
+  cmpp_b * const bKey = b ? cmpp_b_borrow(pp) : 0;
+  if( bKey
+      && 0==cmpp_arg_interpolate(pp, aGroup, b,
+                                 cmpp_arg_interpolate_BRACE_CALL) ){
+    CmppQueryBind qb = { .pp = pp, .q = q, .ndx = 0, .bKey = bKey };
+    if( cmpp_json_is_list(pp, b->z, b->n, true) ){
+      cmpp_json_each(pp, NULL, cmpp_json_LIST, b->z, b->n,
+                     cmpp__query_bind_list_f, &qb);
+    }else if( cmpp_json_is_object(pp, b->z, b->n, true) ){
+      cmpp_json_each(pp, NULL, cmpp_json_OBJECT, b->z, b->n,
+                     cmpp__query_bind_obj_f, &qb);
+    }else if( !ppCode ){
+      cmpp_errf(pp, CMPP_RC_TYPE,
+                "The bind value must be a {...} list, or resolve to a "
+                "JSON list or object, but got: %.*s",
+                (int)(b->n>40 ? 40 : b->n), b->z);
+    }
+  }
+  cmpp_b_return(pp, bKey);
+  cmpp_b_return(pp, b);
   return ppCode;
 }
 
@@ -15459,6 +15577,7 @@ end:
 }
 
 
+
 /**
    If zName matches one of the delayed-load directives, that directive
    is registered and 0 is returned. CMPP_RC_NO_DIRECTIVE is returned if
@@ -15481,6 +15600,7 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
 #define F_A_V4 CF(ARGS_V4)
 #define F_UNSAFE cmpp_f_F_NOT_IN_SAFEMODE
 #define F_NC cmpp_f_F_NO_CALL
+#  define F_ITCH 0
 #define F_CALL cmpp_f_F_CALL_ONLY
 #define DREG0(SYMNAME, NAME, OPENER, OFLAGS, CLOSER, CFLAGS) \
   cmpp_d_reg SYMNAME = {  \
@@ -15552,11 +15672,13 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
 
   M_IF_CORE("@",                cmpp_f_at,           F_A_V4,
                                 cmpp_f_dangling_closer, 0);
-  M_IF_CORE("arg",              cmpp_f_arg,          F_A_V4, 0, 0);
+  M_IF_CORE("arg",              cmpp_f_arg,          F_A_V4 | F_ITCH,
+                                0, 0);
   M_IF_CORE("assert",           cmpp_f_expr,         F_A_V4, 0, 0);
   M_IF_CORE("base64",           cmpp_f_base64,       F_A_V4,
                                 cmpp_f_dangling_closer, 0);
-  M_IF_CORE("cmp",              cmpp_f_cmp,          F_A_V4, 0, 0);
+  M_IF_CORE("cmp",              cmpp_f_cmp,          F_A_V4 | F_ITCH,
+                                0, 0);
   M_IF_CORE("define",           cmpp_f_define,       F_A_V4,
                                 cmpp_f_dangling_closer, 0);
   M_IF_CORE("delimiter",        cmpp_f_delimiter,    F_A_V4,
@@ -15567,20 +15689,23 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
   M_IF_CORE("expand",           cmpp_f_expand,       F_A_V4,
                                 cmpp_f_dangling_closer, 0);
   M_IF_CORE("expr",             cmpp_f_expr,         F_A_V4, 0, 0);
-  M_IF_CORE("join",             cmpp_f_join,         F_A_V4, 0, 0);
+  M_IF_CORE("join",             cmpp_f_join,         F_A_V4 | F_ITCH,
+                                0, 0);
   M_IF_CORE("once",             cmpp_f_once,
                                 F_A_V4 | F_NC | CF(BLOCK_OPEN),
                                 cmpp_f_dangling_closer, CF(BLOCK_CLOSE));
   M_IF_CORE("pragma",           cmpp_f_pragma,       F_A_V4, 0, 0);
   M_IF_CORE("savepoint",        cmpp_f_savepoint,    F_A_V4, 0, 0);
   M_IF_CORE("stderr",           cmpp_f_stderr,       F_A_RAW, 0, 0);
-  M_IF_CORE("sum",              cmpp_f_sum,          F_A_V4, 0, 0);
-  M_IF_CORE("undef",            cmpp_f_undef,        F_A_V4, 0, 0);
+  M_IF_CORE("sum",              cmpp_f_sum,          F_A_V4 | F_ITCH,
+                                0, 0);
+  M_IF_CORE("undef",            cmpp_f_undef,        F_A_V4 | F_ITCH,
+                                0, 0);
   M_IF_CORE("undefined-policy", cmpp_f_undef_policy, F_A_V4, 0, 0);
   M_IF_CORE("//",               cmpp_f_noop,         F_A_V4 | F_A_RAW,
                                 0, 0);
   M_IF_CORE("file",             cmpp_f_file,
-                                F_A_V4 | F_UNSAFE, 0, 0);
+                                F_A_V4 | F_UNSAFE | F_ITCH, 0, 0);
 
 #undef M_IF_CORE
 
@@ -15597,7 +15722,7 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
 
 #ifndef CMPP_OMIT_D_INCLUDE
   M_IF_FLAGGED("include", cmpp_ctor_F_NO_INCLUDE,
-               cmpp_f_include, F_A_V4 | F_UNSAFE,
+               cmpp_f_include, F_A_V4 | F_UNSAFE | F_ITCH,
                0, 0);
 #endif
 
@@ -15654,6 +15779,8 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
 #endif /*CMPP_OMIT_D_DB*/
 
 
+
+
 #undef M_IF_FLAGGED
 
 #ifndef NDEBUG
@@ -15670,6 +15797,7 @@ end:
 #undef F_A_V4
 #undef F_UNSAFE
 #undef F_NC
+#undef F_ITCH
 #undef F_CALL
 #undef CF
 #undef M
@@ -16295,27 +16423,52 @@ CMPP__EXPORT(int,cmpp_arg_parse)(
   return ppCode;
 }
 
+/**
+   Appends word arg to ob, expanding each [...] in it via
+   cmpp_call_str(), as in Tcl: a[b c]d is "a", the output of calling
+   "b c", then "d". Returns ppCode.
+*/
+static int cmpp__word_with_calls(cmpp * const pp, cmpp_arg const * const arg,
+                                 cmpp_b * const ob){
+  unsigned char const * z = arg->z;
+  unsigned char const * const zEnd = z + arg->n;
+  unsigned char const * zLit = z /* start of pending literal text */;
+  while( z<zEnd && !ppCode ){
+    if( '\\'==*z && z+1<zEnd ){
+      z += 2;
+      continue;
+    }else if( '['!=*z ){
+      ++z;
+      continue;
+    }
+    unsigned char const * zClose = z;
+    if( cmpp__find_closing(0, &zClose, zEnd) ){
+      return cmpp_errf(pp, CMPP_RC_SYNTAX,
+                       "Did not find closing ']' in: %.*s",
+                       (int)arg->n, arg->z);
+    }
+    if( z>zLit && cmpp_b_append4(pp, ob, zLit, (cmpp_size_t)(z-zLit)) ){
+      break;
+    }
+    cmpp_call_str(pp, z+1, (cmpp_strlen_t)(zClose-z-1), ob, 0);
+    z = zLit = zClose + 1;
+  }
+  if( !ppCode && zEnd>zLit ){
+    cmpp_b_append4(pp, ob, zLit, (cmpp_size_t)(zEnd-zLit));
+  }
+  return ppCode;
+}
+
 CMPP__EXPORT(int, cmpp_arg_interpolate)(cmpp * const pp, cmpp_arg const *arg,
                                         cmpp_b * ob, cmpp_flag32_t flags){
   /**
-     Reminder to self: this function specifically does not do any
-     expression evaluation of its arguments. Please avoid the
-     temptation to make it do so. Unless it proves necessary.  Or
-     useful. Even then, though, consider the implications deeply
-     before doing so.
-
-     2026-09-21: The above still currently applies but we're going to
-     want expressions if/when the v1 expression cruft is replaced with
-     v2.
+     Expression evaluation of (...) args is opt-in via
+     cmpp_arg_interpolate_PARENS_EXPR.
   */
   if( !ob ){
-    if( arg->interp ){
-      ob = cmpp_b_reuse(arg->interp);
-    }else{
-      return cmpp_errf(pp, CMPP_RC_MISUSE,
-                       "%s() only accepts a NULL cmpp_b if arg->interp "
-                       "is not NULL.", __func__);
-    }
+    return cmpp_errf(pp, CMPP_RC_MISUSE,
+                     "%s() only accepts a NULL cmpp_b if arg->interp "
+                     "is not NULL.", __func__);
   }
   switch( ppCode
           ? 0
@@ -16325,8 +16478,25 @@ CMPP__EXPORT(int, cmpp_arg_interpolate)(cmpp * const pp, cmpp_arg const *arg,
     case 0:
       break;
     case cmpp_tt_Word:
+      if( (cmpp_arg_interpolate_BRACE_CALL & flags)
+          && !(cmpp_arg_interpolate_NO_BRACE_CALL & flags)
+          && memchr(arg->z, '[', arg->n) ){
+        /* e.g. a[call]b. Such a word cannot be a define name. */
+        cmpp__word_with_calls(pp, arg, ob);
+        break;
+      }
       if( 0==(flags & cmpp_arg_interpolate_NO_DEFINES) ){
         cmpp__get_b(pp, arg->z, arg->n, ob, true);
+        break;
+      }
+      goto theDefault;
+    case cmpp_tt_GroupParen:
+      if( cmpp_arg_interpolate_PARENS_EXPR & flags ){
+        int64_t i = 0;
+        if( 0==cmpp__expr_eval_paren(pp, arg, &i)
+            && cmpp_b_append_i64(ob, i) ){
+          cmpp_err(pp, ob->errCode, 0, 0);
+        }
         break;
       }
       goto theDefault;
@@ -16357,44 +16527,22 @@ int cmpp__bind_arg(cmpp * const pp, sqlite3_stmt * const q,
            (int)arg->n, arg->z);
   }
   switch( arg->ttype ){
+    case cmpp_tt_Word:
+    case cmpp_tt_GroupParen:
+    case cmpp_tt_GroupBrace:{
+      cmpp_b * const os = cmpp_b_borrow(pp);
+      if( os
+          && 0==cmpp_arg_interpolate(pp, arg, os,
+                                     cmpp_arg_interpolate_BRACE_CALL
+                                     | cmpp_arg_interpolate_PARENS_EXPR) ){
+        cmpp_stmt_bind_textn(pp, q, bindNdx, os->z, (int)os->n);
+      }
+      cmpp_b_return(pp, os);
+      break;
+    }
     default:
-    case cmpp_tt_IntDec:
-    case cmpp_tt_StringBT:
-    case cmpp_tt_StringDQ:
-    case cmpp_tt_StringSQ:
       cmpp_stmt_bind_textn(pp, q, bindNdx, arg->z, (int)arg->n);
       break;
-
-    case cmpp_tt_Word:{
-      cmpp_b os = cmpp_b_empty;
-      if( 0==cmpp_arg_interpolate(pp, arg, &os, 0) ){
-        if( 0 ){
-          g_warn("bind #%d <<%s>> => <<%.*s>>",
-                 bindNdx, arg->z, (int)os.n, os.z);
-        }
-        cmpp_stmt_bind_textn(pp, q, bindNdx, os.z, (int)os.n);
-      }
-      cmpp_b_clear(&os);
-      break;
-    }
-
-    case cmpp_tt_GroupParen:{
-      int64_t i = 0;
-      if( 0==cmpp__expr_eval_paren(pp, arg, &i) ){
-        /* See comment above about cmpp_tt_Int. */
-        cmpp_stmt_bind_int_text(pp, q, bindNdx, i);
-      }
-      break;
-    }
-
-    case cmpp_tt_GroupBrace:{
-      cmpp_b b = cmpp_b_empty;
-      cmpp_call_str(pp, arg->z, arg->n, &b, 0);
-      cmpp_stmt_bind_textn(pp, q, bindNdx, b.z, b.n);
-      cmpp_b_clear(&b);
-      break;
-    }
-
   }
   return ppCode;
 }
@@ -16427,17 +16575,6 @@ int cmpp__each_parse_args(cmpp *pp,
   return ppCode;
 }
 
-/* Helper for cmpp_kav_each() and friends. */
-static
-int cmpp__each_paren_expr(cmpp *pp, cmpp_arg const * arg,
-                          unsigned char * pOut, size_t nOut){
-  int64_t d = 0;
-  if( 0==cmpp__expr_eval_paren(pp, arg, &d) ){
-    snprintf((char *)pOut, nOut, "%" PRIi64, d);
-  }
-  return ppCode;
-}
-
 CMPP__EXPORT(int, cmpp_kav_each)(cmpp *pp,
                                  unsigned char const *zBegin,
                                  cmpp_strlen_t nIn,
@@ -16453,7 +16590,6 @@ CMPP__EXPORT(int, cmpp_kav_each)(cmpp *pp,
   cmpp_b * const bVal = bKey ? cmpp_b_borrow(pp) : 0;
   if( !bVal ) goto end;
   bool const reqArrow = 0==(cmpp_kav_each_F_NO_ARROW & flags);
-  unsigned char exprBuf[32] = {0};
   cmpp_size_t const nz = cmpp__strlenu(zBegin,nIn);
   cmpp_flag32_t a2bK = 0, a2bV = 0 /*cmpp_arg_interpolate() flags*/;
   assert( zBegin );
@@ -16478,6 +16614,9 @@ CMPP__EXPORT(int, cmpp_kav_each)(cmpp *pp,
   if( cmpp_kav_each_F_CALL_VAL & flags ){
     a2bV |= cmpp_arg_interpolate_BRACE_CALL;
     flags |= cmpp_kav_each_F_EXPAND_VAL;
+  }
+  if( cmpp_kav_each_F_PARENS_EXPR & flags ){
+    a2bV |= cmpp_arg_interpolate_PARENS_EXPR;
   }
   cmpp_arg const * aNext = 0;
   for( cmpp_arg const * aKey = args.arg0;
@@ -16517,15 +16656,9 @@ CMPP__EXPORT(int, cmpp_kav_each)(cmpp *pp,
       zKey = aKey->z;
       nKey = aKey->n;
     }
-    if( cmpp_tt_GroupParen==aVal->ttype
-        && (cmpp_kav_each_F_PARENS_EXPR & flags) ){
-      if( cmpp__each_paren_expr(pp, aVal, &exprBuf[0],
-                                sizeof(exprBuf)-1) ){
-        break;
-      }
-      zVal = &exprBuf[0];
-      nVal = cmpp__strlenu(zVal, -1);
-    }else if( cmpp_kav_each_F_EXPAND_VAL & flags ){
+    if( (cmpp_kav_each_F_EXPAND_VAL & flags)
+        || (cmpp_tt_GroupParen==aVal->ttype
+            && (cmpp_kav_each_F_PARENS_EXPR & flags)) ){
       if( cmpp_arg_interpolate(pp, aVal, cmpp_b_reuse(bVal),
                              a2bV) ){
         break;
@@ -16562,7 +16695,6 @@ CMPP__EXPORT(int, cmpp_str_each)(cmpp *pp,
      those same buffers. */
   cmpp_b ob = cmpp_b_empty;
   cmpp_args args = cmpp_args_empty;
-  unsigned char exprBuf[32] = {0};
   cmpp_size_t const nz = cmpp__strlenu(zBegin,nIn);
   assert( zBegin );
 
@@ -16578,16 +16710,13 @@ CMPP__EXPORT(int, cmpp_str_each)(cmpp *pp,
     /* Expand the key/value parts if needed... */
     unsigned char const *zVal;
     cmpp_size_t nVal;
-    if( cmpp_tt_GroupParen==arg->ttype
-        && (cmpp_kav_each_F_PARENS_EXPR & flags) ){
-      if( cmpp__each_paren_expr(pp, arg, &exprBuf[0],
-                                sizeof(exprBuf)-1) ){
-        break;
-      }
-      zVal = &exprBuf[0];
-      nVal = cmpp__strlenu(zVal, -1);
-    }else if( cmpp_kav_each_F_EXPAND_VAL & flags ){
-      if( cmpp_arg_interpolate(pp, arg, cmpp_b_reuse(&ob), 0) ){
+    if( (cmpp_kav_each_F_EXPAND_VAL & flags)
+        || (cmpp_tt_GroupParen==arg->ttype
+            && (cmpp_kav_each_F_PARENS_EXPR & flags)) ){
+      if( cmpp_arg_interpolate(pp, arg, cmpp_b_reuse(&ob),
+                               (cmpp_kav_each_F_PARENS_EXPR & flags)
+                               ? cmpp_arg_interpolate_PARENS_EXPR
+                               : 0) ){
         break;
       }
       zVal = ob.z;
@@ -17444,6 +17573,365 @@ int cmpp__expr_eval_paren(cmpp *pp, cmpp_arg const * arg,
 }
 
 #undef xpCode
+#include <assert.h>
+#include <stdarg.h>
+
+/**
+   Resets q. Unlike cmpp_stmt_reset(), this does not re-report the
+   error of a failed step, which cmpp__json_step() has already
+   reported (possibly as a data error, which must not end up in pp).
+*/
+static void cmpp__json_reset(sqlite3_stmt * const q){
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
+}
+
+CMPP__EXPORT(bool, cmpp_json_valid)(cmpp *pp, unsigned char const *z,
+                                    cmpp_strlen_t n, int flags){
+  bool rv = false;
+  n = cmpp__strlenu(z, n);
+  if( n && flags>0 && flags<16 ){
+    /* ^^^^ json_valid() is picky about its flags argument.  We skip
+       processing for that case because it can put pp into an error
+       state which the caller is not likely to check for because who
+       would after such an innocuous function? */
+    sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_jsonValid, false);
+    if( q ){
+      cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
+      cmpp_stmt_bind_int(pp, q, 2, flags);
+      if( SQLITE_ROW==cmpp_stmt_step(pp, q, false) ){
+        rv = 0!=sqlite3_column_int(q, 0);
+      }
+      cmpp__json_reset(q);
+    }
+  }
+  return rv;
+}
+
+static inline bool cmpp__json_is_container(cmpp * const pp,
+                                           char opener,
+                                           char closer,
+                                           unsigned char const * const z,
+                                           cmpp_strlen_t n, bool allowJson5){
+  n = cmpp__strlenu(z, n);
+  return (
+    n>1
+    && z[0]==(unsigned char)opener
+    && z[n-1]==(unsigned char)closer
+  ) ? (
+    n==2
+    ? true
+    : cmpp_json_valid(pp, z, n, allowJson5 ? 3 : 1)
+  ) : false;
+}
+
+CMPP__EXPORT(bool,cmpp_json_is_list)(cmpp *pp,
+                                     unsigned char const * const z,
+                                     cmpp_strlen_t n, bool allowJson5){
+  return cmpp__json_is_container(pp, '[', ']', z, n, allowJson5);
+}
+
+CMPP__EXPORT(bool,cmpp_json_is_object)(cmpp *pp,
+                                       unsigned char const * const z,
+                                       cmpp_strlen_t n, bool allowJson5){
+  return cmpp__json_is_container(pp, '{', '}', z, n, allowJson5);
+}
+
+CMPP__EXPORT(int, cmpp_json_key_to_path)(cmpp *pp, int mode,
+                                         unsigned char const *z,
+                                         cmpp_strlen_t n, cmpp_b * bKey){
+  if( ppCode ) return ppCode;
+  n = cmpp__strlenu(z, n);
+  if( !n ){
+    return cmpp_b_append4(pp, bKey, mode
+                          ? "$[]"
+                          : "$.\0"/*illegal, but let SQLite report that*/,
+                          3);
+  }
+  if( '$'==z[0] && (1==n || (mode ? '['==z[1] : '.'==z[1])) ){
+    return cmpp_b_append4(pp, bKey, z, n);
+  }
+  /* This does not superficially look like a JSON path prefix, make it
+     look like one. */
+  unsigned char const * zz = 0;
+  cmpp_size_t nn = 0;
+  if( '$'==z[0] && '.'==z[1] ){
+    zz = z+2;
+    nn = n - 2;
+  }else{
+    zz = z;
+    nn = n;
+  }
+  cmpp_b_append(bKey, mode ? "$[" : "$.", 2);
+  cmpp_b_append(bKey, zz, nn);
+  if( mode ) cmpp_b_append_ch(bKey, ']');
+  if( bKey->errCode ) cmpp_err(pp, bKey->errCode, 0, 0);
+  return ppCode;
+}
+
+CMPP__EXPORT(int, cmpp_json_canonicalize)(cmpp *pp, unsigned char const *z,
+                                          cmpp_size_t n, cmpp_b *b,
+                                          bool append){
+  sqlite3_stmt * const q =
+    cmpp__stmt(pp, CmppStmt_jsonSelf, false);
+  if( !q ) return ppCode;
+  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
+  if( SQLITE_ROW==cmpp_stmt_step(pp, q, false) ){
+    z = sqlite3_column_blob(q,0);
+    n = sqlite3_column_bytes(q,0);
+    //g_warn("canon=%.*s", (int)n, z);
+    cmpp_b_append4(pp, append ? b : cmpp_b_reuse(b), z, n);
+  }
+  cmpp__json_reset(q);
+  return ppCode;
+}
+
+/**
+   Reports a data error via err if it is not NULL, else via pp.
+   Returns rc (or CMPP_RC_OOM if reporting fails).
+*/
+static int cmpp__json_err(cmpp * const pp, cmpp_errinfo * const err,
+                          int rc, char const * zFmt, ...){
+  va_list va;
+  va_start(va, zFmt);
+  rc = err
+    ? cmpp_errinfo_setv(err, rc, zFmt, va)
+    : cmpp_errfv(pp, rc, zFmt, va);
+  va_end(va);
+  return rc;
+}
+
+/**
+   sqlite3_step() wrapper for JSON queries. Returns SQLITE_ROW or
+   SQLITE_DONE on success. On error it returns 0 after reporting the
+   error: SQLITE_NOMEM goes to pp and all others (e.g. malformed JSON
+   or a bad path) are data errors.
+*/
+static int cmpp__json_step(cmpp * const pp, cmpp_errinfo * const err,
+                           sqlite3_stmt * const q){
+  if( ppCode ) return 0;
+  int const rc = sqlite3_step(q);
+  switch( rc ){
+    case SQLITE_ROW:
+    case SQLITE_DONE:
+      return rc;
+    case SQLITE_NOMEM:
+      cmpp_err(pp, CMPP_RC_OOM, 0, 0);
+      return 0;
+    default:
+      cmpp__json_err(pp, err, CMPP_RC_SYNTAX, "%s",
+                     sqlite3_errmsg(sqlite3_db_handle(q)));
+      return 0;
+  }
+}
+
+/**
+   Runs q, which must produce one text value, and replaces out's
+   contents with it. q must have been fetched with cmpp__stmt() and
+   is reset before returning. Returns 0 on success.
+*/
+static int cmpp__json_step_to(cmpp * const pp, cmpp_errinfo * const err,
+                              sqlite3_stmt * const q, cmpp_b * const out){
+  int rc = 0;
+  switch( cmpp__json_step(pp, err, q) ){
+    case SQLITE_ROW:{
+      unsigned char const * const z = sqlite3_column_text(q, 0);
+      int const n = sqlite3_column_bytes(q, 0);
+      cmpp_b_reuse(out);
+      rc = cmpp_b_append4(pp, out, z, (cmpp_size_t)n);
+      break;
+    }
+    case SQLITE_DONE:
+      cmpp_b_reuse(out);
+      break;
+    default:
+      rc = ppCode ? ppCode : (err ? err->code : CMPP_RC_ERROR);
+      break;
+  }
+  cmpp__json_reset(q);
+  return rc;
+}
+
+CMPP__EXPORT(int, cmpp_json_check)(cmpp *pp, cmpp_errinfo *err,
+                                   int type, unsigned char const *z,
+                                   cmpp_strlen_t n){
+  if( ppCode ) return ppCode;
+  n = cmpp__strlenu(z, n);
+  bool const isList = cmpp_json_LIST==type;
+  if( isList
+      ? cmpp_json_is_list(pp, z, n, true)
+      : cmpp_json_is_object(pp, z, n, true) ){
+    return 0;
+  }
+  return ppCode ? ppCode
+    : cmpp__json_err(pp, err, CMPP_RC_TYPE,
+                     "Value is not %s: %.*s",
+                     isList ? "a list" : "an object", (int)n, z);
+}
+
+CMPP__EXPORT(int, cmpp_json_length)(cmpp *pp, cmpp_errinfo *err,
+                                    int type, unsigned char const *z,
+                                    cmpp_strlen_t n, int64_t *pOut){
+  n = cmpp__strlenu(z, n);
+  int rc = cmpp_json_check(pp, err, type, z, n);
+  if( rc ) return rc;
+  sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_jsonLength, false);
+  if( !q ) return ppCode;
+  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
+  switch( cmpp__json_step(pp, err, q) ){
+    case SQLITE_ROW:
+      *pOut = sqlite3_column_int64(q, 0);
+      break;
+    case SQLITE_DONE:
+      *pOut = 0;
+      break;
+    default:
+      rc = ppCode ? ppCode : (err ? err->code : CMPP_RC_ERROR);
+      break;
+  }
+  cmpp__json_reset(q);
+  return rc;
+}
+
+/**
+   Converts key [zKey,zKey+nKey) to a JSON path in bKey, rejecting
+   the path "$", which would replace the whole container.
+*/
+static int cmpp__json_key(cmpp *pp, cmpp_errinfo *err, int type,
+                          unsigned char const *zKey, cmpp_size_t nKey,
+                          cmpp_b * bKey){
+  if( 1==nKey && '$'==zKey[0] ){
+    return cmpp__json_err(pp, err, CMPP_RC_MISUSE,
+                          "JSON path key '$' is not legal "
+                          "in this context.");
+  }
+  return cmpp_json_key_to_path(pp, cmpp_json_LIST==type,
+                               zKey, nKey, cmpp_b_reuse(bKey));
+}
+
+CMPP__EXPORT(int, cmpp_json_get)(cmpp *pp, cmpp_errinfo *err, int type,
+                                 unsigned char const *z,
+                                 cmpp_strlen_t n,
+                                 unsigned char const *zKey,
+                                 cmpp_strlen_t nKey,
+                                 cmpp_b *out){
+  n = cmpp__strlenu(z, n);
+  nKey = cmpp__strlenu(zKey, nKey);
+  int rc = cmpp_json_check(pp, err, type, z, n);
+  if( rc ) return rc;
+  cmpp_b * const bKey = cmpp_b_borrow(pp);
+  if( !bKey ) return ppCode;
+  sqlite3_stmt * q = 0;
+  if( 0==(rc = cmpp__json_key(pp, err, type, zKey, nKey, bKey))
+      && (q = cmpp__stmt(pp, CmppStmt_jsonGet, false)) ){
+    /* TRANSIENT because out may own z. */
+    cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_TRANSIENT);
+    cmpp_stmt_bind_textx(pp, q, 2, bKey->z, bKey->n, SQLITE_STATIC);
+    rc = cmpp__json_step_to(pp, err, q, out);
+  }else if( !rc ){
+    rc = ppCode;
+  }
+  cmpp_b_return(pp, bKey);
+  return rc;
+}
+
+CMPP__EXPORT(int, cmpp_json_set)(cmpp *pp, cmpp_errinfo *err, int type,
+                                 cmpp_b *c,
+                                 unsigned char const *zKey,
+                                 cmpp_strlen_t nKey,
+                                 unsigned char const *zVal,
+                                 cmpp_strlen_t nVal){
+  nKey = cmpp__strlenu(zKey, nKey);
+  int rc = cmpp_json_check(pp, err, type, c->z, c->n);
+  if( rc ) return rc;
+  cmpp_b * const bKey = cmpp_b_borrow(pp);
+  if( !bKey ) return ppCode;
+  sqlite3_stmt * q = 0;
+  if( 0==(rc = cmpp__json_key(pp, err, type, zKey, nKey, bKey))
+      && (q = cmpp__stmt(pp, CmppStmt_jsonSet, false)) ){
+    cmpp_stmt_bind_textx(pp, q, 1, c->z, c->n, SQLITE_TRANSIENT);
+    cmpp_stmt_bind_textx(pp, q, 2, bKey->z, bKey->n, SQLITE_STATIC);
+    cmpp_stmt_bind_textx(pp, q, 3, zVal, cmpp__strlenu(zVal, nVal),
+                         SQLITE_STATIC);
+    rc = cmpp__json_step_to(pp, err, q, c);
+  }else if( !rc ){
+    rc = ppCode;
+  }
+  cmpp_b_return(pp, bKey);
+  return rc;
+}
+
+CMPP__EXPORT(int, cmpp_json_append)(cmpp *pp, cmpp_errinfo *err,
+                                    cmpp_b *list,
+                                    unsigned char const *zVal,
+                                    cmpp_strlen_t nVal){
+  int rc = cmpp_json_check(pp, err, cmpp_json_LIST, list->z, list->n);
+  if( rc ) return rc;
+  sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_jsonAppend, false);
+  if( !q ) return ppCode;
+  cmpp_stmt_bind_textx(pp, q, 1, list->z, list->n, SQLITE_TRANSIENT);
+  cmpp_stmt_bind_textx(pp, q, 2, zVal, cmpp__strlenu(zVal, nVal),
+                       SQLITE_STATIC);
+  return cmpp__json_step_to(pp, err, q, list);
+}
+
+CMPP__EXPORT(int, cmpp_json_slice)(cmpp *pp, cmpp_errinfo *err,
+                                   unsigned char const *z,
+                                   cmpp_strlen_t n,
+                                   int64_t iFrom, int64_t iTo,
+                                   cmpp_b *out){
+  n = cmpp__strlenu(z, n);
+  int rc = cmpp_json_check(pp, err, cmpp_json_LIST, z, n);
+  if( rc ) return rc;
+  if( iFrom<0 ){
+    return cmpp__json_err(pp, err, CMPP_RC_RANGE,
+                          "List slice indexes may not be negative.");
+  }
+  sqlite3_stmt * const q =
+    cmpp__stmt(pp, iTo<0 ? CmppStmt_jsonSliceFrom : CmppStmt_jsonSlice,
+               false);
+  if( !q ) return ppCode;
+  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_TRANSIENT);
+  cmpp_stmt_bind_int(pp, q, 2, iFrom);
+  if( iTo>=0 ) cmpp_stmt_bind_int(pp, q, 3, iTo);
+  return cmpp__json_step_to(pp, err, q, out);
+}
+
+CMPP__EXPORT(int, cmpp_json_each)(cmpp *pp, cmpp_errinfo *err, int type,
+                                  unsigned char const *z,
+                                  cmpp_strlen_t n,
+                                  cmpp_json_each_f callback,
+                                  void *state){
+  n = cmpp__strlenu(z, n);
+  int rc = cmpp_json_check(pp, err, type, z, n);
+  if( rc || 2==n/*empty container*/ ) return rc;
+  sqlite3_stmt * q = 0;
+  if( cmpp_stmt_prepare(pp, &q,
+                        "SELECT key, value FROM json_each(?1)"
+                        " ORDER BY key", -1) ){
+    /* Not a cached statement because callback may recurse. */
+    return ppCode;
+  }
+  /* TRANSIENT because callback might modify z's owner. */
+  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_TRANSIENT);
+  while( 0==rc ){
+    int const src = cmpp__json_step(pp, err, q);
+    if( SQLITE_ROW!=src ){
+      if( !src ) rc = ppCode ? ppCode : (err ? err->code : CMPP_RC_ERROR);
+      break;
+    }
+    /* A JSON null comes back as an SQL NULL. Pass it on as an empty
+       string. */
+    unsigned char const * zK = sqlite3_column_text(q, 0);
+    cmpp_size_t const nK = (cmpp_size_t)sqlite3_column_bytes(q, 0);
+    unsigned char const * zV = sqlite3_column_text(q, 1);
+    cmpp_size_t const nV = (cmpp_size_t)sqlite3_column_bytes(q, 1);
+    rc = callback(state, zK ? zK : ustr_c(""), nK,
+                  zV ? zV : ustr_c(""), nV);
+  }
+  sqlite3_finalize(q) /* see cmpp__json_reset() */;
+  return rc;
+}
 
 
 #if CMPP_ENABLE_DLLS && !defined(CMPP_OMIT_D_MODULE)
@@ -19159,6 +19647,23 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
       case '"': case '`': case '\'':{
         if( tok->ttype || zEsc ){
           /* Scratch that - this is a continuation */
+          if( '['==*z && !zEsc ){
+            /* As in Tcl, a [...] within a word is part of that word,
+               spaces and all, e.g. a[set x 1]b or <[...]>. Consume
+               through its matching ']'. */
+            unsigned char const * zClose = z;
+            if( cmpp__find_closing(0, &zClose, zEnd) ){
+              tz->errToken = *tok;
+              rc = cmpp_tizer_err_setf(tz, CMPP_RC_SYNTAX,
+                                       "Did not find closing character "
+                                       "for '['.");
+              break;
+            }
+            z = zClose + 1;
+            tok->ttype = cmpp_tt_Word;
+            tz->atBOX = false;
+            break;
+          }
           goto do_word;
         }
         //g_warn("*z=%c isEsc=%d", *z, (int)!!zEsc);
@@ -19176,7 +19681,15 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
                    (int)tok->nInner, tok->zInner);
           }
           if( z<zEnd ){
-            if( !cmpp_tizer_terminates_group(tty, *z) ){
+            if( cmpp_tt_GroupBrace==tty
+                && !cmpp_tizer_terminates_group(tty, *z) ){
+              /* As in Tcl, [...] followed by more word characters,
+                 e.g. [set x 1]b or [a][b], is a single word. Keep
+                 going as a word. */
+              tok->ttype = cmpp_tt_Word;
+              tok->zInner = 0;
+              tok->nInner = 0;
+            }else if( !cmpp_tizer_terminates_group(tty, *z) ){
               /* We're eventually going to want to support a Tcl-like
                  bellybutton operation, in which case this has to be
                  patched. Or maybe we'll use JS syntax for that
