@@ -1,5 +1,5 @@
-C Correctly\sissue\san\serror\sin\san\sattempt\sto\sarray-insert\sagainst\sPATH\s'$',\nwhich\sis\snever\san\sarray\selement.\n[bugs:/info/2026-11-05T22:16:10Z|Bug\s2026-11-05T22:16:10Z]
-D 2026-11-14T01:47:53.033
+C The\s'utc'\stime\smodifier\sshould\snot\scancel\s'subsec'.\n[bugs:/info/2026-11-05T22:11:32Z|Bug\s2026-11-05T22:11:32Z]
+D 2026-11-14T02:00:04.897
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -757,7 +757,7 @@ F src/build.c 5528027b42d5af37000638fef24a38a9ac078cc684c18304daf6b63175a8c27d
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 7e922b672ea82f83822baad092a0d4fd9b0074d1be2fa7d15cceeb8792212b2c
 F src/complete.c f68f545b9c6c19e2e848672dc0e4da230072fedc335d8980b55242cc4cfa60da
-F src/date.c e841b18bce3c098de08a46e714dfc9d1ca4f58bf6ba466c2c55705b71cca38bc
+F src/date.c 98dadb15c9d32e78f2d1e6b12a61c86b5428e4742a60727825b580805f505aaa
 F src/dbpage.c b6430aee463c8899363baad61e7623c1299dd135619d6002345c5050b02ce04a
 F src/dbstat.c 34d4e825fbf763640ce3dbc56910ab080495ef4a6efb48b2b1852a43d43763fc
 F src/delete.c f3f07c1fb6ac87fac2425d48fd40ecb2f24a4495a9966f5a939668d3576916c8
@@ -1114,7 +1114,7 @@ F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c47
 F test/cursorhint.test d8b93ac48dfdb2cf4284142710d63e860b6497afff2e9c525daf752a229e5b97
 F test/cursorhint2.test a10f29c0c52d4d73c19cf639f3c33cccbf5024bcf950fa48f2a8cdc14628b985
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
-F test/date.test 931c9ac67e2eab817bd7dc2ba7535008143a3018c7fba2d1dc6462d6c135d2d6
+F test/date.test 6440f63110c23f4504bd19a6ac6b946cfa4f655239e8b359fc47ddc8c6f17cf0
 F test/date2.test 6344250abb5face9174778ec0a476e2baa97ad509df9eee81fbb1ec6933b7114
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test b5ad22baf7394e008ac59383840159daedd45be31dcf74a3b2450ec0e28955ce
@@ -2310,8 +2310,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 23012aa58d4460fe8ff2e6556bf747d6584d4823bedaa12fc201bf0e041d2d82
-R 5165f5278e086b02e62095a5c9d4e8b5
+P b6f9eb930c3063aa2a50054daa466cc07d08de0114e8cac540167951d4532bc7
+R a442084e9d00d8f46e0b61c11071ac08
 U drh
-Z b594357454e021f265aef11c9f7ddb35
+Z 4e05a2cd7a09b2c8ef403f3deaef0150
 # Remove this line to create a well-formed Fossil manifest.
