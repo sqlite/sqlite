@@ -184,7 +184,7 @@ static int SQLITE_TCLAPI register_box_geom(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 
-  pCtx = (BoxGeomCtx*)ckalloc(sizeof(BoxGeomCtx*));
+  pCtx = (BoxGeomCtx*)ckalloc(sizeof(BoxGeomCtx));
   pCtx->interp = interp;
   pCtx->pScript = Tcl_DuplicateObj(objv[2]);
   Tcl_IncrRefCount(pCtx->pScript);
