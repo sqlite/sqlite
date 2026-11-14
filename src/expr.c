@@ -6832,7 +6832,19 @@ static SQLITE_NOINLINE int exprCompareVariable(
       if( sqlite3_value_type(pL)==SQLITE_TEXT ){
         sqlite3_value_text(pL); /* Make sure the encoding is UTF-8 */
       }
-      res = sqlite3MemCompare(pL, pR, 0) ? 2 : 0;
+      /* The bound value and the literal must be interchangeable, not
+      ** just compare equal. For example, integer 1 and real 1.0 are equal
+      ** according to MemCompare(), but are different if TEXT affinity
+      ** is applied to them. Similarly, 0.0 and -0.0.  */
+      int eType = sqlite3_value_type(pL);
+      if( eType==sqlite3_value_type(pR) && sqlite3MemCompare(pL, pR, 0)==0 ){
+        res = 0;
+        if( eType==SQLITE_FLOAT ){
+          double rL = sqlite3_value_double(pL);
+          double rR = sqlite3_value_double(pR);
+          if( memcmp(&rL, &rR, sizeof(double))!=0 ) res = 2;
+        }
+      }
     }
     sqlite3ValueFree(pR);
     sqlite3ValueFree(pL);

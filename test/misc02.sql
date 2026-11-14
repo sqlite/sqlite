@@ -1479,3 +1479,37 @@ SELECT json_error_position('[1,2,3] x'), json_error_position('{"a":[1,2]}x');
 .testcase 2601
 SELECT json_error_position('[1,[]] x');
 .check 8
+
+# Bug 2026-10-28T03:40:05Z sqlite.org/bugs/forumpost/5474c4ba80
+# A partial index with "WHERE c0 = 1.0" is used for a query with
+# "WHERE c0 = ?1" where ?1 is bound to integer 1.  Values 1 and 1.0
+# compare equal but are not interchangeable under TEXT affinity, so
+# rows are missed.
+#
+.open :memory:
+.testcase 2700
+CREATE TABLE t2(c0 TEXT, c1);
+INSERT INTO t2 VALUES(1, 1);
+CREATE INDEX t2i ON t2(c1) WHERE c0 = 1.0;
+.param init
+.param set ?1 1
+SELECT count(*) FROM t2 WHERE c0 = ?1;
+.check 1
+.testcase 2701
+SELECT count(*) FROM t2 WHERE c0 = 1;
+.check 1
+.testcase 2710
+CREATE TABLE t3(c0 TEXT, c1);
+INSERT INTO t3 VALUES(0, 1);
+CREATE INDEX t3i ON t3(c1) WHERE c0 = -0.0;
+.param set ?1 0
+SELECT count(*) FROM t3 WHERE c0 = ?1;
+.check 1
+.testcase 2720
+CREATE TABLE t4(c0 TEXT, c1);
+INSERT INTO t4 VALUES(1, 1);
+CREATE INDEX t4i ON t4(c1) WHERE c0 = 1e0;
+.param set ?1 1
+SELECT count(*) FROM t4 WHERE c0 = ?1;
+.check 1
+.param clear
