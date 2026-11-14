@@ -1861,10 +1861,12 @@ static char *shellFakeSchema(
 ** that return true as long as compile-time options
 ** SQLITE_OMIT_VIRTUALTABLE, SQLITE_OMIT_FOREIGN_KEY, and
 ** SQLITE_OMIT_LOAD_EXTENSION are omitted from the build,
-** respectively.  New special names may be added in the future.
-** Thus, for example, "capable('vtab')" means that the build
-** lacks SQLITE_OMIT_VIRTUALTABLE and hence does support
-** virtual tables.
+** respectively.  Thus capable('vtab') means that virtual table
+** features of SQLite are available in the current build.
+**
+** There is also the special name "unsafe" which is true as long
+** as the CLI is not in safe mode.  New special names may be added
+** in the future.
 **
 ** For other "OMIT" options (besides the three special ones noted
 ** in the previous paragraph) you have to say something like
@@ -1917,6 +1919,12 @@ static void shellCapable(
       res = 1;
       goto capable_finished;
     }
+  }
+
+  /* Special case:  capable('unsafe') is true if not in safe mode */
+  if( sqlite3_stricmp(z, "unsafe")==0 && p->bSafeMode==0 ){
+    res = 1;
+    goto capable_finished;
   }
 
   /* Check special cases likek "vtab" and "fkey" */
