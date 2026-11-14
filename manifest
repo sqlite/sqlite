@@ -1,5 +1,5 @@
-C Fix\srecent\stest\scases\sso\sthat\sthey\srun\son\sall\sconfigurations.\s\sFix\sa\svery\nminor\smemory\sleak\sin\sthe\sCLI.
-D 2026-11-14T11:50:00.325
+C Fix\sa\sdate/time\stest\sinvolving\stimezones\sthat\swas\snot\sworking\son\sWindows.
+D 2026-11-14T12:07:01.886
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1114,7 +1114,7 @@ F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c47
 F test/cursorhint.test d8b93ac48dfdb2cf4284142710d63e860b6497afff2e9c525daf752a229e5b97
 F test/cursorhint2.test a10f29c0c52d4d73c19cf639f3c33cccbf5024bcf950fa48f2a8cdc14628b985
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
-F test/date.test 6440f63110c23f4504bd19a6ac6b946cfa4f655239e8b359fc47ddc8c6f17cf0
+F test/date.test 08e8918198e96ff506ee85167227815e0df5347ae5081a2303da9900d0e1e986
 F test/date2.test 6344250abb5face9174778ec0a476e2baa97ad509df9eee81fbb1ec6933b7114
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test b5ad22baf7394e008ac59383840159daedd45be31dcf74a3b2450ec0e28955ce
@@ -2310,8 +2310,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 20a518c18758715da23a4117fb336f63b7992afceffabbed75cb2e4a09af8d39
-R 696b32c9dda5ac78f53c13fd9129cdb4
+P 6911bdb236d98cf3ed5b430d3c85cd7a085617f9c6f8457f2986d172baa1fe70
+R 1c3094e6d9881cf4ba16b49b16754a1f
 U drh
-Z 0bc065c06910a341f5a467f792c0bc5c
+Z ab7aee02a4cc79449476e43b57f749b9
 # Remove this line to create a well-formed Fossil manifest.
