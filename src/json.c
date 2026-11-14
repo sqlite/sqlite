@@ -3796,8 +3796,11 @@ static void jsonInsertIntoBlob(
     if( zPath[1]==0 ){
       if( eEdit==JEDIT_REPL || eEdit==JEDIT_SET ){
         jsonBlobEdit(p, 0, p->nBlob, ax.aBlob, ax.nBlob);
+      }else if( eEdit==JEDIT_AINS ){
+        rc = JSON_LOOKUP_NOTARRAY;
+      }else{
+        rc = 0;
       }
-      rc = 0;
    }else{
       p->eEdit = eEdit;
       p->nIns = ax.nBlob;

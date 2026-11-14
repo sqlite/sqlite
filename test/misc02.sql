@@ -1429,31 +1429,36 @@ SELECT '{"a]":1,"b":2}' ->> '$.a]';
 .testcase 2501
 SELECT '{"a]":1,"b":2}' ->> '$."a]"';
 .check 1
-
 .testcase 2510
 SELECT json_valid(jsonb_array_insert('{"a]":1,"b":2}','$.a]',9), 8);
 .check --glob "Error*not an array element: '$.a]'"
 .testcase 2511
 SELECT json_valid(jsonb_array_insert('{"a]":[],"b":2}','$.a][0]',9), 8);
 .check 1
-
 .testcase 2520
 SELECT json_array_insert('{"k]":"v"}','$.k]','p','$.k]','q');
 .check --glob 'Error*not an array element'
 .testcase 2521
 SELECT json_array_insert('{"k]":[1]}','$.k][0]','p','$.k][0]','q');
 .check {"k]":["q","p",1]}
-
 .testcase 2530
 SELECT json_array_insert('{"a]":1,"b":2}','$."a]"',9);
 .check --glob 'Error*not an array element: ?$."a]"'
 .testcase 2531
 SELECT json_array_insert('{"a]":[1],"b":2}','$."a]"[0]',9);
 .check {"a]":[9,1],"b":2}
-
 .testcase 2540
 SELECT json_array_insert('{"a]":1,"b":2}','$.a]',9);
 .check --glob "Error*not an array element: '$.a]'"
 .testcase 2541
 SELECT json_array_insert('{"a]":[1,2,3],"b":2}','$.a][1]',9);
 .check {"a]":[1,9,2,3],"b":2}
+
+# Bug 2026-11-05T22:16:10Z sqlite.org/bugs/info/8f2169fa24
+# json_array_insert(X,'$',V) returns X unchanged instead of
+# raising "not an array element".  By Marius
+#
+.testcase 2550
+SELECT json_array_insert('[1,2,3]','$',99);
+.check --glob "Error*not an array element: '$'"
+#
