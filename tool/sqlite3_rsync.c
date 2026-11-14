@@ -376,7 +376,7 @@ static int pclose2(FILE *pIn, FILE *pOut, int childPid){
 **
 **    0      Ordinary character.  No encoding required
 **    1      Needs to be escaped
-**    2      Illegal character.  Do not allow in a filename
+**    2      Control characters or bytes of a UTF-8 other than the first
 **    3      First byte of a 2-byte UTF-8
 **    4      First byte of a 3-byte UTF-8
 **    5      First byte of a 4-byte UTF-8
@@ -390,11 +390,11 @@ static const char aSafeChar[256] = {
      2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2, /* 0x */
      2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2, /* 1x */
      1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0, /* 2x */
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  0,  1,  1, /* 3x */
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1, /* 3x */
      1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, /* 4x */
      0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  0, /* 5x */
      1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, /* 6x */
-     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  0,  1, /* 7x */
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1, /* 7x */
     /* all bytes 0x80 through 0xbf are unescaped, being secondary
     ** bytes to UTF8 characters.  Bytes 0xc0 through 0xff are the
     ** first byte of a UTF8 character and do get escaped */
@@ -410,7 +410,10 @@ static const char aSafeChar[256] = {
 
 /*
 ** Return true if the input contains special characters that need
-** to be escaped.
+** to be escaped.  Actually, just to be conservative, this routine
+** returns true if there is anything in the string that it suspicious,
+** including Unicode characters.  So technically it might return
+** a false-positive.  It should not return a false-negative, however.
 */
 int need_escape(const char *zIn){
   size_t i;
@@ -434,8 +437,7 @@ static int nHexEncode = 0;
 ** appends filename argument zIn.
 **
 ** The argument is escaped if it contains white space or other characters
-** that need to be escaped for the shell.  If zIn contains characters
-** that cannot be safely escaped, then throw a fatal error.
+** that need to be escaped for the shell.
 **
 ** If the isFilename argument is 1 or 2, then the argument is expected
 ** to be a filename.  isFilename==1 means to use shell-style escaping
@@ -460,7 +462,7 @@ void append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
   size_t nIn = strlen(zIn);
 
   /* Separate from the previous argument by a space */
-  if( n>0 && !isspace(z[n-1]) ){
+  if( n>0 && !isspace((unsigned char)z[n-1]) ){
     sqlite3_str_appendchar(pStr, 1, ' ');
   }
 
@@ -506,32 +508,29 @@ void append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
     sqlite3_str_appendchar(pStr, 1, '"');
 #else
     /* Quoting strategy for unix:
-    ** If the name does not contain ', then surround the whole thing
-    ** with '...'.   If there is one or more ' characters within the
-    ** name, then put \ before each special character.
+    ** Surround the whole argument using '...' and escape internal '
+    ** characters as '\''
     */
-    if( strchr(zIn,'\'') ){
-      unsigned char c;
-      size_t i;
-      if( isFilename && zIn[0]=='-' ){
-        sqlite3_str_appendchar(pStr, 1, '.');
-        sqlite3_str_appendchar(pStr, 1, '/');
-      }
-      for(i=0; (c = (unsigned char)zIn[i])!=0; i++){
-        if( aSafeChar[c] && aSafeChar[c]!=2 ){
-          sqlite3_str_appendchar(pStr, 1, '\\');
-        }
-        sqlite3_str_appendchar(pStr, 1, (char)c);
-      }
-    }else{
-      sqlite3_str_appendchar(pStr, 1, '\'');
-      if( isFilename && zIn[0]=='-' ){
-        sqlite3_str_appendchar(pStr, 1, '.');
-        sqlite3_str_appendchar(pStr, 1, '/');
-      }
-      sqlite3_str_appendall(pStr, zIn);
-      sqlite3_str_appendchar(pStr, 1, '\'');
+    sqlite3_str_appendchar(pStr, 1, '\'');
+    if( isFilename && zIn[0]=='-' ){
+      sqlite3_str_appendchar(pStr, 1, '.');
+      sqlite3_str_appendchar(pStr, 1, '/');
     }
+    while( zIn[0] ){
+      char *zEsc = strchr(zIn, '\'');
+      size_t nn;
+      if( zEsc==0 ){
+        sqlite3_str_appendall(pStr, zIn);
+        break;
+      }
+      nn = (size_t)(zEsc - zIn);
+      if( nn>0 ){
+        sqlite3_str_append(pStr, zIn, nn);
+      }
+      sqlite3_str_append(pStr, "'\\''", 4);
+      zIn += nn+1;
+    }
+    sqlite3_str_appendchar(pStr, 1, '\'');
 #endif
   }
 }
@@ -2081,9 +2080,9 @@ static char *hostSeparator(const char *zIn){
 **
 **  (2)    sqlite3_rsync  USER@HOST:FILENAME1  FILENAME2
 **
-**  (3)    sqlite3_rsync --origin FILENAME1
+**  (3)    sqlite3_rsync --origin FILENAME1 FILENAME2
 **
-**  (4)    sqlite3_rsync --replica FILENAME2
+**  (4)    sqlite3_rsync --replica FILENAME2 FILENAME1
 **
 ** The user types (1) or (2).  SSH launches (3) or (4).
 **
@@ -2116,6 +2115,7 @@ int main(int argc, char const * const *argv){
   const char *zRemoteErrFile = 0;
   const char *zRemoteDebugFile = 0;
   int nEncoded = 0;
+  int bDryRun = 0;     /* Don't actually run popen(), just print the command */
 
 #define cli_opt_val cmdline_option_value(argc, argv, ++i)
   memset(&ctx, 0, sizeof(ctx));
@@ -2234,6 +2234,13 @@ int main(int argc, char const * const *argv){
       ctx.bCommCheck = 1;
       continue;
     }
+    if( strcmp(z,"-dryrun")==0 || strcmp(z,"-dry-run")==0 ){  /* DEBUG ONLY */
+      /* Do not actually do a popen() to the remote size or do any other
+      ** work.  Just construct the popen() command and print it, then exit().
+      ** Used for security testing of the shell-escape mechanisms. */
+      bDryRun = 1;
+      continue;
+    }
     if( strcmp(z,"-arg-escape-check")==0 ){  /* DEBUG ONLY */
       /* Test the append_escaped_arg() routine by using it to render a
       ** copy of the input command-line, assuming all arguments except
@@ -2288,6 +2295,7 @@ int main(int argc, char const * const *argv){
       ctx.zErrFile = decode_filename(ctx.zErrFile);
       ctx.zDebugFile = decode_filename(ctx.zDebugFile);
     }
+    if( bDryRun ) exit(0);
   }else{
     /* Must be the local side */
     if( nHexEncode ){
@@ -2333,7 +2341,7 @@ int main(int argc, char const * const *argv){
       sqlite3_str *pStr = sqlite3_str_new(0);
       append_escaped_arg(pStr, zSsh, 1);
       if( iPort>0 ) sqlite3_str_appendf(pStr, " -p %d", iPort);
-      sqlite3_str_appendf(pStr, " -e none");
+      sqlite3_str_appendf(pStr, " -e none --");
       append_escaped_arg(pStr, ctx.zOrigin, 1);
       if( iRetry ) add_path_argument(pStr);
       append_escaped_arg(pStr, zExe, 1);
@@ -2362,6 +2370,11 @@ int main(int argc, char const * const *argv){
         append_escaped_arg(pStr, "2>/dev/null", 0);
       }
       zCmd = sqlite3_str_finish(pStr);
+      if( bDryRun ){
+        printf("%s\n", zCmd);
+        if( iRetry>=1 ) exit(0);
+        continue;
+      }
       if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
       if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
         if( iRetry>=1 ){
@@ -2385,7 +2398,7 @@ int main(int argc, char const * const *argv){
       sqlite3_str *pStr = sqlite3_str_new(0);
       append_escaped_arg(pStr, zSsh, 1);
       if( iPort>0 ) sqlite3_str_appendf(pStr, " -p %d", iPort);
-      sqlite3_str_appendf(pStr, " -e none");
+      sqlite3_str_appendf(pStr, " -e none --");
       append_escaped_arg(pStr, ctx.zReplica, 1);
       if( iRetry==1 ) add_path_argument(pStr);
       append_escaped_arg(pStr, zExe, 1);
@@ -2414,6 +2427,11 @@ int main(int argc, char const * const *argv){
         append_escaped_arg(pStr, "2>/dev/null", 0);
       }
       zCmd = sqlite3_str_finish(pStr);
+      if( bDryRun ){
+        printf("%s\n", zCmd);
+        if( iRetry>=1 ) exit(0);
+        continue;
+      }
       if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
       if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
         if( iRetry>=1 ){
@@ -2450,6 +2468,7 @@ int main(int argc, char const * const *argv){
       sqlite3_str_appendf(pStr, " --encoded-filenames %d", nHexEncode);
     }
     zCmd = sqlite3_str_finish(pStr);
+    if( bDryRun ){ printf("%s\n", zCmd); exit(0); }
     if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
     if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
       fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
