@@ -1461,4 +1461,14 @@ SELECT json_array_insert('{"a]":[1,2,3],"b":2}','$.a][1]',9);
 .testcase 2550
 SELECT json_array_insert('[1,2,3]','$',99);
 .check --glob "Error*not an array element: '$'"
+
+# Bug 2026-11-04T00:57:03Z sqlite.org/bugs/info/f3a7ac5ca8
+# json_error_position() returns the wrong position for extra text
+# after well-formed JSON.  By Marius
 #
+.testcase 2600
+SELECT json_error_position('[1,2,3] x'), json_error_position('{"a":[1,2]}x');
+.check 9,12
+.testcase 2601
+SELECT json_error_position('[1,[]] x');
+.check 8
