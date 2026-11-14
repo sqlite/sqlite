@@ -1847,14 +1847,15 @@ static char *shellFakeSchema(
 **
 ** A build has capability X if any of the following are true:
 **
-**   (1)  A function named X exists.
-**   (2)  A module named X exists.
-**   (3)  A compile-time option X is used for the build.
+**   (1)  A VFS named X exists.
+**   (2)  A function named X exists.
+**   (3)  A module named X exists.
+**   (4)  A compile-time option X is used for the build.
 **
 ** Comparison between X and the various items above is done
-** without to case.  So capable('generate_series') and
-** capable('GENERATE_SERIES') and capable('Generate_Series')
-** all work the same.
+** using sqlite_stricmp() so that upper/lower case does not matter.
+** So capable('generate_series') and capable('GENERATE_SERIES')
+** both work the same.
 **
 ** There are also special names "vtab", "fkey", and "load_ext"
 ** that return true as long as compile-time options
@@ -1905,9 +1906,20 @@ static void shellCapable(
   size_t i;
   int invert = 0;
   int res = 0;
+  sqlite3_vfs *pVfs;
 
   UNUSED_PARAMETER(nVal);
   if( z==0 ) return;
+
+  /* Check available VFS names */
+  for(pVfs=sqlite3_vfs_find(0); pVfs; pVfs=pVfs->pNext){
+    if( sqlite3_stricmp(z,pVfs->zName)==0 ){
+      res = 1;
+      goto capable_finished;
+    }
+  }
+
+  /* Check special cases likek "vtab" and "fkey" */
   for(i=0; i<sizeof(azInversions)/sizeof(azInversions[0])-1; i+=2){
     if( sqlite3_stricmp(z, azInversions[i])==0 ){
       z = azInversions[i+1];
@@ -1915,12 +1927,14 @@ static void shellCapable(
       break;
     }
   } 
+
+  /* Run pragmas listing compile-time options, virtual tables, and functions */
   for(i=0; i<sizeof(azSql)/sizeof(azSql[0]); i++){
     sqlite3_stmt *pStmt = 0;
     sqlite3_prepare_v2(p->db, azSql[i], -1, &pStmt, 0);
     while( sqlite3_step(pStmt)==SQLITE_ROW ){
       const char *zRow = (const char*)sqlite3_column_text(pStmt, 0);
-      if( sqlite3_stricmp(zRow, z)==0 ){
+      if( sqlite3_stricmp(z,zRow)==0 ){
         res = 1;
         break;
       }
@@ -1928,6 +1942,8 @@ static void shellCapable(
     sqlite3_finalize(pStmt);
     if( res ) break;
   }
+
+capable_finished:
   if( invert ) res = !res;
   sqlite3_result_int(pCtx, res);
 }
@@ -9818,8 +9834,9 @@ static char *trimSpace(char *zIn, int *pN){
   while( IsSpace(zIn[0]) ){ zIn++; }
   if( pN ){
     size_t n = strlen(zIn);
+    assert( n<=0x7fffffff );
     while( n>0 && IsSpace(zIn[n-1]) ){ n--; }
-    *pN = n;
+    *pN = (int)n;
   }
   return zIn;
 }
