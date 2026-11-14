@@ -1,5 +1,5 @@
-C Enhance\sthe\s.check\scommand\sof\sthe\sCLI\sso\sthat\sthe\sPATTERN\sis\sthe\nconcatenation\swith\sspace\sseparator\sof\sall\snon-option\sarguments.\nAlso\sfix\sa\sbug\sthat\sprevented\sthe\sCLI\sfrom\scompiling\swith\nSQLITE_OMIT_LOAD_EXTENSION.
-D 2026-11-14T19:54:25.441
+C Fix\sa\sharmless\scompiler\swarning\sadded\sby\s[116a220245803639].
+D 2026-11-14T19:59:29.067
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -761,7 +761,7 @@ F src/date.c 98dadb15c9d32e78f2d1e6b12a61c86b5428e4742a60727825b580805f505aaa
 F src/dbpage.c b6430aee463c8899363baad61e7623c1299dd135619d6002345c5050b02ce04a
 F src/dbstat.c e9e7ffe4363ebaa34368bbd0d76c3184071a7343060b5363950cf5a3ac39e0e4
 F src/delete.c f3f07c1fb6ac87fac2425d48fd40ecb2f24a4495a9966f5a939668d3576916c8
-F src/expr.c a8e9c281dd011252b9270ec4b800feca65f07246448f2da8214864c286f7adad
+F src/expr.c ac4cffdfbc81a0d21b0bea821e00408872129f21557f09d32734f237f8f7b920
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 530a71895451ad32f4cffd9657226ad6070cca6a913c1f0bccd58e79d0d0e385
 F src/func.c 0e1beb5ffbcb32823b797b196e8a9c7f55d17a8ded8472fed5e04a44fb122502
@@ -2311,8 +2311,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c383654fd16f2a3acdf63667f89200294e6e1bc6fb40f935cd2806eacc2023fd
-R 2e9a75f2fd19c87a3bf38d3b9944ea89
+P cf2c3c8f122d56a07b2de793cbc670580e079cf22b935e601025e8aeca61bff6
+R e3d9a07503f606a13a63fc049cef92ab
 U drh
-Z 6cfcf1d9054bc309489bfc1ff00a8ac2
+Z 80c0f467f0cee2ea773dd0010d481ebb
 # Remove this line to create a well-formed Fossil manifest.
