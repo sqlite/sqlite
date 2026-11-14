@@ -1512,4 +1512,21 @@ CREATE INDEX t4i ON t4(c1) WHERE c0 = 1e0;
 .param set ?1 1
 SELECT count(*) FROM t4 WHERE c0 = ?1;
 .check 1
+
+# Real 0.0 and -0.0 do not cause a problem, as they both convert
+# to text value "0.0".
+#
+.testcase 2730
+CREATE TABLE t5(c0 TEXT, c1);
+INSERT INTO t5 VALUES(0.0, 0.0);
+CREATE INDEX t5i ON t5(c1) WHERE c0 = 0.0;
+.param init
+.param set ?1 -0.0
+SELECT count(*) FROM t5 WHERE c0 = ?1;
+.check 1
+.testcase 2731
+SELECT count(*) FROM t5 WHERE c0 = -0.0;
+.check 1
 .param clear
+
+
