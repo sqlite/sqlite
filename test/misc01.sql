@@ -137,14 +137,14 @@ UPDATE sqlite_schema
  WHERE name IN ('i1','v1','r1');
 .testcase 410
 .recover
-.check --exact <<END
+.check --glob <<END
 .dbconfig defensive off
 .safe
 BEGIN;
 PRAGMA writable_schema = on;
 PRAGMA foreign_keys = off;
 PRAGMA encoding = 'UTF-8';
-PRAGMA page_size = '4096';
+PRAGMA page_size = '#';
 PRAGMA auto_vacuum = '0';
 PRAGMA user_version = '0';
 PRAGMA application_id = '0';

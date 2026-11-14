@@ -259,6 +259,15 @@ do_catchsql_test strict1-9.4.43 {
   INSERT INTO strict(k) VALUES(43);
 } {1 {cannot store TEXT value in BLOB column strict.c4}}
 
+##########################################################################
+####         Remaining tests in the file require ALTER TABLE         #####
+####                                                                 #####
+ifcapable !altertable {
+  finish_test
+  return
+}
+##########################################################################
+
 #-------------------------------------------------------------------------
 # ALTER TABLE ADD COLUMN on a STRICT table should not need to scan the
 # entire table when the new column has no DEFAULT (or a NULL DEFAULT),

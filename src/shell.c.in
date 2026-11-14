@@ -10185,7 +10185,7 @@ static int dotCmdTestcase(ShellState *p){
       }
       free(p->zErrPrefix);
       i++;
-      p->zErrPrefix = azArg[i][0]==0 ? 0 : strdup(azArg[i]);
+      p->zErrPrefix = (azArg[i] && azArg[i][0]) ? strdup(azArg[i]) : 0;
     }else if( zName ){
       dotCmdError(p, i, "unknown option", 0);
       return 1;
@@ -10465,9 +10465,11 @@ static int dotCmdSafe(ShellState *p){
   for(i=0; i<ArraySize(p->aAuxDb); i++){
     sqlite3 *db = p->aAuxDb[i].db;
     if( db==0 ) continue;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
     sqlite3_create_module(db, "fsdir", 0, 0);
-    sqlite3_create_function(db, "writefile", -1, 0, 0, 0, 0, 0);
     sqlite3_create_module(db, "zipfile", 0, 0);
+#endif
+    sqlite3_create_function(db, "writefile", -1, 0, 0, 0, 0, 0);
     sqlite3_create_function(db, "zipfile", -1, 0, 0, 0, 0, 0);
   }
   return 0;
@@ -15530,6 +15532,7 @@ int SQLITE_CDECL main(int argc, char **argv){
         shell_check_oom(zErrCtx);
         sqlite3_snprintf(64,zErrCtx,"argv[%i]:",aiCmd[i]);
         data.zInFile = "<cmdline>";
+        free(data.zErrPrefix);
         data.zErrPrefix = zErrCtx;
         rc = do_meta_command(azCmd[i], &data);
         free(data.zErrPrefix);

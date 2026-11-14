@@ -9,6 +9,13 @@
 #    May you find forgiveness for yourself and forgive others.
 #    May you share freely, never taking more than you give.
 #
+
+# All tests in this module assume virtual tables exist
+#
+.if NOT capable('vtab')
+.exit
+.endif
+
 #***********************************************************************
 #
 # A multi-row VALUES clause on the left of a compound operator should
