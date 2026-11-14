@@ -19,14 +19,14 @@
 .mode -reset quote
 .if NOT capable('vtab')
 .testcase setup
-.check ''
+.check
 .exit
 .endif
 
 .testcase setup
 .open :memory:
 .mode tty
-.check ''
+.check
 
 # The ".eqp on" setting does not affect the output from .fullschema
 # and similar.
@@ -63,7 +63,7 @@ END
 
 .testcase 120
 .tables
-.check --glob "t1"
+.check --glob t1
 
 .testcase 130
 .indexes
@@ -77,10 +77,11 @@ END
 .mode --reset list
 .testcase 200
 SELECT 'a'||char(10)||'b';
-.check 'a b'
+.check a b --keep
+.check ' a b '
 .testcase 201
 SELECT '  a'||char(9)||'b  '||char(10);
-.check 'a b'
+.check a b
 .testcase 202
 SELECT 'a   b';
 .check --not 'a b'
@@ -92,7 +93,7 @@ SELECT 'a b';
 .check --not 'a/b'
 .testcase 205
 SELECT 'a/b';
-.check --not 'a b'
+.check --not a b
 .testcase 206
 SELECT 'ab';
 .check --not 'a b'

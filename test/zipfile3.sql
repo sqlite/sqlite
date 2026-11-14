@@ -31,7 +31,7 @@ INSERT INTO t2 VALUES(readfile('test.zip')),('test.zip');
 .check
 .testcase 101
 SELECT (SELECT name FROM zipfile(t2.x)) FROM t2;
-.check 'abc.txt abc.txt'
+.check abc.txt abc.txt
 
 # At one point, valgrind would show a UAF on the following
 .if capable('tryeval')

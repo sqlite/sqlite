@@ -9809,7 +9809,7 @@ dotCmdOutput_error:
 ** Return true if the argument is <<MARK for some arbitrary mark
 */
 static int isHereDoc(const char *z){
-  return z[0]=='<' && z[1]=='<' && z[2]!=0;
+  return z && z[0]=='<' && z[1]=='<' && z[2]!=0;
 }
 
 /*
@@ -9861,6 +9861,9 @@ static char *trimSpace(char *zIn, int *pN){
 ** After checking the result, all captured output is discarded and
 ** output starts going back to the console, unless --keep is used.
 **
+** The PATTERN is the concatenation (with a single space separator) of
+** all arguments that are not part of OPTIONS.
+**
 ** If PATTERN is "<<ENDMARK" (for any ENDMARK) then the actual pattern is
 ** taken from subsequent lines of text up to the first line that begins
 ** with ENDMARK.
@@ -9901,9 +9904,9 @@ static int dotCmdCheck(ShellState *p){
   int k;                             /* Result of pickStr() */
   char *zTest;                       /* Textcase result */
   int bKeep = 0;                     /* --keep option */
-  char *zCheck = 0;                  /* PATTERN argument */
-  char *zPattern = 0;                /* Actual test pattern */
-  char *zToFree = 0;                 /* allocated text to free */
+  sqlite3_str *pPattern;             /* PATTERN argument */
+  char *zPattern = 0;                /* Test pattern */
+  char *zToFree = 0;                 /* Start of test pattern */
   int eCheck = 0;                    /* 0: default.  Else 1+index of option */
   int isOk = 0;                      /* True if results are OK */
   int bNot = 0;                      /* Invert the sense of the test */
@@ -9923,6 +9926,7 @@ static int dotCmdCheck(ShellState *p){
     dotCmdError(p, 0, "no .testcase is active", 0);
     return 1;
   }
+  pPattern = sqlite3_str_new(p->db);
   for(i=1; i<nArg; i++){
     char *z = azArg[i];
     if( z[0]=='-' && z[1]=='-' && z[2]!=0 ) z++;
@@ -9944,20 +9948,18 @@ static int dotCmdCheck(ShellState *p){
         eCheck = k+1;
       }else{
         output_reset(p);
+        sqlite3_str_free(pPattern);
         dotCmdError(p, i, "incompatible with prior options",0);
         return 1;
       }
-    }else if( zCheck ){
-      output_reset(p);
-      dotCmdError(p, i, "unknown option", 0);
-      return 1;
     }else{
-      zCheck = azArg[i];
-      iPat = i;
+      if( sqlite3_str_length(pPattern)>0 ){
+        sqlite3_str_appendchar(pPattern, 1, ' ');
+      }else{
+        iPat = i;
+      }
+      sqlite3_str_appendall(pPattern, azArg[i]);
     }
-  }
-  if( zCheck==0 ){
-    zCheck = "";  /* No pattern string defaults to mean no output */
   }
   if( sqlite3_str_length(cli_output_capture) ){
     zTest = sqlite3_str_value(cli_output_capture);
@@ -9966,15 +9968,14 @@ static int dotCmdCheck(ShellState *p){
     zTest = "";
   }
   p->nTestRun++;
-  if( isHereDoc(zCheck) ){
-    zPattern = captureHereDoc(p, zCheck+2);
-    if( zPattern==0 ){
-      zPattern = sqlite3_mprintf("");
-    }
+  zToFree = zPattern = sqlite3_str_finish(pPattern);
+  if( isHereDoc(zPattern) ){
+    zPattern = captureHereDoc(p, zPattern+2);
+    sqlite3_free(zToFree);
     zToFree = zPattern;
-  }else{
-    zPattern = zCheck;
-    zToFree = 0;
+  }
+  if( zPattern==0 ){
+    zToFree = zPattern = sqlite3_mprintf("");
   }
   shell_check_oom(zPattern);
   switch( eCheck ){
@@ -10486,7 +10487,9 @@ static int dotCmdSafe(ShellState *p){
   int i;
   p->bSafeMode = 1;
   p->bSafeModePersist = 1;
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
   if( p->db ) sqlite3_enable_load_extension(p->db, 0);
+#endif
   for(i=0; i<ArraySize(p->aAuxDb); i++){
     sqlite3 *db = p->aAuxDb[i].db;
     if( db==0 ) continue;

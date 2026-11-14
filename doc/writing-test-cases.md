@@ -101,6 +101,10 @@ errors" line, and check the exit status, to know whether the script passed.
      aspects of the captured output.  When there are multiple .check
      commands in a row, all but the last should use --keep.
 
+  *  The PATTERN is concatenation (with a single space separator) of
+     all arguments to the .check command except arguments that are an
+     option or the argument to an option.
+
   *  By default, captured output and PATTERN are compared like this:
      (1) leading and trailing whitespace is removed from both output
      and PATTERN.  (2) A whitespace character in PATTERN match a
