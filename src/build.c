@@ -658,6 +658,7 @@ void sqlite3ResetOneSchema(sqlite3 *db, int iDb, Vdbe *pSafe){
       }else if( DbMaskTest(m,i) ){
         db->bPendingSchemaReset = 1;
       }else{
+        sqlite3ExpireStmtsUsingSchema(db, i, pSafe);
         sqlite3SchemaClear(db->aDb[i].pSchema);
         db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
       }

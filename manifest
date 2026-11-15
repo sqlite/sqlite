@@ -1,5 +1,5 @@
-C Improve\srobustness\sof\sRBU\sagainst\sSQL\sinjection\sattackes\scoming\sfrom\nhostile\sdatabases.\s\s(Because\sof\sthe\sway\sRBU\sis\sintended\sto\sbe\sused,\nboth\sdatabases\s<i>should</i>\sbe\strusted,\sand\sso\sthis\sis\snot\sa\srealistic\nattack,\sbut\sit\sdoes\snot\shurt\sto\sfix\sit.)
-D 2026-11-15T00:55:04.503
+C Ensure\sthat\sEXPLAIN\sand\sEXPLAIN\sQUERY\sPLAN\sstatements\sare\sexpired\safter\nthe\sschema\schanges\sout\sfrom\sunder\sthem.\n[bugs:/info/2026-11-15T21:05:06Z|Bug\s2026-11-15T21:05:06Z]
+D 2026-11-15T23:14:27.559
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -753,7 +753,7 @@ F src/btmutex.c 8a6878fcbb95b37021e4ec20d72efeb197d1b114915af73239f1b1f638b3b844
 F src/btree.c 8fcf0ffeeb0ad7565dd0d27812062a1dedac1b52d48da2e398baade5bb76dff5
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d82
-F src/build.c 5528027b42d5af37000638fef24a38a9ac078cc684c18304daf6b63175a8c27d
+F src/build.c 02275b78d98ec194d62b0f9eadea10941afb91dec61b07f0b4b0b458b8cf5665
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 7e922b672ea82f83822baad092a0d4fd9b0074d1be2fa7d15cceeb8792212b2c
 F src/complete.c f68f545b9c6c19e2e848672dc0e4da230072fedc335d8980b55242cc4cfa60da
@@ -1686,7 +1686,7 @@ F test/schema4.test 3b26c9fa916abb6dadf894137adcf41b7796f7b9
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
 F test/schema6.test e4bd1f23d368695eb9e7b51ef6e02ca0642ea2ab4a52579959826b5e7dce1f9b
 F test/schemafault.test 1936bceca55ac82c5efbcc9fc91a1933e45c8d1e1d106b9a7e56c972a5a2a51e
-F test/schemareset.test 558f52695809d7eec41e2d430b95e12bfa68e50296a6fdb0056d2c724ca7ad7c
+F test/schemareset.test 67f911d020edba67c8f4a97d6cd140baba3f810ff637a830dcfa28bcdf886774
 F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2ff09384
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/seekscan1.test c03d81f495f24bbcbb4d087af09b5732ba5ce06b250ce8abfb703839f3e42bc2
@@ -2311,8 +2311,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 427bf208e8f2f99e512a84ac96ccca735f97256fe3f0348b2cf82d47c7f5c4dd
-R 80c6814e0a0edc05e4584f2e04ec15c3
+P ad4ee20509dc4e2803f35093b03df55cb3e39c8083b0d4ad231e1432516c7841
+R 5e5c18bbfbd14a5f7e38316a64c53cbb
 U drh
-Z fe5f422647f9a71dec548eb78fd6f919
+Z 38a52b55b1b7360bae69ccec8c2ddae0
 # Remove this line to create a well-formed Fossil manifest.
