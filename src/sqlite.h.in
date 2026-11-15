@@ -5567,7 +5567,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** <tr><td> INTEGER  <td>   BLOB    <td> Same as INTEGER->TEXT
 ** <tr><td>  FLOAT   <td> INTEGER   <td> [CAST] to INTEGER
 ** <tr><td>  FLOAT   <td>   TEXT    <td> ASCII rendering of the float
-** <tr><td>  FLOAT   <td>   BLOB    <td> [CAST] to BLOB
+** <tr><td>  FLOAT   <td>   BLOB    <td> Same as FLOAT->TEXT
 ** <tr><td>  TEXT    <td> INTEGER   <td> [CAST] to INTEGER
 ** <tr><td>  TEXT    <td>  FLOAT    <td> [CAST] to REAL
 ** <tr><td>  TEXT    <td>   BLOB    <td> No change
