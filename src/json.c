@@ -1612,6 +1612,7 @@ json_parse_restart:
           if( pParse->nBlob!=(u32)iStart ) pParse->hasNonstd = 1;
           break;
         }
+      json_parse_label_identifier:
         j += json5Whitespace(&z[j]);
         op = JSONB_TEXT;
         if( sqlite3JsonId1(z[j]) 
@@ -1635,6 +1636,13 @@ json_parse_restart:
       if( pParse->oom ) return -1;
       t = pParse->aBlob[iBlob] & 0x0f;
       if( t<JSONB_TEXT || t>JSONB_TEXTRAW ){
+        if( sqlite3JsonId1(z[j + json5Whitespace(&z[j])]) ){
+          /* JSON5 unquoted label that spells a keyword or special number:
+          ** true, false, null, NaN, Infinity. */
+          pParse->nBlob = iBlob;
+          x = 0;
+          goto json_parse_label_identifier;
+        }
         pParse->iErr = j;
         return -1;
       }

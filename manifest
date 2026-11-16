@@ -1,5 +1,5 @@
-C Mark\ssome\sinternal-only\sroutines\sas\sstatic\sin\sthe\sexpert\sextension.\sNo\sfunctional\schanges.
-D 2026-11-16T17:35:51.358
+C In\sJSON5,\sallow\san\sunquoted\slabel\sto\sbe\sa\sJSON\skeyword\sor\sspecial\sconstant\nlike\s"Infinity".\n[bugs:/info/2026-11-04T00:54:43Z|Enhancement\srequest\s2026-11-04T00:54:43Z]
+D 2026-11-16T18:29:51.442
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -771,7 +771,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 5cb15147c8583d0fc4748e1c12ea6f38c9deaeefa147a4d8d379fd9bc81fee9a
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c ad4d170d7abf6093b02399c38e9afc84fd9f1a4646a5fc7cdc10dec4a8b3ae38
-F src/json.c 51626a4d524557c2939115a4e7c0f4145a4e6265370284aaaabdc31d74d8e160
+F src/json.c 4cb963481b4b7255ecaeb5b498662d0ebe7b9718d98c8d1249e37b2f091ac3bf
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c c6c1cce7e0bff84544eb73fbedb2d04287779601594c1e13b04913d38596559e
 F src/main.c b09bb07437106f4b8ccbb64c252b439be387bde009bd069b1b77c832009fab5a
@@ -2312,8 +2312,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2f5b194d9eea7bd6af062c4be9540a69a179bb43e9155826251c3c2bbbf5d792
-R 0370fbbc9860eb9a5f20fbb2fd72774f
-U stephan
-Z 4921552462d7d0b9c65c83cb70fe2c0f
+P 37a791871575e05dedb370e77cd00f76c3d61634eecdf158367bd9a9248a9809
+R 0faa660971a6301d78de226eabd93af4
+U drh
+Z 2b1dfbb5c6161a01973889a39731b0a1
 # Remove this line to create a well-formed Fossil manifest.
