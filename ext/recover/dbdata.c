@@ -201,6 +201,13 @@ static int dbdataConnect(
   (void)argv;
   (void)pzErr;
   sqlite3_vtab_config(db, SQLITE_VTAB_USES_ALL_SCHEMAS);
+
+  /* These tables expose the raw content of the database pages of any
+  ** attached database, in the same way as sqlite_dbpage. And, like
+  ** sqlite_dbpage, they may only be used from top-level SQL, not from
+  ** within triggers or views. Otherwise a view or trigger in the schema
+  ** of one database could be used to read the content of another.  */
+  sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
   if( rc==SQLITE_OK ){
     pTab = (DbdataTable*)sqlite3_malloc64(sizeof(DbdataTable));
     if( pTab==0 ){

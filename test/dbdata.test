@@ -20,9 +20,19 @@ ifcapable !vtab||!compound {
   finish_test
   return
 }
-if { [catch { db enable_load_extension 1 }]
-  || [catch { db eval { SELECT load_extension('../dbdata') } }] 
-} {
+# Register the sqlite_dbdata and sqlite_dbptr virtual tables with database
+# handle $db. Use the [sqlite3_dbdata_init] command if this testfixture
+# provides it, or else try to load them from a loadable extension.
+#
+proc dbdata_load {db} {
+  if {[info commands sqlite3_dbdata_init]!=""} {
+    sqlite3_dbdata_init $db
+  } else {
+    $db enable_load_extension 1
+    $db eval { SELECT load_extension('../dbdata') }
+  }
+}
+if {[catch { dbdata_load db }]} {
   finish_test
   return
 }
@@ -80,8 +90,7 @@ do_test 1.5 {
 
 #-------------------------------------------------------------------------
 reset_db
-db enable_load_extension 1
-db eval { SELECT load_extension('../dbdata') }
+dbdata_load db
 
 do_execsql_test 2.0 {
   CREATE TABLE t1(a);
@@ -111,5 +120,46 @@ do_execsql_test 2.3 {
   3 24   3 23
 }
 
+#-------------------------------------------------------------------------
+# The sqlite_dbdata and sqlite_dbptr tables may only be used from top-level
+# SQL. They may not be used within a view or trigger, as this would allow
+# the schema of one database to read the raw content of another that has
+# been attached to the same connection.
+#
+reset_db
+dbdata_load db
+forcedelete test.db2
+do_execsql_test 3.0 {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t1(x);
+  INSERT INTO aux.t1 VALUES('private data');
+  CREATE TABLE t2(y);
+  CREATE VIEW v1 AS SELECT value FROM sqlite_dbdata('aux');
+  CREATE VIEW v2 AS SELECT child FROM sqlite_dbptr('aux');
+  CREATE TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+    INSERT INTO t2 SELECT value FROM sqlite_dbdata('aux') WHERE pgno=2;
+  END;
+}
+
+do_catchsql_test 3.1 {
+  SELECT * FROM v1;
+} {1 {unsafe use of virtual table "sqlite_dbdata"}}
+do_catchsql_test 3.2 {
+  SELECT * FROM v2;
+} {1 {unsafe use of virtual table "sqlite_dbptr"}}
+do_catchsql_test 3.3 {
+  INSERT INTO t2 VALUES(1);
+} {1 {unsafe use of virtual table "sqlite_dbdata"}}
+do_execsql_test 3.4 {
+  SELECT count(*) FROM t2;
+} {0}
+
+# Direct use is still allowed.
+do_execsql_test 3.5 {
+  SELECT value FROM sqlite_dbdata('aux') WHERE pgno=2 AND field=0;
+} {{private data}}
+do_execsql_test 3.6 {
+  SELECT count(*) FROM sqlite_dbptr('aux');
+} {0}
 
 finish_test

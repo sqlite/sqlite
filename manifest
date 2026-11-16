@@ -1,5 +1,5 @@
-C (PandaSt0rm\sF3)
-D 2026-11-16T17:07:21.333
+C (PandaSt0rm\sF5)
+D 2026-11-16T17:08:06.333
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -481,7 +481,7 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c 2cc0c05e16aaae91d32da238b67a59f4917db062f3f87fd7f703d4ed53435f09
 F ext/rbu/sqlite3rbu.h e3a5bf21e09ca93ce4e8740e00d6a853e90a697968ec0ea98f40826938bdb68e
 F ext/rbu/test_rbu.c 8b6e64e486c28c41ef29f6f4ea6be7b3091958987812784904f5e903f6b56418
-F ext/recover/dbdata.c d49c08a6aad98a0da9b31d80826878cd77350b7ef380755adf8b8565c67755f0
+F ext/recover/dbdata.c eea1ced904577c6ba6b070114c483b779dae9b842cc2f1828ac599624a719f5e
 F ext/recover/recover1.test f3586db8786fbe0cd34bcc64c1fd5a8be0c9ca6b49804a354b026b20fe2136bb
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test c74170e0f7b02456af41838afeb5353fdb985a48cc2331d661bbabbca7c6b8e3
@@ -1119,7 +1119,7 @@ F test/date2.test 6344250abb5face9174778ec0a476e2baa97ad509df9eee81fbb1ec6933b71
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test b5ad22baf7394e008ac59383840159daedd45be31dcf74a3b2450ec0e28955ce
 F test/date5.test 14ba189bc4d03efc371dd5302e035764f6633355a3e13acb4a45e7b33530231e
-F test/dbdata.test 042f49acff3438f940eeba5868d3af080ae64ddf26ae78f80c92bec3ca7d8603
+F test/dbdata.test 2509c326c5caecfcfcb7d0ed4bec3261cb69b1c13d379f1bf36d2bffcfcaefb5
 F test/dbfuzz.c 687793b95adc63477fdc1ce935d73befb6ec01eb9eb18f56be7fb23acd056cde
 F test/dbfuzz001.test 34d72411704e1f40731a1818ff4ba42b43319e41fb59fd809aceb9c05ba8995b
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
@@ -2312,11 +2312,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 447a681116cc5e2650a884322f0a8e6efa620c5b13aaa8cf0d4655357e726545
-R 7cf2c04e8a784184dc38a02077b9862d
-T *branch * pandast0rm-fixes
-T *sym-pandast0rm-fixes *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 7e6825df9922bb43a8d7208e291c4cd7dd01f6563e6393a85398984c4232ad1c
+R afa1cda2410225547b8416849368b86f
 U stephan
-Z 6e5b5a4564683636ca2d68459e7e8449
+Z d4a31efa7b5bd80bc830fbf15eaf81b7
 # Remove this line to create a well-formed Fossil manifest.
