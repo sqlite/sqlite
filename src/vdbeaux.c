@@ -3586,6 +3586,9 @@ int sqlite3VdbeTransferError(Vdbe *p){
     sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, SQLITE_TRANSIENT);
     sqlite3EndBenignMalloc();
     db->bBenignMalloc--;
+    if( db->pErr==0 || (db->pErr->flags & MEM_Str)==0 ){
+      rc = p->rc = SQLITE_NOMEM_BKPT;
+    }
   }else if( db->pErr ){
     sqlite3ValueSetNull(db->pErr);
   }

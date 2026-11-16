@@ -66,4 +66,22 @@ do_faultsim_test 3 -faults oom* -prep {
   faultsim_test_result {0 ok}
 }
 
+#-------------------------------------------------------------------------
+# An OOM while copying a run-time error message from the VM to the
+# database handle used to cause SQLITE_ERROR to be returned along with
+# the generic "SQL logic error" message.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(x);
+}
+faultsim_save_and_close
+do_faultsim_test 4 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { SELECT abs(-9223372036854775807 - 1) }
+} -test {
+  faultsim_test_result {1 {integer overflow}}
+}
+
 finish_test

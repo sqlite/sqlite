@@ -1,5 +1,5 @@
-C Tests\sintended\sfor\sthe\sprevious\scheck-in.
-D 2026-11-16T18:38:45.662
+C When\ssqlite3VbdeTransferError()\sfails\sdue\sto\san\sOOM,\sreport\sthat\sas\sOOM\sinstead\sof\sretaining\sthe\soriginal\scode\swithout\sthe\soriginal\smessage.\sA\strivial\schange\sbut\sit\shas\spotential\sfor\sAPI\scompatibility\sguaranty\sviolations\sso\srequires\sdrh\ssign-off.
+D 2026-11-16T18:54:12.840
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -881,7 +881,7 @@ F src/vdbe.c c841b9c6129fac64b7c836020b2fc21a7c45ac27a0434a94600cca6690f278a9
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 581b112c6a763a5871ae1d2b948c5288e749d03c7e3829ebce2738402fe21074
 F src/vdbeapi.c 1602b12cae241e086779290985c67f0c843a534cc75bb9eceb4ffa6afd850516
-F src/vdbeaux.c 85ba9a281315da54496583ad615195e144bb4a12baf53be43117cad40b724c9d
+F src/vdbeaux.c c6a9cacee97117d793b39983dc1da356c44ce99140cffb44a71ffb36d5656998
 F src/vdbeblob.c 40ca30a10499e804be0df669a13c53e48529c7f390676b4a224627998ac1dab9
 F src/vdbemem.c b282c23ad1bc0d3ff192177f7c32ea6549ab33b32e6d3409e922973bd6cea4db
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
@@ -1508,7 +1508,7 @@ F test/mallocI.test 6c23a71df077fa5d387be90e7e669c5b368ca38a
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test 25897506da0098cea09b302ff432b0fb6d8002773c1e0fc9732aa8b444bfd455
 F test/mallocL.test fb311ff80afddf3b1a75e52289081f4754d901dc
-F test/mallocM.test f43cf1534f665170a31556c3c58f494cc0b6ba9fbf2276a4699ae45e8223cdc9
+F test/mallocM.test 2fcbc857739e405be6a50ce62db269d7b04740532d2ac5137aa901c6dc6ced83
 F test/malloc_common.tcl eac970bee5e4d38be38818d25b2796336620b0eff823e84db302cea33365ab9d
 F test/malloctraceviewer.tcl 3e3ddf11e30d2b20f53aa16aa6615082fb24a100bea61cca7214c927b742eba6
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
@@ -2312,8 +2312,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 83fc83e36c906ad4a78ab2bec6e2efbb5632e59da622f15e7108fce6b9ee8fe3
-R 23bca47ec93c890f2c4813a69ae30ead
+P cb262c966d113e9c1d043ba65536a7e9ceb98f6dba58ba40e39f7d823c57d109
+R c5bdbc966c7d342677fb5eb98e6b9a0f
+T *branch * errmsg-cp-oom
+T *sym-errmsg-cp-oom *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z 1f020856136edae6528964e54e9104dd
+Z ec4733ec5756d74f758336325946ea99
 # Remove this line to create a well-formed Fossil manifest.
