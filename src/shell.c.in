@@ -13207,7 +13207,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     {"prng_seed",          SQLITE_TESTCTRL_PRNG_SEED,   0, "SEED ?db?"      },
     {"seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,  0, ""               },
     {"sorter_mmap",        SQLITE_TESTCTRL_SORTER_MMAP, 0, "NMAX"           },
-    {"tune",               SQLITE_TESTCTRL_TUNE,        1, "ID VALUE"       },
+    {"tune",               SQLITE_TESTCTRL_TUNE,        1, "ID [VALUE]"     },
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -13469,11 +13469,9 @@ static int do_meta_command(const char *zLine, ShellState *p){
               int val = 0;
               rc2 = sqlite3_test_control(testctrl, -id, &val);
               if( rc2!=SQLITE_OK ) break;
-              if( id>1 ) cli_puts("  ", p->out);
-              cli_printf(p->out, "%d: %d", id, val);
+              cli_printf(p->out, "%2d: %d\n", id, val);
               id++;
             }
-            if( id>1 ) cli_puts("\n", p->out);
             isOk = 3;
           }
           break;
