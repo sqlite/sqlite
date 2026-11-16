@@ -249,5 +249,70 @@ do_execsql_test 6.4 {
 
 # db eval { SELECT * FROM t1 } { puts "$a || $b" }
 
+#-------------------------------------------------------------------------
+# The sqlite3changeset_concat() API refuses to combine a changeset with
+# a patchset, but a blob that does so may still be passed to the
+# sqlite3changeset_apply() family of functions. Check that changes
+# deferred because of a UNIQUE constraint are retried using the format
+# of the table they belong to, not that of the table that follows.
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);
+  CREATE TABLE t2(x PRIMARY KEY, y);
+  INSERT INTO t1 VALUES(1, 'one'), (2, 'two');
+}
+
+# Swap the b values of the two rows of t1. Neither UPDATE can be applied
+# while the other row still holds the old value, so both are deferred.
+set sql1 {
+  UPDATE t1 SET b='tmp' WHERE a=1;
+  UPDATE t1 SET b='one' WHERE a=2;
+  UPDATE t1 SET b='two' WHERE a=1;
+}
+set sql2 {
+  INSERT INTO t2 VALUES('x', 'y');
+}
+do_test 7.1 {
+  db eval BEGIN
+  set ::C1 [changeset_from_sql $sql1]
+  set ::P2 [patchset_from_sql $sql2]
+  db eval ROLLBACK
+  db eval BEGIN
+  set ::P1 [patchset_from_sql $sql1]
+  set ::C2 [changeset_from_sql $sql2]
+  db eval ROLLBACK
+  execsql {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }
+} {1 one 2 two}
+
+# Test cases 7.2.3 and 7.2.4 append a table header with no changes
+# following it, taken from the start of P2 or C2 (the 7 bytes 'P' or 'T',
+# nCol, the two PK flags and "t2\0").
+#
+set H2 [string range $P2 0 6]
+set H2c [string range $C2 0 6]
+proc xConflict {args} { lappend ::conflicts $args ; return "OMIT" }
+foreach {tn blob res} [list \
+  1 $C1$P2  {1 two 2 one x y} \
+  2 $P1$C2  {1 two 2 one x y} \
+  3 $C1$H2  {1 two 2 one}     \
+  4 $P1$H2c {1 two 2 one}     \
+] {
+  db eval BEGIN
+  do_test 7.2.$tn.1 {
+    set ::conflicts [list]
+    sqlite3changeset_apply db $blob xConflict
+    set ::conflicts
+  } {}
+  do_execsql_test 7.2.$tn.2 {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  } $res
+  db eval ROLLBACK
+}
+
 
 finish_test

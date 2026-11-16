@@ -5699,7 +5699,7 @@ static int sessionChangesetApply(
   int rc = SQLITE_OK;             /* Return code */
   const char *zTab = 0;           /* Name of current table */
   SessionApplyCtx sApply;         /* changeset_apply() context object */
-  int bPatchset;
+  int bPatchset = 0;              /* True if zTab changes are a patchset */
   u64 savedFlag = db->flags & SQLITE_FkNoAction;
   int bNew = 0;                   /* True for first entry of new table */
 
@@ -5734,10 +5734,14 @@ static int sessionChangesetApply(
       u8 *abPK;
       bNew = 0;
 
+      /* Retry any changes to the previous table deferred due to constraint
+      ** violations. Use the format (changeset or patchset) of that table,
+      ** as pIter->bPatchset now describes the new table.  */
       rc = sessionRetryConstraints(
-          db, pIter->bPatchset, zTab, &sApply, xConflict, pCtx
+          db, bPatchset, zTab, &sApply, xConflict, pCtx
       );
       if( rc!=SQLITE_OK ) break;
+      bPatchset = pIter->bPatchset;
 
       sessionUpdateFree(&sApply);
       sqlite3_free((char*)sApply.azCol);  /* cast works around VC++ bug */
@@ -5832,7 +5836,6 @@ static int sessionChangesetApply(
     rc = sessionApplyOneWithRetry(db, pIter, &sApply, xConflict, pCtx);
   }
 
-  bPatchset = pIter->bPatchset;
   if( rc==SQLITE_OK ){
     rc = sqlite3changeset_finalize(pIter);
   }else{
