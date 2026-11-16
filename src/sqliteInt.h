@@ -5027,6 +5027,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3ShowIdList(const IdList*);
   void sqlite3ShowSrcList(const SrcList*);
   void sqlite3ShowSelect(const Select*);
+  void sqlite3ShowSelectAsSql(const Select*);
   void sqlite3ShowWith(const With*);
   void sqlite3ShowUpsert(const Upsert*);
 #ifndef SQLITE_OMIT_TRIGGER
