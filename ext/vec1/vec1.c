@@ -6959,7 +6959,7 @@ static const float *vec1TransformInputVector(
     if(
         (pMod->hdr.flags & VEC1_MODEL_WHT)
      || (pMod->hdr.eDistance==VEC1_DISTANCE_COS)
-     || (nCodebook>0 && (nCodebook*pMod->nCodeElem)!=pMod->hdr.nElem)
+     || (nCodebook>0 && (u32)nCodebook*(u32)pMod->nCodeElem!=pMod->hdr.nElem)
     ){
       memcpy(aTmp, aRet, pMod->hdr.nElem * sizeof_f32);
       /* If distance=cos, normalize the vector before applying the WHT
