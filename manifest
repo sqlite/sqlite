@@ -1,5 +1,5 @@
-C (PandaSt0rm\sF5)
-D 2026-11-16T17:08:06.333
+C (PandaSt0rm\sF6)
+D 2026-11-16T17:08:44.395
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -604,7 +604,7 @@ F ext/vec1/test/vec1bucket.test 5af9afe8c4b8ec7e0a84ade0df7fb0163226145e3f47b72a
 F ext/vec1/test/vec1cat.test 8cea568d8823519044053d39f4eec8d77a806bf85e1e14817b448729038306de
 F ext/vec1/test/vec1cat2.test 9e0d9a9cfa33b6aade9150c73064be53e52de9d693f53b7600e7696ed8022e02
 F ext/vec1/test/vec1config.test ddb2afc068e78c0c55e0c44b8f4cdb9c80fb8695e062aba8fc30aff16e8377c5
-F ext/vec1/test/vec1corrupt.test 59bbe16f0dd5cfda27c4d851a1fda14d8a13d6fa1eead79d587172d3170d628e
+F ext/vec1/test/vec1corrupt.test c880f5c7e12229a49fd54cb6d22a6b46fee6c11816c3001c4bff0268258ee985
 F ext/vec1/test/vec1create.test fdf7dc7d4e62d5654c1ac27bb9aea9451f024280dce5d0ec97d2698a040b3914
 F ext/vec1/test/vec1delete.test 91a3a1c7328cb8960687b81790ac69c676409e3aff83a9a68f3bf3e8d32efc91
 F ext/vec1/test/vec1error.test 3d1b74cd535dd5c9d303309f0b18ec606b100139a6483cbbd495b0aa3a9c8a09
@@ -650,7 +650,7 @@ F ext/vec1/tool/vec1_algo_test.c 2777488a8b9ab9545732562c93988aa2424d7afd8b4895d
 F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b62631b480c2d2d
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c de33d11affa682b3dfa44220a06f167679465447cec7b719cfd711ea22b6d75f
+F ext/vec1/vec1.c f46121a90159cce834912263e80aefd9d34c6dbac94b21a02efcac89f326b2df
 F ext/wasm/GNUmakefile c0ec3c98a70f365a21aa047371b729d5b55e960dfc2959f24bdb8a15227385fe
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md a84fffbb50568f135ac19f121978b80473068ceee7075501ce2e64a62bb64df0
@@ -2312,8 +2312,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7e6825df9922bb43a8d7208e291c4cd7dd01f6563e6393a85398984c4232ad1c
-R afa1cda2410225547b8416849368b86f
+P 4c400f5122cad68b815ee78fc5a91eea6aa52c214039060b8997b1ba03921f27
+R fb1b1cda68e515140fbcfec339411813
 U stephan
-Z d4a31efa7b5bd80bc830fbf15eaf81b7
+Z 0eae9ef35c2a8c26dec07fedcaa9c025
 # Remove this line to create a well-formed Fossil manifest.

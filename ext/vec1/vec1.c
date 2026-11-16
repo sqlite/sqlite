@@ -5293,21 +5293,24 @@ static int vec1DecodeModel(
   }
 
   nCodebook = pMod->hdr.nCodebook;
-  if( nCodebook>0 ){
-    if( (pMod->hdr.flags & VEC1_MODEL_BITQUANT)==0 ){
-      pMod->nCodeElem = (pMod->hdr.nElem + nCodebook-1)/nCodebook;
-      pMod->aModel = (float*)pCsr;
-      pCsr += (nCodebook*pMod->nCodeElem*VEC1_PQ_CODEBOOK_SZ * sizeof_f32);
+  if( pMod->hdr.flags & VEC1_MODEL_BITQUANT ){
+    /* A binary quantizer uses either 1 bit for each element (nCodeElem==8)
+    ** or 1 bit for each pair of elements (nCodeElem==16) of the vector.
+    ** The code that encodes and compares vectors relies on nCodeElem being
+    ** one of these two values, so a model with any other nCodebook value,
+    ** including 0, is corrupt.  */
+    if( nCodebook>0 && ((pMod->hdr.nElem + 7)/8)==(u32)nCodebook ){
+      pMod->nCodeElem = 8;
+    }else if( nCodebook>0 && ((pMod->hdr.nElem + 15)/16)==(u32)nCodebook ){
+      pMod->nCodeElem = 16;
     }else{
-      if( ((pMod->hdr.nElem + 7)/8)==(u32)nCodebook ){
-        pMod->nCodeElem = 8;
-      }else if( ((pMod->hdr.nElem + 15)/16)==(u32)nCodebook ){
-        pMod->nCodeElem = 16;
-      }else{
-        *pzErr = sqlite3_mprintf("vec1: unrecognized bq codesize");
-        return SQLITE_ERROR;
-      }
+      *pzErr = sqlite3_mprintf("vec1: unrecognized bq codesize");
+      return SQLITE_ERROR;
     }
+  }else if( nCodebook>0 ){
+    pMod->nCodeElem = (pMod->hdr.nElem + nCodebook-1)/nCodebook;
+    pMod->aModel = (float*)pCsr;
+    pCsr += (nCodebook*pMod->nCodeElem*VEC1_PQ_CODEBOOK_SZ * sizeof_f32);
   }
   if( pMod->hdr.nBucket>0 ){
     pMod->aCentroid = (float*)pCsr;
