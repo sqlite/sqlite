@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\s".testctrl\stune"\sdot-command\sin\sthe\sCLI.
-D 2026-11-16T12:18:53.791
+C (PandaSt0rm\sF3)
+D 2026-11-16T17:07:21.333
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -73,8 +73,8 @@ F doc/writing-test-cases.md 9e371327b92033425817095de505ee4edae7ab86c23969dc8f53
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 9f4d6751981bf5dda7b7480f6f878659d032a47fe74d84f31f80fdc05d6cad78
-F ext/expert/expert1.test 9241d9a314b579a964d749827b38a9f0caadbf485f9a7c3603b3c53ee13b2b20
-F ext/expert/sqlite3expert.c ac3779031f64a1db654e9b223f2d57d43605166729a4ea4b1c473d67bf52afb7
+F ext/expert/expert1.test d5c47de856feeaf436d6daf501176b1c034b0fabad0c17a3efc16be62b42dbdd
+F ext/expert/sqlite3expert.c b50c24c63949002f293cc9e659e00b293711a23eba5d4a101d3fa6fa5b1917e5
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c c395134bd6d4efa594a7d26578a1cb624c4027b79b4b5fcd44736c5ef1f5f725
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -2312,8 +2312,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7919b2227b685a21e492e4a18dd83b3c33da483e45971edd14f3e65d5406d4df
-R 2a220a51ead1c0b41d16caea2a149c1a
-U drh
-Z 32cd82b67a7aeec453bfce9ed13de6c6
+P 447a681116cc5e2650a884322f0a8e6efa620c5b13aaa8cf0d4655357e726545
+R 7cf2c04e8a784184dc38a02077b9862d
+T *branch * pandast0rm-fixes
+T *sym-pandast0rm-fixes *
+T -sym-trunk * Cancelled\sby\sbranch.
+U stephan
+Z 6e5b5a4564683636ca2d68459e7e8449
 # Remove this line to create a well-formed Fossil manifest.

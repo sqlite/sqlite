@@ -1301,6 +1301,37 @@ static int idxAuthCallback(
   return rc;
 }
 
+/*
+** Execute the CREATE statement in zSql, which was read from the
+** sqlite_schema table of the database being analyzed, using database
+** handle db. If no error occurs, set (*pzErr) to NULL and return
+** SQLITE_OK. Otherwise, return an SQLite error code and set (*pzErr) to
+** point to a buffer containing an English language error message.
+**
+** If the database was opened with "PRAGMA writable_schema=ON", the text
+** read from sqlite_schema is not guaranteed to be a single CREATE
+** statement. So the same rules are applied as when SQLite itself loads a
+** schema: text that does not begin with "CR" is ignored, as only CREATE
+** statements begin with those two letters, and only the first statement
+** in the text is executed. Anything that follows it is ignored.
+*/
+static int expertSchemaExec(sqlite3 *db, const char *zSql, char **pzErr){
+  int rc = SQLITE_OK;
+  if( pzErr ) *pzErr = 0;
+  if( (zSql[0]=='c' || zSql[0]=='C') && (zSql[1]=='r' || zSql[1]=='R') ){
+    sqlite3_stmt *pStmt = 0;
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+    if( rc==SQLITE_OK && pStmt ){
+      while( SQLITE_ROW==sqlite3_step(pStmt) ){}
+      rc = sqlite3_finalize(pStmt);
+    }
+    if( rc!=SQLITE_OK && pzErr ){
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+    }
+  }
+  return rc;
+}
+
 static int idxProcessOneTrigger(
   sqlite3expert *p, 
   IdxWrite *pWrite, 
@@ -1323,7 +1354,7 @@ static int idxProcessOneTrigger(
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSelect) ){
     const char *zCreate = (const char*)sqlite3_column_text(pSelect, 0);
     if( zCreate==0 ) continue;
-    rc = sqlite3_exec(p->dbv, zCreate, 0, 0, pzErr);
+    rc = expertSchemaExec(p->dbv, zCreate, pzErr);
   }
   idxFinalize(&rc, pSelect);
 
@@ -1448,7 +1479,7 @@ static int expertSchemaSql(sqlite3 *db, const char *zSql, char **pzErr){
   int rc = SQLITE_OK;
   char *zErr = 0;
 
-  rc = sqlite3_exec(db, zSql, 0, 0, &zErr);
+  rc = expertSchemaExec(db, zSql, &zErr);
   if( rc!=SQLITE_OK && zErr ){
     int nErr = STRLEN(zErr);
     if( nErr>=15 && memcmp(zErr, "no such module:", 15)==0 ){
