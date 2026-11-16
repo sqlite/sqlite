@@ -8630,7 +8630,7 @@ int sqlite3Select(
         /* TUNING: For a UNION CTE, because UNION is implies DISTINCT,
         ** reduce the estimated output row count by 8 (LogEst 30). 
         ** Search for tag-20250414a to see other cases */
-        p->nSelectRow -= 30;
+        p->nSelectRow -= Tuning(30,1);
       }
     }
     if( sDistinct.isTnct && sqlite3WhereIsDistinct(pWInfo) ){

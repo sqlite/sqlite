@@ -4327,19 +4327,30 @@ typedef struct {
 #define INITFLAG_AlterDropCons 0x0004  /* Reparse after a DROP CONSTRAINT */
 
 /* Tuning parameters are set using SQLITE_TESTCTRL_TUNE and are controlled
-** on debug-builds of the CLI using ".testctrl tune ID VALUE".  Tuning
-** parameters are for temporary use during development, to help find
-** optimal values for parameters in the query planner.  The should not
-** be used on trunk check-ins.  They are a temporary mechanism available
-** for transient development builds only.
+** the SQLITE_TESTCTRL_TUNE test-control, or ".testctrl tune ID VALUE" in
+** the CLI.  Tuning is only possible on selected builds, and does not work
+** by default.  This is intended for development and testing use only.
 **
-** Tuning parameters are numbered starting with 1.
+** Tuning(D,ID) means the integer value of the ID-th tuning parameter
+** (1..SQLITE_ENABLE_TUNING) or use the default value D if tuning is
+** not enabled.
+**
+** Tuning(D,ID) is not an API and is subject to change from one checkin
+** to the next.  In particular, the IDs for the various tuning parameters
+** are very likely to change from one release to the next.
+**
+** Run the tool/tuningverify.tcl script to verify that all of the Tuning()
+** macros are correct and agree with the global sqlite3Tuning[] array.
 */
-#define SQLITE_NTUNE  6             /* Should be zero for all trunk check-ins */
-#ifdef SQLITE_DEBUG
-# define Tuning(X)  (sqlite3Config.aTune[(X)-1])
+#if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_TUNING)
+  /* Default behavior to return D */
+# define Tuning(D,ID)  (D)
 #else
-# define Tuning(X)  0
+  /* During debugging and development, use the adjustable global constant */
+# ifndef SQLITE_AMALGAMATION
+  extern int sqlite3Tuning[];  /* Forward declaration */
+# endif
+# define Tuning(D,ID)  (sqlite3Tuning[(ID)])
 #endif
 
 /*
@@ -4416,7 +4427,7 @@ struct Sqlite3Config {
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
   /* vvvv--- must be last ---vvv */
-#ifdef SQLITE_DEBUG
+#if 0
   sqlite3_int64 aTune[SQLITE_NTUNE]; /* Tuning parameters */
 #endif
 };

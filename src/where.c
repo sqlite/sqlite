@@ -2266,7 +2266,7 @@ static int whereRangeScanEst(
           ** sample, then assume they are 4x more selective.  This brings
           ** the estimated selectivity more in line with what it would be
           ** if estimated without the use of STAT4 tables. */
-          if( iLwrIdx==iUprIdx ){ nNew -= 20; }
+          if( iLwrIdx==iUprIdx ){ nNew -= Tuning(20,2); }
           assert( 20==sqlite3LogEst(4) );
         }else{
           nNew = 10;        assert( 10==sqlite3LogEst(2) );
@@ -2299,7 +2299,7 @@ static int whereRangeScanEst(
   ** index. While a closed range (e.g. col BETWEEN ? AND ?) is estimated to
   ** match 1/64 of the index. */
   if( pLower && pLower->truthProb>0 && pUpper && pUpper->truthProb>0 ){
-    nNew -= 20;
+    nNew -= Tuning(20,3);
   }
 
   nOut -= (pLower!=0) + (pUpper!=0);
@@ -3405,7 +3405,7 @@ static int whereLoopAddBtreeIndex(
         /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
         int i;
         int bRedundant = 0;
-        nIn = 46;  assert( 46==sqlite3LogEst(25) );
+        nIn = Tuning(46,4);  assert( 46==sqlite3LogEst(25) );
 
         /* The expression may actually be of the form (x, y) IN (SELECT...).
         ** In this case there is a separate term for each of (x) and (y).
@@ -3456,8 +3456,8 @@ static int whereLoopAddBtreeIndex(
         */
         M = pProbe->aiRowLogEst[saved_nEq];
         logK = estLog(nIn);
-        /* TUNING      v-----  10 to bias toward indexed IN */
-        x = M + logK + 10 - (nIn + rLogSize);
+        /* TUNING             v-----  10 to bias toward indexed IN */
+        x = M + logK + Tuning(10,5) - (nIn + rLogSize);
         if( x>=0 ){
           WHERETRACE(0x40,
             ("IN operator (N=%d M=%d logK=%d nIn=%d rLogSize=%d x=%d) "
@@ -3577,7 +3577,7 @@ static int whereLoopAddBtreeIndex(
              /* TUNING: Mark terms as "low selectivity" if they seem likely
              ** to be true for half or more of the rows in the table.
              ** See tag-202002240-1 */
-             && pNew->nOut+10 > pProbe->aiRowLogEst[0]
+             && pNew->nOut+Tuning(10,6) > pProbe->aiRowLogEst[0]
             ){
 #if WHERETRACE_ENABLED /* 0x01 */
               if( sqlite3WhereTrace & 0x20 ){
@@ -3606,7 +3606,7 @@ static int whereLoopAddBtreeIndex(
             /* TUNING: If there is no likelihood() value, assume that a
             ** "col IS NULL" expression matches twice as many rows
             ** as (col=?). */
-            pNew->nOut += 10;
+            pNew->nOut += Tuning(10,7);
           }
         }
       }
@@ -3697,7 +3697,8 @@ static int whereLoopAddBtreeIndex(
    && pProbe->noSkipScan==0
    && pProbe->hasStat1!=0
    && OptimizationEnabled(db, SQLITE_SkipScan)
-   && pProbe->aiRowLogEst[saved_nEq+1]>=42  /* TUNING: Minimum for skip-scan */
+   && pProbe->aiRowLogEst[saved_nEq+1]>=Tuning(42,8) 
+      /* TUNING: Minimum for skip-scan --------^^ */
    && pSrc->fg.fromExists==0
    && (rc = whereLoopResize(db, pNew, pNew->nLTerm+1))==SQLITE_OK
   ){
@@ -3710,7 +3711,7 @@ static int whereLoopAddBtreeIndex(
     pNew->nOut -= nIter;
     /* TUNING:  Because uncertainties in the estimates for skip-scan queries,
     ** add a 1.375 fudge factor to make skip-scan slightly less likely. */
-    nIter += 5;
+    nIter += Tuning(5,9);
     whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nIter + nInMul);
     pNew->nOut = saved_nOut;
     pNew->u.btree.nEq = saved_nEq;
@@ -4178,7 +4179,8 @@ static int whereLoopAddBtree(
     sPk.aiRowLogEst = aiRowEstPk;
     sPk.onError = OE_Replace;
     sPk.pTable = pTab;
-    sPk.szIdxRow = 3;  /* TUNING: Interior rows of IPK table are very small */
+    sPk.szIdxRow = Tuning(3,11);
+    /* TUNING:            ^--- Interior rows of IPK table are very small */
     sPk.idxType = SQLITE_IDXTYPE_IPK;
     aiRowEstPk[0] = pTab->nRowLogEst;
     aiRowEstPk[1] = 0;
@@ -4222,10 +4224,11 @@ static int whereLoopAddBtree(
         ** indexes on subqueries and views. */
         pNew->rSetup = rLogSize + rSize;
         if( !IsView(pTab) && (pTab->tabFlags & TF_Ephemeral)==0 ){
-          pNew->rSetup += 28;
+          pNew->rSetup += Tuning(28,12);
         }else{
-          pNew->rSetup -= 25;  /* Greatly reduced setup cost for auto indexes
-                               ** on ephemeral materializations of views */
+          pNew->rSetup -= Tuning(25,13);
+              /*                 ^^--  Greatly reduced setup cost for auto
+              ** indexes on ephemeral materializations of views */
         }
         ApplyCostMultiplier(pNew->rSetup, pTab->costMult);
         if( pNew->rSetup<0 ) pNew->rSetup = 0;
@@ -4233,7 +4236,7 @@ static int whereLoopAddBtree(
         ** is more than the usual guess of 10 rows, since we have no way
         ** of knowing how selective the index will ultimately be.  It would
         ** not be unreasonable to make this value much larger. */
-        pNew->nOut = 43;  assert( 43==sqlite3LogEst(20) );
+        pNew->nOut = Tuning(43,14);  assert( 43==sqlite3LogEst(20) );
         pNew->rRun = sqlite3LogEstAdd(rLogSize,pNew->nOut);
         pNew->wsFlags = WHERE_AUTO_INDEX;
         pNew->prereq = mPrereq | pTerm->prereqRight;
@@ -4293,10 +4296,9 @@ static int whereLoopAddBtree(
       ** the scarcer of the two values, and in that case an index lookup is
       ** better.
       */
+      pNew->rRun = rSize + Tuning(16,10);
 #ifdef SQLITE_ENABLE_STAT4
-      pNew->rRun = rSize + 16 - 2*((pTab->tabFlags & TF_HasStat4)!=0);
-#else
-      pNew->rRun = rSize + 16;
+      pNew->rRun -=   2*((pTab->tabFlags & TF_HasStat4)!=0);
 #endif
       ApplyCostMultiplier(pNew->rRun, pTab->costMult);
       whereLoopOutputAdjust(pWC, pNew, rSize);
@@ -5068,7 +5070,7 @@ static int whereLoopAddOr(
         **
         ** the planner may elect to "OR" together a full-table scan and an
         ** index lookup. And other similarly odd results.  */
-        pNew->rRun = sSum.a[i].rRun + 1;
+        pNew->rRun = sSum.a[i].rRun + Tuning(1,15);
         pNew->nOut = sSum.a[i].nOut;
         pNew->prereq = sSum.a[i].prereq;
         rc = whereLoopInsert(pBuilder, pNew);
@@ -5732,9 +5734,9 @@ static LogEst whereSortingCost(
   ** rows, so fudge it downwards a bit.
   */
   if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 ){
-    rSortCost += 10;       /* TUNING: Extra 2.0x if using LIMIT */
+    rSortCost += Tuning(10,16);  /* TUNING: Extra 2.0x if using LIMIT */
     if( nSorted!=0 ){
-      rSortCost += 6;      /* TUNING: Extra 1.5x if also using partial sort */
+      rSortCost += Tuning(6,17); /* TUNING: Extra 1.5x for partial sort */
     }
     if( pWInfo->iLimit<nRow ){
       nRow = pWInfo->iLimit;
@@ -5742,7 +5744,10 @@ static LogEst whereSortingCost(
   }else if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT) ){
     /* TUNING: In the sort for a DISTINCT operator, assume that the DISTINCT
     ** reduces the number of output rows by a factor of 2 */
-    if( nRow>10 ){ nRow -= 10;  assert( 10==sqlite3LogEst(2) ); }
+    if( nRow>Tuning(10,18) ){
+      nRow -= Tuning(10,18);
+      assert( 10==sqlite3LogEst(2) );
+    }
   }
   rSortCost += estLog(nRow);
   return rSortCost;
@@ -5958,7 +5963,11 @@ static int computeMxChoice(WhereInfo *pWInfo){
     }
 #endif
   }
-  return pWInfo->bStarUsed ? 18 : 12;
+  if( pWInfo->bStarUsed ){
+    return Tuning(18,25);    /* TUNING: Preserve 18 paths for star-queries */
+  }else{
+    return Tuning(12,26);    /* TUNING: Preserve 12 paths for others */
+  }
 }
 
 /*
@@ -6032,7 +6041,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   if( nLoop<=1 ){
     mxChoice = 1;
   }else if( nLoop==2 ){
-    mxChoice = 5;
+    mxChoice = Tuning(5,19);
   }else if( pParse->nErr ){
     mxChoice = 1;
   }else{
@@ -6081,7 +6090,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   ** TUNING: Do not let the number of iterations go above 28.  If the cost
   ** of computing an automatic index is not paid back within the first 28
   ** rows, then do not use the automatic index. */
-  aFrom[0].nRow = MIN(pParse->nQueryLoop, 48);  assert( 48==sqlite3LogEst(28) );
+  aFrom[0].nRow = MIN(pParse->nQueryLoop, Tuning(48,27));
+  assert( 48==sqlite3LogEst(28) );
   nFrom = 1;
   assert( aFrom[0].isOrdered==0 );
   if( nOrderBy ){
@@ -6147,7 +6157,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           ** extra encouragement to the query planner to select a plan
           ** where the rows emerge in the correct order without any sorting
           ** required. */
-          rCost = sqlite3LogEstAdd(rUnsort, aSortCost[isOrdered]) + 3;
+          rCost = sqlite3LogEstAdd(rUnsort, aSortCost[isOrdered])
+                     + Tuning(3,20);
 
           WHERETRACE(0x002,
               ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
@@ -6155,7 +6166,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                rUnsort, rCost));
         }else{
           rCost = rUnsort;
-          rUnsort -= 2;  /* TUNING:  Slight bias in favor of no-sort plans */
+          rUnsort -= Tuning(2,21);  /* TUNING:  Slight bias to no-sort plans */
         }
 
         /* Check to see if pWLoop should be added to the set of
@@ -6548,7 +6559,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->nLTerm = 1;
     pLoop->u.btree.nEq = 1;
     /* TUNING: Cost of a rowid lookup is 10 */
-    pLoop->rRun = 33;  /* 33==sqlite3LogEst(10) */
+    pLoop->rRun = Tuning(33,22);  /* 33==sqlite3LogEst(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       int opMask;
@@ -6574,7 +6585,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       pLoop->u.btree.nEq = j;
       pLoop->u.btree.pIndex = pIdx;
       /* TUNING: Cost of a unique index lookup is 15 */
-      pLoop->rRun = 39;  /* 39==sqlite3LogEst(15) */
+      pLoop->rRun = Tuning(39,23);  /* 39==sqlite3LogEst(15) */
       break;
     }
   }
@@ -7279,7 +7290,7 @@ WhereInfo *sqlite3WhereBegin(
     if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT)!=0 ){
       WHERETRACE(0x0080,("nRowOut reduced from %d to %d due to DISTINCT\n",
                          pWInfo->nRowOut, pWInfo->nRowOut-30));
-      pWInfo->nRowOut -= 30;
+      pWInfo->nRowOut -= Tuning(30,24);
     }
 
   }
