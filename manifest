@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\s".testctrl\stune"\sdot-command\sin\sthe\sCLI.
-D 2026-11-16T12:18:53.791
+C Have\svec1\sreject\sa\smodel\swith\sresidual=1\sand\snbucket=0.
+D 2026-11-16T14:42:55.619
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -645,12 +645,12 @@ F ext/vec1/test/vec1stream2.test ad0aa9dc70fdccd46b31d6c19352387a04394bb631437a1
 F ext/vec1/test/vec1train.test a3eb41da85050beb9928e2d037077844b6bf9f2b6744b35c92f1df2e253eb3de
 F ext/vec1/test/vec1update.test 77d5b85b859393f0d8fbc2f556a75c06bee7b23a19b5af7c3c40dc443f811e65
 F ext/vec1/test/vec1update2.test 4fb868f051df89a35f7e58725699259150292fe972253088f3feb10ee7c50945
-F ext/vec1/test/vec1version.test 7d17cc84c0a3c8706080abb3484bad8a6eb118c8d4946c7846cde5c4e6cfc89e
+F ext/vec1/test/vec1version.test f0da4587f4b4d0088a3e5fb05f649b61c8362c87b255bb7c8a3ec799abaadde0
 F ext/vec1/tool/vec1_algo_test.c 2777488a8b9ab9545732562c93988aa2424d7afd8b4895d0f03d20c9edf93727
 F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b62631b480c2d2d
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c de33d11affa682b3dfa44220a06f167679465447cec7b719cfd711ea22b6d75f
+F ext/vec1/vec1.c d1b29deb8029ff729574b7fccdb7052472ac0c76b5e1762a27d3e89559154a4b
 F ext/wasm/GNUmakefile c0ec3c98a70f365a21aa047371b729d5b55e960dfc2959f24bdb8a15227385fe
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md a84fffbb50568f135ac19f121978b80473068ceee7075501ce2e64a62bb64df0
@@ -2312,8 +2312,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7919b2227b685a21e492e4a18dd83b3c33da483e45971edd14f3e65d5406d4df
-R 2a220a51ead1c0b41d16caea2a149c1a
-U drh
-Z 32cd82b67a7aeec453bfce9ed13de6c6
+P 447a681116cc5e2650a884322f0a8e6efa620c5b13aaa8cf0d4655357e726545
+R 67fc8d6794ed3879f5ee286ed64afafc
+U dan
+Z cc65ea1ac6068732ef015e3a834fd131
 # Remove this line to create a well-formed Fossil manifest.
