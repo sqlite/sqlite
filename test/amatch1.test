@@ -171,4 +171,28 @@ do_execsql_test amatch1-5.3 {
   SELECT word, distance FROM t WHERE word MATCH 'abc' AND distance<10;
 } {abc 0}
 
+# The vocabulary_language option used to generate malformed SQL, so
+# that no words were ever matched.
+reset_db
+load_static_extension db amatch
+do_execsql_test amatch1-6.0 {
+  CREATE TABLE vocab(w, lang);
+  INSERT INTO vocab VALUES('abc', 0), ('abd', 0), ('abe', 1);
+  CREATE TABLE costs(iLang, cFrom, cTo, Cost);
+  INSERT INTO costs VALUES(0, '?', '?', 10), (1, '?', '?', 10);
+  CREATE VIRTUAL TABLE t USING approximate_match(
+     vocabulary_table=vocab,
+     vocabulary_word=w,
+     vocabulary_language=lang,
+     edit_distances=costs
+  );
+}
+do_execsql_test amatch1-6.1 {
+  SELECT word, distance FROM t WHERE word MATCH 'abc' AND distance<20;
+} {abc 0 abd 10}
+do_execsql_test amatch1-6.2 {
+  SELECT word, distance FROM t WHERE word MATCH 'abc' AND distance<20
+                                 AND language=1;
+} {abe 10}
+
 finish_test

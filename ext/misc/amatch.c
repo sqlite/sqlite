@@ -1135,7 +1135,7 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
     char *zSql;
     if( p->zVocabLang && p->zVocabLang[0] ){
       zSql = sqlite3_mprintf(
-          "SELECT \"%w\" FROM \"%w\"",
+          "SELECT \"%w\" FROM \"%w\""
           " WHERE \"%w\">=?1 AND \"%w\"=?2"
           " ORDER BY 1",
           p->zVocabWord, p->zVocabTab,
