@@ -1,5 +1,5 @@
-C When\sopening\sa\sTEMP\sdb\sfails\sdue\sto\sOOM,\sreport\sit\sas\sOOM\sinstead\sof\sas\sa\sfailed\sopen.
-D 2026-11-16T18:37:59.667
+C Tests\sintended\sfor\sthe\sprevious\scheck-in.
+D 2026-11-16T18:38:45.662
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1508,7 +1508,7 @@ F test/mallocI.test 6c23a71df077fa5d387be90e7e669c5b368ca38a
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test 25897506da0098cea09b302ff432b0fb6d8002773c1e0fc9732aa8b444bfd455
 F test/mallocL.test fb311ff80afddf3b1a75e52289081f4754d901dc
-F test/mallocM.test 78bbe9d3da84a5c679123cdb40d7b2010b18fc46e13897e4f253c6ba6fbff134
+F test/mallocM.test f43cf1534f665170a31556c3c58f494cc0b6ba9fbf2276a4699ae45e8223cdc9
 F test/malloc_common.tcl eac970bee5e4d38be38818d25b2796336620b0eff823e84db302cea33365ab9d
 F test/malloctraceviewer.tcl 3e3ddf11e30d2b20f53aa16aa6615082fb24a100bea61cca7214c927b742eba6
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
@@ -2312,8 +2312,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8b0edc30310ef587575311c8d150460aa9e9779fc20ade1c6e0d1955260d233b
-R 1d657211069935a811171a6c4ba1e5dc
+P 83fc83e36c906ad4a78ab2bec6e2efbb5632e59da622f15e7108fce6b9ee8fe3
+R 23bca47ec93c890f2c4813a69ae30ead
 U stephan
-Z 05ddad04406efd843a2b54e3004c263a
+Z 1f020856136edae6528964e54e9104dd
 # Remove this line to create a well-formed Fossil manifest.

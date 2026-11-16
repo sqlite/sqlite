@@ -45,4 +45,25 @@ do_faultsim_test 2.2 -faults oom* -body {
   faultsim_test_result {0 1}
 }
 
+#-------------------------------------------------------------------------
+# An OOM while opening the TEMP database used to be reported as
+# "unable to open a temporary database file for storing temporary
+# tables", even with temp_store=memory.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  CREATE INDEX t1b ON t1(b);
+  INSERT INTO t1 VALUES(1, 2), (3, 4);
+}
+faultsim_save_and_close
+do_faultsim_test 3 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql { PRAGMA temp_store = memory }
+} -body {
+  execsql { PRAGMA integrity_check }
+} -test {
+  faultsim_test_result {0 ok}
+}
+
 finish_test
