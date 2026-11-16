@@ -5503,6 +5503,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_series_init(p->db, 0, 0);
     sqlite3_diskused_init(p->db, 0, 0);
     sqlite3_strdup_init(p->db, 0, 0);
+    sqlite3_completion_init(p->db, 0, 0);
     if( !p->bSafeMode ){
       sqlite3_tryeval_init(p->db, 0, 0);
 #ifndef SQLITE_SHELL_FIDDLE
