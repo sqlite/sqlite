@@ -2692,6 +2692,35 @@ static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
 }
 
 /*
+** This routine is called by the name resolver for a SELECT statement
+** created by convertCompoundSelectToSubquery() - one with the SF_Converted
+** flag set. pSub is the compound sub-query and pOrderBy the ORDER BY clause
+** of the outer query, which has already been resolved against pSub. This
+** function adds TK_COLLATE wrappers around any ORDER BY terms that require
+** them.
+*/
+void sqlite3ConvertedOrderByColl(
+  Parse *pParse,        /* Parsing context */
+  Select *pSub,         /* The compound sub-query */
+  ExprList *pOrderBy    /* ORDER BY clause of the outer query */
+){
+  if( IN_RENAME_OBJECT==0 ){
+    int i;
+    for(i=0; i<pOrderBy->nExpr; i++){
+      struct ExprList_item *p = &pOrderBy->a[i];
+      int iCol = p->u.x.iOrderByCol - 1;
+      CollSeq *pColl;
+      assert( iCol>=0 && iCol<pSub->pEList->nExpr );
+      if( ExprHasProperty(p->pExpr, EP_Collate) ) continue;
+      pColl = multiSelectCollSeq(pParse, pSub, iCol);
+      if( pColl ){
+        p->pExpr = sqlite3ExprAddCollateString(pParse, p->pExpr, pColl->zName);
+      }
+    }
+  }
+}
+
+/*
 ** The select statement passed as the second parameter is a compound SELECT
 ** with an ORDER BY clause. This function allocates and returns a KeyInfo
 ** structure suitable for implementing the ORDER BY.

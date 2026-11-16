@@ -5115,6 +5115,11 @@ void sqlite3DeleteColumnNames(sqlite3*,Table*);
 void sqlite3GenerateColumnNames(Parse *pParse, Select *pSelect);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
 void sqlite3SubqueryColumnTypes(Parse*,Table*,Select*,char);
+#ifdef SQLITE_OMIT_COMPOUND_SELECT
+# define sqlite3ConvertedOrderByColl(x,y,z)
+#else
+  void sqlite3ConvertedOrderByColl(Parse*,Select*,ExprList*);
+#endif
 Table *sqlite3ResultSetOfSelect(Parse*,Select*,char);
 void sqlite3OpenSchemaTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);

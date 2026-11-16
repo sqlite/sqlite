@@ -1530,3 +1530,53 @@ SELECT count(*) FROM t5 WHERE c0 = -0.0;
 .param clear
 
 
+
+# Bug 2026-11-04T01:00:55Z sqlite.org/bugs/forumpost/329495bf8c
+# Adding a COLLATE term to the ORDER BY of a UNION causes another
+# ORDER BY term to use BINARY instead of the NOCASE collation taken
+# from a later (non-leftmost) SELECT of the compound.  By Marius
+#
+.open :memory:
+.mode list
+.testcase 2800
+CREATE TABLE t1(c0 TEXT COLLATE NOCASE, c1 TEXT);
+INSERT INTO t1 VALUES('a','1'),('B','2'),('c','3');
+SELECT 'D','x' UNION SELECT c0,c1 FROM t1 ORDER BY 1 DESC;
+.check 'D|x c|3 B|2 a|1'
+.testcase 2801
+SELECT 'D','x' UNION SELECT c0,c1 FROM t1 ORDER BY 1 DESC, 2 COLLATE BINARY;
+.check 'D|x c|3 B|2 a|1'
+.testcase 2802
+SELECT 'D','x' UNION SELECT 'e','y' UNION SELECT c0,c1 FROM t1
+  ORDER BY 1 DESC, 2 COLLATE BINARY;
+.check 'e|y D|x c|3 B|2 a|1'
+.testcase 2803
+SELECT 'D','x' UNION SELECT c0,c1 FROM t1 EXCEPT SELECT 'q','q'
+  ORDER BY 1, 2 COLLATE BINARY;
+.check 'a|1 B|2 c|3 D|x'
+.testcase 2804
+SELECT 'D','x' INTERSECT SELECT c0,c1 FROM t1 ORDER BY 1, 2 COLLATE BINARY;
+.check ''
+# An explicit COLLATE on the ORDER BY term still takes precedence.
+.testcase 2805
+SELECT 'D','x' UNION SELECT c0,c1 FROM t1 ORDER BY 1 COLLATE BINARY DESC;
+.check 'c|3 a|1 D|x B|2'
+# Left-most component is a multi-row VALUES clause.
+.testcase 2806
+VALUES('D','x'),('e','y') UNION SELECT c0,c1 FROM t1 ORDER BY 1;
+.check 'a|1 B|2 c|3 D|x e|y'
+.testcase 2807
+VALUES('D','x'),('e','y') UNION SELECT c0,c1 FROM t1 ORDER BY 1, 2 COLLATE BINARY;
+.check 'a|1 B|2 c|3 D|x e|y'
+# No component has a collating sequence for column 1 (c0||'' does not
+# inherit the NOCASE collation of c0), so BINARY is used throughout.
+.testcase 2808
+SELECT 'D','x' UNION SELECT c0||'',c1 FROM t1 ORDER BY 1 DESC;
+.check 'c|3 a|1 D|x B|2'
+.testcase 2809
+SELECT 'D','x' UNION SELECT c0||'',c1 FROM t1 ORDER BY 1 DESC, 2 COLLATE BINARY;
+.check 'c|3 a|1 D|x B|2'
+.testcase 2810
+VALUES('D','x'),('e','y') UNION SELECT c0||'',c1 FROM t1
+  ORDER BY 1, 2 COLLATE BINARY;
+.check 'B|2 D|x a|1 c|3 e|y'
