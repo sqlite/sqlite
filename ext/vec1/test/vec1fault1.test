@@ -30,8 +30,7 @@ do_faultsim_test 1 -faults oom* -prep {
     INSERT INTO mytbl VALUES(random_vector(128), 555);
   }
 } -test {
-  faultsim_test_result {0 {}} \
-    {1 {unable to open a temporary database file for storing temporary tables}}
+  faultsim_test_result {0 {}}
 }
 
 #-------------------------------------------------------------------------
@@ -52,8 +51,7 @@ do_faultsim_test 2 -faults oom* -body {
     PRAGMA integrity_check
   }
 } -test {
-  faultsim_test_result {0 ok} \
-    {1 {unable to open a temporary database file for storing temporary tables}}
+  faultsim_test_result {0 ok}
 }
 
 #-------------------------------------------------------------------------

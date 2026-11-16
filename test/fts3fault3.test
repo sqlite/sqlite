@@ -18,10 +18,6 @@ set ::testprefix fts3fault
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 { finish_test ; return }
 
-set ::TMPDBERROR [list 1 \
-  {unable to open a temporary database file for storing temporary tables}
-]
-
 
 # Test error handling in an "ALTER TABLE ... RENAME TO" statement on an
 # FTS3 table. Specifically, test renaming the table within a transaction
@@ -75,7 +71,7 @@ do_faultsim_test 2 -faults oom-t* -prep {
     PRAGMA integrity_check;
   }
 } -test {
-  faultsim_test_result {0 ok} $::TMPDBERROR
+  faultsim_test_result {0 ok}
 }
 
 

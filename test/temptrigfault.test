@@ -98,7 +98,7 @@ do_faultsim_test 4 -faults oom* -prep {
     DELETE FROM t1 WHERE rowid=2;
   }
 } -test {
-  faultsim_test_result {0 {}} {1 {unable to open a temporary database file for storing temporary tables}}
+  faultsim_test_result {0 {}}
 }
 
 faultsim_save_and_close
@@ -113,7 +113,7 @@ do_faultsim_test 5 -faults oom* -prep {
     UPDATE aux.t1 SET x=x||x WHERE rowid=1+abs(random() % 5);
   }
 } -test {
-  faultsim_test_result {0 {}} {1 {unable to open a temporary database file for storing temporary tables}}
+  faultsim_test_result {0 {}}
 }
 
 
