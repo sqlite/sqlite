@@ -3052,7 +3052,9 @@ static int pragmaVtabColumn(
   if( i<pTab->iHidden ){
     sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pPragma, i));
   }else{
-    sqlite3_result_text(ctx, pCsr->azArg[i-pTab->iHidden],-1,SQLITE_TRANSIENT);
+    int k = i - pTab->iHidden;
+    if( (pTab->pName->mPragFlg & PragFlg_Result1)==0 ) k++;
+    sqlite3_result_text(ctx, pCsr->azArg[k],-1,SQLITE_TRANSIENT);
   }
   return SQLITE_OK;
 }

@@ -1580,3 +1580,28 @@ SELECT 'D','x' UNION SELECT c0||'',c1 FROM t1 ORDER BY 1 DESC, 2 COLLATE BINARY;
 VALUES('D','x'),('e','y') UNION SELECT c0||'',c1 FROM t1
   ORDER BY 1, 2 COLLATE BINARY;
 .check 'B|2 D|x a|1 c|3 e|y'
+
+# Bug 2026-11-04T20:26:34Z sqlite.org/bugs/info/f72488b20be0fe
+# pragma_page_count('two') and pragma_journal_mode('two') report
+# NULL in their schema column
+.open :memory:
+.mode --reset quote --quote relaxed
+CREATE TEMP TABLE t1(x);
+.testcase 2900
+SELECT schema, page_count FROM pragma_page_count('temp');
+.check -glob temp,[23]
+.testcase 2910
+SELECT page_count FROM pragma_page_count('temp') WHERE schema IS NOT NULL;
+.check -glob [23]
+.testcase 2920
+SELECT schema, journal_mode FROM pragma_journal_mode('temp');
+.check -glob temp,*
+.testcase 2930
+SELECT schema, journal_mode FROM pragma_journal_mode('main');
+.check main,memory
+.testcase 2940
+SELECT schema, page_count FROM pragma_page_count;
+.check NULL,0
+.testcase 2950
+SELECT schema, name FROM pragma_table_info('t1','temp');
+.check temp,x
