@@ -5464,13 +5464,9 @@ int sqlite3OpenTempDatabase(Parse *pParse){
 
     rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pBt, 0, flags);
     if( rc!=SQLITE_OK ){
-      if( rc==SQLITE_NOMEM ){
-        sqlite3OomFault(db);
-      }else{
-        sqlite3ErrorMsg(pParse, "unable to open a temporary database "
-          "file for storing temporary tables");
-        pParse->rc = rc;
-      }
+      /* See proof sketch on the 2026-11-16 check-in that adds the following */
+      assert( rc==SQLITE_NOMEM );
+      sqlite3OomFault(db);
       return 1;
     }
     db->aDb[1].pBt = pBt;
