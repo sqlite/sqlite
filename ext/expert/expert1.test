@@ -725,6 +725,46 @@ do_test 11.1 {
   set res
 } {CREATE INDEX t1_idx_960cf414 ON t1(a COLLATE '1x');}
 
+#-------------------------------------------------------------------------
+# With "PRAGMA writable_schema=ON", the sql column of the sqlite_schema
+# table may contain text that is not a single CREATE statement. When the
+# expert copies the schema it must only execute the first statement of
+# such text, and only if it is a CREATE statement, just as SQLite itself
+# does when it loads the schema.
+#
+reset_db
+forcedelete test.db2 test.db3 test.db4
+do_execsql_test 12.0 {
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(x);
+  CREATE VIEW v1 AS SELECT a FROM t1;
+  CREATE VIEW v2 AS SELECT b FROM t1;
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN INSERT INTO t2 VALUES(new.a); END;
+  PRAGMA writable_schema = ON;
+  UPDATE sqlite_schema SET sql = sql || '; ATTACH ''test.db2'' AS aux2'
+   WHERE name = 'v1';
+  UPDATE sqlite_schema SET sql = 'ATTACH ''test.db3'' AS aux3'
+   WHERE name = 'v2';
+  UPDATE sqlite_schema SET sql = sql || '; ATTACH ''test.db4'' AS aux4'
+   WHERE name = 'tr1';
+}
 
+db close
+sqlite3 db test.db
+db eval { PRAGMA writable_schema = ON }
+
+do_test 12.1 {
+  set expert [sqlite3_expert_new db]
+  $expert sql { INSERT INTO t1 VALUES(1, 2) }
+  $expert sql { SELECT * FROM v1 WHERE a=? }
+  $expert analyze
+  set res [string trim [$expert report 1 indexes]]
+  $expert destroy
+  set res
+} {CREATE INDEX t1_idx_00000061 ON t1(a);}
+
+do_test 12.2 {
+  list [file exists test.db2] [file exists test.db3] [file exists test.db4]
+} {0 0 0}
 
 finish_test

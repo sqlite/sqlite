@@ -1,5 +1,5 @@
-C Fix\sthe\sformat()\sfunction\s(and\sits\srelated\sprintf()\sroutines)\sso\sthat\nthe\salternate-form\sflag\s("#")\son\shexadecimal\sand\soctal\soutputs\sincludes\nthe\s0x,\s0X,\sor\s0\sprefix\sas\spart\sof\sthe\stotal\swidth.\n[bugs:/info/2026-11-05T22:14:37Z|Bug\s2026-11-05T22:14:37Z]
-D 2026-11-17T15:05:53.348
+C Merge\sfixes\sfor\sissues\sF3\s(expert\sextension),\sF5\s(dbdata\sextension)\sand\sF6\s(vec1\sextension)\sreported\sat\s[bugs:/info/2026-11-17T15:14:07Z\s|\s2026-11-17T15:14:07Z].
+D 2026-11-17T15:21:11.401
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -73,8 +73,8 @@ F doc/writing-test-cases.md 9e371327b92033425817095de505ee4edae7ab86c23969dc8f53
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 9f4d6751981bf5dda7b7480f6f878659d032a47fe74d84f31f80fdc05d6cad78
-F ext/expert/expert1.test 9241d9a314b579a964d749827b38a9f0caadbf485f9a7c3603b3c53ee13b2b20
-F ext/expert/sqlite3expert.c 0c3133f24812faeb275c34fb78497ebb649da422b0eb408f9f39ce67858e9a46
+F ext/expert/expert1.test d5c47de856feeaf436d6daf501176b1c034b0fabad0c17a3efc16be62b42dbdd
+F ext/expert/sqlite3expert.c 35b7e7a84b52ad7418a6dc2cf39ba07cae6a789c1c8aaa03efc0654fc22f8423
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c c395134bd6d4efa594a7d26578a1cb624c4027b79b4b5fcd44736c5ef1f5f725
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -481,7 +481,7 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c 2cc0c05e16aaae91d32da238b67a59f4917db062f3f87fd7f703d4ed53435f09
 F ext/rbu/sqlite3rbu.h e3a5bf21e09ca93ce4e8740e00d6a853e90a697968ec0ea98f40826938bdb68e
 F ext/rbu/test_rbu.c 8b6e64e486c28c41ef29f6f4ea6be7b3091958987812784904f5e903f6b56418
-F ext/recover/dbdata.c d49c08a6aad98a0da9b31d80826878cd77350b7ef380755adf8b8565c67755f0
+F ext/recover/dbdata.c eea1ced904577c6ba6b070114c483b779dae9b842cc2f1828ac599624a719f5e
 F ext/recover/recover1.test f3586db8786fbe0cd34bcc64c1fd5a8be0c9ca6b49804a354b026b20fe2136bb
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test c74170e0f7b02456af41838afeb5353fdb985a48cc2331d661bbabbca7c6b8e3
@@ -604,7 +604,7 @@ F ext/vec1/test/vec1bucket.test 5af9afe8c4b8ec7e0a84ade0df7fb0163226145e3f47b72a
 F ext/vec1/test/vec1cat.test 8cea568d8823519044053d39f4eec8d77a806bf85e1e14817b448729038306de
 F ext/vec1/test/vec1cat2.test 9e0d9a9cfa33b6aade9150c73064be53e52de9d693f53b7600e7696ed8022e02
 F ext/vec1/test/vec1config.test ddb2afc068e78c0c55e0c44b8f4cdb9c80fb8695e062aba8fc30aff16e8377c5
-F ext/vec1/test/vec1corrupt.test 59bbe16f0dd5cfda27c4d851a1fda14d8a13d6fa1eead79d587172d3170d628e
+F ext/vec1/test/vec1corrupt.test c880f5c7e12229a49fd54cb6d22a6b46fee6c11816c3001c4bff0268258ee985
 F ext/vec1/test/vec1create.test fdf7dc7d4e62d5654c1ac27bb9aea9451f024280dce5d0ec97d2698a040b3914
 F ext/vec1/test/vec1delete.test 91a3a1c7328cb8960687b81790ac69c676409e3aff83a9a68f3bf3e8d32efc91
 F ext/vec1/test/vec1error.test 3d1b74cd535dd5c9d303309f0b18ec606b100139a6483cbbd495b0aa3a9c8a09
@@ -650,7 +650,7 @@ F ext/vec1/tool/vec1_algo_test.c 2777488a8b9ab9545732562c93988aa2424d7afd8b4895d
 F ext/vec1/tool/vec1bench.tcl a117caee3cb99712f0477fe2fa85c94c260866951d3a9d667b62631b480c2d2d
 F ext/vec1/tool/vec1bench_addcols.tcl 8c509253d07b179928f2ee32e3591a2c70d13c914217e1328c01afa148717051
 F ext/vec1/tool/vec1bench_vibe2db.py 84ddb0236bc3d02a0393abce41986a1b7dad7f0d83884576f8318c2883e3aed3
-F ext/vec1/vec1.c 4f40c9b25789f376b9126573a80c9d11b0de2c9eedd7099a0b96e1afa1b22564
+F ext/vec1/vec1.c 14531f61095b04c73d1fe63379fd529a62826a31224950f87c982d702b604b39
 F ext/wasm/GNUmakefile c0ec3c98a70f365a21aa047371b729d5b55e960dfc2959f24bdb8a15227385fe
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md a84fffbb50568f135ac19f121978b80473068ceee7075501ce2e64a62bb64df0
@@ -1119,7 +1119,7 @@ F test/date2.test 6344250abb5face9174778ec0a476e2baa97ad509df9eee81fbb1ec6933b71
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test b5ad22baf7394e008ac59383840159daedd45be31dcf74a3b2450ec0e28955ce
 F test/date5.test 14ba189bc4d03efc371dd5302e035764f6633355a3e13acb4a45e7b33530231e
-F test/dbdata.test 042f49acff3438f940eeba5868d3af080ae64ddf26ae78f80c92bec3ca7d8603
+F test/dbdata.test 2509c326c5caecfcfcb7d0ed4bec3261cb69b1c13d379f1bf36d2bffcfcaefb5
 F test/dbfuzz.c 687793b95adc63477fdc1ce935d73befb6ec01eb9eb18f56be7fb23acd056cde
 F test/dbfuzz001.test 34d72411704e1f40731a1818ff4ba42b43319e41fb59fd809aceb9c05ba8995b
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
@@ -2312,8 +2312,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6c54ed03c1d5ea2a4d9e43efc76b45a4b36dd8d8f1a20e87d33f70e8455c0785
-R c1a35b5812cbf3e65de48c19fe7c6fb0
-U drh
-Z d1b233554a29fd0436839b8472efd000
+P 0c67cf34dc85f28e414e4a2c5a1417be9f1ad69886b211f65e56b08be45335f3
+Q +4c400f5122cad68b815ee78fc5a91eea6aa52c214039060b8997b1ba03921f27
+Q +7e6825df9922bb43a8d7208e291c4cd7dd01f6563e6393a85398984c4232ad1c
+Q +a07c04da5764aa8d2aa96eca54fe9577c26193db2244dcb756f356e76c41489d
+R f4adc5a5a200e5860d92ed93765998e8
+U dan
+Z 1ffbada6f3c37a8e7076fd35bd1e1e9a
 # Remove this line to create a well-formed Fossil manifest.
