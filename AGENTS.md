@@ -214,6 +214,7 @@ Editing rules:
 - C89/C99 compatible C only. No C++, no STL, no exceptions, no VLAs.
   Use `/* ... */` comments, never `//`.  Declare all local variables at
   the start of a block, before any statement.  Keep lines to 80 columns.
+- Comments added by agents should be pithy, concise, cave-man talk.
 - In the SQLite core, memory is allocated using `sqlite3Malloc()` and
   its relatives such as `sqlite3MallocZero()` and `sqlite3DbMallocRaw()`,
   never raw `malloc()`.  Extensions and the CLI use the public

@@ -1,9 +1,9 @@
-C Have\sthe\ssession\smodule\smore\sconsistently\sreject\sany\schangeset/patchset\sthat\scontains\sa\smix\sof\schangeset\sand\spatchset\sheaders\sas\scorrupt.\sIssue\sF8\sreported\sat\s[bugs:/info/2026-11-17T15:14:07Z\s|\s2026-11-17T15:14:07Z].
-D 2026-11-17T15:34:52.818
+C Update\sAGENTS.md\sto\sencourage\sagents\sto\suse\sfewer\swords.
+D 2026-11-17T16:09:30.133
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F AGENTS.md 4b2bad4f97e85e395164db4915749a82fb47b47d059f214703a01a6b49810e9d
+F AGENTS.md 78dabd4ac43a9d54d916295e3103a41f552db11a45d7443ec48cf66b60d4e884
 F LICENSE.md 3aa673c9c864ea8ee3ac46c7a52d270543a8fb8e1dd7e7b02df8f41dca1b80b6
 F Makefile.in b9e64c91cf8bea2305e1ca88bd3eb022afa93963a8561ea8290c65d4fafec03e
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
@@ -2312,8 +2312,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P fbc5e92bddf4199d12b94910302c11d9ab859771ae3551d7bd29dd9be6f3a14f
-R f47d56430f51c78335522c418b7a9702
-U dan
-Z 1ab8a4ab3dcffe499c77d3243a083f2d
+P d6eb7a06c47c6be8d97de349b62265e72c9e976d47339a7ebdc02903cdd07ba9
+R 1c2dbd001096544d9a03023cb8345f34
+U drh
+Z 6603efe4fd157c2a7fda2be6e8546c1d
 # Remove this line to create a well-formed Fossil manifest.
