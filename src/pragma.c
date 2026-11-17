@@ -1837,15 +1837,13 @@ void sqlite3Pragma(
         int bStrict;            /* True for a STRICT table */
         int r2;                 /* Previous key for WITHOUT ROWID tables */
         int mxCol;              /* Maximum non-virtual column number */
-        int regIdxCnt;          /* reg[regIdxCnt+j] is the entry count of the
-                                ** j-th index of pTab, from OP_IntegrityCk */
-        int nPartIdx = 0;       /* Number of partial indexes on pTab */
-        int regPartCnt = 0;     /* nPartIdx registers counting the rows that
-                                ** belong in each partial index */
+        int regIdxCnt;          /* reg[regIdxCnt+j] is the size of index j */
+        int nPartIdx = 0;       /* Number of partial indexes */
+        int regPartCnt = 0;     /* Row counts for the partial indexes */
         int iPart;              /* Loop counter over partial indexes */
 
         if( tableSkipIntegrityCheck(pTab,pObjTab) ) continue;
-        /* Keep cnt in step with the aRoot[] enumeration above */
+        /* Count the indexes the same way as for aRoot[] above */
         if( HasRowid(pTab) ) cnt++;
         regIdxCnt = 8+cnt;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -1868,10 +1866,9 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_Integer, 0, 7);
         assert( sqlite3NoTempsInRange(pParse,1,7) );
         if( !isQuick && nPartIdx>0 ){
-          /* reg[regPartCnt+k] counts the rows that satisfy the WHERE clause
-          ** of the k-th partial index.  After the loop this is compared with
-          ** the number of entries OP_IntegrityCk found in that index, since
-          ** the table row count used for other indexes does not apply. */
+          /* Count the rows that satisfy the WHERE clause of each partial
+          ** index.  After the loop, compare each count with the number of
+          ** entries in that index. */
           regPartCnt = sqlite3GetTempRange(pParse, nPartIdx);
           for(iPart=0; iPart<nPartIdx; iPart++){
             sqlite3VdbeAddOp2(v, OP_Integer, 0, regPartCnt+iPart);
@@ -2091,7 +2088,7 @@ void sqlite3Pragma(
                                          pPrior, r1);
             pPrior = pIdx;
             if( pIdx->pPartIdxWhere ){
-              /* Only reached when the row belongs in this partial index */
+              /* Count this row for the partial index */
               sqlite3VdbeAddOp2(v, OP_AddImm, regPartCnt+iPart, 1);
               iPart++;
             }
@@ -2184,9 +2181,9 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, loopTop-1);
         if( regPartCnt ){
-          /* A partial index must hold exactly one entry for each row that
-          ** satisfies its WHERE clause.  The per-row checks above find
-          ** missing entries; this count comparison finds surplus entries. */
+          /* Report any partial index whose size differs from its row count.
+          ** The per-row checks above find missing entries, so this finds
+          ** the surplus ones. */
           assert( !isQuick );
           sqlite3VdbeLoadString(v, 2, "wrong # of entries in index ");
           for(j=0, iPart=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
