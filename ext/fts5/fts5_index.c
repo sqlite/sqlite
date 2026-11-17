@@ -378,6 +378,7 @@ struct Fts5Index {
   int nRead;                      /* Total number of blocks read */
 
   sqlite3_stmt *pDeleteFromIdx;
+  sqlite3_stmt *pIdxKeyUpdate;    /* UPDATE %_idx SET term WHERE (segid,pgno) */
 
   sqlite3_stmt *pDataVersion;
   i64 iStructVersion;             /* data_version when pStruct read */
@@ -5202,6 +5203,39 @@ static void fts5SecureDeleteIdxEntry(
 }
 
 /*
+** Execute the SQL statement:
+**
+**    UPDATE %_idx SET term=$pKey WHERE (segid, (pgno/2)) = ($iSegid, $iPgno);
+**
+** This is used when a secure-delete operation removes the first term from
+** a segment leaf page that contains other terms. The %_idx key for the
+** page is a prefix of the removed term, so it is replaced with a key
+** derived from the new first term on the page.
+*/
+static void fts5SecureUpdateIdxEntry(
+  Fts5Index *p,                   /* FTS5 backend object */
+  int iSegid,                     /* Id of segment */
+  int iPgno,                      /* Page number within segment */
+  const u8 *pKey, int nKey        /* New key */
+){
+  assert( iPgno!=1 );
+  if( p->rc==SQLITE_OK && p->pIdxKeyUpdate==0 ){
+    fts5IndexPrepareStmt(p, &p->pIdxKeyUpdate, sqlite3_mprintf(
+        "UPDATE '%q'.'%q_idx' SET term=?1 WHERE (segid, (pgno/2)) = (?2, ?3)",
+        p->pConfig->zDb, p->pConfig->zName
+    ));
+  }
+  if( p->rc==SQLITE_OK ){
+    sqlite3_bind_blob(p->pIdxKeyUpdate, 1, pKey, nKey, SQLITE_STATIC);
+    sqlite3_bind_int(p->pIdxKeyUpdate, 2, iSegid);
+    sqlite3_bind_int(p->pIdxKeyUpdate, 3, iPgno);
+    sqlite3_step(p->pIdxKeyUpdate);
+    p->rc = sqlite3_reset(p->pIdxKeyUpdate);
+    sqlite3_bind_null(p->pIdxKeyUpdate, 1);
+  }
+}
+
+/*
 ** This is called when a secure-delete operation removes a position-list
 ** that overflows onto segment page iPgno of segment pSeg. This function
 ** rewrites node iPgno, and possibly one or more of its right-hand peers,
@@ -5502,6 +5536,22 @@ static void fts5DoSecureDelete(
       if( (iKeyOff+nSuffix)>(u64)iPgIdx || (iNextOff+nSuffix2)>(u64)iPgIdx ){
         FTS5_CORRUPT_IDX(p);
       }else{
+        if( iKey==1 && pSeg->iLeafPgno!=1 
+         && nPrefix2<=(u64)pSeg->term.n && nSuffix2>0
+        ){
+          /* The term being removed is the first on the page, so the %_idx
+          ** key for the page is a prefix of it. Replace the key with a
+          ** prefix of the new first term that is one byte longer than
+          ** the prefix it shares with the removed term. */
+          int nNew = (int)nPrefix2 + 1;
+          u8 *aNew = (u8*)sqlite3Fts5MallocZero(&p->rc, nNew);
+          if( aNew ){
+            memcpy(aNew, pSeg->term.p, nNew-1);
+            aNew[nNew-1] = aPg[iNextOff];
+            fts5SecureUpdateIdxEntry(p, iSegid, pSeg->iLeafPgno, aNew, nNew);
+            sqlite3_free(aNew);
+          }
+        }
         if( iKey!=1 ){
           iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
         }
@@ -6991,6 +7041,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p){
     sqlite3_finalize(p->pIdxNextSelect);
     sqlite3_finalize(p->pDataVersion);
     sqlite3_finalize(p->pDeleteFromIdx);
+    sqlite3_finalize(p->pIdxKeyUpdate);
     sqlite3Fts5HashFree(p->pHash);
     sqlite3_free(p->zDataTbl);
     sqlite3_free(p);
