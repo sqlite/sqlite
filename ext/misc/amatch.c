@@ -30,7 +30,12 @@
 **
 ** returns the allowed vocabulary for the match.  If the "vocabulary_language"
 ** or L columnname is left unspecified or is an empty string, then no
-** filtering of the vocabulary by language is performed. 
+** filtering of the vocabulary by language is performed.
+**
+** Table V must be either in the "temp" schema or in the same database as
+** the amatch virtual table itself. If a table or view named V exists in
+** "temp", it is used. The edit-cost-table must be in the same database as
+** the amatch virtual table.
 **
 ** For efficiency, it is essential that the vocabulary table be indexed:
 **
@@ -1112,6 +1117,29 @@ static void amatchAddWord(
 
 
 /*
+** Return the name of the schema to read the vocabulary table from. This
+** is "temp" if there is a table or view with the right name in the temp
+** schema, or the schema containing the amatch virtual table otherwise.
+** Attached databases other than the one containing the amatch table are
+** never searched.
+*/
+static const char *amatchVocabSchema(amatch_vtab *p){
+  const char *zRet = p->zDb;
+  sqlite3_stmt *pStmt = 0;
+  int rc = sqlite3_prepare_v2(p->db,
+      "SELECT 1 FROM temp.sqlite_schema"
+      " WHERE type IN ('table','view') AND name=?1 COLLATE nocase",
+      -1, &pStmt, 0
+  );
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_text(pStmt, 1, p->zVocabTab, -1, SQLITE_STATIC);
+    if( sqlite3_step(pStmt)==SQLITE_ROW ) zRet = "temp";
+  }
+  sqlite3_finalize(pStmt);
+  return zRet;
+}
+
+/*
 ** Advance a cursor to its next row of output
 */
 static int amatchNext(sqlite3_vtab_cursor *cur){
@@ -1133,20 +1161,21 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
 
   if( p->pVCheck==0 ){
     char *zSql;
+    const char *zSchema = amatchVocabSchema(p);
     if( p->zVocabLang && p->zVocabLang[0] ){
       zSql = sqlite3_mprintf(
-          "SELECT \"%w\" FROM \"%w\""
+          "SELECT \"%w\" FROM \"%w\".\"%w\""
           " WHERE \"%w\">=?1 AND \"%w\"=?2"
           " ORDER BY 1",
-          p->zVocabWord, p->zVocabTab,
+          p->zVocabWord, zSchema, p->zVocabTab,
           p->zVocabWord, p->zVocabLang
       );
     }else{
       zSql = sqlite3_mprintf(
-          "SELECT \"%w\" FROM \"%w\""
+          "SELECT \"%w\" FROM \"%w\".\"%w\""
           " WHERE \"%w\">=?1"
           " ORDER BY 1",
-          p->zVocabWord, p->zVocabTab,
+          p->zVocabWord, zSchema, p->zVocabTab,
           p->zVocabWord
       );
     }

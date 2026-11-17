@@ -195,4 +195,73 @@ do_execsql_test amatch1-6.2 {
                                  AND language=1;
 } {abe 10}
 
+#-------------------------------------------------------------------------
+# The vocabulary table named by a virtual table in schema "main" must not
+# be resolved against an attached database. It may only be found in the
+# "temp" schema or in the same schema as the virtual table.
+#
+reset_db
+load_static_extension db amatch
+forcedelete test.db2
+do_execsql_test amatch1-7.0 {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.secret(w TEXT);
+  INSERT INTO aux.secret VALUES('topsecret');
+  CREATE TABLE costs(iLang, cFrom, cTo, Cost);
+  INSERT INTO costs VALUES(0, '?', '?', 10);
+  CREATE VIRTUAL TABLE t7 USING approximate_match(
+     vocabulary_table=secret,
+     vocabulary_word=w,
+     edit_distances=costs
+  );
+}
+do_catchsql_test amatch1-7.1 {
+  SELECT word FROM t7 WHERE word MATCH 'topsecret';
+} {0 {}}
+
+# Same again, but via a view in "main". This is the case where the main
+# database file is untrusted but the application has attached a private
+# database of its own. With trusted_schema=OFF the view is already
+# rejected, because the MATCH() function is not innocuous.
+do_execsql_test amatch1-7.2 {
+  CREATE VIEW v7 AS SELECT word FROM t7 WHERE word MATCH 'topsecret';
+}
+do_catchsql_test amatch1-7.3 {
+  SELECT * FROM v7;
+} {0 {}}
+do_execsql_test amatch1-7.3.1 {
+  PRAGMA trusted_schema = 0;
+}
+do_catchsql_test amatch1-7.3.2 {
+  SELECT * FROM v7;
+} {1 {unsafe use of MATCH()}}
+do_execsql_test amatch1-7.3.3 {
+  PRAGMA trusted_schema = 1;
+}
+
+# A vocabulary table in the same schema as the virtual table still works.
+do_execsql_test amatch1-7.4 {
+  CREATE TABLE aux.costs(iLang, cFrom, cTo, Cost);
+  INSERT INTO aux.costs VALUES(0, '?', '?', 10);
+  CREATE VIRTUAL TABLE aux.t7b USING approximate_match(
+     vocabulary_table=secret,
+     vocabulary_word=w,
+     edit_distances=costs
+  );
+  SELECT word FROM aux.t7b WHERE word MATCH 'topsecret';
+} {topsecret}
+
+# A vocabulary table in "temp" is still used by a virtual table in "main",
+# even if the name differs in case.
+do_execsql_test amatch1-7.5 {
+  CREATE TEMP TABLE Vocab7(w TEXT);
+  INSERT INTO Vocab7 VALUES('notsecret');
+  CREATE VIRTUAL TABLE t7c USING approximate_match(
+     vocabulary_table=VOCAB7,
+     vocabulary_word=w,
+     edit_distances=costs
+  );
+  SELECT word FROM t7c WHERE word MATCH 'notsecret';
+} {notsecret}
+
 finish_test
