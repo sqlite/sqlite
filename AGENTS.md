@@ -214,7 +214,19 @@ Editing rules:
 - C89/C99 compatible C only. No C++, no STL, no exceptions, no VLAs.
   Use `/* ... */` comments, never `//`.  Declare all local variables at
   the start of a block, before any statement.  Keep lines to 80 columns.
-- Comments added by agents should be pithy, concise, cave-man talk.
+- Comments inside a function body, on a struct member, and in test scripts
+  should be brief, plain English: one or two short, complete, grammatical
+  sentences.  Prefer the imperative mood where it fits, as in
+  "Change i1 to have 2 surplus entries."  Say what the next block of code
+  does or sets up, not how it works internally.  Do not drop articles or
+  write telegraphic fragments, and do not restate what the code already
+  makes obvious.  Include the comment-worthy reason when the code does
+  something surprising.
+- Comments ahead of a function or a structure definition may be longer,
+  even several paragraphs, when that helps.  Use them to explain what the
+  function does, what its arguments mean, and what it returns (not how it
+  is implemented), or what the structure represents and what invariants
+  it maintains.
 - In the SQLite core, memory is allocated using `sqlite3Malloc()` and
   its relatives such as `sqlite3MallocZero()` and `sqlite3DbMallocRaw()`,
   never raw `malloc()`.  Extensions and the CLI use the public
