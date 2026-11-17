@@ -927,6 +927,7 @@ int sqlite3Fts5ConfigSetValue(
   int *pbBadkey
 ){
   int rc = SQLITE_OK;
+  int bBadkey = 0;
 
   if( 0==sqlite3_stricmp(zKey, "pgsz") ){
     int pgsz = 0;
@@ -934,7 +935,7 @@ int sqlite3Fts5ConfigSetValue(
       pgsz = sqlite3_value_int(pVal);
     }
     if( pgsz<32 || pgsz>FTS5_MAX_PAGE_SIZE ){
-      *pbBadkey = 1;
+      bBadkey = 1;
     }else{
       pConfig->pgsz = pgsz;
     }
@@ -946,7 +947,7 @@ int sqlite3Fts5ConfigSetValue(
       nHashSize = sqlite3_value_int(pVal);
     }
     if( nHashSize<=0 ){
-      *pbBadkey = 1;
+      bBadkey = 1;
     }else{
       pConfig->nHashSize = nHashSize;
     }
@@ -958,7 +959,7 @@ int sqlite3Fts5ConfigSetValue(
       nAutomerge = sqlite3_value_int(pVal);
     }
     if( nAutomerge<0 || nAutomerge>64 ){
-      *pbBadkey = 1;
+      bBadkey = 1;
     }else{
       if( nAutomerge==1 ) nAutomerge = FTS5_DEFAULT_AUTOMERGE;
       pConfig->nAutomerge = nAutomerge;
@@ -971,7 +972,7 @@ int sqlite3Fts5ConfigSetValue(
       nUsermerge = sqlite3_value_int(pVal);
     }
     if( nUsermerge<2 || nUsermerge>16 ){
-      *pbBadkey = 1;
+      bBadkey = 1;
     }else{
       pConfig->nUsermerge = nUsermerge;
     }
@@ -983,7 +984,7 @@ int sqlite3Fts5ConfigSetValue(
       nCrisisMerge = sqlite3_value_int(pVal);
     }
     if( nCrisisMerge<0 ){
-      *pbBadkey = 1;
+      bBadkey = 1;
     }else{
       if( nCrisisMerge<=1 ) nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
       if( nCrisisMerge>=FTS5_MAX_SEGMENT ) nCrisisMerge = FTS5_MAX_SEGMENT-1;
@@ -996,7 +997,7 @@ int sqlite3Fts5ConfigSetValue(
     if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
       nVal = sqlite3_value_int(pVal);
     }else{
-      *pbBadkey = 1;
+      bBadkey = 1;
     }
     if( nVal<0 ) nVal = FTS5_DEFAULT_DELETE_AUTOMERGE;
     if( nVal>100 ) nVal = 0;
@@ -1015,7 +1016,7 @@ int sqlite3Fts5ConfigSetValue(
       pConfig->zRankArgs = zRankArgs;
     }else if( rc==SQLITE_ERROR ){
       rc = SQLITE_OK;
-      *pbBadkey = 1;
+      bBadkey = 1;
     }
   }
 
@@ -1025,7 +1026,13 @@ int sqlite3Fts5ConfigSetValue(
       bVal = sqlite3_value_int(pVal);
     }
     if( bVal<0 ){
-      *pbBadkey = 1;
+      bBadkey = 1;
+    }else if( bVal>0 && pConfig->bContentlessDelete && pbBadkey ){
+      /* Secure-delete may not be enabled on a contentless_delete=1 table. */
+      sqlite3Fts5ConfigErrmsg(pConfig,
+          "'secure-delete' may not be used with a contentless_delete=1 table"
+      );
+      rc = SQLITE_ERROR;
     }else{
       pConfig->bSecureDelete = (bVal ? 1 : 0);
     }
@@ -1037,14 +1044,16 @@ int sqlite3Fts5ConfigSetValue(
       bVal = sqlite3_value_int(pVal);
     }
     if( bVal<0 ){
-      *pbBadkey = 1;
+      bBadkey = 1;
     }else{
       pConfig->bPrefixInsttoken = (bVal ? 1 : 0);
     }
 
   }else{
-    *pbBadkey = 1;
+    bBadkey = 1;
   }
+
+  if( pbBadkey ) *pbBadkey = bBadkey;
   return rc;
 }
 
@@ -1082,8 +1091,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
       if( 0==sqlite3_stricmp(zK, "version") ){
         iVersion = sqlite3_value_int(pVal);
       }else{
-        int bDummy = 0;
-        sqlite3Fts5ConfigSetValue(pConfig, zK, pVal, &bDummy);
+        sqlite3Fts5ConfigSetValue(pConfig, zK, pVal, 0);
       }
     }
     rc = sqlite3_finalize(p);
