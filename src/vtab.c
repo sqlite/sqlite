@@ -605,7 +605,6 @@ static int vtabCallConstructor(
   pTab->u.vtab.azArg[1] = db->aDb[iDb].zDbSName;
 
   /* Invoke the virtual table constructor */
-  assert( db->pVtabCtx );
   assert( xConstruct );
   sCtx.pTab = pTab;
   sCtx.pVTable = pVTable;
