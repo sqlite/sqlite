@@ -1,5 +1,5 @@
-C Minor\sfix\sto\sthe\sdbdata.tcl\sscript:\smake\ssure\sthe\sdatabase\sis\snot\sin\nauto_vacuum\smode.
-D 2026-11-17T20:21:58.159
+C Fix\sa\sminor\sconfiguration\sissue\swith\sthe\sext/expert/expert1.test\sscript.
+D 2026-11-17T20:37:38.106
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -73,7 +73,7 @@ F doc/writing-test-cases.md 9e371327b92033425817095de505ee4edae7ab86c23969dc8f53
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c 9f4d6751981bf5dda7b7480f6f878659d032a47fe74d84f31f80fdc05d6cad78
-F ext/expert/expert1.test d5c47de856feeaf436d6daf501176b1c034b0fabad0c17a3efc16be62b42dbdd
+F ext/expert/expert1.test fadf24db11e013d180803bb2197b81d7d8e4a6036cb950ed00f7334da10a4512
 F ext/expert/sqlite3expert.c 35b7e7a84b52ad7418a6dc2cf39ba07cae6a789c1c8aaa03efc0654fc22f8423
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c c395134bd6d4efa594a7d26578a1cb624c4027b79b4b5fcd44736c5ef1f5f725
@@ -2312,8 +2312,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 34972060123461bd75ecc728f8d9a4600d73dc66796cad7072b88e5ad0881012
-R 9765c8a90507c9ef7037fbcb6b3db379
+P 3bef86371c03f0241fcf663ff3a7d787f0099b8b04f36b9dcc9816d40a5afb50
+R 44fe9f0735a3510b4818b7ac9c9c0a13
 U drh
-Z 97a94e055d10b31bd556d23e674edd84
+Z afafd601060f5b57bf099190a671c2d8
 # Remove this line to create a well-formed Fossil manifest.
