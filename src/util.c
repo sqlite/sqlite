@@ -1442,7 +1442,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     v = (v<<11) | U64_BIT(63);
     e -= 1086;
   }
-  sqlite3Fp2Convert10(v, e, (iRound<=0||iRound>=18)?18:iRound+1, &v, &exp);  
+  sqlite3Fp2Convert10(v, e, (iRound<=0||iRound>=16)?18:iRound+3, &v, &exp);  
 
   /* Extract significant digits, start at the right-most slot in p->zBuf
   ** and working back to the right.  "i" keeps track of the next slot in
