@@ -1605,3 +1605,85 @@ SELECT schema, page_count FROM pragma_page_count;
 .testcase 2950
 SELECT schema, name FROM pragma_table_info('t1','temp');
 .check temp,x
+
+# Bug sqlite.org/bugs/forumpost/64e9d45f6f
+# A DELETE inside a transaction whose self-referencing ON DELETE CASCADE
+# chain fails with "triggers nested too deep" must be rolled back, as
+# it is in autocommit mode.
+#
+.open :memory:
+.mode list
+.testcase 3000
+PRAGMA foreign_keys=ON;
+CREATE TABLE t1(id INTEGER PRIMARY KEY, parent REFERENCES t1(id) ON DELETE CASCADE);
+INSERT INTO t1 VALUES(1,NULL);
+WITH RECURSIVE s(i) AS (SELECT 2 UNION ALL SELECT i+1 FROM s WHERE i<1200)
+  INSERT INTO t1 SELECT i, i-1 FROM s;
+BEGIN;
+DELETE FROM t1 WHERE id=1;
+.check -glob "*rror near line *: triggers nested too deep*"
+
+.testcase 3010
+SELECT count(*), min(id) FROM t1;
+PRAGMA foreign_key_check(t1);
+.check 1200|1
+
+.testcase 3020
+COMMIT;
+.check -glob "*"
+
+# Same again, but with a recursive AFTER DELETE trigger instead of an
+# ON DELETE CASCADE foreign key action.
+#
+.testcase 3100
+PRAGMA recursive_triggers=ON;
+CREATE TABLE t2(id INTEGER PRIMARY KEY, parent);
+INSERT INTO t2 VALUES(1,NULL);
+WITH RECURSIVE s(i) AS (SELECT 2 UNION ALL SELECT i+1 FROM s WHERE i<1200)
+  INSERT INTO t2 SELECT i, i-1 FROM s;
+CREATE TRIGGER t2d AFTER DELETE ON t2 BEGIN
+  DELETE FROM t2 WHERE parent=old.id;
+END;
+BEGIN;
+DELETE FROM t2 WHERE id=1;
+.check -glob "*rror near line *: triggers nested too deep*"
+
+.testcase 3110
+SELECT count(*), min(id) FROM t2;
+.check 1200|1
+
+.testcase 3120
+COMMIT;
+PRAGMA recursive_triggers=OFF;
+.check -glob "*"
+
+# Multi-write statements that use the first_value() window function.
+# sqlite3WindowCodeInit() calls sqlite3MayAbort(), but first_value() is
+# coded without OP_AggStep or any other opcode that sqlite3VdbeAssertMayAbort()
+# recognizes as able to abort, so the assert() in sqlite3FinishCoding()
+# fails in SQLITE_DEBUG builds.
+#
+.open :memory:
+.mode list
+.testcase 3200
+CREATE TABLE w1(a INTEGER PRIMARY KEY, b, c);
+INSERT INTO w1 VALUES(1,2,3),(4,5,6);
+CREATE TABLE w2(x, y);
+INSERT INTO w2 SELECT first_value(b) OVER (ORDER BY a), 1 FROM w1;
+SELECT * FROM w2;
+.check '2|1 2|1'
+
+.testcase 3210
+INSERT INTO w2 SELECT first_value(b) OVER (PARTITION BY c), 2 FROM w1;
+SELECT * FROM w2 WHERE y=2 ORDER BY x;
+.check '2|2 5|2'
+
+.testcase 3220
+UPDATE w1 SET c = (SELECT first_value(b) OVER () FROM w1 LIMIT 1);
+SELECT c FROM w1;
+.check '2 2'
+
+.testcase 3230
+DELETE FROM w1 WHERE a IN (SELECT first_value(a) OVER (ORDER BY b) FROM w1);
+SELECT a FROM w1;
+.check 4
