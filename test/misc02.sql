@@ -1687,3 +1687,11 @@ SELECT c FROM w1;
 DELETE FROM w1 WHERE a IN (SELECT first_value(a) OVER (ORDER BY b) FROM w1);
 SELECT a FROM w1;
 .check 4
+
+# Bug 2026-11-05T22:14:37Z sqlite.org/bugs/info/cb31fbe4045ed
+# Incorrect amount of padding in format() when both "#" and "0"
+# flags are used.
+#
+.testcase 3300
+SELECT format('%#010x,%#010X,%#010o,%#010d',255,255,255,255);
+.check 0x000000ff,0X000000FF,0000000377,0000000255
