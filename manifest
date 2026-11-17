@@ -1,5 +1,5 @@
-C Make\sit\san\serror\sto\sconfigure\ssecure-delete\smode\son\sa\scontentless_delete=1\sfts5\stable.\sPrior\sto\sthis\sit\swas\snot\san\serror,\sbut\sthe\ssetting\shad\sno\seffect\sat\sall.
-D 2026-11-17T17:53:17.986
+C Minor\sfix\sto\sthe\sdbdata.tcl\sscript:\smake\ssure\sthe\sdatabase\sis\snot\sin\nauto_vacuum\smode.
+D 2026-11-17T20:21:58.159
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1119,7 +1119,7 @@ F test/date2.test 6344250abb5face9174778ec0a476e2baa97ad509df9eee81fbb1ec6933b71
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test b5ad22baf7394e008ac59383840159daedd45be31dcf74a3b2450ec0e28955ce
 F test/date5.test 14ba189bc4d03efc371dd5302e035764f6633355a3e13acb4a45e7b33530231e
-F test/dbdata.test 2509c326c5caecfcfcb7d0ed4bec3261cb69b1c13d379f1bf36d2bffcfcaefb5
+F test/dbdata.test f4b3fe016293a0f0d0fddb85f776fad1e78c69105313cee57ff2a8000a8031c0
 F test/dbfuzz.c 687793b95adc63477fdc1ce935d73befb6ec01eb9eb18f56be7fb23acd056cde
 F test/dbfuzz001.test 34d72411704e1f40731a1818ff4ba42b43319e41fb59fd809aceb9c05ba8995b
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
@@ -2312,8 +2312,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7a9c6378a28aff6d5bab136e72e6e3820a51de5c7bb87cd38604504e0a37cec4
-R 28fb088d765522da598f821a9c3de858
-U dan
-Z 5b34866b470004fc26d366c0b09034a7
+P 34972060123461bd75ecc728f8d9a4600d73dc66796cad7072b88e5ad0881012
+R 9765c8a90507c9ef7037fbcb6b3db379
+U drh
+Z 97a94e055d10b31bd556d23e674edd84
 # Remove this line to create a well-formed Fossil manifest.

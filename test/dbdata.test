@@ -38,6 +38,7 @@ if {[catch { dbdata_load db }]} {
 }
 
 do_execsql_test 1.0 {
+  PRAGMA auto_vacuum = 0;
   CREATE TABLE T1(a, b);
   INSERT INTO t1(rowid, a ,b) VALUES(5, 'v', 'five');
   INSERT INTO t1(rowid, a, b) VALUES(10, 'x', 'ten');
@@ -93,6 +94,7 @@ reset_db
 dbdata_load db
 
 do_execsql_test 2.0 {
+  PRAGMA auto_vacuum = 0;
   CREATE TABLE t1(a);
   CREATE INDEX i1 ON t1(a);
   WITH s(i) AS (
@@ -131,6 +133,7 @@ dbdata_load db
 forcedelete test.db2
 do_execsql_test 3.0 {
   ATTACH 'test.db2' AS aux;
+  PRAGMA aux.auto_vacuum = 0;
   CREATE TABLE aux.t1(x);
   INSERT INTO aux.t1 VALUES('private data');
   CREATE TABLE t2(y);
