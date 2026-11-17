@@ -1,5 +1,5 @@
-C Merge\sfixes\sfor\sissues\sF3\s(expert\sextension),\sF5\s(dbdata\sextension)\sand\sF6\s(vec1\sextension)\sreported\sat\s[bugs:/info/2026-11-17T15:14:07Z\s|\s2026-11-17T15:14:07Z].
-D 2026-11-17T15:21:11.401
+C Have\sthe\ssession\smodule\smore\sconsistently\sreject\sany\schangeset/patchset\sthat\scontains\sa\smix\sof\schangeset\sand\spatchset\sheaders\sas\scorrupt.\sIssue\sF8\sreported\sat\s[bugs:/info/2026-11-17T15:14:07Z\s|\s2026-11-17T15:14:07Z].
+D 2026-11-17T15:34:52.818
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -570,7 +570,7 @@ F ext/session/sessionchange.test 6618cb1c1338a4b6df173b6ac42d09623fb71269962abf2
 F ext/session/sessionchange2.test eaf97490cd4931fc4b5f8be48a3143093b607de3fe72f9df33976012c0bdbeb6
 F ext/session/sessionconflict.test 19e4a53795c4c930bfec49e809311e09b2a9e202d9446e56d7a8b139046a0c07 x
 F ext/session/sessionconflict2.test dcaa9979a71d47ff524d01757d137a66cd1dee8faaf93395fcb55b1838851379 x
-F ext/session/sessioncorrupt.test 63f613fde3d0a2d8d98c0dfcd52992507a417e5f645a2854a3cdf7df20f76df3 x
+F ext/session/sessioncorrupt.test 76c100f50686962f9615a0d7be5b1b240acfffe695d4836cdba7310ec539ce45 x
 F ext/session/sessiondiff.test e89f7aedcdd89e5ebac3a455224eb553a171e9586fc3e1e6a7b3388d2648ba8d
 F ext/session/sessionfault.test c2b43d01213b389a3f518e90775fca2120812ba51e50444c4066962263e45c11
 F ext/session/sessionfault2.test 0c050779bc8daa21d1b9233dfd36b84716d51fad750b7b460cee12e21eb3f59c
@@ -586,7 +586,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 3e5fdb7a743b1caac29e05aa8660f5c4b3d0700968c3c0ca1a1a8fbdceba7b23
+F ext/session/sqlite3session.c 2d71fe5b053c0c84fbbafb231b7a178566bc8a959166191d0e7ebac103713fab
 F ext/session/sqlite3session.h ca7c4422c1514a95056cc8d333217df6b1829d39058126b1de85d10cd62d7a9c
 F ext/session/test_session.c b30b1ecbb042d08f42406eb4fcfb2efef9609507e1b6b04b0a1ea4cb0a3cffe3
 F ext/vec1/Makefile 791bd52e40d5b65026c63c8778dbdfc6d66083457ee50cf873d6483d98f43437
@@ -2312,11 +2312,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0c67cf34dc85f28e414e4a2c5a1417be9f1ad69886b211f65e56b08be45335f3
-Q +4c400f5122cad68b815ee78fc5a91eea6aa52c214039060b8997b1ba03921f27
-Q +7e6825df9922bb43a8d7208e291c4cd7dd01f6563e6393a85398984c4232ad1c
-Q +a07c04da5764aa8d2aa96eca54fe9577c26193db2244dcb756f356e76c41489d
-R f4adc5a5a200e5860d92ed93765998e8
+P fbc5e92bddf4199d12b94910302c11d9ab859771ae3551d7bd29dd9be6f3a14f
+R f47d56430f51c78335522c418b7a9702
 U dan
-Z 1ffbada6f3c37a8e7076fd35bd1e1e9a
+Z 1ab8a4ab3dcffe499c77d3243a083f2d
 # Remove this line to create a well-formed Fossil manifest.
