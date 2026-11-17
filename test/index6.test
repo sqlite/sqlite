@@ -591,4 +591,100 @@ do_execsql_test index6-20.11 {
   SELECT x, a FROM t2 LEFT JOIN t1 ON c=x AND d=3 AND b=1 ORDER BY x, a;
 } {2 one 2 real 5 {}}
 
+#-------------------------------------------------------------------------
+# 2026-11-08 https://sqlite.org/bugs/forumpost/b2f9f58ae6bf
+#
+# Check that integrity_check reports index entries for rows that fail the
+# WHERE clause of a partial index.  Create such surplus entries by editing
+# the WHERE clause in sqlite_schema.
+#
+reset_db
+load_static_extension db wholenumber
+do_execsql_test index6-21.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1,10),(2,20),(3,30);
+  CREATE INDEX i1 ON t1(b);
+  CREATE INDEX i2 ON t1(b) WHERE a>2;
+  PRAGMA integrity_check;
+} {ok}
+
+# Change i1 to have 2 surplus entries and i2 to have 2 missing entries.
+do_execsql_test index6-21.1 {
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_schema SET sql='CREATE INDEX i1 ON t1(b) WHERE a>2'
+   WHERE name='i1';
+  UPDATE sqlite_schema SET sql='CREATE INDEX i2 ON t1(b)' WHERE name='i2';
+  PRAGMA writable_schema=RESET;
+  SELECT count(*) FROM t1 INDEXED BY i1 WHERE a>2;
+  SELECT count(*) FROM t1 NOT INDEXED WHERE a>2;
+} {3 1}
+do_execsql_test index6-21.2 {
+  PRAGMA integrity_check;
+} {{wrong # of entries in index i2} {row 1 missing from index i2}
+   {row 2 missing from index i2} {wrong # of entries in index i1}}
+do_execsql_test index6-21.3 {
+  PRAGMA integrity_check(t1);
+} {{wrong # of entries in index i2} {row 1 missing from index i2}
+   {row 2 missing from index i2} {wrong # of entries in index i1}}
+do_execsql_test index6-21.4 {
+  PRAGMA integrity_check(3);
+} {{wrong # of entries in index i2} {row 1 missing from index i2}
+   {row 2 missing from index i2}}
+
+# quick_check only compares the size of i2 with the row count.
+do_execsql_test index6-21.5 {
+  PRAGMA quick_check;
+} {{wrong # of entries in index i2}}
+do_execsql_test index6-21.6 {
+  REINDEX;
+  PRAGMA integrity_check;
+  PRAGMA quick_check;
+} {ok ok}
+
+# Create surplus entries in partial indexes on a WITHOUT ROWID table.
+do_execsql_test index6-21.10 {
+  CREATE TABLE t2(a INT PRIMARY KEY, b) WITHOUT ROWID;
+  INSERT INTO t2 VALUES(1,10),(2,20),(3,30);
+  CREATE INDEX i21 ON t2(b);
+  CREATE UNIQUE INDEX i22 ON t2(b);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_schema SET sql='CREATE INDEX i21 ON t2(b) WHERE a>2'
+   WHERE name='i21';
+  UPDATE sqlite_schema SET sql='CREATE UNIQUE INDEX i22 ON t2(b) WHERE a>1'
+   WHERE name='i22';
+  PRAGMA writable_schema=RESET;
+  PRAGMA integrity_check(t2);
+} {{wrong # of entries in index i22} {wrong # of entries in index i21}}
+
+# Give i31 one surplus and one missing entry.  The size is then correct,
+# but the missing entry is still reported.
+do_execsql_test index6-21.20 {
+  CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t3 VALUES(1,10),(2,20),(3,30);
+  CREATE INDEX i31 ON t3(b) WHERE a IN (1,3);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_schema SET sql='CREATE INDEX i31 ON t3(b) WHERE a>1'
+   WHERE name='i31';
+  PRAGMA writable_schema=RESET;
+  PRAGMA integrity_check(t3);
+} {{row 2 missing from index i31}}
+
+# Check the whole database.  Views and virtual tables must not disturb
+# the counts.
+do_execsql_test index6-21.30 {
+  PRAGMA integrity_check;
+} {{row 2 missing from index i31} {wrong # of entries in index i22}
+   {wrong # of entries in index i21}}
+do_execsql_test index6-21.31 {
+  CREATE VIEW v1 AS SELECT * FROM t1;
+  CREATE TABLE t0(x);
+  CREATE VIRTUAL TABLE nums2 USING wholenumber;
+  PRAGMA integrity_check;
+} {{wrong # of entries in index i22} {wrong # of entries in index i21}
+   {row 2 missing from index i31}}
+do_execsql_test index6-21.32 {
+  REINDEX;
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test

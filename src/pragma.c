@@ -1835,6 +1835,7 @@ void sqlite3Pragma(
 
       /* Make sure all the indices are constructed correctly.
       */
+      cnt = pObjTab ? 1 : 0;
       for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx, *pPk;
@@ -1845,8 +1846,19 @@ void sqlite3Pragma(
         int bStrict;            /* True for a STRICT table */
         int r2;                 /* Previous key for WITHOUT ROWID tables */
         int mxCol;              /* Maximum non-virtual column number */
+        int regIdxCnt;          /* reg[regIdxCnt+j] is the size of index j */
+        int nPartIdx = 0;       /* Number of partial indexes */
+        int regPartCnt = 0;     /* Row counts for the partial indexes */
+        int iPart;              /* Loop counter over partial indexes */
 
         if( tableSkipIntegrityCheck(pTab,pObjTab) ) continue;
+        /* Count the indexes the same way as for aRoot[] above */
+        if( HasRowid(pTab) ) cnt++;
+        regIdxCnt = 8+cnt;
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          cnt++;
+          if( pIdx->pPartIdxWhere ) nPartIdx++;
+        }
         if( !IsOrdinaryTable(pTab) ) continue;
         if( isQuick || HasRowid(pTab) ){
           pPk = 0;
@@ -1862,6 +1874,15 @@ void sqlite3Pragma(
         */
         sqlite3VdbeAddOp2(v, OP_Integer, 0, 7);
         assert( sqlite3NoTempsInRange(pParse,1,7) );
+        if( !isQuick && nPartIdx>0 ){
+          /* Count the rows that satisfy the WHERE clause of each partial
+          ** index.  After the loop, compare each count with the number of
+          ** entries in that index. */
+          regPartCnt = sqlite3GetTempRange(pParse, nPartIdx);
+          for(iPart=0; iPart<nPartIdx; iPart++){
+            sqlite3VdbeAddOp2(v, OP_Integer, 0, regPartCnt+iPart);
+          }
+        }
         sqlite3VdbeAddOp2(v, OP_Rewind, iDataCur, 0); VdbeCoverage(v);
         loopTop = sqlite3VdbeAddOp2(v, OP_AddImm, 7, 1);
 
@@ -2061,6 +2082,7 @@ void sqlite3Pragma(
         }
         if( !isQuick ){ /* Omit the remaining tests for quick_check */
           /* Validate index entries for the current row */
+          iPart = 0;
           for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
             int jmp2, jmp3, jmp4, jmp5, label6;
             int kk;
@@ -2069,6 +2091,11 @@ void sqlite3Pragma(
             r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 0, &jmp3,
                                          pPrior, r1);
             pPrior = pIdx;
+            if( pIdx->pPartIdxWhere ){
+              /* Count this row for the partial index */
+              sqlite3VdbeAddOp2(v, OP_AddImm, regPartCnt+iPart, 1);
+              iPart++;
+            }
             /* Verify that an index entry exists for the current table row */
             sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, ckUniq, r1,
                                         pIdx->nColumn); VdbeCoverage(v);
@@ -2157,6 +2184,26 @@ void sqlite3Pragma(
         }
         sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, loopTop-1);
+        if( regPartCnt ){
+          /* Report any partial index whose size differs from its row count.
+          ** The per-row checks above find missing entries, so this finds
+          ** the surplus ones. */
+          assert( !isQuick );
+          sqlite3VdbeLoadString(v, 2, "wrong # of entries in index ");
+          for(j=0, iPart=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
+            if( pIdx->pPartIdxWhere==0 ) continue;
+            addr = sqlite3VdbeAddOp3(v, OP_Eq, regPartCnt+iPart, 0,
+                                     regIdxCnt+j);
+            VdbeCoverageNeverNull(v);
+            sqlite3VdbeLoadString(v, 4, pIdx->zName);
+            sqlite3VdbeAddOp3(v, OP_Concat, 4, 2, 3);
+            integrityCheckResultRow(v, 0, -1);
+            sqlite3VdbeJumpHere(v, addr);
+            iPart++;
+          }
+          assert( iPart==nPartIdx );
+          sqlite3ReleaseTempRange(pParse, regPartCnt, nPartIdx);
+        }
         if( pPk ){
           assert( !isQuick );
           sqlite3ReleaseTempRange(pParse, r2, pPk->nKeyCol);
