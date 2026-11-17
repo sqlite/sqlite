@@ -1301,6 +1301,37 @@ static int idxAuthCallback(
   return rc;
 }
 
+/*
+** Execute the CREATE statement in zSql, which was read from the
+** sqlite_schema table of the database being analyzed, using database
+** handle db. If no error occurs, set (*pzErr) to NULL and return
+** SQLITE_OK. Otherwise, return an SQLite error code and set (*pzErr) to
+** point to a buffer containing an English language error message.
+**
+** If the database was opened with "PRAGMA writable_schema=ON", the text
+** read from sqlite_schema is not guaranteed to be a single CREATE
+** statement. So the same rules are applied as when SQLite itself loads a
+** schema: text that does not begin with "CR" is ignored, as only CREATE
+** statements begin with those two letters, and only the first statement
+** in the text is executed. Anything that follows it is ignored.
+*/
+static int expertSchemaExec(sqlite3 *db, const char *zSql, char **pzErr){
+  int rc = SQLITE_OK;
+  if( pzErr ) *pzErr = 0;
+  if( (zSql[0]=='c' || zSql[0]=='C') && (zSql[1]=='r' || zSql[1]=='R') ){
+    sqlite3_stmt *pStmt = 0;
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+    if( rc==SQLITE_OK && pStmt ){
+      while( SQLITE_ROW==sqlite3_step(pStmt) ){}
+      rc = sqlite3_finalize(pStmt);
+    }
+    if( rc!=SQLITE_OK && pzErr ){
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+    }
+  }
+  return rc;
+}
+
 static int idxProcessOneTrigger(
   sqlite3expert *p, 
   IdxWrite *pWrite, 
@@ -1323,7 +1354,7 @@ static int idxProcessOneTrigger(
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSelect) ){
     const char *zCreate = (const char*)sqlite3_column_text(pSelect, 0);
     if( zCreate==0 ) continue;
-    rc = sqlite3_exec(p->dbv, zCreate, 0, 0, pzErr);
+    rc = expertSchemaExec(p->dbv, zCreate, pzErr);
   }
   idxFinalize(&rc, pSelect);
 
@@ -1448,7 +1479,7 @@ static int expertSchemaSql(sqlite3 *db, const char *zSql, char **pzErr){
   int rc = SQLITE_OK;
   char *zErr = 0;
 
-  rc = sqlite3_exec(db, zSql, 0, 0, &zErr);
+  rc = expertSchemaExec(db, zSql, &zErr);
   if( rc!=SQLITE_OK && zErr ){
     int nErr = STRLEN(zErr);
     if( nErr>=15 && memcmp(zErr, "no such module:", 15)==0 ){
@@ -1916,7 +1947,8 @@ static int idxPopulateStat1(sqlite3expert *p, char **pzErr){
 ** Define and possibly pretend to use a useless collation sequence.
 ** This pretense allows expert to accept SQL using custom collations.
 */
-int dummyCompare(void *up1, int up2, const void *up3, int up4, const void *up5){
+static int dummyCompare(void *up1, int up2, const void *up3, int up4,
+                        const void *up5){
   (void)up1;
   (void)up2;
   (void)up3;
@@ -1926,7 +1958,7 @@ int dummyCompare(void *up1, int up2, const void *up3, int up4, const void *up5){
   return 0;
 }
 /* And a callback to register above upon actual need */
-void useDummyCS(void *up1, sqlite3 *db, int etr, const char *zName){
+static void useDummyCS(void *up1, sqlite3 *db, int etr, const char *zName){
   (void)up1;
   sqlite3_create_collation_v2(db, zName, etr, 0, dummyCompare, 0);
 }
@@ -1936,13 +1968,13 @@ void useDummyCS(void *up1, sqlite3 *db, int etr, const char *zName){
 /*
 ** dummy functions for no-op implementation of UDFs during expert's work
 */
-void dummyUDF(sqlite3_context *up1, int up2, sqlite3_value **up3){
+static void dummyUDF(sqlite3_context *up1, int up2, sqlite3_value **up3){
   (void)up1;
   (void)up2;
   (void)up3;
   assert(0); /* VDBE should never be run. */
 }
-void dummyUDFvalue(sqlite3_context *up1){
+static void dummyUDFvalue(sqlite3_context *up1){
   (void)up1;
   assert(0); /* VDBE should never be run. */
 }
@@ -1950,7 +1982,7 @@ void dummyUDFvalue(sqlite3_context *up1){
 /*
 ** Register UDFs from user database with another.
 */
-int registerUDFs(sqlite3 *dbSrc, sqlite3 *dbDst){
+static int registerUDFs(sqlite3 *dbSrc, sqlite3 *dbDst){
   sqlite3_stmt *pStmt;
   int rc = sqlite3_prepare_v2(dbSrc,
             "SELECT name,type,enc,narg,flags "

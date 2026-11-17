@@ -50,7 +50,7 @@ do_faultsim_test 2 -prep {
   }
 } -test {
   execsql { PRAGMA journal_mode = off }
-  faultsim_test_result {0 {}} {1 {no such schema}}  {1 {SQL logic error}} {1 {unable to open a temporary database file for storing temporary tables}}
+  faultsim_test_result {0 {}} {1 {no such schema}}  {1 {SQL logic error}}
 }
 
 reset_db
@@ -106,7 +106,7 @@ do_faultsim_test 4 -prep {
     ) WHERE pgno = $pgno;
   }
 } -test {
-  faultsim_test_result {0 {}} {1 {unable to open a temporary database file for storing temporary tables}}
+  faultsim_test_result {0 {}}
 }
 
 finish_test

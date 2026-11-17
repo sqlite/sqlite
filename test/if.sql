@@ -528,20 +528,20 @@ EOF
 .print 550-a
 .if 1
 .endif
-.check --keep --glob "nested too deep"
-.check --keep --notglob 550-BUG
-.check --glob 550-a
+.check --keep --any "nested too deep"
+.check --keep --nowhere 550-BUG
+.check --any 550-a
 
 #############################################################################
 # Errors
 #
 .testcase 600
 .else
-.check --glob ".else without a .if"
+.check --any ".else without a .if"
 
 .testcase 610
 .endif
-.check --glob ".endif without a .if"
+.check --any ".endif without a .if"
 
 # .elseif without .if is an error, but it does not stop the script
 #
@@ -550,8 +550,8 @@ EOF
 .elseif 1
 .print 620-inner-end
 EOF
-.check --keep --glob ".elseif with no .if"
-.check --glob 620-inner-end
+.check --keep --any ".elseif with no .if"
+.check --any 620-inner-end
 
 .testcase 630
 .if 1
@@ -560,8 +560,8 @@ EOF
 .else
 .print 630-BUG
 .endif
-.check --keep --glob "already saw a .else"
-.check --notglob 630-BUG
+.check --keep --any "already saw a .else"
+.check --nowhere 630-BUG
 
 # .elseif after .else is an error.  It does not cause the body that
 # follows it to run.
@@ -574,8 +574,8 @@ EOF
 .elseif 1
 .print 640-BUG
 .endif
-.check --keep --glob ".elseif follows a .else"
-.check --notglob 640-BUG
+.check --keep --any ".elseif follows a .else"
+.check --nowhere 640-BUG
 
 .testcase 641
 .if 0
@@ -585,8 +585,8 @@ EOF
 .elseif 1
 .print 641-BUG
 .endif
-.check --keep --glob ".elseif follows a .else"
-.check --notglob 641-BUG
+.check --keep --any ".elseif follows a .else"
+.check --nowhere 641-BUG
 
 #############################################################################
 # Interaction with .read
@@ -603,9 +603,9 @@ EOF
 .print 700-after-read
 .if 1
 .endif
-.check --keep --glob "<heredoc>:2: unterminated .if"
-.check --keep --notglob 700-BUG
-.check --glob "700-inner*700-after-read"
+.check --keep --any "<heredoc>:2: unterminated .if"
+.check --keep --nowhere 700-BUG
+.check --glob "*700-inner*700-after-read*"
 
 # Also with nested unterminated .ifs.  The .else at nesting level 2
 # must not be remembered after the .read finishes.
@@ -628,9 +628,9 @@ EOF
 .if 1
 .endif
 .endif
-.check --keep --glob "unterminated .if"
-.check --keep --notglob "already saw a .else"
-.check --glob "701-inner*701-after-read*701-nested-else"
+.check --keep --any "unterminated .if"
+.check --keep --nowhere "already saw a .else"
+.check --glob "*701-inner*701-after-read*701-nested-else*"
 
 # A true branch taken in an unterminated .if of a .read script must
 # not be remembered after the .read finishes.
@@ -646,8 +646,8 @@ EOF
 .endif
 .if 1
 .endif
-.check --keep --glob "unterminated .if"
-.check --glob 702-a
+.check --keep --any "unterminated .if"
+.check --any 702-a
 
 # A .read script cannot close, invert, or change a .if of its caller
 #
@@ -674,11 +674,11 @@ EOF
 OUTER
 .if 1
 .endif
-.check --keep --glob ".endif without a .if"
-.check --keep --glob ".else without a .if"
-.check --keep --glob ".elseif with no .if"
-.check --keep --notglob 710-BUG
-.check --glob "710-a*710-end"
+.check --keep --any ".endif without a .if"
+.check --keep --any ".else without a .if"
+.check --keep --any ".elseif with no .if"
+.check --keep --nowhere 710-BUG
+.check --glob "*710-a*710-end*"
 
 .testcase 711
 .read <<OUTER
@@ -693,8 +693,8 @@ EOF
 OUTER
 .if 1
 .endif
-.check --keep --glob ".elseif with no .if"
-.check --glob 711-a
+.check --keep --any ".elseif with no .if"
+.check --any 711-a
 
 # .if and .endif within a .read script work normally when the
 # caller is within a .if
@@ -802,7 +802,7 @@ OUTER
 EOF
 .else
 .check --keep --glob "*if.sql:#: .else without a .if"
-.check --glob "760-c"
+.check --any "760-c"
 
 #############################################################################
 # The capable() function

@@ -780,6 +780,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   int hasCreateTable = 0;
   int hasCreateIndex = 0;
   int hasInitCoroutine = 0;
+  int hasProgram = 0;
   Op *pOp;
   VdbeOpIter sIter;
 
@@ -794,6 +795,9 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
      || opcode==OP_VCreate
      || opcode==OP_ParseSchema
      || opcode==OP_Function || opcode==OP_PureFunc
+     || opcode==OP_AggStep || opcode==OP_AggInverse
+     || opcode==OP_AggFinal || opcode==OP_AggValue
+     || opcode==OP_VFilter || opcode==OP_VColumn
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull)
       && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))
      || (opcode==OP_MustBeInt && pOp->p2==0)
@@ -816,17 +820,37 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
       hasFkCounter = 1;
     }
 #endif
+    if( opcode==OP_Program ){
+      hasProgram = 1;
+    }
   }
   sqlite3DbFree(v->db, sIter.apSub);
 
-  /* Return true if hasAbort==mayAbort. Or if a malloc failure occurred.
-  ** If malloc failed, then the while() loop above may not have iterated
-  ** through all opcodes and hasAbort may be set incorrectly. Return
-  ** true for this case to prevent the assert() in the callers frame
-  ** from failing.  */
-  return ( v->db->mallocFailed || hasAbort==mayAbort || hasFkCounter
-        || (hasCreateTable && hasInitCoroutine) || hasCreateIndex
-  );
+  /* Return true if there is no problem, or false if there is. Determined
+  ** as follows:
+  ** 
+  **    1. If a malloc() failed, always return 1.
+  **
+  **    2. If hasAbort is set, then the statement contains an opcode that
+  **       can cause an abort. So this is an error if mayAbort==0, or a
+  **       pass if mayAbort is set. Just return mayAbort.
+  **
+  **    3. If the statement is a CREATE TABLE AS or a CREATE INDEX, then
+  **       also return mayAbort - same logic as in (2).
+  **
+  **    4. If hasFkCounter or hasProgram is set, it is not possible to tell
+  **       whether the statement may abort or not. So either value of mayAbort
+  **       is a pass. Just return 1.
+  **
+  **    5. Otherwise, mayAbort should be clear. Return true if it is, or 
+  **       false otherwise.
+  */
+  if( v->db->mallocFailed ) return 1;                           /* 1. */
+  if( hasAbort ) return mayAbort;                               /* 2. */
+  if( hasCreateIndex ) return mayAbort;                         /* 3. */
+  if( (hasCreateTable && hasInitCoroutine) ) return mayAbort;   /* 3. */
+  if( hasFkCounter || hasProgram ) return 1;                    /* 4. */
+  return !mayAbort;                                             /* 5. */
 }
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 

@@ -273,9 +273,9 @@ static unsigned int checksum(const char *zIn, size_t N){
 #endif
   }
   switch(N&3){
-    case 3:   sum += (z[2] << 8);
-    case 2:   sum += (z[1] << 16);
-    case 1:   sum += (z[0] << 24);
+    case 3:   sum += ((unsigned)z[2] << 8);
+    case 2:   sum += ((unsigned)z[1] << 16);
+    case 1:   sum += ((unsigned)z[0] << 24);
     default:  ;
   }
   return sum;

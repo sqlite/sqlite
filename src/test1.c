@@ -4734,7 +4734,7 @@ static int SQLITE_TCLAPI test_carray_bind(
       }
       for(j=0; rc==SQLITE_OK && j<nData; j++){
         Tcl_Size n = 0;
-        unsigned char *v = Tcl_GetByteArrayFromObj(objv[i+i], &n);
+        unsigned char *v = Tcl_GetByteArrayFromObj(objv[i+j], &n);
         a[j].iov_len = (size_t)n;
         a[j].iov_base = sqlite3_malloc64( n );
         if( a[j].iov_base==0 ){
@@ -4754,6 +4754,7 @@ static int SQLITE_TCLAPI test_carray_bind(
       if( xDel!=SQLITE_TRANSIENT ) xDel = SQLITE_STATIC;
       isTransient = 0;
       isStatic = 0;
+      isMalloc = 0;
       break;
     }
   }

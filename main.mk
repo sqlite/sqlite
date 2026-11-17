@@ -1928,8 +1928,16 @@ xdevtest: has_tclsh85
 # Validate that various generated files in the source tree
 # are up-to-date.
 #
-srctree-check:	$(TOP)/tool/srctree-check.tcl
+srctree-check:	$(TOP)/tool/srctree-check.tcl tuning-verify
 	$(TCLSH_CMD) $(TOP)/tool/srctree-check.tcl
+
+#
+# Verify that the Tuning(D,ID) macros in the source code agree with the
+# defaults in the sqlite3Tuning[] array of src/global.c.  This is part of
+# srctree-check, and thus of devtest, mdevtest and releasetest.
+#
+tuning-verify:	$(TOP)/tool/tuningverify.tcl
+	$(TCLSH_CMD) $(TOP)/tool/tuningverify.tcl $(TOP)
 
 #
 # Testing for a release

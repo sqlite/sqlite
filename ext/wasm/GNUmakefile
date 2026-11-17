@@ -1609,8 +1609,9 @@ endif
 ########################################################################
 
 # Run local web server for the test/demo pages.
+httpd.port ?= 8321
 httpd:
-	althttpd -max-age 1 -enable-sab 1 -page index.html
+	althttpd -port $(httpd.port) -max-age 1 -enable-sab 1 -page index.html
 
 ########################################################################
 # fiddle_remote is the remote destination for the fiddle app. It must

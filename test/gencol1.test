@@ -602,7 +602,7 @@ reset_db
     );
     INSERT INTO t1(a) VALUES(5);
     SELECT name, type FROM pragma_table_xinfo('t1');
-  } {a INTEGER b INT c TEXT d {} e INT}
+  } {a INTEGER b INT c TEXT d {} e {int                         Always}}
 }
 
 # 2021-09-07 forum https://sqlite.org/forum/forumpost/699b44b3ee

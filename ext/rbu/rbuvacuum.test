@@ -441,4 +441,96 @@ do_test 4.1 {
   list [catch { rbu close } msg] $msg
 } {1 {SQLITE_CORRUPT - malformed database schema (t1)}}
 
+#-------------------------------------------------------------------------
+# The declared type of a column is free-form text.  When it is written as
+# a quoted string, the text that PRAGMA table_xinfo reports may contain any
+# characters at all.  RBU must treat that text as a type name only, and
+# never let it change the shape of the SQL that RBU generates.
+#
+# Each hostile type below is used as the type of column "v" of a table,
+# for three kinds of table (ordinary, WITHOUT ROWID, and with an index).
+# Vacuuming such a table must succeed, leave the schema text and the rows
+# unchanged, and not create anything that was not in the original database.
+#
+set ::hostile_types [list \
+  {INT CHECK(0)}                         \
+  {TEXT NOT NULL DEFAULT (abs(-9))}      \
+  {INT, spare TEXT}                      \
+  {INT); CREATE TABLE intruder(x}        \
+  {INT) WITHOUT ROWID; --}               \
+  {INT)}                                 \
+  {TEXT /* unterminated}                 \
+  "IN\"T 'X' \\ %s %d"                   \
+]
+
+foreach {kind ddl} {
+  rowid       {CREATE TABLE tx(k INTEGER PRIMARY KEY, v "%TYPE%")}
+  norowid     {CREATE TABLE tx(k, v "%TYPE%", PRIMARY KEY(k)) WITHOUT ROWID}
+  indexed     {CREATE TABLE tx(k INTEGER PRIMARY KEY, v "%TYPE%");
+               CREATE INDEX tx_v ON tx(v)}
+} {
+  set tn 0
+  foreach ztype $::hostile_types {
+    incr tn
+    reset_db
+    set sql [string map [list %TYPE% [string map {\" \"\"} $ztype]] $ddl]
+    execsql $sql
+    execsql {
+      INSERT INTO tx(k, v) VALUES(1, 'alpha'), (2, 'beta'), (3, 'gamma');
+    }
+    set schema_before [db eval {SELECT name, sql FROM sqlite_schema}]
+    set rows_before [db eval {SELECT k, v FROM tx ORDER BY k}]
+    set type_before [db eval {SELECT type FROM pragma_table_xinfo('tx')}]
+
+    do_rbu_vacuum_test 5.$kind.$tn 0
+
+    do_test 5.$kind.$tn.schema {
+      db eval {SELECT name, sql FROM sqlite_schema}
+    } $schema_before
+    do_test 5.$kind.$tn.rows {
+      db eval {SELECT k, v FROM tx ORDER BY k}
+    } $rows_before
+    do_test 5.$kind.$tn.type {
+      db eval {SELECT type FROM pragma_table_xinfo('tx')}
+    } $type_before
+  }
+}
+
+#-------------------------------------------------------------------------
+# Multi-word types, types with arguments and types that select unusual
+# column affinities must keep behaving as before when the table is
+# vacuumed. A text value is stored in every column of every table so that
+# any change of affinity would show up as a change of storage class.
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE ty(
+    k INTEGER PRIMARY KEY,
+    c1 VARCHAR(30),
+    c2 NATIVE CHARACTER(70),
+    c3 DOUBLE PRECISION,
+    c4 DECIMAL(10,5),
+    c5 UNSIGNED BIG INT,
+    c6 BLOB,
+    c7,
+    c8 "quoted type"
+  );
+  INSERT INTO ty VALUES(1, '12', '12', '12', '12', '12', '12', '12', '12');
+}
+set ::before [db eval {
+  SELECT typeof(c1), typeof(c2), typeof(c3), typeof(c4), typeof(c5),
+         typeof(c6), typeof(c7), typeof(c8) FROM ty
+}]
+do_test 6.1 { set ::before } {text text real integer integer text text integer}
+do_rbu_vacuum_test 6.2 0
+do_execsql_test 6.3 {
+  SELECT typeof(c1), typeof(c2), typeof(c3), typeof(c4), typeof(c5),
+         typeof(c6), typeof(c7), typeof(c8) FROM ty
+} $::before
+do_execsql_test 6.4 {
+  SELECT name, type FROM pragma_table_xinfo('ty') ORDER BY cid
+} {k INTEGER c1 VARCHAR(30) c2 {NATIVE CHARACTER(70)} c3 {DOUBLE PRECISION}
+   c4 DECIMAL(10,5) c5 {UNSIGNED BIG INT} c6 BLOB c7 {} c8 {quoted type}}
+
+
 finish_test

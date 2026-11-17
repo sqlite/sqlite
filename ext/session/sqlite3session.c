@@ -3865,6 +3865,11 @@ static int sessionChangesetNextOne(
 
   op = p->in.aData[p->in.iNext++];
   while( op=='T' || op=='P' ){
+    /* A single changeset may not contain both changeset ('T') and
+    ** patchset ('P') table headers. If it does, it is corrupt. */
+    if( p->zTab && p->bPatchset!=(op=='P') ){
+      return (p->rc = SQLITE_CORRUPT_BKPT);
+    }
     if( pbNew ) *pbNew = 1;
     p->bPatchset = (op=='P');
     if( sessionChangesetReadTblhdr(p) ) return p->rc;

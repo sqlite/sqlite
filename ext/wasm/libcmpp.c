@@ -5,7 +5,7 @@
 
   ./c-pp -I. -I./src -Dsrcdir=./src -o libcmpp.c ./tool/libcmpp.c-pp.c
 
-  with libcmpp 2.0.x 4539e17f451054d2aeb6a5ffe3891af087fd8fa6cfae4e31d02e1fddfec69d46 @ 2026-09-30 09:12:44.230 UTC
+  with libcmpp 2.0.x 8d8c04a3fafae2f13182be91e517a5a7d0a2d93da3232d7b0fbaeaff2f2e5b09 @ 2026-11-14 20:55:04.664 UTC
 */
 #if !defined(NET_WANDERINGHORSE_LIBCMPP_C_INCLUDED)
 #define NET_WANDERINGHORSE_LIBCMPP_C_INCLUDED
@@ -20,13 +20,13 @@
 
   ./c-pp -I. -I./src -Dsrcdir=./src -o libcmpp.h ./tool/libcmpp.c-pp.h
 
-  with libcmpp 2.0.x 4539e17f451054d2aeb6a5ffe3891af087fd8fa6cfae4e31d02e1fddfec69d46 @ 2026-09-30 09:12:44.230 UTC
+  with libcmpp 2.0.x 8d8c04a3fafae2f13182be91e517a5a7d0a2d93da3232d7b0fbaeaff2f2e5b09 @ 2026-11-14 20:55:04.664 UTC
 */
 #define CMPP_PACKAGE_NAME "libcmpp"
 #define CMPP_LIB_VERSION "2.0.x"
-#define CMPP_LIB_VERSION_HASH "4539e17f451054d2aeb6a5ffe3891af087fd8fa6cfae4e31d02e1fddfec69d46"
-#define CMPP_LIB_VERSION_TIMESTAMP "2026-09-30 09:12:44.230 UTC"
-#define CMPP_LIB_CONFIG_TIMESTAMP "2026-09-30 09:14 GMT"
+#define CMPP_LIB_VERSION_HASH "8d8c04a3fafae2f13182be91e517a5a7d0a2d93da3232d7b0fbaeaff2f2e5b09"
+#define CMPP_LIB_VERSION_TIMESTAMP "2026-11-14 20:55:04.664 UTC"
+#define CMPP_LIB_CONFIG_TIMESTAMP "2026-11-14 22:23 GMT"
 #define CMPP_VERSION CMPP_LIB_VERSION " " CMPP_LIB_VERSION_HASH " @ " CMPP_LIB_VERSION_TIMESTAMP
 #define CMPP_PLATFORM_EXT_DLL ".so"
 #define CMPP_MODULE_PATH ".:/usr/local/lib/cmpp"
@@ -1703,6 +1703,13 @@ CMPP_EXPORT void cmpp_b_unescape(cmpp_b * b);
 CMPP_EXPORT bool cmpp_b_chomp(cmpp_b * b);
 
 /**
+   Trims leading and trailing spaces and newlines from b in place.
+   Adjusts b->n appropriately and NUL-terminates b if it adjusts
+   anything. This is a no-op if !b->n.
+*/
+CMPP_EXPORT void cmpp_b_trim(cmpp_b * b);
+
+/**
    Counts the number of newlines between [zBegin,zPos).  zBegin must
    be <= zEnd. zPos must be >= zBegin and <= zEnd. This function may
    assert() that the preconditions are met.
@@ -1831,11 +1838,7 @@ enum cmpp_tt_mask_e {
   /** For "", '', and `` strings. */
   cmpp_tt_shape_string = 0x04000,
   /** For {}, [], and () macro-tokens. */
-  cmpp_tt_shape_group  = 0x08000,
-  /** For expression operators. */
-  cmpp_tt_shape_op     = 0x10000,
-  /** For EOL, EOC, and EOF. */
-  cmpp_tt_shape_flow   = 0x20000
+  cmpp_tt_shape_group  = 0x08000
 };
 
 /**
@@ -1852,7 +1855,7 @@ enum cmpp_tt_mask_e {
 */
 #define cmpp_tt_map(E)                        \
   E(None,          0,   0)                      \
-  E(Error,         1,   cmpp_tt_shape_flow)   \
+  E(Error,         1,   0)                    \
   /** Anything with no more specific type. */   \
   E(Word,          2,   cmpp_tt_shape_word)   \
   E(StringSQ,      3,   cmpp_tt_shape_string) \
@@ -1864,45 +1867,43 @@ enum cmpp_tt_mask_e {
       rendering then token. */                  \
   E(IntDec,        6,   cmpp_tt_shape_number) \
   E(RawLine,       7,   0)                      \
-  E(OpPlus,        100, cmpp_tt_shape_op)     \
-  E(OpMinus,       101, cmpp_tt_shape_op)     \
-  E(OpNot,         102, cmpp_tt_shape_op)     \
-  E(OpAnd,         103, cmpp_tt_shape_op)     \
-  E(OpOr,          104, cmpp_tt_shape_op)     \
-  E(OpGlob,        105, cmpp_tt_shape_op)     \
-  E(OpCmpEq,       106, cmpp_tt_shape_op)     \
-  E(OpCmpNeq,      107, cmpp_tt_shape_op)     \
-  E(OpCmpLt,       108, cmpp_tt_shape_op)     \
-  E(OpCmpLe,       109, cmpp_tt_shape_op)     \
-  E(OpCmpGt,       110, cmpp_tt_shape_op)     \
-  E(OpCmpGe,       111, cmpp_tt_shape_op)     \
-  E(OpShiftL,      112, cmpp_tt_shape_op)     \
-  E(OpShiftL3,     113, cmpp_tt_shape_op)     \
-  E(OpShiftR,      114, cmpp_tt_shape_op)     \
-  E(OpBitwiseAnd,  115, cmpp_tt_shape_op)     \
-  E(OpBitwiseOr,   116, cmpp_tt_shape_op)     \
-  E(OpBitwiseNegate,117, cmpp_tt_shape_op)    \
+  E(OpPlus,        100, 0)                    \
+  E(OpMinus,       101, 0)                    \
+  E(OpNot,         102, 0)                    \
+  E(OpAnd,         103, 0)                    \
+  E(OpOr,          104, 0)                    \
+  E(OpGlob,        105, 0)                    \
+  E(OpCmpEq,       106, 0)                    \
+  E(OpCmpNeq,      107, 0)                    \
+  E(OpCmpLt,       108, 0)                    \
+  E(OpCmpLe,       109, 0)                    \
+  E(OpCmpGt,       110, 0)                    \
+  E(OpCmpGe,       111, 0)                    \
+  E(OpShiftL,      112, 0)                    \
+  E(OpShiftL3,     113, 0)                    \
+  E(OpShiftR,      114, 0)                    \
+  E(OpBitwiseAnd,  115, 0)                    \
+  E(OpBitwiseOr,   116, 0)                    \
+  E(OpBitwiseNegate,117, 0)                   \
   /*SQLite does have xor
-    E(OpXOr,         118, cmpp_tt_shape_op)*/ \
-  E(OpMultiply,    119, cmpp_tt_shape_op)     \
-  E(OpDivide,      120, cmpp_tt_shape_op)     \
-  E(OpModulo,      121, cmpp_tt_shape_op)     \
+    E(OpXOr,         118, 0)               */ \
+  E(OpMultiply,    119, 0)                    \
+  E(OpDivide,      120, 0)                    \
+  E(OpModulo,      121, 0)                    \
   E(GroupBrace,    200, cmpp_tt_shape_group)  \
   E(GroupParen,    201, cmpp_tt_shape_group)  \
   E(GroupSquiggly, 202, cmpp_tt_shape_group)  \
-  E(EOL,           253, cmpp_tt_shape_flow)   \
-  E(EOC,           254, cmpp_tt_shape_flow)   \
-  E(EOF,           255, cmpp_tt_shape_flow)   \
+  E(EOL,           253, 0)                    \
+  E(EOC,           254, 0)                    \
+  E(EOF,           255, 0)                    \
   /* Arg 2 MUST fit in cmpp_tt_mask_id. */    \
   /* Refactoring crutches for legacy
      token type compatibility: */               \
-  E(OpDefined,     300, cmpp_tt_shape_op)     \
-  E(OpNotGlob,     301, cmpp_tt_shape_op)     \
-  E(Noop,          302, cmpp_tt_shape_op)     \
-  E(Null,          303, cmpp_tt_shape_op)     \
+  E(OpDefined,     300, 0)                    \
+  E(Null,          303, 0)                    \
   E(DbString,      304, cmpp_tt_shape_word)   \
-  E(ThinArrowR,    305, cmpp_tt_shape_op)     \
-  E(ThinArrowL,    306, cmpp_tt_shape_op)     \
+  E(ThinArrowR,    305, 0)                    \
+  E(ThinArrowL,    306, 0)                    \
   E(AnyType,       307, 0)
 
 /**
@@ -2534,10 +2535,10 @@ struct cmpp_arg {
      "3".
 
      In non-cmpp_itch invocations of cmpp_f() this is currently always
-     0 but The Plan is to eventually offer the ability for directives
-     to opt-in to interpolations which most directives already
-     currently use. That would save significant amounts of code for
-     some directives.
+     0. When Itch invokes a directive which has the
+     cmpp_f_F_ITCH_CALLABLE flag, this is set, and
+     cmpp_arg_interpolate() uses it in place of its own
+     interpolation rules.
 
      This buffer is owned by this object but the very simple cmpp_arg
      lifetime model makes it perfectly legal do one of the following
@@ -2659,11 +2660,11 @@ enum cmpp_f_e {
      If cmpp_f_F_ARGS_RAW is used together with this flag then
      it works a bit differently:
 
-     - cmpp_f_args::argc will be set to the number of arguments
-       tokenized by the preprocessor (it has to do so to be able to
-       get to the point of calling the cmpp_f()). Because V4 includes
-       the name of the being-invoked directive or command as argument
-       0, argc will always be at least one.
+     - cmpp_f_args::argc will always be 1, accounting only for the
+       name of the being-invoked directive or command (which V4
+       always includes as argument 0). The preprocessor does not
+       tokenize the remaining arguments in this mode: that is left to
+       the cmpp_f() impl.
 
      - cmpp_f_args::argv will be NULL. Such cmpp_f() impls are
        expected to parse the arguments using (e.g.) cmpp_tizer with
@@ -2677,7 +2678,10 @@ enum cmpp_f_e {
        back into the original source bytes, backslash-escaped newlines
        and all.
   */
-  cmpp_f_F_ARGS_V4        = 0x40,
+  cmpp_f_F_ARGS_V4        = 0x04
+  /* This was 0x40 until 2026-11-14, colliding with
+     cmpp_f_F_ENFORCE_ARITY. That went unnoticed because all built-in
+     directives have an arity of -1. */,
 
   /**
      Indicates that the cmpp_f() should not be available if the cmpp
@@ -3704,11 +3708,13 @@ enum cmpp_arg_interpolate_e {
    */
   cmpp_arg_interpolate_UNESCAPE      = 0x10,
 #endif
-#if 0
-  /* Going to need this for porting the expression
-     builder from itch to the core. */
+  /**
+     If set, arguments with a ttype of cmpp_tt_GroupParen are
+     evaluated as expressions (see README.md's "Expression Rules")
+     and their integer result is emitted in decimal form. Without
+     this flag, their inner text is emitted as-is.
+  */
   cmpp_arg_interpolate_PARENS_EXPR    = 0x20,
-#endif
 
   /**
      TODO? cmpp_arg_interpolate_UNESCAPE to run it through
@@ -3728,9 +3734,15 @@ enum cmpp_arg_interpolate_e {
 
    Returns 0 on success and all that.
 
-   If b is NULL then: (A) if arg->interp is not NULL then it is reused
-   as the target else (B) return CMPP_RC_MISUSE and update's pp's
-   error state with a description of the problem.
+   If arg->interp is not NULL then the argument has already been
+   interpolated by the context which set it up (e.g. a cmpp_itch
+   interpreter calling a cmpp_f_F_ITCH_CALLABLE directive). In that
+   case the contents of arg->interp are appended to b as-is, the
+   flags are ignored, and a NULL b is a no-op.
+
+   If b is NULL and arg->interp is NULL then this returns
+   CMPP_RC_MISUSE and updates pp's error state with a description of
+   the problem.
 
    See: cmpp_atpol_get(), cmpp_atpol_set()
 
@@ -5030,7 +5042,6 @@ CMPP_EXPORT bool cmpp_is_int64(unsigned char const *z, unsigned n,
 CMPP_EXPORT bool cmpp_json_valid(cmpp *pp, unsigned char const *z,
                                  cmpp_strlen_t n, int flags);
 
-
 /**
    Returns true if [z,z+n) begins with '[', ends with ']', and
    cmpp_json_valid() for the same range returns true. i.e. if it's a
@@ -5087,24 +5098,141 @@ CMPP_EXPORT int cmpp_json_canonicalize(cmpp *pp, unsigned char const *z,
                                        bool append);
 
 /**
-   Appends some form of [z,z+n) to str, using strlen() to calculate n
-   if n is negative:
-
-   - 0==n: append "" (and empty JSON string).
-
-   - cmpp_json_valid(z,n) is true: append the bytes as-is.
-
-   - Else append n bytes of z as a JSON-format string using
-     sqlite3_str_appendf()'s `%J` formatter.
-
-   This returns void because that's how sqlite3_str's APIs work.  It
-   will only fail if str gets "too big" (the limits of which varies by
-   str's source but all of which are arguably out of scope for
-   cmpp-sized inputs and outputs).
+   Container types for the cmpp_json_...() APIs. The values match
+   the mode argument of cmpp_json_key_to_path().
 */
-void cmpp_str_json_append(cmpp *pp, sqlite3_str * str,
-                          unsigned char const * z,
-                          cmpp_strlen_t n);
+enum cmpp_json_e {
+  /** A JSON object. */
+  cmpp_json_OBJECT = 0,
+  /** A JSON array, a.k.a. list. */
+  cmpp_json_LIST = 1
+};
+
+/*
+  The following cmpp_json_...() APIs work on lists and objects held
+  as JSON text. All of them share these conventions:
+
+  - type is one of the cmpp_json_e values.
+
+  - If n (or a similar length argument) is negative, strlen() is used
+    to calculate it.
+
+  - Input containers may be JSON or JSON5. Output containers are
+    canonical JSON.
+
+  - Values are stored in containers using the following rules, so
+    that they come back out exactly as they went in (with the
+    caveats noted):
+
+    - Text which starts with [ or { and is valid JSON or JSON5 is
+      stored as a container (so containers can nest). It comes back
+      out as canonical JSON.
+
+    - Text which is an integer in canonical form (no leading zeros or
+      +, within the int64 range) is stored as a JSON integer.
+
+    - Everything else, including the empty string and the words
+      null, true and false, is stored as a JSON string.
+
+  - A JSON null which is already in a container comes back out as an
+    empty string.
+
+  - Errors in the inputs (e.g. the container is not of the requested
+    type, is malformed, or a key is not a legal JSON path) are
+    reported via err, if it is not NULL, else via pp. Allocation and
+    db-level errors are always reported via pp. Callers which pass a
+    non-NULL err can treat errors reported there as recoverable.
+    err is not cleared on success.
+
+  - They return 0 on success, else the code of the reported error.
+
+  - They are no-ops, returning pp's error code, if pp has error state
+    when they are called.
+*/
+
+/**
+   Returns 0 if [z,z+n) is a container of the given type, else
+   reports a CMPP_RC_TYPE error.
+*/
+CMPP_EXPORT int cmpp_json_check(cmpp *pp, cmpp_errinfo *err, int type,
+                                unsigned char const *z, cmpp_strlen_t n);
+
+/**
+   Sets *pOut to the number of entries in container [z,z+n).
+*/
+CMPP_EXPORT int cmpp_json_length(cmpp *pp, cmpp_errinfo *err, int type,
+                                 unsigned char const *z, cmpp_strlen_t n,
+                                 int64_t *pOut);
+
+/**
+   Replaces out's contents with the value at the given key of
+   container [z,z+n). The key is converted to a JSON path by
+   cmpp_json_key_to_path(). A missing entry results in an empty
+   value. z may be owned by out.
+*/
+CMPP_EXPORT int cmpp_json_get(cmpp *pp, cmpp_errinfo *err, int type,
+                              unsigned char const *z, cmpp_strlen_t n,
+                              unsigned char const *zKey,
+                              cmpp_strlen_t nKey,
+                              cmpp_b *out);
+
+/**
+   Sets the given key of container c, which is modified in place, to
+   [zVal,zVal+nVal). The key is converted to a JSON path by
+   cmpp_json_key_to_path(), and the key "$" is an error. For lists,
+   the key "#" appends.
+
+   Caveat: setting a list index past its end is a silent no-op
+   (inherited from SQLite's json_set()).
+*/
+CMPP_EXPORT int cmpp_json_set(cmpp *pp, cmpp_errinfo *err, int type,
+                              cmpp_b *c,
+                              unsigned char const *zKey,
+                              cmpp_strlen_t nKey,
+                              unsigned char const *zVal,
+                              cmpp_strlen_t nVal);
+
+/**
+   Appends [zVal,zVal+nVal) to list, which is modified in place.
+*/
+CMPP_EXPORT int cmpp_json_append(cmpp *pp, cmpp_errinfo *err,
+                                 cmpp_b *list,
+                                 unsigned char const *zVal,
+                                 cmpp_strlen_t nVal);
+
+/**
+   Replaces out's contents with the entries [iFrom,iTo) of list
+   [z,z+n). If iTo is negative, the slice extends to the end of the
+   list. A negative iFrom is a CMPP_RC_RANGE error. z may be owned by
+   out.
+*/
+CMPP_EXPORT int cmpp_json_slice(cmpp *pp, cmpp_errinfo *err,
+                                unsigned char const *z, cmpp_strlen_t n,
+                                int64_t iFrom, int64_t iTo,
+                                cmpp_b *out);
+
+/**
+   Callback type for cmpp_json_each(). It gets the key (for lists,
+   the index) and value of one container entry. The bytes are only
+   valid for the duration of the call. A non-0 return value stops
+   the iteration and is returned from cmpp_json_each().
+*/
+typedef int (*cmpp_json_each_f)(void *state,
+                                unsigned char const *zKey,
+                                cmpp_size_t nKey,
+                                unsigned char const *zVal,
+                                cmpp_size_t nVal);
+
+/**
+   Calls callback(state,...) for each entry of container [z,z+n), in
+   order of their keys. Returns 0 on success, else the code of a
+   reported error, else the callback's non-0 result (which is not
+   reported anywhere: it's the callback's job to report errors). The
+   callback may recurse into this function.
+*/
+CMPP_EXPORT int cmpp_json_each(cmpp *pp, cmpp_errinfo *err, int type,
+                               unsigned char const *z, cmpp_strlen_t n,
+                               cmpp_json_each_f callback, void *state);
 
 /**
    A proxy for sqlite3_prepare_v2() which uses pp's database, supports
@@ -5537,30 +5665,18 @@ enum cmpp_f_ext_e {
   cmpp_f_F_MASK_INTERNAL = ~cmpp_f_F_MASK,
 
   /**
-     If true, and if cmpp_f_F_ARGS_LIST is set, then cmpp_args_parse()
-     will pass its results to cmpp_args__not_simplify(). Only
-     directives which eval cmpp_arg expressions need this, and the
-     library does not expose the pieces for evaluating such
-     expressions.  As such, this flag is for internal use only. This
-     only has an effect if cmpp_f_F_ARGS_LIST is also used.
+     Marks a directive which always requires its closing directive
+     (e.g. #if and #once, but not #define, whose closer is optional).
+     cmpp__dx_skip() uses this to keep nested blocks balanced when
+     skipping over content. It cannot know this for directives with
+     optional closers, as that requires running them.
   */
-  cmpp_f_F_NOT_SIMPLIFY  = 0x10000,
+  cmpp_f_F_BLOCK_OPEN  = 0x20000,
 
   /**
-     Most directives are inert when they are seen in the "falsy" part
-     of an if/else. The callbacks for such directives are skipped, as
-     opposed to requiring each directive's callback to check whether
-     they should be skipping. This flag indicates that a directive
-     must always be run, even when skipping content (e.g. inside of an
-     #if 0 block). Only flow-control directives may have the
-     FLOW_CONTROL bit set. The library API does not expose enough of
-     its internals for client-defined directives to make flow-control
-     decisions.
-
-     i really want to get rid of this flag but it seems to be a
-     necessary evil.
+     Marks the closing directive of a cmpp_f_F_BLOCK_OPEN directive.
   */
-  cmpp_f_F_FLOW_CONTROL  = 0x20000
+  cmpp_f_F_BLOCK_CLOSE = 0x40000
 };
 
 /**
@@ -5609,40 +5725,29 @@ typedef struct CmppRecyclerList CmppRecyclerList;
 
 
 /**
-   CmppLvl represents one "level" of parsing, pushing one level
-   for each of `#if` and popping one for each `#/if`.
+   Consumes dx's input, without generating any output or running any
+   directives, until it finds a directive from the given list of
+   closers (or an error, e.g. EOF).
 
-   These pieces are ONLY for use with flow-control directives. It's
-   not proven that they can be of any use to more than a single
-   flow-control directive. e.g. if we had a hypothetical #foreach, we
-   may need to extend this.
-*/
-struct CmppLvl {
-  /**
-     Bitmask of CmppLvl_F_...
-  */
-  cmpp_flag32_t flags;
-  /**
-     The directive line number which started this level.  This is used for
-     reporting the starting lines of erroneously unclosed block
-     constructs.
-  */
-  cmpp_size_t lineNo;
-};
-typedef struct CmppLvl CmppLvl;
-#define CmppLvl_empty_m {/*.d=0, .state=0,*/ .flags=0U, .lineNo=0U}
+   This is the "falsy branch" counterpart of cmpp_dx_consume(). It
+   is how #if and friends skip over branches which are not taken.
 
-/**
-   A dynamically-allocated list of CmppLvl objects.
+   Each directive line encountered along the way is searched for
+   (so unknown directives trigger an error) and its arguments are
+   tokenized (so syntax errors are caught), but nothing is evaluated
+   or interpolated. Content between directives is discarded.
+
+   Directives flagged with cmpp_f_F_BLOCK_OPEN (those which always
+   require their closing directive) are skipped recursively, so that
+   nested blocks are balanced. Encountering a cmpp_f_F_BLOCK_CLOSE
+   directive which neither matches an open block nor is in dClosers
+   is an error.
+
+   On success dx->d is the closer which ended the skip.
 */
-cmpp__ListType_decl(CmppLvlList,CmppLvl*);
-#define CmppLvlList_empty_m cmpp__LIST_T_empty_m
-CMPP_PRIVATE CmppLvl * CmppLvl_push(cmpp_dx *dx);
-CMPP_PRIVATE CmppLvl * CmppLvl_get(cmpp_dx const *dx);
-CMPP_PRIVATE void CmppLvl_pop(cmpp_dx *dx, CmppLvl *lvl);
-CMPP_PRIVATE void CmppLvl_elide(CmppLvl *lvl, bool on);
-CMPP_PRIVATE bool CmppLvl_is_eliding(CmppLvl const *lvl);
-CMPP_PRIVATE bool cmpp_dx_is_eliding(cmpp_dx const *dx);
+CMPP_PRIVATE int cmpp__dx_skip(cmpp_dx * dx,
+                               cmpp_d const * const * dClosers,
+                               unsigned nClosers);
 
 /**
    A dynamically-allocated list of cmpp_b objects.
@@ -5803,6 +5908,27 @@ struct cmpp__dx_pimpl {
       reporting. */
   unsigned const char * zErrPos;
   /**
+     If not NULL, the precise location of the error currently being
+     reported. Unlike zErrPos, which defaults to the start of the
+     current directive line, this is only set when the exact byte is
+     known, and only for the duration of one cmpp__dx_errf_at() call.
+     It may point into this dx's input or into buf.line.
+  */
+  unsigned const char * zErrAt;
+  /**
+     Where this dx's input came from, for inputs which are copies of
+     some part of the source (e.g. the body of an #eval) rather than
+     pointers into it. Line N of this dx's input is reported as line
+     (lineBase+N), and columns on its first line are offset by
+     colBase. Both are 0 for inputs which are not copies. These are
+     ignored for dx's which share their parent's input range, as line
+     numbers for those are calculated from that range.
+  */
+  struct {
+    cmpp_size_t lineBase;
+    cmpp_size_t colBase;
+  } origin;
+  /**
      Next context up in the stack. When cmpp_dx's share an input range
      in a parent/child manner, We can use this to provide better stack
      traces and line/column info by delaying line count until an error
@@ -5842,17 +5968,6 @@ struct cmpp__dx_pimpl {
   /** Current directive's args. Updated by the parsing and dispatching
       steps. */
   cmpp_args args;
-  /**
-     A stack of state used by #if and friends to inform the innards
-     that they must not generate output. This is largely historical
-     and could have been done differently had this code started as a
-     library instead of a monolithic app.
-
-     TODO is to figure out how best to move this state completely into
-     the #if handler, rather than fiddle with this all throughout the
-     processing. We could maybe move this stack into CmppIfState?
-  */
-  CmppLvlList dxLvl;
   struct {
     /**
        A copy of this->d's input line which gets translated slightly
@@ -5883,17 +5998,61 @@ struct cmpp__dx_pimpl {
        True if the next directive is the start of a [call].
     */
     bool nextIsCall;
+    /**
+       True while cmpp__dx_skip() is active. Content is not emitted
+       while this is set.
+    */
+    bool skipping;
   } flags;
 };
 
 /**
-   Calculates the whole input range of dx and its parents, for
-   purposes of calculating line counts in. Sets *zBegin and *zEnd
-   to the half-open range.
+   Tries to resolve z to an absolute 1-based line and 0-based column
+   (as Emacs does it) of dx's source. z may point into dx's input (or that of a parent which
+   shares its input range) or into dx's normalized copy of the
+   current directive line (dx->pimpl->buf.line). Returns true if it
+   can resolve z, else false, in which case *pLine and *pCol are not
+   modified. pCol may be NULL.
 */
-CMPP_PRIVATE void cmpp__dx_input_range(cmpp_dx const * dx,
-                                       unsigned char const **zBegin,
-                                       unsigned char const **zEnd);
+CMPP_PRIVATE bool cmpp__dx_where(cmpp_dx const * dx,
+                                 unsigned char const * z,
+                                 cmpp_size_t * pLine,
+                                 cmpp_size_t * pCol);
+
+/**
+   Must only be called when cmpp_tizer_next() has just failed for
+   tz. Tokenizer errors lack location info. If pp has an active
+   cmpp_dx, this re-reports the error with location info. Returns
+   pp's error code.
+*/
+CMPP_PRIVATE int cmpp__args_tzerr_uplift(cmpp *pp, cmpp_tizer const *tz);
+
+/**
+   Works like cmpp_dx_errf() but reports the error as having happened
+   at the precise location zAt, as resolved by cmpp__dx_where(). If
+   it cannot be resolved, this behaves like cmpp_dx_errf().
+*/
+CMPP_PRIVATE int cmpp__dx_errf_at(cmpp_dx * dx, unsigned char const * zAt,
+                                  int rc, char const *zFmt, ...);
+
+/**
+   Works like cmpp_process_string() but is intended for inputs which
+   are copies of some part of the current input (e.g. the body of an
+   #eval). If zOrigin is not NULL and can be resolved by
+   cmpp__dx_where() for the current cmpp_dx, the nested input is
+   reported as having the current input's name, and its lines and
+   columns are reported relative to zOrigin's location. Otherwise
+   this behaves exactly like cmpp_process_string().
+
+   This is only accurate to the extent that the copy has the same
+   line structure as the source text it came from. e.g. if the
+   copy was @interpolated@ and a value contained newlines, line
+   numbers after that point will be off.
+*/
+CMPP_PRIVATE int cmpp__process_string_from(cmpp *pp, const char * zName,
+                                           unsigned char const * zIn,
+                                           cmpp_strlen_t nIn,
+                                           unsigned char const * zOrigin);
 
 /**
    Initializes or resets a. Returns non-0 on OOM.
@@ -5908,12 +6067,13 @@ CMPP_PRIVATE void cmpp__args_reuse(cmpp_args *a);
 
 #define cmpp__dx_pimpl_empty_m { \
   .zBegin=0, .zEnd=0, .zErrPos=0,\
+  .zErrAt=0,                     \
+  .origin={.lineBase=0,.colBase=0}, \
   .pos=cmpp_dx_pos_empty_m,      \
   .up=0,                         \
   .dline=CmppDLine_empty_m,      \
   .nSavepoint=0,                 \
   .args = cmpp_args_empty_m,     \
-  .dxLvl = CmppLvlList_empty_m,  \
   .buf = {                       \
     cmpp_b_empty_m,              \
     cmpp_b_empty_m               \
@@ -5923,7 +6083,8 @@ CMPP_PRIVATE void cmpp__args_reuse(cmpp_args *a);
     .ridInclPath = 0             \
   },                             \
   .flags = {                     \
-    .nextIsCall = false          \
+    .nextIsCall = false,         \
+    .skipping = false            \
   }                              \
 }
 
@@ -6102,12 +6263,32 @@ struct cmpp__pimpl {
   /** All frequently-reused queries. */
   struct {
 
-#define CMPP__SEL_V_FROM(N)            \
-    "(SELECT v FROM " CMPP__DB_MAIN_NAME ".vdef WHERE k=?" #N \
-    " ORDER BY source LIMIT 1)"
-
     /** Name of library-generated savepoints. */
 #define CMPP__SAVEPOINT_NAME "_cmpp_"
+
+    /**
+       An SQL expression which converts the text (or NULL) value P
+       (e.g. "?3") into the value to store in a JSON list or
+       object. This is the one place which defines that rule:
+
+       - NULL (which cmpp_stmt_bind_textx() uses for empty strings)
+         becomes an empty JSON string.
+       - Text which starts with [ or { and is valid JSON or JSON5 is
+         inserted as a (canonicalized) JSON container.
+       - Text which is an integer in canonical form (no leading
+         zeros, no +, within int64 range) is inserted as a JSON
+         integer.
+       - Everything else is inserted as a JSON string, so that it
+         round-trips exactly. e.g. null, true, 1e3, Infinity, 007
+         and "x" (with its quotes) are all strings.
+    */
+#define CMPP__JSON_VALUE(P)                                   \
+      "CASE WHEN " P " IS NULL THEN ''"                         \
+      " WHEN substr(" P ",1,1) IN ('[','{')"                    \
+      " AND json_valid(" P ",2) THEN json(" P ")"               \
+      " WHEN CAST(CAST(" P " AS INTEGER) AS TEXT)=" P           \
+      " THEN CAST(" P " AS INTEGER)"                            \
+      " ELSE " P " END"
 
     /**
        One entry for each distinct query used by cmpp: E(X,SQL), where
@@ -6144,16 +6325,6 @@ struct cmpp__pimpl {
       "SELECT source,t,k,v FROM "                      \
       CMPP__DB_MAIN_NAME ".vdef"                       \
       " WHERE k = ?1 ORDER BY source LIMIT 1")         \
-    E(defGetBool,                                      \
-      "SELECT cmpp_truthy(v) FROM "                    \
-      CMPP__DB_MAIN_NAME ".vdef"                       \
-      " WHERE k = ?1"                                  \
-      " ORDER BY source LIMIT 1")                      \
-    E(defGetInt,                                       \
-      "SELECT CAST(v AS INTEGER)"                      \
-      " FROM " CMPP__DB_MAIN_NAME ".vdef"              \
-      " WHERE k = ?1"                                  \
-      " ORDER BY source LIMIT 1")                      \
     E(defSelAll, "SELECT t,k,v"                        \
       " FROM " CMPP__DB_MAIN_NAME ".vdef"              \
       " ORDER BY source, k")                           \
@@ -6180,25 +6351,6 @@ struct cmpp__pimpl {
       " FROM " CMPP__DB_MAIN_NAME ".inclpath"          \
       " WHERE cmpp_file_exists(fn) "                   \
       " ORDER BY priority DESC, rowid LIMIT 1"         \
-      ")")                                             \
-    /* Compare two values. */                          \
-    E(cmpVV, "SELECT cmpp_compare(?1,?2)")             \
-    /* Compare LHS define to value ?2. */              \
-    E(cmpDV,                                           \
-      "SELECT cmpp_compare("                           \
-      CMPP__SEL_V_FROM(1) ", ?2"                       \
-      ")")                                             \
-    /* Compare value ?1 to RHS define. */              \
-    E(cmpVD,                                           \
-      "SELECT cmpp_compare("                           \
-      "?1," CMPP__SEL_V_FROM(2)                        \
-      ")")                                             \
-    /* Compare defines ?1 and ?2. */                   \
-    E(cmpDD,                                           \
-      "SELECT cmpp_compare("                           \
-      CMPP__SEL_V_FROM(1)                              \
-      ","                                              \
-      CMPP__SEL_V_FROM(2)                              \
       ")")                                             \
     E(dbAttach,                                        \
       "ATTACH ?1 AS ?2")                               \
@@ -6257,12 +6409,24 @@ struct cmpp__pimpl {
       "SELECT json_valid(?1,?2)")                      \
     E(jsonSelf,                                        \
       "SELECT json(?1)") /* a.k.a. ?1->'?' */          \
-    /*E(jsonOrQuoted,                                  \
-      "SELECT if("                                     \
-      "json_valid(?1,coalesce(?2,1)),"                 \
-      "json(?1),"                                      \
-      "?1)"                                            \
-    )*/                                                \
+    E(jsonGet,                                         \
+      "SELECT ?1->>?2")                                \
+    E(jsonLength,                                      \
+      "SELECT count(*) FROM json_each(?1)")            \
+    E(jsonSet,                                         \
+      "SELECT json_set(?1,?2,"                         \
+      CMPP__JSON_VALUE("?3") ")")                      \
+    E(jsonAppend,                                      \
+      "SELECT json_insert(?1,'$[#]',"                  \
+      CMPP__JSON_VALUE("?2") ")")                      \
+    E(jsonSlice,                                       \
+      "SELECT json_group_array(value)"                 \
+      " FROM json_each(?1) WHERE"                      \
+      " cast(key as integer) BETWEEN ?2 AND (?3-1)")   \
+    E(jsonSliceFrom,                                   \
+      "SELECT json_group_array(value)"                 \
+      " FROM json_each(?1) WHERE"                      \
+      " cast(key as integer) >= ?2")                   \
 
 #define E(N,S) sqlite3_stmt * N;
     CmppStmt_map(E)
@@ -6568,28 +6732,24 @@ CMPP_PRIVATE int cmpp__bind_arg(cmpp *pp, sqlite3_stmt * q,
                                 int bindNdx, cmpp_arg const * aVal);
 
 /**
-   Helper for #query's bind X part, where aGroup is that X.
+   Helper for #query's bind X part, where aGroup is that X:
 
-   A wrapper around cmpp__bind_arg(). Requires aGroup->ttype to be
-   either cmpp_TT_GroupBrace or cmpp_TT_GroupSquiggly and to have
-   non-empty content. cmpp_TT_GroupBrace treats it as a list of values
-   to bind. cmpp_TT_GroupSquiggly expects sets of 3 tokens per stmt
-   column in one of these forms:
+   - {:name -> value ...}: binds by name. The names include their
+     ':', '$', or '@' prefix. Values are resolved as for
+     cmpp__bind_arg().
 
-   :bindName -> value
-   $bindName -> value
+   - {value ...}: binds by index. Each value is passed to
+     cmpp__bind_arg().
 
-   Each LHS refers to a same-named binding in q's SQL, including the
-   ':' or '$' prefix. (SQLite supports an '@' prefix but we did not
-   historically allow it here to avoid confusion with the now-defunct
-   cmpp_TT_StringAt tokens.)
+   - Anything else is resolved via cmpp_arg_interpolate() and must
+     produce a JSON list (bound by index) or object (bound by name,
+     with keys lacking a ':', '$', or '@' prefix getting a '$'
+     prefix). As a migration aid for the pre-2026-11-14 bind [a b c]
+     syntax, a [...] whose first word is not a directive name is
+     reported as an error which suggests {...}.
 
-   Each bound value is passed to cmpp__bind_arg() for processing.
-
-   On success, each aGroup entry is bound to q. On error q's state is
+   On success, each entry is bound to q. On error q's state is
    unspecified. Returns ppCode.
-
-   See cmpp__bind_arg() for notes about the bind data type.
 */
 CMPP_PRIVATE int cmpp__bind_group(cmpp *pp, sqlite3_stmt * const q,
                                   cmpp_arg const * const aGroup);
@@ -6603,28 +6763,6 @@ CMPP_PRIVATE int cmpp__bind_group(cmpp *pp, sqlite3_stmt * const q,
    rely on it). If it's negative, strlen() is used to calculate it.
 */
 CMPP_PRIVATE int cmpp__has(cmpp *pp, const char * zName, cmpp_strlen_t nName);
-
-/**
-   Returns true if the given key is already in the `#define` list, and
-   it has a truthy value (is not empty and not equal to '0'), else
-   false. If zName contains an '=' then only the part preceding that
-   is used as the key.
-
-   nName is the length of zName, or <0 to use strlen() to figure
-   it out.
-
-   Updates ppCode on error.
-*/
-CMPP_PRIVATE int cmpp__get_bool(cmpp *pp, unsigned const char * zName,
-                                cmpp_strlen_t nName);
-
-/**
-   Fetches the given define. If found, sets *pOut to it, else pOut is
-   unmodified. Returns pp->err.code. If bRequire is true and no entry
-   is found p->err.code is updated.
-*/
-CMPP_PRIVATE int cmpp__get_int(cmpp *pp, unsigned const char * zName,
-                               cmpp_strlen_t nName, int *pOut);
 
 #if 0
 /**
@@ -6797,43 +6935,193 @@ CMPP_PRIVATE int cmpp__define2(cmpp *pp,
                                cmpp_strlen_t nVal,
                                cmpp_tt_e tType);
 
-/**
-   Evals pArgs's arguments as an integer expression. On success, sets
-   *pResult to the value.
-
-   Returns ppCode.
+/*
+** Expression evaluator v2 (expr.c).
 */
-CMPP_PRIVATE int cmpp__args_evalToInt(cmpp *pp, cmpp_args const *pArgs,
-                                      int * pResult);
 
-/** Passes the contents of arg through to cmpp__args_evalToInt(). */
-CMPP_PRIVATE int cmpp__arg_evalSubToInt(cmpp *pp, cmpp_arg const *arg,
-                                        int * pResult);
-
-/**
-   Evaluated arg as an integer/bool, placing the result in *pResult
-   and setting *pNext to the first argument to arg's right which this
-   routine did not consume. Non-0 on error and all that.
-*/
-CMPP_PRIVATE int cmpp__arg_toBool(cmpp * pp, cmpp_arg const *arg,
-                                  int * pResult, cmpp_arg const **pNext);
-
-typedef struct cmpp_argOp cmpp_argOp;
-typedef void (*cmpp_argOp_f)(cmpp *pp,
-                             cmpp_argOp const *op,
-                             cmpp_arg const *vLhs,
-                             cmpp_arg const **pvRhs,
-                             int *pResult);
-struct cmpp_argOp {
-  int ttype;
-  /* 1 or 2 */
-  unsigned char arity;
-  /* 0=none/left, 1=right (unary ops only) */
-  signed char   assoc;
-  cmpp_argOp_f   xCall;
+/** Value types for cmpp__xval::type. */
+enum cmpp__xval_e {
+  cmpp__xval_NONE = 0,
+  cmpp__xval_INT,
+  cmpp__xval_STR
 };
 
-CMPP_PRIVATE cmpp_argOp const * cmpp_argOp_for_tt(cmpp_tt_e tt);
+/**
+   A value in the expression evaluator: a 64-bit integer or a
+   string. Strings which look like integers are treated as integers
+   by arithmetic and (when both sides are integer-ish) comparison
+   operators.
+*/
+typedef struct cmpp__xval cmpp__xval;
+struct cmpp__xval {
+  /** From cmpp__xval_e. */
+  int type;
+  /** The value if type==cmpp__xval_INT. */
+  int64_t i;
+  /**
+     The value if type==cmpp__xval_STR. From cmpp_b_borrow() and owned
+     by this object. Must be freed with cmpp__xval_clear().
+  */
+  cmpp_b * b;
+};
+#define cmpp__xval_empty_m {.type=0, .i=0, .b=0}
+extern const cmpp__xval cmpp__xval_empty;
+
+/** Frees v's state and resets it to cmpp__xval_empty. */
+CMPP_PRIVATE void cmpp__xval_clear(cmpp *pp, cmpp__xval *v);
+
+/**
+   Sets v's type to cmpp__xval_STR, ensures it has a buffer, and
+   empties that buffer. Returns ppCode.
+*/
+CMPP_PRIVATE int cmpp__xval_str(cmpp *pp, cmpp__xval *v);
+
+/**
+   Coerces v to an integer, writing it to *pOut. Integers are used
+   as-is. For strings, leading spaces are skipped and the
+   optionally-signed decimal digits which follow are the value, and
+   anything after them is ignored (so "3.9" is 3 and "-2.5" is -2). A
+   string with no leading digits is 0. Returns ppCode, which is
+   CMPP_RC_RANGE if the digits do not fit in an int64_t.
+*/
+CMPP_PRIVATE int cmpp__xval_to_int(cmpp *pp, cmpp__xval const *v,
+                                   int64_t *pOut);
+
+/** Returns v's truthiness: non-0 for integers, cmpp_simple_truth()
+    for strings. */
+CMPP_PRIVATE bool cmpp__xval_truth(cmpp__xval const *v);
+
+/**
+   Flags for cmpp__expr_operand_f().
+*/
+enum cmpp__expr_operand_e {
+  cmpp__expr_operand_NONE = 0,
+  /**
+     Reserved for the RHS of "in" and "not in": the operand is wanted
+     as a list rather than a scalar. Not yet used.
+  */
+  cmpp__expr_operand_LIST = 0x01
+};
+
+typedef struct cmpp__expr cmpp__expr;
+
+/**
+   Resolves an expression operand: tok is a word, string, [call], or
+   {...} token from tz (integers and (...) groups are handled by the
+   evaluator). The resolved value must be written to *out, which the
+   evaluator owns and will clear. flags is a bitmask of
+   cmpp__expr_operand_e values. It must return 0 on success or an
+   error code (which must also be reflected by ex->xErrCode(), or by
+   ex->pp's error state if that is NULL).
+
+   This is the hook through which contexts other than the
+   preprocessor (e.g. cmpp_itch) add their own interpolation.
+*/
+typedef int (*cmpp__expr_operand_f)(cmpp__expr const * ex,
+                                    cmpp_tizer * tz,
+                                    cmpp_token const * tok,
+                                    cmpp_flag32_t flags,
+                                    cmpp__xval * out);
+
+/** Flags for cmpp__expr::flags. */
+enum cmpp__expr_e {
+  /**
+     Only check the expression for syntax errors: resolve no operands,
+     run no [calls], and produce no value.
+  */
+  cmpp__expr_F_PARSE_ONLY = 0x01
+};
+
+/**
+   Error hook for cmpp__expr::xErr. It must report error message zMsg,
+   with result code rc, as having happened at position zAt of the
+   input of tokenizer tz (which may be a sub-tokenizer of the one
+   cmpp__expr_eval() started with), and return the resulting non-0
+   error code.
+*/
+typedef int (*cmpp__expr_err_f)(cmpp__expr const * ex, cmpp_tizer * tz,
+                                unsigned char const * zAt, int rc,
+                                char const * zMsg);
+
+/**
+   Configuration for cmpp__expr_eval().
+
+   The tzParent and x... members other than xOperand are optional and
+   exist so that contexts with their own error-reporting model (namely
+   cmpp_itch, whose script errors are catchable results rather than
+   pp errors) can use the evaluator. If they are NULL, errors are
+   reported via pp's error state, with location information from the
+   current cmpp_dx (if any).
+*/
+struct cmpp__expr {
+  cmpp * pp;
+  /** Operand resolver. */
+  cmpp__expr_operand_f xOperand;
+  /** Opaque state for xOperand and the other hooks. */
+  void * state;
+  /** Bitmask of cmpp__expr_e values. */
+  cmpp_flag32_t flags;
+  /**
+     Optional tokenizer whose input contains the expression. The
+     evaluator's tokenizer takes its name and error object from it
+     and, if it contains the input, uses it as its parent (for line
+     counting in error messages).
+  */
+  cmpp_tizer const * tzParent;
+  /** Optional: reports an error. See cmpp__expr_err_f. */
+  cmpp__expr_err_f xErr;
+  /** Optional: returns the current error code. */
+  int (*xErrCode)(cmpp__expr const * ex);
+  /**
+     Optional: called when the tokenizer tz fails, to move its error
+     (which lacks location info) into the error state. Must return
+     the resulting error code, or 0 if there was no error to move.
+  */
+  int (*xTzErr)(cmpp__expr const * ex, cmpp_tizer * tz);
+};
+
+/**
+   The preprocessor's operand resolver: words are define lookups (an
+   undefined name is an empty string, subject to the
+   undefined-policy), strings are literals (unescaped), and [...] is
+   a call.
+*/
+CMPP_PRIVATE int cmpp__expr_operand_core(cmpp__expr const * ex,
+                                         cmpp_tizer * tz,
+                                         cmpp_token const * tok,
+                                         cmpp_flag32_t flags,
+                                         cmpp__xval * out);
+
+/**
+   Tokenizes and evaluates the expression in [z,z+n), writing its
+   value to *rv (which is cleared first). Returns ex->pp's error code.
+   On error, *rv is cleared.
+
+   If there is an active cmpp_dx and [z,z+n) points into its input,
+   errors are reported with their precise line and column.
+*/
+CMPP_PRIVATE int cmpp__expr_eval(cmpp__expr const * ex,
+                                 unsigned char const * z, cmpp_size_t n,
+                                 cmpp__xval * rv);
+
+/** cmpp__expr_eval() using cmpp__expr_operand_core(). */
+CMPP_PRIVATE int cmpp__expr_eval_core(cmpp *pp, unsigned char const * z,
+                                      cmpp_size_t n, cmpp__xval * rv);
+
+/**
+   cmpp__expr_eval_core() followed by cmpp__xval_to_int(). Returns
+   ppCode.
+*/
+CMPP_PRIVATE int cmpp__expr_eval_int(cmpp *pp, unsigned char const * z,
+                                     cmpp_size_t n, int64_t * pOut);
+
+/**
+   Evaluates the contents of a (...) argument as an integer
+   expression, as per cmpp__expr_eval_int(). This is how (...) values
+   behave in, e.g., #define and #query's bind lists.
+*/
+CMPP_PRIVATE int cmpp__expr_eval_paren(cmpp *pp, cmpp_arg const * arg,
+                                       int64_t * pOut);
 
 
 
@@ -6935,17 +7223,6 @@ static inline int cmpp__isnl(unsigned char const * z, unsigned char const *zEnd)
     default: return '\n'==*z;
   }
 }
-
-#if 1
-static inline bool cmpp__issnl(int ch){
-  /* TODO: replace this in line with cmpp__isnl(), but it needs
-     a new interface for that. It's only used in two places and they
-     have different traversal directions, so we can probably
-     get rid of this and do the direct CRNL check in each of those
-     places. */
-  return ' '==ch || '\t'==ch || '\n'==ch;
-}
-#endif
 
 static inline sqlite3_str * cmpp__sqlite3_str_new(cmpp*pp){
   sqlite3_str * const s = sqlite3_str_new(pp ? pp->pimpl->db.dbh : 0);
@@ -7074,8 +7351,12 @@ CMPP__EXPORT(void, cmpp_skip_space)(
 CMPP__EXPORT(void, cmpp_skip_snl)( unsigned char const **p,
                                    unsigned char const *zEnd ){
   unsigned char const * z = *p;
-  /* FIXME: CRNL. */
-  while( z<zEnd && cmpp__issnl(*z) ) ++z;
+  while( z<zEnd ){
+    int const nNl = cmpp__isnl(z, zEnd) /* 1 for LF, 2 for CRLF */;
+    if( nNl ) z += nNl;
+    else if( cmpp_isspace(*z) ) ++z;
+    else break;
+  }
   *p = z;
 }
 
@@ -7090,9 +7371,16 @@ CMPP__EXPORT(void, cmpp_skip_space_trailing)( unsigned char const *zBegin,
 CMPP__EXPORT(void, cmpp_skip_snl_trailing)( unsigned char const *zBegin,
                                             unsigned char const **p ){
   assert( *p >= zBegin );
-  unsigned char const * z = *p;
-  /* FIXME? CRNL */
-  while( z>zBegin && cmpp__issnl(z[-1]) ) --z;
+  unsigned char const * const zEnd = *p;
+  unsigned char const * z = zEnd;
+  while( z>zBegin ){
+    if( cmpp_isspace(z[-1]) || '\n'==z[-1] ) --z;
+    else if( '\r'==z[-1] && z<zEnd && '\n'==*z ){
+      /* CR of a CRNL whose LF we just skipped. */
+      --z;
+    }
+    else break;
+  }
   *p = z;
 }
 
@@ -7298,39 +7586,6 @@ CMPP__EXPORT(int,cmpp_slurp_file)(cmpp *pp, char const *fn,
 bool FileWrapper_chomp(FileWrapper * p){
   return cmpp_chomp(p->zContent, &p->nContent);
 }
-
-/** Flags and constants related to CmppLvl. */
-enum CmppLvl_e {
-  /**
-     Flag indicating that all ostensible output for a CmpLevel should
-     be elided. This also suppresses non-flow-control directives from
-     being processed.
-  */
-  CmppLvl_F_ELIDE = 0x01,
-  /**
-     Mask of CmppLvl::flags which are inherited when
-     CmppLvl_push() is used.
-  */
-  CmppLvl_F_INHERIT_MASK = CmppLvl_F_ELIDE
-};
-
-//static const CmppDLine CmppDLine_empty = CmppDLine_empty_m;
-
-/** Free all memory owned by li but does not free li. */
-static void CmppLvlList_cleanup(CmppLvlList *li);
-
-/**
-   Allocate a list entry, owned by li, and return it (cleanly zeroed
-   out). Returns NULL and updates pp->err on error.  It is expected
-   that the caller will populate the entry's zName using
-   sqlite3_mprintf() or equivalent.
-*/
-static CmppLvl * CmppLvlList_push(cmpp *pp, CmppLvlList *li);
-
-/** Returns the most-recently-appended element of li back to li's
-    free-list. It expects to receive that value as a sanity-checking
-    measure and may fail fatally of that's not upheld. */
-static void CmppLvlList_pop(cmpp *pp, CmppLvlList *li, CmppLvl * lvl);
 
 static const cmpp__dx_pimpl cmpp__dx_pimpl_empty =
   cmpp__dx_pimpl_empty_m;
@@ -7750,15 +8005,12 @@ int cmpp__out2(cmpp *pp, cmpp_outputer *pOut,
 }
 
 CMPP__EXPORT(int, cmpp_out_raw)(cmpp * pp, void const *z, cmpp_size_t n){
-    cmpp_dx * const dx = cmpp__dx_current(pp);
-  if( ppCode || (dx && cmpp_dx_is_eliding(dx)) ) return ppCode;
+  if( ppCode ) return ppCode;
   return cmpp__out2(pp, &pp->pimpl->out, z, n);
 }
 
 CMPP__EXPORT(int, cmpp_outfv2)(cmpp *pp, cmpp_outputer *out, char const *zFmt, va_list va){
   assert( out );
-  cmpp_dx const * const dx = cmpp__dx_current(pp);
-  if( dx && cmpp_dx_is_eliding(dx) ) return ppCode;
   if( !ppCode && zFmt && *zFmt && out->out ){
     char * s = sqlite3_vmprintf(zFmt, va);
     if( 0==cmpp_check_oom(pp, s) ){
@@ -7771,8 +8023,6 @@ CMPP__EXPORT(int, cmpp_outfv2)(cmpp *pp, cmpp_outputer *out, char const *zFmt, v
 
 CMPP__EXPORT(int, cmpp_outf2)(cmpp *pp, cmpp_outputer *out, char const *zFmt, ...){
   assert( out );
-  cmpp_dx const * const dx = cmpp__dx_current(pp);
-  if( dx && cmpp_dx_is_eliding(dx) ) return ppCode;
   if( !ppCode && zFmt && *zFmt && out->out ){
     va_list va;
     va_start(va, zFmt);
@@ -7862,7 +8112,7 @@ static int cmpp__out_expand(cmpp * pp, cmpp_outputer * pOut,
     }
     pOut = &pi->out;
   }
-  assert( pi->dx ? !cmpp_dx_is_eliding(pi->dx) : 1 );
+  assert( pi->dx ? !pi->dx->pimpl->flags.skipping : 1 );
 
 #define tflush                                                          \
   if(z>zEnd) z=zEnd;                                                    \
@@ -8005,58 +8255,8 @@ CMPP__EXPORT(int, cmpp_out_expand)(cmpp * const pp,
                                    unsigned char const * zFrom,
                                    cmpp_size_t n,
                                    cmpp_atpol_e atPolicy){
-  cmpp_dx const * const dx = cmpp__dx_current(pp);
-  if( ppCode || (dx && cmpp_dx_is_eliding(dx)) ) return ppCode;
+  if( ppCode ) return ppCode;
   return cmpp__out_expand(pp, pOut, zFrom, n, atPolicy);
-}
-
-CmppLvl * CmppLvl_get(cmpp_dx const *dx){
-  return dx->pimpl->dxLvl.n
-    ? dx->pimpl->dxLvl.list[dx->pimpl->dxLvl.n-1]
-    : 0;
-}
-
-static const CmppLvl CmppLvl_empty = CmppLvl_empty_m;
-
-CmppLvl * CmppLvl_push(cmpp_dx *dx){
-  CmppLvl * p = 0;
-  if( !dxppCode ){
-    CmppLvl * const pPrev = CmppLvl_get(dx);
-    p = CmppLvlList_push(dx->pp, &dx->pimpl->dxLvl);
-    if( p ){
-      *p = CmppLvl_empty;
-      p->lineNo = dx->pimpl->dline.lineNo;
-      //p->d = dx->d;
-      if( pPrev ){
-        p->flags = (CmppLvl_F_INHERIT_MASK & pPrev->flags);
-        //if(CLvl_isSkip(pPrev)) p->flags |= CmppLvl_F_ELIDE;
-      }
-    }
-  }
-  return p;
-}
-
-void CmppLvl_pop(cmpp_dx *dx, CmppLvl * lvl){
-  CmppLvlList_pop(dx->pp, &dx->pimpl->dxLvl, lvl);
-}
-
-void CmppLvl_elide(CmppLvl *lvl, bool on){
-  if( on ) lvl->flags |=  CmppLvl_F_ELIDE;
-  else     lvl->flags &= ~CmppLvl_F_ELIDE;
-}
-
-bool CmppLvl_is_eliding(CmppLvl const *lvl){
-  return lvl && !!(lvl->flags & CmppLvl_F_ELIDE);
-}
-
-#if 0
-void cmpp_dx_elide_mode(cmpp_dx *dx, bool on){
-  CmppLvl_elide(CmppLvl_get(dx), on);
-}
-#endif
-
-bool cmpp_dx_is_eliding(cmpp_dx const *dx){
-  return CmppLvl_is_eliding(CmppLvl_get(dx));
 }
 
 CMPP__EXPORT(sqlite3_str *, cmpp_sqlite3_str_new)(cmpp*pp){
@@ -8378,41 +8578,6 @@ int cmpp__has(cmpp *pp, const char * zName, cmpp_strlen_t nName){
   return rc;
 }
 
-int cmpp__get_bool(cmpp *pp, unsigned const char *zName, cmpp_strlen_t nName){
-  int rc = 0;
-  sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_defGetBool, false);
-  if( q ){
-    nName = cmpp__strlenu(zName, nName);
-    cmpp_stmt_bind_textn(pp, q, 1, zName, nName);
-    assert(0==ppCode);
-    if(SQLITE_ROW == cmpp_stmt_step(pp, q, false)){
-      rc = sqlite3_column_int(q, 0);
-    }else{
-      rc = 0;
-      cmpp__affirm_undef_policy(pp, zName, nName);
-    }
-    cmpp_stmt_reset(pp, q);
-  }
-  return rc;
-}
-
-int cmpp__get_int(cmpp *pp, unsigned const char * zName,
-                  cmpp_strlen_t nName, int *pOut ){
-  sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_defGetInt, false);
-  if( q ){
-    nName = cmpp__strlenu(zName, nName);
-    cmpp_stmt_bind_textn(pp, q, 1, zName, nName);
-    assert(0==ppCode);
-    if(SQLITE_ROW == cmpp_stmt_step(pp, q, false)){
-      *pOut = sqlite3_column_int(q,0);
-    }else{
-      cmpp__affirm_undef_policy(pp, zName, nName);
-    }
-    cmpp_stmt_reset(pp, q);
-  }
-  return ppCode;
-}
-
 int cmpp__get_b(cmpp *pp, unsigned const char * zName,
                 cmpp_strlen_t nName, cmpp_b * b,
                 bool enforceUndefPolicy){
@@ -8661,26 +8826,27 @@ int cmpp__legal_key_check(cmpp *pp, unsigned char const *zKey,
 static cmpp_size_t cmpp__dx_guess_lineno(cmpp_dx const * dx,
                                          unsigned char const * zWhere){
   cmpp__dx_pi(dx);
-  unsigned char const *zB = 0;
-  unsigned char const *zE = 0;
+  cmpp_size_t line = 0;
   if( !zWhere ) zWhere = dpi->zErrPos;
-  cmpp__dx_input_range(dx, &zB, &zE);
-  //g_warn("Whole script:\n%.*s", (int)(zE-zB), zB);
-  assert( zB && zE && zB<=zE );
   if( !zWhere ){
-    if( dpi->pos.z<zE && dpi->pos.z>=zB ){
-      /* This is frequently at zEnd because we read line by line and
-         it can be at EOF at the end of that line. Similarly,
-         [call...] contexts have a virtual EOF at the ']'. */
-      zWhere = dpi->pos.z;
-    }else{
-      zWhere = dpi->dline.zBegin;
+    zWhere = dpi->pos.z;
+    if( zWhere && dpi->dline.zEnd && zWhere>dpi->dline.zBegin ){
+      /* dpi->pos.z is normally just past the current directive line's
+         EOL, i.e. at the start of the next line. In that case we're
+         still on the directive's line, and reporting the next line
+         would be misleading. */
+      unsigned char const * z = dpi->dline.zEnd;
+      if( z<zWhere && '\r'==*z ) ++z;
+      if( z<zWhere && '\n'==*z ) ++z;
+      if( zWhere<=z ) return dpi->dline.lineNo;
     }
   }
-  return zWhere
-    ? 1 + cmpp_count_nl(zB, zE, zWhere, NULL)
-    : dpi->dline.lineNo;
+  return cmpp__dx_where(dx, zWhere, &line, NULL)
+    ? line : dpi->dline.lineNo;
 }
+
+static int cmpp__dx_tzerr_uplift(cmpp_dx * const dx,
+                                 cmpp_tizer const * const tz);
 
 /**
    Scans [dx->pos.z,dx->zEnd) for a directive delimiter. Emits any
@@ -8744,9 +8910,10 @@ static int cmpp__dx_delim_search(cmpp_dx * const dx, bool * gotOne){
   }
 #define tflush                                            \
   if( z>zEnd ) z=zEnd;                                    \
-  if( z>zLeft && cmpp_out_expand(dx->pp, &pi->out, zLeft, \
-                                 (cmpp_size_t)(z-zLeft),  \
-                                 cmpp_atpol_CURRENT) ){   \
+  if( z>zLeft && !dxp->flags.skipping                     \
+      && cmpp_out_expand(dx->pp, &pi->out, zLeft,         \
+                         (cmpp_size_t)(z-zLeft),          \
+                         cmpp_atpol_CURRENT) ){           \
     return dxppCode;                                      \
   } zLeft = z
 
@@ -8880,7 +9047,7 @@ static int cmpp__dx_delim_search(cmpp_dx * const dx, bool * gotOne){
     }
     if( tzrc ){
       assert( dxppCode && "Expecting via tz.err" );
-      return dxppCode;
+      return cmpp__dx_tzerr_uplift(dx, &tz);
     }
     if( !nTok ){
       dxserr("No directive name found after %s.", zD);
@@ -8895,11 +9062,11 @@ static int cmpp__dx_delim_search(cmpp_dx * const dx, bool * gotOne){
     if(0){
       g_warn("tokenized: %.*s", (z - dline->zBegin), dline->zBegin);
     }
-    assert( z==zEnd || '\n'==*z );
+    assert( z==zEnd || cmpp__isnl(z, zEnd) );
     dline->zEnd = z;
-    dxp->pos.z = dline->zEnd + 1
+    dxp->pos.z = dline->zEnd + (z<zEnd ? cmpp__isnl(z, zEnd) : 1)
       /* For the next call to this function, skip the trailing newline
-         or EOF */;
+         (LF or CRLF) or EOF */;
     assert( dline->zBegin < dline->zEnd && "Was checked above" );
     if( 0 ){
       g_warn("line= %u <<%.*s>>", (dline->zEnd-dline->zBegin),
@@ -8981,56 +9148,6 @@ int cmpp_array_reserve(cmpp *pp, void **list, cmpp_size_t nDesired,
     }
   }
   return rc;
-}
-
-CmppLvl * CmppLvlList_push(cmpp *pp, CmppLvlList *li){
-  CmppLvl * p = 0;
-  assert( li->list ? li->na : 0==li->na );
-  if( 0==ppCode
-      && 0==CmppLvlList_reserve(pp, li,
-                                cmpp__li_reserve1_size(li,5)) ){
-    p = li->list[li->n];
-    if( !p ){
-      p = cmpp_malloc2(pp, sizeof(*p));
-    }
-    if( p ){
-      li->list[li->n++] = p;
-      *p = CmppLvl_empty;
-    }
-  }
-  return p;
-}
-
-void CmppLvlList_pop(cmpp * const pp, CmppLvlList * const li,
-                     CmppLvl * const lvl){
-  assert( li->n );
-  if( li->n ){
-    if( lvl==li->list[li->n-1] ){
-      *lvl = CmppLvl_empty;
-      cmpp_mfree(lvl);
-      li->list[--li->n] = 0;
-    }else{
-      if( pp ){
-        cmpp_errf(pp, CMPP_RC_ASSERT,
-                     "Misuse of %s(): not passed the top of the stack. "
-                     "The CmppLvl stack is now out of whack.",
-                     __func__);
-      }else{
-        cmpp__fatal("Misuse of %s(): not passed the top of the stack",
-                    __func__);
-      }
-      /* do not free it - CmppLvlList_cleanup() will catch it. */
-    }
-  }
-}
-
-void CmppLvlList_cleanup(CmppLvlList *li){
-  const CmppLvlList CmppLvlList_empty = CmppLvlList_empty_m;
-  while( li->na ){
-    cmpp_mfree( li->list[--li->na] );
-  }
-  cmpp_mfree(li->list);
-  *li = CmppLvlList_empty;
 }
 
 static inline void CmppDList_entry_clean(CmppDList_entry * const e){
@@ -9167,8 +9284,12 @@ void cmpp__delim_list_cleanup(cmpp__delim_list *li){
   *li = cmpp__delim_list_empty;
 }
 
-void cmpp__dx_input_range(cmpp_dx const * dx, unsigned char const **zBegin,
-                          unsigned char const **zEnd){
+/**
+   Returns the outermost cmpp_dx, starting at dx and walking up its
+   parents, which shares dx's input range, i.e. the one whose input
+   holds the bytes dx is processing.
+*/
+static cmpp_dx const * cmpp__dx_input_owner(cmpp_dx const * dx){
   cmpp_dx const * up;
   while( (up = dx->pimpl->up) ){
     /* If up lives in the same byte range, use it for purposes of
@@ -9180,8 +9301,71 @@ void cmpp__dx_input_range(cmpp_dx const * dx, unsigned char const **zBegin,
       break;
     }
   }
-  *zBegin = dx->pimpl->zBegin;
-  *zEnd = dx->pimpl->zEnd;
+  return dx;
+}
+
+bool cmpp__dx_where(cmpp_dx const * dx, unsigned char const * z,
+                    cmpp_size_t * pLine, cmpp_size_t * pCol){
+  cmpp__dx_pi(dx);
+  if( !z ) return false;
+  cmpp_dx const * const owner = cmpp__dx_input_owner(dx);
+  cmpp__dx_pimpl const * const opi = owner->pimpl;
+  cmpp_size_t col = 0, nl;
+  if( opi->zBegin && z>=opi->zBegin && z<=opi->zEnd ){
+    nl = cmpp_count_nl(opi->zBegin, opi->zEnd, z, &col);
+    *pLine = 1 + nl + opi->origin.lineBase;
+    if( pCol ) *pCol = col + (nl ? 0 : opi->origin.colBase);
+    return true;
+  }
+  cmpp_b const * const bl = &dpi->buf.line;
+  if( bl->z && z>=bl->z && z<=bl->z+bl->n
+      && dpi->dline.zBegin && z!=dpi->dline.zBegin/*recursion guard*/ ){
+    /* buf.line is a copy of the directive line, starting at
+       dline.zBegin, with the backslashes of backslash-escaped
+       newlines removed. That preserves its newlines and, because
+       those backslashes are always at the end of a line, its
+       columns. */
+    cmpp_size_t dLine = 0, dCol = 0;
+    if( !cmpp__dx_where(dx, dpi->dline.zBegin, &dLine, &dCol) ){
+      return false;
+    }
+    nl = cmpp_count_nl(bl->z, bl->z+bl->n, z, &col);
+    *pLine = dLine + nl;
+    if( pCol ) *pCol = nl ? col : dCol + col;
+    return true;
+  }
+  return false;
+}
+
+/**
+   Must only be called when cmpp_tizer_next() has just failed for tz.
+   Tokenizer errors are written directly to the cmpp_errinfo object
+   they're configured with, without any location info. If that
+   object is dx's error state, this re-reports the error via
+   cmpp__dx_errf_at(), so that it gets the same location info as
+   other errors. Returns dx's error code.
+*/
+static int cmpp__dx_tzerr_uplift(cmpp_dx * const dx,
+                                 cmpp_tizer const * const tz){
+  cmpp_errinfo * const err = &dx->pp->pimpl->err;
+  if( err->code && tz->err==err && CMPP_RC_OOM!=err->code ){
+    char * const zMsg = sqlite3_mprintf("%s", err->zStatic);
+    int const rc = err->code;
+    cmpp_errinfo_reuse(err);
+    if( zMsg ){
+      cmpp__dx_errf_at(dx, cmpp_tizer_errpos(tz), rc, "%s", zMsg);
+      sqlite3_free(zMsg);
+    }else{
+      cmpp_err(dx->pp, CMPP_RC_OOM, 0, 0);
+    }
+  }
+  return dxppCode;
+}
+
+int cmpp__args_tzerr_uplift(cmpp * const pp, cmpp_tizer const * const tz){
+  return pp->pimpl->dx
+    ? cmpp__dx_tzerr_uplift(pp->pimpl->dx, tz)
+    : ppCode;
 }
 
 CMPP__EXPORT(int, cmpp_dx_next)(cmpp_dx * const dx, bool * pGotOne){
@@ -9387,8 +9571,11 @@ CMPP__EXPORT(int, cmpp_dx_next)(cmpp_dx * const dx, bool * pGotOne){
   assert( !dpi->args.pimpl->argOut.n );
   assert( !dpi->args.pimpl->argli.n );
   assert( dx->args.z );
-  if( !cmpp_dx_is_eliding(dx)
-      || 0!=(cmpp_f_F_FLOW_CONTROL & dx->d->flags) ){
+  {
+    /* Reminder: we do this even when dx->pimpl->flags.skipping is
+       set, as it serves to catch syntax errors (e.g. unbalanced
+       quotes) in skipped blocks. Parsing does not evaluate or
+       interpolate anything. */
     if( (cmpp_f_F_ARGS_LIST & dx->d->flags)
         || (v4 && !(cmpp_f_F_ARGS_RAW & dx->d->flags)) ){
       cmpp_dx_args_parse(dx, &dpi->args);
@@ -9581,6 +9768,44 @@ CMPP__EXPORT(int, cmpp_dx_consume)(cmpp_dx * const dx, cmpp_outputer * const os,
   if( os ){
     dx->pp->pimpl->out = oldOut;
   }
+  return dxppCode;
+}
+
+int cmpp__dx_skip(cmpp_dx * const dx,
+                  cmpp_d const * const * const dClosers,
+                  unsigned nClosers){
+  if( dxppCode ) return dxppCode;
+  cmpp__dx_pimpl * const dpi = dx->pimpl;
+  cmpp_d const * const d = cmpp_dx_d(dx);
+  cmpp_size_t const lineNo = dpi->dline.lineNo;
+  bool const wasSkipping = dpi->flags.skipping;
+  bool gotOne = false;
+  dpi->flags.skipping = true;
+  while( 0==dxppCode
+         && 0==cmpp_dx_next(dx, &gotOne) ){
+    if( !gotOne ){
+      dxserr("No closing directive found for "
+             "%s%s opened on line %" CMPP_SIZE_T_PFMT ".",
+             cmpp_dx_delim(dx), d->name.z, lineNo);
+      break;
+    }
+    cmpp_d const * const d2 = cmpp_dx_d(dx);
+    unsigned i = 0;
+    for( ; i < nClosers && d2!=dClosers[i]; ++i ){}
+    if( i < nClosers ){
+      break;
+    }else if( cmpp_f_F_BLOCK_OPEN & d2->flags ){
+      assert( d2->closer );
+      cmpp__dx_skip(dx, &d2->closer, 1);
+    }else if( cmpp_f_F_BLOCK_CLOSE & d2->flags ){
+      dxserr("Unexpected %s%s inside %s%s opened on line %"
+             CMPP_SIZE_T_PFMT ".",
+             cmpp_dx_delim(dx), d2->name.z,
+             cmpp_dx_delim(dx), d->name.z, lineNo);
+    }
+    /* Else ignore it. */
+  }
+  dpi->flags.skipping = wasSkipping;
   return dxppCode;
 }
 
@@ -9895,7 +10120,6 @@ void cmpp_dx__reset(cmpp_dx * const dx){
 
 void cmpp_dx_cleanup(cmpp_dx * const dx){
   unsigned prev = 0;
-  CmppLvlList_cleanup(&dx->pimpl->dxLvl);
   while( dx->pimpl->nSavepoint && prev!=dx->pimpl->nSavepoint ){
     prev = dx->pimpl->nSavepoint;
     cmpp__dx_sp_rollback(dx);
@@ -10103,9 +10327,7 @@ CMPP__EXPORT(int,cmpp_dx_process)(cmpp_dx * const dx){
   if( dxppCode ) return dxppCode;
   cmpp_d const * const d = cmpp_dx_d(dx);
   assert( d );
-  if( cmpp_dx_is_eliding(dx) && !(d->flags & cmpp_f_F_FLOW_CONTROL) ){
-    return dxppCode;
-  }
+  assert( !dx->pimpl->flags.skipping );
   cmpp_flag32_t const callFlags = 0/*TODO?*/;
   bool const isDxCall = dx->pimpl->args.pimpl->isDxCall;
   if( (cmpp_f_F_NOT_IN_SAFEMODE & d->flags)
@@ -10311,15 +10533,50 @@ static void cmpp_dx__teardown(cmpp_dx *dx){
   cmpp_dx_cleanup(dx);
 }
 
+/**
+   Impl. of cmpp_process_string() and cmpp__process_string_from(). If
+   zName is NULL then the current input's name is used. lineBase and
+   colBase are as documented for cmpp__dx_pimpl::origin.
+*/
+static int cmpp__process_string_at(cmpp *pp, const char * zName,
+                                   unsigned char const * zIn,
+                                   cmpp_strlen_t nIn,
+                                   cmpp_size_t lineBase,
+                                   cmpp_size_t colBase);
+
 CMPP__EXPORT(int, cmpp_process_string)(
   cmpp *pp, const char * zName,
   unsigned char const * zIn,
   cmpp_strlen_t nIn
 ){
+  return cmpp__process_string_at(pp, zName ? zName : "", zIn, nIn, 0, 0);
+}
+
+int cmpp__process_string_from(cmpp *pp, const char * zName,
+                              unsigned char const * zIn,
+                              cmpp_strlen_t nIn,
+                              unsigned char const * zOrigin){
+  cmpp_dx const * const dx = pp->pimpl->dx;
+  cmpp_size_t line = 0, col = 0;
+  if( dx && zOrigin && cmpp__dx_where(dx, zOrigin, &line, &col) ){
+    return cmpp__process_string_at(pp, NULL, zIn, nIn, line-1, col);
+  }
+  return cmpp_process_string(pp, zName, zIn, nIn);
+}
+
+static int cmpp__process_string_at(cmpp *pp, const char * zName,
+                                   unsigned char const * zIn,
+                                   cmpp_strlen_t nIn,
+                                   cmpp_size_t lineBase,
+                                   cmpp_size_t colBase){
   if( !nIn || (nIn<0 && !*zIn) ) return 0;
   if( 0==cmpp__db_init(pp) ){
-    if( !zName ) zName = "";
     cmpp_dx * const oldDx = pp->pimpl->dx;
+    if( !zName ){
+      zName = (oldDx && oldDx->sourceName)
+        ? (char const *)oldDx->sourceName
+        : "";
+    }
     cmpp__dx_pimpl dxp = cmpp__dx_pimpl_empty;
     cmpp_dx dx = {
       .pp = pp,
@@ -10328,6 +10585,8 @@ CMPP__EXPORT(int, cmpp_process_string)(
       .pimpl = &dxp
     };
     dxp.up = oldDx;
+    dxp.origin.lineBase = lineBase;
+    dxp.origin.colBase = colBase;
     dxp.flags.nextIsCall = pp->pimpl->flags.nextIsCall;
     pp->pimpl->flags.nextIsCall = false;
     if( dxp.flags.nextIsCall ){
@@ -10350,13 +10609,6 @@ CMPP__EXPORT(int, cmpp_process_string)(
           && 0==cmpp_dx_next(&dx, &gotOne)
           && gotOne){
       cmpp_dx_process(&dx);
-    }
-    if(0==ppCode && 0!=dx.pimpl->dxLvl.n){
-      CmppLvl const * const lv = CmppLvl_get(&dx);
-      cmpp_dx_err(&dx, CMPP_RC_SYNTAX,
-                 "Input ended inside an unterminated nested construct "
-                 "opened at [%s] line %" CMPP_SIZE_T_PFMT ".", zName,
-                  lv ? lv->lineNo : (cmpp_size_t)0);
     }
     cmpp_dx__teardown(&dx);
     pp->pimpl->dx = oldDx;
@@ -10436,9 +10688,7 @@ CMPP__EXPORT(int, cmpp_call_str)(
        is considered a call context. */;
   cmpp_outputer oOld = cmpp_outputer_empty;
   cmpp__outputer_swap(pp, &oB, &oOld);
-  cmpp_process_string(pp, "call"/*if we knew that z was NUL-terminated
-                                  then we could use it as the name*/,
-                      z, n);
+  cmpp__process_string_from(pp, "call", z, n, z);
   cmpp__outputer_swap(pp, &oOld, NULL);
   assert( !pi->flags.nextIsCall || ppCode );
   assert( !pi->flags.fakeNextDelim || ppCode );
@@ -10676,14 +10926,32 @@ void cmpp__dx_append_script_info(cmpp_dx const * dx,
      && 0==strcmp("-", (char const *)dx->sourceName))
     ? "<stdin>"
     : (char const *)dx->sourceName;
+  cmpp_size_t atLine = 0, atCol = 0;
+  bool const haveAt = dpi->zErrAt
+    && cmpp__dx_where(dx, dpi->zErrAt, &atLine, &atCol);
   if( dx->d ){
-    sqlite3_str_appendf(sstr,  "%s @ %s:%" CMPP_SIZE_T_PFMT,
-                        dx->d->name.z, zSrcName,
-                        dpi->dline.lineNo);
-    if( nl != dpi->dline.lineNo ){
-      /* Input position past the directive line. */
-      sqlite3_str_appendf(sstr, " from line %" CMPP_SIZE_T_PFMT, nl);
+    if( haveAt ){
+      /* We know precisely where the error is. */
+      sqlite3_str_appendf(sstr,  "%s @ %s:%" CMPP_SIZE_T_PFMT
+                          ":%" CMPP_SIZE_T_PFMT,
+                          dx->d->name.z, zSrcName, atLine, atCol);
+      if( atLine != dpi->dline.lineNo ){
+        sqlite3_str_appendf(sstr, " (directive on line %"
+                            CMPP_SIZE_T_PFMT ")", dpi->dline.lineNo);
+      }
+    }else{
+      sqlite3_str_appendf(sstr,  "%s @ %s:%" CMPP_SIZE_T_PFMT,
+                          dx->d->name.z, zSrcName,
+                          dpi->dline.lineNo);
+      if( nl != dpi->dline.lineNo ){
+        /* Input position past the directive line. */
+        sqlite3_str_appendf(sstr, " from line %" CMPP_SIZE_T_PFMT, nl);
+      }
     }
+  }else if( haveAt ){
+    sqlite3_str_appendf(sstr,  "%s:%" CMPP_SIZE_T_PFMT
+                        ":%" CMPP_SIZE_T_PFMT,
+                        zSrcName, atLine, atCol);
   }else{
     sqlite3_str_appendf(sstr,  "%s:%" CMPP_SIZE_T_PFMT,
                         zSrcName, nl);
@@ -10889,6 +11157,18 @@ int cmpp_dx_errf(cmpp_dx *dx, int rc,
   return rc;
 }
 
+int cmpp__dx_errf_at(cmpp_dx *dx, unsigned char const * zAt,
+                     int rc, char const *zFmt, ...){
+  unsigned char const * const zOld = dx->pimpl->zErrAt;
+  dx->pimpl->zErrAt = zAt;
+  va_list va;
+  va_start(va, zFmt);
+  rc = cmpp_errfv(dx->pp, rc, zFmt, va);
+  va_end(va);
+  dx->pimpl->zErrAt = zOld;
+  return rc;
+}
+
 int cmpp_dx_errfv(cmpp_dx *dx, int rc, char const *zFmt, va_list vargs){
   return cmpp_errfv(dx->pp, rc, zFmt, vargs);
 }
@@ -10936,7 +11216,6 @@ CMPP__EXPORT(cmpp_dx *,cmpp_dx_current)(cmpp *pp){
 //cmpp__ListType_impl(CmppDList,CmppDList_entry*)
 //cmpp__ListType_impl(CmppSohList,void*)
 cmpp__ListType_impl(cmpp_b_list,cmpp_b*)
-cmpp__ListType_impl(CmppLvlList,CmppLvl*)
 
 /**
    Expects that *ndx points to the current argv entry and that it is a
@@ -11014,137 +11293,6 @@ CMPP__EXPORT(bool, cmpp_simple_truth)(unsigned char const *z,
   }
 }
 
-CMPP__EXPORT(bool, cmpp_json_valid)(cmpp *pp, unsigned char const *z,
-                                    cmpp_strlen_t n, int flags){
-  bool rv = false;
-  n = cmpp__strlenu(z, n);
-  if( n && flags>0 && flags<16 ){
-    /* ^^^^ json_valid() is picky about its flags argument.  We skip
-       processing for that case because it can put pp into an error
-       state which the caller is not likely to check for because who
-       would after such an innocuous function? */
-    sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_jsonValid, false);
-    if( q ){
-      cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
-      cmpp_stmt_bind_int(pp, q, 2, flags);
-      if( SQLITE_ROW==cmpp_stmt_step(pp, q, false) ){
-        rv = 0!=sqlite3_column_int(q, 0);
-      }
-      cmpp_stmt_reset(pp, q);
-    }
-  }
-  return rv;
-}
-
-static inline bool cmpp__json_is_container(cmpp * const pp,
-                                           char opener,
-                                           char closer,
-                                           unsigned char const * const z,
-                                           cmpp_strlen_t n, bool allowJson5){
-  n = cmpp__strlenu(z, n);
-  return (
-    n>1
-    && z[0]==(unsigned char)opener
-    && z[n-1]==(unsigned char)closer
-  ) ? (
-    n==2
-    ? true
-    : cmpp_json_valid(pp, z, n, allowJson5 ? 3 : 1)
-  ) : false;
-}
-
-CMPP__EXPORT(bool,cmpp_json_is_list)(cmpp *pp,
-                                     unsigned char const * const z,
-                                     cmpp_strlen_t n, bool allowJson5){
-  return cmpp__json_is_container(pp, '[', ']', z, n, allowJson5);
-}
-
-CMPP__EXPORT(bool,cmpp_json_is_object)(cmpp *pp,
-                                       unsigned char const * const z,
-                                       cmpp_strlen_t n, bool allowJson5){
-  return cmpp__json_is_container(pp, '{', '}', z, n, allowJson5);
-}
-
-CMPP__EXPORT(int, cmpp_json_key_to_path)(cmpp *pp, int mode,
-                                         unsigned char const *z,
-                                         cmpp_strlen_t n, cmpp_b * bKey){
-  if( ppCode ) return ppCode;
-  n = cmpp__strlenu(z, n);
-  if( !n ){
-    return cmpp_b_append4(pp, bKey, mode
-                          ? "$[]"
-                          : "$.\0"/*illegal, but let SQLite report that*/,
-                          3);
-  }
-  if( '$'==z[0] && (1==n || (mode ? '['==z[1] : '.'==z[1])) ){
-    return cmpp_b_append4(pp, bKey, z, n);
-  }
-  /* This does not superficially look like a JSON path prefix, make it
-     look like one. */
-  unsigned char const * zz = 0;
-  cmpp_size_t nn = 0;
-  if( '$'==z[0] && '.'==z[1] ){
-    zz = z+2;
-    nn = n - 2;
-  }else{
-    zz = z;
-    nn = n;
-  }
-  cmpp_b_append(bKey, mode ? "$[" : "$.", 2);
-  cmpp_b_append(bKey, zz, nn);
-  if( mode ) cmpp_b_append_ch(bKey, ']');
-  if( bKey->errCode ) cmpp_err(pp, bKey->errCode, 0, 0);
-  return ppCode;
-}
-
-CMPP__EXPORT(void,cmpp_str_json_append)(cmpp *pp, sqlite3_str * str,
-                                        unsigned char const * z,
-                                        cmpp_strlen_t n){
-  n = cmpp__strlenu(z, n);
-  if( !n ){
-    sqlite3_str_append(str, "\"\"", 2);
-    return;
-  }
-  int64_t j;
-  if( cmpp_is_int64(z, n, &j) ){
-    sqlite3_str_appendf(str, "%lld", j);
-  }else{
-    /* If it's JSON then append it as-is, don't escape it.  We
-       "could" handle ints here but it's much faster to do them
-       above. */
-    //g_warn("arg %d: %.*s", (int)i, (int)n, z);
-    if( cmpp_json_valid(pp, z, n, 1) ){
-      /* Using any json_valid() flags which allow json5 will end
-         up generating JSON5 output, which we don't want here
-         because it would probably give us headaches everywhere
-         else. e.g. [list new a b c] would result in [a, b, c]
-         instead of ["a", "b", "c"]. */
-      //g_warn("is-valid 1: %.*s", (int)n, z);
-      sqlite3_str_append(str, (char *)z, (int)n);
-    }else{
-      //g_warn("is-valid 0: %.*s", (int)n, z);
-      sqlite3_str_appendf(str, "%.*J", (int)n, z);
-    }
-  }
-}
-
-CMPP__EXPORT(int, cmpp_json_canonicalize)(cmpp *pp, unsigned char const *z,
-                                          cmpp_size_t n, cmpp_b *b,
-                                          bool append){
-  sqlite3_stmt * const q =
-    cmpp__stmt(pp, CmppStmt_jsonSelf, false);
-  if( !q ) return ppCode;
-  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
-  if( SQLITE_ROW==cmpp_stmt_step(pp, q, false) ){
-    z = sqlite3_column_blob(q,0);
-    n = sqlite3_column_bytes(q,0);
-    //g_warn("canon=%.*s", (int)n, z);
-    cmpp_b_append4(pp, append ? b : cmpp_b_reuse(b), z, n);
-  }
-  cmpp_stmt_reset(pp, q);
-  return ppCode;
-}
-
 void cmpp__dump_defines(cmpp *pp, cmpp_FILE * fp, int bIndent){
   sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_defSelAll, false);
   if( q ){
@@ -11210,8 +11358,8 @@ CMPP__EXPORT(int, cmpp_process_argv)(cmpp *pp, int argc,
   if( !pp->pimpl->out.out && cmpp__out_fopen(pp, "-") ) break
 
   cmpp__staticAssert(TT_None,0==(int)cmpp_tt_None);
-  cmpp__staticAssert(Mask1,  cmpp_f_F_MASK_INTERNAL & cmpp_f_F_FLOW_CONTROL);
-  cmpp__staticAssert(Mask2,  cmpp_f_F_MASK_INTERNAL & cmpp_f_F_NOT_SIMPLIFY);
+  cmpp__staticAssert(Mask1,  cmpp_f_F_MASK_INTERNAL & cmpp_f_F_BLOCK_OPEN);
+  cmpp__staticAssert(Mask1b, cmpp_f_F_MASK_INTERNAL & cmpp_f_F_BLOCK_CLOSE);
   cmpp__staticAssert(Mask3,  0==(cmpp_f_F_MASK_INTERNAL & cmpp_f_F_MASK));
 
   for(int doIt = 0; doIt<2 && 0==ppCode; ++doIt){
@@ -11948,41 +12096,59 @@ static char * skipNonB64( char *s, int nc ){
   return s;
 }
 
-/* Decode base64 text into a byte buffer. */
+/* Decode base64 text into a byte buffer.
+**
+** Whitespace is ignored wherever it appears, including inside a group
+** of four base64 digits.  A pad character fills one position of its
+** group with zero bits.  Any other non-base64 character inside a group
+** ends the decode.  Each group yields only the whole bytes encoded by
+** the base64 digits actually present in it.
+*/
+/* src: https://sqlite.org/src/info/9de86d3f09325a0ffea */
 static uint8_t* fromBase64( char *pIn, int ncIn, uint8_t *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 && *pIn!=PAD_CHAR ){
     static signed char nboi[] = { 0, 0, 1, 2, 3 };
     char *pUse = skipNonB64(pIn, ncIn);
     unsigned long qv = 0L;
-    int nti, nbo, nac;
+    int nbo, nac = 0, ndg = 0;
     ncIn -= (pUse - pIn);
     pIn = pUse;
-    nti = (ncIn>4)? 4 : ncIn;
-    ncIn -= nti;
-    nbo = nboi[nti];
-    if( nbo==0 ) break;
-    for( nac=0; nac<4; ++nac ){
-      char c = (nac<nti)? *pIn++ : b64Numerals[0];
-      uint8_t bdp = BX_DV_PROTO(c);
-      switch( bdp ){
-      case ND:
-        /*  Treat dark non-digits as pad, but they terminate decode too. */
-        ncIn = 0;
-        deliberate_fall_through; /* FALLTHRU */
-      case WS:
-        /* Treat whitespace as pad and terminate this group.*/
-        nti = nac;
-        deliberate_fall_through; /* FALLTHRU */
-      case PC:
-        bdp = 0;
-        --nbo;
-        deliberate_fall_through; /* FALLTHRU */
-      default: /* bdp is the digit value. */
-        qv = qv<<6 | bdp;
-        break;
+    if( ncIn>=4 ){
+      /* Fast path: a complete group of four base64 digits. */
+      u8 d0 = BX_DV_PROTO(pIn[0]), d1 = BX_DV_PROTO(pIn[1]);
+      u8 d2 = BX_DV_PROTO(pIn[2]), d3 = BX_DV_PROTO(pIn[3]);
+      if( IS_BX_DIGIT(d0|d1|d2|d3) ){
+        qv = (unsigned long)d0<<18 | (unsigned long)d1<<12 | d2<<6 | d3;
+        pOut[0] = (qv>>16) & 0xff;
+        pOut[1] = (qv>>8) & 0xff;
+        pOut[2] = (qv) & 0xff;
+        pOut += 3;
+        pIn += 4;
+        ncIn -= 4;
+        continue;
       }
     }
+    /* Gather up to four group positions: digits and pad characters. */
+    while( nac<4 && ncIn>0 ){
+      u8 bdp = BX_DV_PROTO(*pIn);
+      if( IS_BX_DIGIT(bdp) ){
+        qv = qv<<6 | bdp;
+        ++nac;
+        ++ndg;
+      }else if( IS_BX_PAD(bdp) ){
+        qv <<= 6;
+        ++nac;
+      }else if( !IS_BX_WS(bdp) ){
+        /* Dark non-digits terminate the decode. */
+        ncIn = 0;
+        break;
+      }
+      ++pIn;
+      --ncIn;
+    }
+    qv <<= 6*(4-nac);
+    nbo = nboi[ndg];
     switch( nbo ){
     case 3:
       pOut[2] = (qv) & 0xff;
@@ -12205,6 +12371,20 @@ CMPP__EXPORT(int,cmpp_b_cmp)(cmpp_b const * b, void const *p,
     : (b->n<nn ? -1 : 1/* prefix match: shortest first */);
 }
 
+
+/**
+   Trims leading and trailing spaces and newlines from b in place.
+*/
+CMPP__EXPORT(void,cmpp_b_trim)(cmpp_b * const b){
+  if( !b->n ) return;
+  unsigned char const * z = b->z;
+  unsigned char const * zEnd = b->z + b->n;
+  cmpp_skip_snl(&z, zEnd);
+  cmpp_skip_snl_trailing(z, &zEnd);
+  b->n = (cmpp_size_t)(zEnd - z);
+  if( b->n && z!=b->z ) memmove(b->z, z, b->n);
+  b->z[b->n] = 0;
+}
 
 #undef PC
 #undef WS
@@ -12749,6 +12929,13 @@ static void cmpp__udf_file_size(
   }
 }
 
+#if 0
+/*
+** 2026-11-14: cmpp_truthy() and cmpp_compare() were only used by the
+** pre-2026-11 expression engine. They are disabled, rather than
+** removed, pending a decision about whether they are useful enough to
+** expose as SQL functions for #query.
+*/
 static void cmpp__udf_truthy(
   sqlite3_context *context,
   int argc,
@@ -12812,6 +12999,7 @@ static void cmpp__udf_compare(
   if(0) g_stderr("udf_compare (%s,%s) = %d\n", z1, z2, rv);
   sqlite3_result_int(context, rv);
 }
+#endif /* cmpp_truthy() and cmpp_compare() */
 
 int cmpp__db_init(cmpp *pp){
   cmpp__pi(pp);
@@ -12969,6 +13157,7 @@ int cmpp__db_init(cmpp *pp){
       .arity = 1,
       .flags = SQLITE_UTF8 | SQLITE_DIRECTONLY
     },
+#if 0 /* See cmpp__udf_truthy() */
     {
       .zName = "cmpp_truthy",
       .xUdf  = cmpp__udf_truthy,
@@ -12981,6 +13170,7 @@ int cmpp__db_init(cmpp *pp){
       .arity = 2,
       .flags = SQLITE_UTF8 | SQLITE_DIRECTONLY | SQLITE_DETERMINISTIC
     }
+#endif
   };
   assert( 0==rc );
   for( unsigned int i = 0; 0==rc && i < sizeof(aFunc)/sizeof(aFunc[0]); ++i ){
@@ -13061,6 +13251,7 @@ static int cmpp__dx_err_just_once(cmpp_dx *dx, cmpp_arg const *arg){
   return cmpp_dx_errf(dx, CMPP_RC_MISUSE, "'%s' may only be used once.",
                          arg->z);
 }
+
 
 /* No-op cmpp_f() impl. */
 static void cmpp_f_noop(cmpp_f_args const * args){
@@ -13203,7 +13394,10 @@ static void cmpp_f_define(cmpp_f_args const * args){
               }
             }
             if( cmpp_arg_interpolate(args->pp, arg, os,
-                              cmpp_arg_interpolate_BRACE_CALL) ) break;
+                                     cmpp_arg_interpolate_BRACE_CALL
+                                     | cmpp_arg_interpolate_PARENS_EXPR) ){
+              break;
+            }
             cmpp_b * const which = (ba && ba->n) ? ba : os;
             if( which==ba && os->n ){
               if( ba->n ) cmpp_b_append4(dx->pp, ba, aAppend->z, aAppend->n);
@@ -13212,7 +13406,13 @@ static void cmpp_f_define(cmpp_f_args const * args){
             int n = nChomp;
             while( n-- && cmpp_b_chomp(which) ){}
             cmpp__define2(dx->pp, aKey->z, aKey->n, which->z, which->n,
-                          arg->ttype);
+                          /* The stored type reflects the result
+                             type, not the token type. */
+                          (cmpp_tt_GroupParen==arg->ttype)
+                          ? cmpp_tt_IntDec
+                          : ((cmpp_tt_GroupBrace==arg->ttype)
+                             ? cmpp_tt_AnyType
+                             : arg->ttype));
             if( 0 ){
               g_warn("aKey=%u z=[%.*s]\n", aKey->n, (int)aKey->n, aKey->z);
               g_warn("nExp=%u z=[%.*s]\n", which->n, (int)which->n, which->z);
@@ -13255,45 +13455,16 @@ static void cmpp_f_define(cmpp_f_args const * args){
         }
         aKey = 0;
         break;
-      case cmpp_tt_GroupParen:{
+      case cmpp_tt_GroupParen:
+      case cmpp_tt_GroupBrace:
         if( !aKey ){
           cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                          "(...) is not permitted as a key.");
+                       "%s is not permitted as a key.",
+                       cmpp_tt_GroupParen==arg->ttype ? "(...)" : "[...]");
           break;
         }
-        checkIsDefined(aKey);
-        int d = 0;
-        if( 0==cmpp__arg_evalSubToInt(args->pp, arg, &d) ){
-          char exprBuf[32] = {0};
-          cmpp_size_t nVal =
-            (cmpp_size_t)snprintf(&exprBuf[0],
-                                  sizeof(exprBuf), "%d", d);
-          assert(nVal>0);
-          cmpp__define2(dx->pp, aKey->z, aKey->n,
-                        ustr_c(&exprBuf[0]), nVal,
-                        cmpp_tt_IntDec);
-        }
-        break;
-      }
-      case cmpp_tt_GroupBrace:{
-        if( !aKey ){
-          cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                          "[...] is not permitted as a key.");
-          break;
-        }
-        checkIsDefined(aKey);
-        cmpp_b * const b = cmpp_b_borrow(dx->pp);
-        if( b && 0==cmpp_call_str(dx->pp, arg->z, arg->n, b, 0) ){
-          int n = nChomp;
-          while( n-- && cmpp_b_chomp(b) ){}
-          cmpp__define2(dx->pp, aKey->z, aKey->n,
-                        b->z, b->n, cmpp_tt_AnyType);
-        }
-        cmpp_b_return(dx->pp, b);
-        break;
-      }
+        goto handle_value;
       default:
-        // TODO: treat (...) as an expression
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "Unhandled arg type %s: %s",
                         cmpp__tt_cstr2(arg->ttype, true), arg->z);
@@ -13334,30 +13505,25 @@ static void cmpp_f_undef(cmpp_f_args const * args){
                 "Expecting one or more arguments");
     return;
   }
-  cmpp_size_t n = 0;
-  char const * z;
+  cmpp_b * const b = cmpp_b_borrow(args->pp);
+  if( !b ) return;
   for( unsigned i = 1; i < args->argc && 0==dxppCode; ++i ){
     cmpp_arg const * arg = args->argv[i];
-    z = cmpp_arg_cstr2(arg, &n);
-    if( 0 ){
-      g_stderr("  %s: %s %p n=%d %.*s\n", args->d->name.z,
-               cmpp__tt_cstr2(arg->ttype, true), arg->z,
-               (int)arg->n, (int)arg->n, arg->z);
-    }
-    if( cmpp_tt_Word==arg->ttype ){
-#if 0
-      /* Too strict? */
-      if( 0==cmpp__legal_key_check(dx->pp, z, n, false) ) {
-        cmpp_undefine(dx->pp, (char const *)z);
-      }
-#else
-      cmpp_undefine(dx->pp, z, n);
-#endif
-    }else{
+    if( !arg->interp && cmpp_tt_Word!=arg->ttype ){
+      /* Preprocessor input requires a define name, not some other
+         token type. Callers which pre-interpolated (Itch) may pass
+         any token type. */
       cmpp_errf(dx->pp, CMPP_RC_MISUSE, "Invalid arg for %s: %s",
                 args->d->name.z, arg->z);
+      break;
+    }
+    if( 0==cmpp_arg_interpolate(args->pp, arg, cmpp_b_reuse(b),
+                                cmpp_arg_interpolate_NO_DEFINES)
+        && b->n ){
+      cmpp_undefine(dx->pp, (char const *)b->z, b->n);
     }
   }
+  cmpp_b_return(args->pp, b);
 }
 
 /* Impl. for #eval. */
@@ -13371,8 +13537,15 @@ static void cmpp_f_eval(cmpp_f_args const * args){
   cmpp_arg const * const arg = args->argv[1];
   cmpp_b * const b = arg->n ? cmpp_b_borrow(dx->pp) : 0;
   if( b ){
-    /* We need to collect the line info before processing the arg so
-       that it points to the start of the script. */
+    /* If the script is a {...} or string literal, its contents came
+       from (a copy of) the source text, so we can report its errors
+       relative to that. Otherwise (e.g. it's the name of a define)
+       we cannot know where it came from, so we name it after this
+       directive's location and its line numbers are relative to the
+       script. We need to collect that info before processing the arg
+       so that it points to the start of the script. */
+    bool const fromSrc = cmpp_tt_GroupSquiggly==arg->ttype
+      || cmpp_token_is_string(&arg->token);
     sqlite3_str * const sstr = cmpp__sqlite3_str_new(args->pp);
     if( sstr ){
       cmpp__dx_append_script_info(dx, sstr);
@@ -13381,8 +13554,9 @@ static void cmpp_f_eval(cmpp_f_args const * args){
          && 0==cmpp_arg_interpolate(args->pp, arg, b,
                              cmpp_arg_interpolate_BRACE_CALL)
          && b->n){
-        cmpp_process_string(args->pp, z ? z : args->d->name.z,
-                            b->z, b->n);
+        cmpp__process_string_from(args->pp, z ? z : args->d->name.z,
+                                  b->z, b->n,
+                                  fromSrc ? arg->token.zInner : NULL);
       }
       sqlite3_free(z);
     }
@@ -13541,7 +13715,7 @@ static void cmpp_f_once(cmpp_f_args const * args){
   cmpp_d const * const d = args->d;
   assert(d);
   assert(d->closer);
-  if( dx->args.arg0 ){
+  if( args->argc>1 ){
     cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                     "Expecting no arguments");
     return;
@@ -13573,15 +13747,8 @@ static void cmpp_f_once(cmpp_f_args const * args){
   int const had = cmpp__has(args->pp, (char const *)b->z, b->n);
   if( dxppCode ) goto end;
   else if( had ){
-    /* Consume until #/once in elide mode. */
-    CmppLvl * const lvl = CmppLvl_push(dx);
-    if( lvl ){
-      CmppLvl_elide(lvl, true);
-      cmpp_outputer devNull = cmpp_outputer_empty;
-      cmpp_dx_consume(dx, &devNull, &d->closer, 1,
-                      cmpp_dx_consume_F_PROCESS_OTHER_D);
-      CmppLvl_pop(dx, lvl);
-    }
+    /* Skip until #/once. */
+    cmpp__dx_skip(dx, &d->closer, 1);
   }else if( 0==cmpp_define_v2(args->pp, (char const*)b->z, "1") ){
     cmpp_dx_consume(dx, NULL, &d->closer, 1,
                     cmpp_dx_consume_F_PROCESS_OTHER_D);
@@ -13789,6 +13956,51 @@ end:
 #endif /* #ifndef CMPP_OMIT_D_INCLUDE */
 
 /**
+   For V4 directives: sets *pz and *pn to the arguments of dx's current
+   directive line, i.e. dx->args.z minus the name of directive d and
+   any spaces/newlines which follow it. The range points into dx's
+   source, so expression errors can report their precise location.
+*/
+static void cmpp__dx_args_after_name(cmpp_dx const * dx,
+                                     cmpp_d const * d,
+                                     unsigned char const **pz,
+                                     cmpp_size_t *pn){
+  unsigned char const * z = dx->args.z;
+  unsigned char const * const zEnd = z + dx->args.nz;
+  assert( dx->args.nz >= d->name.n );
+  assert( 0==memcmp(z, d->name.z, d->name.n) );
+  z += d->name.n;
+  cmpp_skip_snl(&z, zEnd);
+  *pz = z;
+  *pn = (cmpp_size_t)(zEnd - z);
+}
+
+/**
+   Evaluates the expression in the arguments of dx's current
+   directive line, which belongs to directive d, and sets *pTruth to
+   its truthiness. If parseOnly is true, the expression is only
+   checked for syntax errors: nothing in it is resolved or called,
+   and *pTruth is set to false. Returns dxppCode.
+*/
+static int cmpp__dx_expr_truth(cmpp_dx * const dx, cmpp_d const * d,
+                               bool parseOnly, bool * pTruth){
+  unsigned char const * z = 0;
+  cmpp_size_t n = 0;
+  cmpp__dx_args_after_name(dx, d, &z, &n);
+  cmpp__expr const ex = {
+    .pp = dx->pp, .xOperand = cmpp__expr_operand_core, .state = 0,
+    .flags = parseOnly ? cmpp__expr_F_PARSE_ONLY : 0
+  };
+  cmpp__xval v = cmpp__xval_empty;
+  *pTruth = false;
+  if( 0==cmpp__expr_eval(&ex, z, n, &v) && !parseOnly ){
+    *pTruth = cmpp__xval_truth(&v);
+  }
+  cmpp__xval_clear(dx->pp, &v);
+  return dxppCode;
+}
+
+/**
    cmpp_f() callback state for cmpp_f_if(): pointers to the
    various directives of that family.
 */
@@ -13800,121 +14012,70 @@ struct CmppIfState {
 };
 typedef struct CmppIfState CmppIfState;
 
-/* Version 2 of #if. */
+/* Version 4 of #if: expression engine v2. */
 static void cmpp_f_if(cmpp_f_args const * xargs){
   cmpp_dx * const dx = xargs->dx;
-  /* Reminder to self:
-
-     We need to be able to recurse, even in skip mode, for #if nesting
-     to work.  That's not great because it means we are evaluating
-     stuff we ideally should be skipping over, but it's keeping the
-     current tests working as-is. We can/do, however, avoid evaluating
-     expressions and such when recursing via skip mode. If we can
-     eliminate that here, by keeping track of the #if stack depth,
-     then we can possibly eliminate the whole CmppLvl_F_ELIDE
-     flag stuff.
-
-     The more convoluted version 1 #if (which this replaced not hours
-     ago) kept track of the skip state across a separate directive
-     function for #if and #/if. That was more complex but did avoid
-     having to recurse into #if in order to straighten out #elif and
-     #else. Update: tried a non-recursive variant involving moving
-     this function's gotTruth into the CmppLvl object() and
-     managing the CmppLvl stack here, but it just didn't want to
-     work for me and i was too tired to figure out why.
+  /*
+    Each branch is either consumed normally, running any directives
+    it contains, or is passed over via cmpp__dx_skip(), which runs
+    nothing and emits nothing. A nested #if within a skipped branch
+    is never run: cmpp__dx_skip() balances it on its own. Thus this
+    function no longer needs to recurse for the sake of nesting, nor
+    does the core need to know anything about #if.
   */
-  int gotTruth = 0 /*expr result*/;
   CmppIfState const * const cis = xargs->d->impl.state;
-  cmpp_d const * dClosers[] = {
+  cmpp_d const * const dClosers[] = {
     cis->dElif, cis->dElse, cis->dEndif
   };
-  CmppLvl * lvl = 0;
-  CmppDLine const dline = dx->pimpl->dline;
-  cmpp_args args = cmpp_args_empty;
+  unsigned const nClosers = sizeof(dClosers)/sizeof(dClosers[0]);
+  bool truth = false  /* Result of the current branch's expression. */;
+  bool taken = false  /* True once any branch has been taken. */;
+  bool sawElse = false;
   char delim[20] = {0};
-#define skipOn CmppLvl_elide((lvl), true)
-#define skipOff CmppLvl_elide((lvl), false)
 
   assert( xargs->d==cis->dIf );
-  if( !dx->args.arg0 ){
+  assert( !dx->pimpl->flags.skipping );
+  if( xargs->argc<2 ){
     cmpp_dx_errf(dx, CMPP_RC_MISUSE, "Expecting an expression.");
     return;
   }
   snprintf(delim, sizeof(delim), "%s", cmpp_dx_delim(dx));
   delim[sizeof(delim)-1] = 0;
-  lvl = CmppLvl_push(dx);
-  if( !lvl ) goto end;
-  if( cmpp_dx_is_eliding(dx) ){
-    gotTruth = 1;
-  }else if( cmpp__args_evalToInt(xargs->pp, &dx->pimpl->args,
-                                 &gotTruth) ){
-    goto end;
-  }else if( !gotTruth ){
-    skipOn;
+  if( cmpp__dx_expr_truth(dx, xargs->d, false, &truth) ){
+    return;
   }
-
-  cmpp_d const * dPrev = xargs->d;
-  cmpp_outputer devNull = cmpp_outputer_empty;
   while( !dxppCode ){
-    dPrev = dx->d;
-    bool const isFinal = dPrev==cis->dElse
-      /* true if expecting an #/if. */;
-    if( cmpp_dx_consume(dx,
-                        CmppLvl_is_eliding(lvl) ? &devNull : NULL,
-                        isFinal ? &cis->dEndif : dClosers,
-                        isFinal ? 1 : sizeof(dClosers)/sizeof(dClosers[0]),
-                        cmpp_dx_consume_F_PROCESS_OTHER_D) ){
-      break;
+    if( truth && !taken ){
+      taken = true;
+      cmpp_dx_consume(dx, NULL, dClosers, nClosers,
+                      cmpp_dx_consume_F_PROCESS_OTHER_D);
+    }else{
+      cmpp__dx_skip(dx, dClosers, nClosers);
     }
+    if( dxppCode ) break;
     cmpp_d const * const d2 = dx->d;
-    if( !d2 ){
-      dxserr("Reached end of input in an untermined %s%s opened "
-             "at line %" CMPP_SIZE_T_PFMT ".",
-             delim, cis->dIf->name.z, dline.lineNo);
-    }
     if( d2==cis->dEndif ){
       break;
-    }else if( isFinal ){
-      assert(!"cannot happen - caught by consume()");
-      dxserr("Expecting %s%s to close %s%s.",
-             delim, cis->dEndif->name.z,
-             delim, dPrev->name.z);
-      break;
-    }else if( gotTruth ){
-      skipOn;
-      continue;
-    }else if( d2==cis->dElif ){
-      if( 0==cmpp_dx_args_parse(dx, &args)
-          && 0==cmpp__args_evalToInt(xargs->pp, &args, &gotTruth) ){
-        if( gotTruth ) skipOff;
-        else skipOn;
-      }
-      continue;
+    }else if( sawElse ){
+      dxserr("%s%s may not follow %s%s.",
+             delim, d2->name.z, delim, cis->dElse->name.z);
+    }else if( d2==cis->dElse ){
+      sawElse = true;
+      truth = true;
     }else{
-      assert( d2==cis->dElse
-              && "Else (haha!) we cannot have gotten here" );
-      skipOff;
-      continue;
-    }
-    assert(!"unreachable");
-  }
-
-#undef skipOff
-#undef skipOn
-end:
-  cmpp_args_cleanup(&args);
-  if( lvl ){
-    bool const lvlIsOk = CmppLvl_get(dx)==lvl;
-    CmppLvl_pop(dx, lvl);
-    if( !lvlIsOk && !dxppCode ){
-      assert(!"i naively believe that this is not possible");
-      cmpp_dx_errf(dx, CMPP_RC_SYNTAX,
-                      "Mis-terminated %s%s opened at line "
-                      "%" CMPP_SIZE_T_PFMT ".",
-                      delim, cis->dIf->name.z, dline.lineNo);
+      assert( d2==cis->dElif );
+      unsigned char const * z = 0;
+      cmpp_size_t n = 0;
+      cmpp__dx_args_after_name(dx, d2, &z, &n);
+      if( !n ){
+        dxserr("%s%s requires an expression.", delim, d2->name.z);
+      }else{
+        /* Once a branch has been taken, later #elif expressions are
+           only checked for syntax errors, not evaluated. */
+        cmpp__dx_expr_truth(dx, d2, taken, &truth);
+      }
     }
   }
-  return;
 }
 
 /* Version 2 of #elif, #else, and #/if. */
@@ -13953,7 +14114,6 @@ static void cmpp__dump_sizeofs(void){
   SO(CmppDLine);
   SO(CmppDList);
   SO(CmppDList_entry);
-  SO(CmppLvl);
   SO(PodList__atpol);
   printf("cmpp_tt__last   = %d\n",
          cmpp_tt__last);
@@ -14050,8 +14210,7 @@ static void cmpp_f_stderr(cmpp_f_args const * args){
 */
 static void cmpp_f_at(cmpp_f_args const * args){
   cmpp_dx * const dx = args->dx;
-  cmpp_arg const * arg = dx->args.arg0;
-  if( !arg ){
+  if( args->argc<2 ){
     cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                     "Expecting arguments.");
     return;
@@ -14067,7 +14226,8 @@ static void cmpp_f_at(cmpp_f_args const * args){
   cmpp_arg const * argDelimC = 0 /* @token@ closer */;
   cmpp__pi(args->pp);
   cmpp_atpol_e polNew = cmpp_atpol_get(args->pp);
-  for( ; arg; arg = arg ? arg->next : NULL ){
+  for( unsigned i = 1; i < args->argc; ++i ){
+    cmpp_arg const * arg = args->argv[i];
     //g_warn("arg=%s", arg->z);
     if( !checkedCallForm ){
       assert( args->isDxCall );
@@ -14090,22 +14250,23 @@ static void cmpp_f_at(cmpp_f_args const * args){
         goto end;
       }else{
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                        "In call form, '%s' expects one of "
-                        "'policy' or delimiter'.");
+                     "In call form, '%s' expects one of "
+                     "'policy' or delimiter'.",
+                     args->d->name.z);
       }
       goto end;
     }/* checkedCallForm */
     if( !argDelimC && op_none==op ){
       /* Look for push|pop. */
       if( cmpp_arg_equals_c(arg, "pop") ){
-        arg = arg->next;
-        if( !arg ){
+        if( ++i==args->argc ){
           cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                           "'pop' expects arguments of 'policy' "
                           "and/or 'delimiter' and/or 'both'.");
           goto end;
         }
-        for( ; arg; arg = arg->next ){
+        for( ; i < args->argc; ++i ){
+          arg = args->argv[i];
           if( 0==(pop_policy & popWhich)
               && cmpp_arg_equals_c(arg, "policy") ){
             popWhich |= pop_policy;
@@ -14117,11 +14278,11 @@ static void cmpp_f_at(cmpp_f_args const * args){
             popWhich |= pop_both;
           }else{
             cmpp_dx_errf(dx, CMPP_RC_MISUSE,
-                            "Invalid argument to 'pop': ", arg->z);
+                         "Invalid argument to 'pop': %s",
+                         arg->z);
             goto end;
           }
         }
-        assert( !arg );
         op = op_pop;
         break;
       }/* pop */
@@ -14138,12 +14299,12 @@ static void cmpp_f_at(cmpp_f_args const * args){
       /* Fall through */
     }/* !argDelimC && op_none==op */
     if( !gotPolicy && cmpp_arg_equals_c(arg, "policy") ){
-      arg = arg->next;
-      if( !arg ){
+      if( ++i==args->argc ){
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "'policy' requires a policy name argument.");
         goto end;
       }
+      arg = args->argv[i];
       polNew = cmpp_atpol_from_str(NULL, (char const*)arg->z);
       if( cmpp_atpol_invalid==polNew ){
         cmpp_atpol_from_str(args->pp, (char const*)arg->z)
@@ -14156,19 +14317,19 @@ static void cmpp_f_at(cmpp_f_args const * args){
     }
     if( !argDelimC && cmpp_arg_equals_c(arg, "delimiter") ){
       assert( !argDelimO && !argDelimC );
-      argDelimO = arg->next;
-      argDelimC = argDelimO ? argDelimO->next : NULL;
-      if( !argDelimC ){
+      if( i+2>=args->argc ){
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "'delimiter' requires two arguments.");
         goto end;
       }
-      arg = argDelimC->next;
+      argDelimO = args->argv[++i];
+      argDelimC = args->argv[++i];
+      if( op_none==op ) op = op_set;
       continue;
     }
     if( op_pop!=op ){
       if( cmpp_arg_equals_c(arg,"<<") ){
-        if( arg->next ) {
+        if( i+1<args->argc ) {
           cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                           "'%s' must be the final argument.",
                           arg->z);
@@ -14238,8 +14399,7 @@ static void cmpp_f_at(cmpp_f_args const * args){
       bool const pushedDelim = NULL!=argDelimC;
       assert( args->d->closer );
       cmpp_dx_consume(dx, NULL, &args->d->closer, 1,
-                      cmpp_dx_consume_F_PROCESS_OTHER_D)
-        /* !Invalidates argDelimO and argDelimC! */;
+                      cmpp_dx_consume_F_PROCESS_OTHER_D);
       popcheck(pi->policy.at);
       cmpp_atpol_pop(args->pp);
       if( pushedDelim ) cmpp_atdelim_pop(args->pp);
@@ -14263,41 +14423,43 @@ bad_pop:
 #undef popcheck
 }
 
+/**
+   #expr and #assert.
 
+   #expr emits the expression's value as an integer: strings are
+   coerced as per cmpp__xval_to_int(). #assert fails if the value
+   is falsy (as per cmpp__xval_truth(), so 'abc' is truthy even though
+   #expr would emit 0 for it).
+*/
 static void cmpp_f_expr(cmpp_f_args const * args){
+  cmpp * const pp = args->pp;
   cmpp_dx * const dx = args->dx;
-  int rv = 0;
-  assert( dx->args.z );
-  if( 0 ){
-    g_stderr("%s() argc=%d arg0 [%.*s]\n", __func__, dx->args.argc,
-             dx->args.arg0->n, dx->args.arg0->z);
-    g_stderr("%s() dx->args.z [%.*s]\n", __func__,
-             (int)dx->args.nz, dx->args.z);
-  }
-  if( !dx->args.argc ){
+  cmpp_d const * const d = args->d;
+  unsigned char const * z = 0;
+  cmpp_size_t n = 0;
+  assert( d );
+  if( args->argc<2 ){
     dxserr("An empty expression is not permitted.");
     return;
   }
-#if 0
-  for( cmpp_arg const * a = dx->args.arg0; a; a = a->next ){
-    g_stderr("got type=%s n=%u z=%.*s\n",
-             cmpp__tt_cstr2(a->ttype, true),
-             (unsigned)a->n, (int)a->n, a->z);
-  }
-#endif
-  if( 0==cmpp__args_evalToInt(args->pp, &dx->pimpl->args, &rv) ){
-    if( 'a'==args->d->name.z[0] ){
-      if( !rv ){
-        cmpp_errf(args->pp, CMPP_RC_ASSERT,
-                     "Assertion failed: %s",
-                     args->raw.z);
+  cmpp__dx_args_after_name(dx, d, &z, &n);
+  cmpp__xval v = cmpp__xval_empty;
+  if( 0==cmpp__expr_eval_core(pp, z, n, &v) ){
+    if( 'a'==d->name.z[0] ){
+      if( !cmpp__xval_truth(&v) ){
+        cmpp_errf(pp, CMPP_RC_ASSERT, "Assertion failed: %.*s",
+                  (int)n, z);
       }
     }else{
-      char buf[60];
-      snprintf(buf, sizeof(buf), "%d\n", rv);
-      cmpp_out_raw(args->pp, buf, strlen(buf));
+      int64_t i = 0;
+      if( 0==cmpp__xval_to_int(pp, &v, &i) ){
+        char buf[32];
+        int const nb = snprintf(buf, sizeof(buf), "%" PRIi64 "\n", i);
+        cmpp_out_raw(pp, buf, (cmpp_size_t)nb);
+      }
     }
   }
+  cmpp__xval_clear(pp, &v);
 }
 
 static void cmpp_f_undef_policy(cmpp_f_args const * args){
@@ -14480,19 +14642,19 @@ end:
 
 static void cmpp_f_delimiter(cmpp_f_args const * args){
   cmpp_dx * const dx = args->dx;
-  cmpp_arg const * arg = dx->args.arg0;
   enum ops { op_none, op_set, op_push, op_pop };
   enum ops op = op_none;
   cmpp_arg const * argD = 0;
   bool doHeredoc = false;
-  for( ; arg; arg = arg->next ){
+  for( unsigned i = 1; i < args->argc; ++i ){
+    cmpp_arg const * const arg = args->argv[i];
     if( op_none==op ){
       /* Look for push|pop. */
       if( cmpp_arg_equals_c(arg, "push") ){
         op = op_push;
         continue;
       }else if( cmpp_arg_equals_c(arg, "pop") ){
-        if( arg->next ){
+        if( i+1<args->argc ){
           cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                           "'pop' expects no arguments.");
           return;
@@ -14511,7 +14673,7 @@ static void cmpp_f_delimiter(cmpp_f_args const * args){
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "'%s' is not legal in [call] form.", arg->z);
         return;
-      }else if( arg->next ){
+      }else if( i+1<args->argc ){
         cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                         "'%s' must be the final argument.", arg->z);
           return;
@@ -14539,11 +14701,12 @@ static void cmpp_f_delimiter(cmpp_f_args const * args){
       ? NULL
       : (char const*)argD->z;
     if( op_push==op ){
-      cmpp_delimiter_push(args->pp, (char const*)argD->z);
+      /* Includes the doHeredoc case. */
+      cmpp_delimiter_push(args->pp, z);
     }else{
       assert( op_set==op );
-      if( doHeredoc ) cmpp_delimiter_push(args->pp, z);
-      else cmpp_delimiter_set(args->pp, z);
+      assert( !doHeredoc );
+      cmpp_delimiter_set(args->pp, z);
     }
   }
   if( !cmpp_err_has(dx->pp) ){
@@ -14638,11 +14801,8 @@ int cmpp__consume_sql_args(cmpp *pp, cmpp_f_args const *args,
     cmpp_arg const *pN = nextArg;
     if( pN && cmpp_arg_equals_c(pN, "bind") ){
       pN = nextArg;
-      if( !pN || (
-            cmpp_tt_GroupSquiggly!=pN->ttype
-            && cmpp_tt_GroupBrace!=pN->ttype
-          ) ){
-        return serr("Expecting {...} or [...] after 'bind'.");
+      if( !pN ){
+        return serr("Expecting an argument after 'bind'.");
       }
       *pBind = pN;
     }else{
@@ -14681,42 +14841,139 @@ static int cmpp_kav_each_f_query__bind(
   return ppCode;
 }
 
+/** State for the cmpp_json_each_f() impls used by #query's bind. */
+typedef struct {
+  cmpp * pp;
+  sqlite3_stmt * q;
+  int ndx;
+  cmpp_b * bKey;
+} CmppQueryBind;
+
+/** cmpp_json_each_f() impl for binding a JSON list's entries. */
+static int cmpp__query_bind_list_f(void *state,
+                                   unsigned char const *zKey,
+                                   cmpp_size_t nKey,
+                                   unsigned char const *zVal,
+                                   cmpp_size_t nVal){
+  CmppQueryBind * const qb = state;
+  (void)zKey; (void)nKey;
+  return cmpp_stmt_bind_textn(qb->pp, qb->q, ++qb->ndx, zVal, nVal);
+}
+
+/**
+   cmpp_json_each_f() impl for binding a JSON object's entries. Keys
+   which do not start with ':', '$', or '@' get a '$' prefix, so that
+   {"a":1} binds to $a.
+*/
+static int cmpp__query_bind_obj_f(void *state,
+                                  unsigned char const *zKey,
+                                  cmpp_size_t nKey,
+                                  unsigned char const *zVal,
+                                  cmpp_size_t nVal){
+  CmppQueryBind * const qb = state;
+  cmpp * const pp = qb->pp;
+  cmpp_b * const b = cmpp_b_reuse(qb->bKey);
+  if( !nKey || (':'!=zKey[0] && '$'!=zKey[0] && '@'!=zKey[0]) ){
+    cmpp_b_append_ch(b, '$');
+  }
+  if( cmpp_b_append4(pp, b, zKey, nKey) ) return ppCode;
+  int const bindNdx =
+    sqlite3_bind_parameter_index(qb->q, (char const*)b->z);
+  if( !bindNdx ){
+    return cmpp_errf(pp, CMPP_RC_RANGE, "Invalid bind name: %s", b->z);
+  }
+  return cmpp_stmt_bind_textn(pp, qb->q, bindNdx, zVal, nVal);
+}
+
+/**
+   If aCall is a [...] whose first word is not a directive name, this
+   reports an error suggesting {...} instead, because [a b c] was the
+   bind-list syntax before [...] became a call there. Returns ppCode.
+*/
+static int cmpp__query_bind_call_check(cmpp * const pp,
+                                       cmpp_arg const * const aCall){
+  unsigned char const * z = aCall->z;
+  unsigned char const * const zEnd = z + aCall->n;
+  cmpp__delim const * const delim = cmpp__pp_delim(pp);
+  cmpp_skip_snl(&z, zEnd);
+  if( (cmpp_size_t)(zEnd-z) > delim->open.n
+      && 0==memcmp(z, delim->open.z, delim->open.n) ){
+    z += delim->open.n;
+  }
+  unsigned char const * zW = z;
+  while( zW<zEnd && !cmpp_isspace(*zW) ) ++zW;
+  char zName[128];
+  cmpp_size_t const nName = (cmpp_size_t)(zW - z);
+  if( !nName || nName>=sizeof(zName) ) return ppCode;
+  memcpy(zName, z, nName);
+  zName[nName] = 0;
+  if( !cmpp__d_search3(pp, zName, cmpp__d_search3_F_ALL) && !ppCode ){
+    cmpp_errf(pp, CMPP_RC_MISUSE,
+              "bind [%s ...] is a function call, but '%s' is not a "
+              "directive. Lists of values to bind are written as "
+              "{...}, e.g. bind {a b c}.", zName, zName);
+  }
+  return ppCode;
+}
+
 int cmpp__bind_group(cmpp * const pp, sqlite3_stmt * const q,
                      cmpp_arg const * const aGroup){
   if( ppCode ) return ppCode;
   if( cmpp_tt_GroupSquiggly==aGroup->ttype ){
-    return cmpp_kav_each(
-      pp, aGroup->z, aGroup->n,
-      cmpp_kav_each_f_query__bind, q,
-      cmpp_kav_each_F_NOT_EMPTY
-      | cmpp_kav_each_F_CALL_VAL
-      | cmpp_kav_each_F_PARENS_EXPR
-    );
-  }
-  if( cmpp_tt_GroupBrace!=aGroup->ttype ){
-    return cmpp_errf(pp, CMPP_RC_MISUSE,
-                        "Expecting {...} or [...] "
-                        "for SQL binding list.");
-  }
-  int bindNdx = 0;
-  cmpp_args args = cmpp_args_empty;
-  cmpp_args_parse(pp, &args, aGroup->z, aGroup->n, 0);
-  if( !args.argc && !ppCode ){
-    cmpp_errf(pp, CMPP_RC_RANGE,
-                 "Empty SQL bind list is not permitted.");
-    /* Keep going so we can clean up a partially-parsed args. */
-  }
-  for( cmpp_arg const * aVal = args.arg0;
-       !ppCode && aVal;
-       aVal = aVal->next ){
-    ++bindNdx;
-    if( 0 ){
-      g_warn("bind #%d %s <<%s>>", bindNdx,
-             cmpp__tt_cstr2(aVal->ttype, true), aVal->z);
+    /* {:k -> v ...} or {v1 v2 ...} */
+    cmpp_args args = cmpp_args_empty;
+    cmpp_args_parse(pp, &args, aGroup->z, aGroup->n, 0);
+    if( !args.argc && !ppCode ){
+      cmpp_errf(pp, CMPP_RC_RANGE,
+                "Empty SQL bind list is not permitted.");
+      /* Keep going so we can clean up a partially-parsed args. */
+    }else if( !ppCode
+              && args.arg0->next
+              && cmpp_tt_ThinArrowR==args.arg0->next->ttype ){
+      cmpp_args_cleanup(&args);
+      return cmpp_kav_each(
+        pp, aGroup->z, aGroup->n,
+        cmpp_kav_each_f_query__bind, q,
+        cmpp_kav_each_F_NOT_EMPTY
+        | cmpp_kav_each_F_CALL_VAL
+        | cmpp_kav_each_F_PARENS_EXPR
+      );
     }
-    cmpp__bind_arg(pp, q, bindNdx, aVal);
+    int bindNdx = 0;
+    for( cmpp_arg const * aVal = args.arg0;
+         !ppCode && aVal;
+         aVal = aVal->next ){
+      cmpp__bind_arg(pp, q, ++bindNdx, aVal);
+    }
+    cmpp_args_cleanup(&args);
+    return ppCode;
   }
-  cmpp_args_cleanup(&args);
+  /* Anything else must resolve to a JSON list or object. */
+  if( cmpp_tt_GroupBrace==aGroup->ttype
+      && cmpp__query_bind_call_check(pp, aGroup) ){
+    return ppCode;
+  }
+  cmpp_b * const b = cmpp_b_borrow(pp);
+  cmpp_b * const bKey = b ? cmpp_b_borrow(pp) : 0;
+  if( bKey
+      && 0==cmpp_arg_interpolate(pp, aGroup, b,
+                                 cmpp_arg_interpolate_BRACE_CALL) ){
+    CmppQueryBind qb = { .pp = pp, .q = q, .ndx = 0, .bKey = bKey };
+    if( cmpp_json_is_list(pp, b->z, b->n, true) ){
+      cmpp_json_each(pp, NULL, cmpp_json_LIST, b->z, b->n,
+                     cmpp__query_bind_list_f, &qb);
+    }else if( cmpp_json_is_object(pp, b->z, b->n, true) ){
+      cmpp_json_each(pp, NULL, cmpp_json_OBJECT, b->z, b->n,
+                     cmpp__query_bind_obj_f, &qb);
+    }else if( !ppCode ){
+      cmpp_errf(pp, CMPP_RC_TYPE,
+                "The bind value must be a {...} list, or resolve to a "
+                "JSON list or object, but got: %.*s",
+                (int)(b->n>40 ? 40 : b->n), b->z);
+    }
+  }
+  cmpp_b_return(pp, bKey);
+  cmpp_b_return(pp, b);
   return ppCode;
 }
 
@@ -14998,14 +15255,15 @@ static void cmpp_f_arg(cmpp_f_args const * args){
   cmpp_dx * const dx = args->dx;
   cmpp_flag32_t a2bFlags = cmpp_arg_interpolate_BRACE_CALL;
   bool trimL = false, trimR = false;
-  cmpp_arg const * arg = dx->args.arg0;
-  if( !dx->args.argc ){
+  if( args->argc<2 ){
     cmpp_dx_errf(dx, CMPP_RC_MISUSE, "Expecting an argument.");
     return;
   }
-  //g_warn("argc=%d", dx->args.argc);
+  //g_warn("argc=%u", args->argc);
   cmpp_b * const b = cmpp_b_borrow(args->pp);
-  for( ; arg && !cmpp_err_has(args->pp); arg = arg->next ){
+  if( !b ) return;
+  for( unsigned i = 1; i < args->argc && !cmpp_err_has(args->pp); ++i ){
+    cmpp_arg const * const arg = args->argv[i];
 #define FLAG(X)if( cmpp_arg_isflag_c(arg, X) )
     FLAG("-raw") {
       a2bFlags = cmpp_arg_interpolate_FORCE_STRING;
@@ -15025,7 +15283,6 @@ static void cmpp_f_arg(cmpp_f_args const * args){
                (int)arg->n, (int)b->n, cmpp_tt_cstr(arg->ttype),
                (int)(zzEnd-zz), zz);
       }
-      //assert(!cmpp_dx_is_eliding(args->dx));
       if( zzEnd-zz>0 ){
         cmpp_out_raw(args->pp, zz, zzEnd-zz);
         //g_warn0("here");
@@ -15053,7 +15310,7 @@ static void cmpp_f_join(cmpp_f_args const * args){
   bool addNl = !args->isDxCall;
   int n = 0;
   if( !b || !bSep ) goto end;
-  if( !dx->args.argc ){
+  if( args->argc<2 ){
     cmpp_dx_errf(dx, CMPP_RC_MISUSE,
                     "%s%s expects ?flags? ...args",
                     cmpp_dx_delim(dx), args->d->name.z);
@@ -15061,22 +15318,22 @@ static void cmpp_f_join(cmpp_f_args const * args){
   }
   cmpp_b_append_ch(bSep, ' ');
   cmpp_check_oom(args->pp, bSep->z);
-  for( cmpp_arg const * arg = dx->args.arg0; arg
+  for( unsigned i = 1; i < args->argc
          && !b->errCode
          && !bSep->errCode
          && !cmpp_err_has(args->pp);
-       arg = arg->next ){
+       ++i ){
+    cmpp_arg const * const arg = args->argv[i];
 #define FLAG(X)if( cmpp_arg_isflag_c(arg, X) )
     FLAG("-s"){
-      if( !arg->next ){
+      if( ++i==args->argc ){
         cmpp_errf(args->pp, CMPP_RC_MISUSE,
                   "Missing SEPARATOR argument to -s.");
         break;
       }
-      cmpp_arg_interpolate(args->pp, arg->next,
+      cmpp_arg_interpolate(args->pp, args->argv[i],
                     cmpp_b_reuse(bSep),
                     cmpp_arg_interpolate_BRACE_CALL);
-      arg = arg->next;
       /* FIXME: unescape bSep */
       continue;
     }
@@ -15189,39 +15446,28 @@ missing_arg:
 }
 
 /**
-   #cmp LHS op RHS
+   #cmp LHS RHS
+
+   Emits -1, 0, or 1 if the (expanded) LHS is less than, equal to,
+   or greater than the (expanded) RHS, as per strcmp().
 */
 static void cmpp_f_cmp(cmpp_f_args const * args){
   cmpp_b * const bL = cmpp_b_borrow(args->pp);
   cmpp_b * const bR = cmpp_b_borrow(args->pp);
   cmpp_flag32_t a2bFlags = cmpp_arg_interpolate_BRACE_CALL;
-  if( !bL || !!bR ) goto end;
-  for( cmpp_arg const * arg = args->dx->args.arg0; arg
-         && !cmpp_err_has(args->pp);
-       arg = arg->next ){
-    if( !bL->z ){
-      cmpp_arg_interpolate(args->pp, arg, bL, a2bFlags);
-      continue;
-    }
-    if( !bR->z ){
-      cmpp_arg_interpolate(args->pp, arg, bR, a2bFlags);
-      continue;
-    }
-    break;
-  }
-
-  if( cmpp_err_has(args->pp) ) goto end;
-  if( !bL->z || !bR->z ){
+  if( !bL || !bR ) goto end;
+  if( 3!=args->argc ){
     cmpp_errf(args->pp, CMPP_RC_MISUSE, "Usage: LHS RHS");
     goto end;
   }
-  assert( bL->z );
-  assert( bR->z );
-  char cbuf[20];
-  int const cmp = strcmp((char*)bL->z, (char*)bR->z);
-  int const n = snprintf(cbuf, sizeof(cbuf), "%d", cmp);
-  assert(n>0);
-  cmpp_out_raw(args->pp, cbuf, (cmpp_size_t)n);
+  if( cmpp_arg_interpolate(args->pp, args->argv[1], bL, a2bFlags)
+      || cmpp_arg_interpolate(args->pp, args->argv[2], bR, a2bFlags) ){
+    goto end;
+  }
+  int const cmp = strcmp(bL->z ? (char const*)bL->z : "",
+                         bR->z ? (char const*)bR->z : "");
+  char const * const z = cmp<0 ? "-1" : (cmp ? "1" : "0");
+  cmpp_out_raw(args->pp, z, strlen(z));
 
 end:
   cmpp_b_return(args->pp, bL);
@@ -15241,6 +15487,7 @@ static void cmpp_f_base64(cmpp_f_args const * args){
   for( unsigned i = 1; i < args->argc; ++i ){
     cmpp_arg const * arg = args->argv[i];
 #define M(STR) cmpp_arg_equals_c(arg, STR)
+    /* -d/-decode is TODO, pending only an actual use case. */
     if( M("-comma") ) comma = true;
     else if( M("-quote") ) quote = true;
     else if( M("-f") || M("-file")
@@ -15330,6 +15577,7 @@ end:
 }
 
 
+
 /**
    If zName matches one of the delayed-load directives, that directive
    is registered and 0 is returned. CMPP_RC_NO_DIRECTIVE is returned if
@@ -15350,10 +15598,9 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
 #define CF(X) cmpp_f_F_ ## X
 #define F_A_RAW CF(ARGS_RAW)
 #define F_A_V4 CF(ARGS_V4)
-#define F_A_LIST CF(ARGS_LIST)
-#define F_EXPR CF(ARGS_LIST) | CF(NOT_SIMPLIFY)
 #define F_UNSAFE cmpp_f_F_NOT_IN_SAFEMODE
 #define F_NC cmpp_f_F_NO_CALL
+#  define F_ITCH 0
 #define F_CALL cmpp_f_F_CALL_ONLY
 #define DREG0(SYMNAME, NAME, OPENER, OFLAGS, CLOSER, CFLAGS) \
   cmpp_d_reg SYMNAME = {  \
@@ -15380,10 +15627,12 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
   /* The #if family requires some hand-holding... */
   if( M_OC("if") || M("elif") || M("else") ) {
     DREG0(rIf,   "if",
-          cmpp_f_if, F_EXPR | F_NC | CF(FLOW_CONTROL),
-          cmpp_f_if_dangler, 0);
+          cmpp_f_if, F_A_V4 | F_NC | CF(BLOCK_OPEN),
+          cmpp_f_if_dangler, CF(BLOCK_CLOSE));
     DREG0(rElif, "elif",
-          cmpp_f_if_dangler, F_NC,
+          /* V4 so that cmpp_f_if() gets #elif's args as
+             cmpp__dx_args_after_name() expects them. */
+          cmpp_f_if_dangler, F_A_V4 | F_NC,
           0, 0);
     DREG0(rElse, "else",
           cmpp_f_if_dangler, F_NC,
@@ -15421,35 +15670,42 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
     DREG(N, OPENER, OFLAGS, CLOSER, CFLAGS);      \
   } (void)0
 
-  M_IF_CORE("@",                cmpp_f_at,           F_A_LIST,
+  M_IF_CORE("@",                cmpp_f_at,           F_A_V4,
                                 cmpp_f_dangling_closer, 0);
-  M_IF_CORE("arg",              cmpp_f_arg,          F_A_LIST, 0, 0);
-  M_IF_CORE("assert",           cmpp_f_expr,         F_EXPR, 0, 0);
+  M_IF_CORE("arg",              cmpp_f_arg,          F_A_V4 | F_ITCH,
+                                0, 0);
+  M_IF_CORE("assert",           cmpp_f_expr,         F_A_V4, 0, 0);
   M_IF_CORE("base64",           cmpp_f_base64,       F_A_V4,
                                 cmpp_f_dangling_closer, 0);
-  M_IF_CORE("cmp",              cmpp_f_cmp,          F_A_LIST, 0, 0);
+  M_IF_CORE("cmp",              cmpp_f_cmp,          F_A_V4 | F_ITCH,
+                                0, 0);
   M_IF_CORE("define",           cmpp_f_define,       F_A_V4,
                                 cmpp_f_dangling_closer, 0);
-  M_IF_CORE("delimiter",        cmpp_f_delimiter,    F_A_LIST,
+  M_IF_CORE("delimiter",        cmpp_f_delimiter,    F_A_V4,
                                 cmpp_f_dangling_closer, 0);
   M_IF_CORE("error",            cmpp_f_error,        F_A_RAW, 0, 0);
   M_IF_CORE("eval",             cmpp_f_eval,         F_A_V4,
                                 cmpp_f_dangling_closer, 0);
   M_IF_CORE("expand",           cmpp_f_expand,       F_A_V4,
                                 cmpp_f_dangling_closer, 0);
-  M_IF_CORE("expr",             cmpp_f_expr,         F_EXPR, 0, 0);
-  M_IF_CORE("join",             cmpp_f_join,         F_A_LIST, 0, 0);
-  M_IF_CORE("once",             cmpp_f_once,         F_A_LIST | F_NC,
-                                cmpp_f_dangling_closer, 0);
+  M_IF_CORE("expr",             cmpp_f_expr,         F_A_V4, 0, 0);
+  M_IF_CORE("join",             cmpp_f_join,         F_A_V4 | F_ITCH,
+                                0, 0);
+  M_IF_CORE("once",             cmpp_f_once,
+                                F_A_V4 | F_NC | CF(BLOCK_OPEN),
+                                cmpp_f_dangling_closer, CF(BLOCK_CLOSE));
   M_IF_CORE("pragma",           cmpp_f_pragma,       F_A_V4, 0, 0);
   M_IF_CORE("savepoint",        cmpp_f_savepoint,    F_A_V4, 0, 0);
   M_IF_CORE("stderr",           cmpp_f_stderr,       F_A_RAW, 0, 0);
-  M_IF_CORE("sum",              cmpp_f_sum,          F_A_V4, 0, 0);
-  M_IF_CORE("undef",            cmpp_f_undef,        F_A_V4, 0, 0);
+  M_IF_CORE("sum",              cmpp_f_sum,          F_A_V4 | F_ITCH,
+                                0, 0);
+  M_IF_CORE("undef",            cmpp_f_undef,        F_A_V4 | F_ITCH,
+                                0, 0);
   M_IF_CORE("undefined-policy", cmpp_f_undef_policy, F_A_V4, 0, 0);
-  M_IF_CORE("//",               cmpp_f_noop,         F_A_RAW, 0, 0);
+  M_IF_CORE("//",               cmpp_f_noop,         F_A_V4 | F_A_RAW,
+                                0, 0);
   M_IF_CORE("file",             cmpp_f_file,
-                                F_A_V4 | F_UNSAFE, 0, 0);
+                                F_A_V4 | F_UNSAFE | F_ITCH, 0, 0);
 
 #undef M_IF_CORE
 
@@ -15466,7 +15722,7 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
 
 #ifndef CMPP_OMIT_D_INCLUDE
   M_IF_FLAGGED("include", cmpp_ctor_F_NO_INCLUDE,
-               cmpp_f_include, F_A_V4 | F_UNSAFE,
+               cmpp_f_include, F_A_V4 | F_UNSAFE | F_ITCH,
                0, 0);
 #endif
 
@@ -15523,6 +15779,8 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
 #endif /*CMPP_OMIT_D_DB*/
 
 
+
+
 #undef M_IF_FLAGGED
 
 #ifndef NDEBUG
@@ -15535,12 +15793,11 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
 end:
 #undef DREG
 #undef DREG0
-#undef F_EXPR
 #undef F_A_RAW
-#undef F_A_LIST
 #undef F_A_V4
 #undef F_UNSAFE
 #undef F_NC
+#undef F_ITCH
 #undef F_CALL
 #undef CF
 #undef M
@@ -15831,451 +16088,6 @@ int cmpp__args_init(cmpp * pp, cmpp_args * a){
 }
 
 /**
-   Declare cmpp_argOp_f_NAME().
-*/
-#define cmpp_argOp_decl(NAME)                                \
-  static void cmpp_argOp_f_ ## NAME (cmpp *pp,               \
-                                     cmpp_argOp const *op,   \
-                                     cmpp_arg const *vLhs,   \
-                                     cmpp_arg const **pvRhs, \
-                                     int *pResult)
-cmpp_argOp_decl(compare);
-
-#if 0
-cmpp_argOp_decl(logical1);
-cmpp_argOp_decl(logical2);
-cmpp_argOp_decl(defined);
-#endif
-
-static const struct {
-  const cmpp_argOp opAnd;
-  const cmpp_argOp opOr;
-  const cmpp_argOp opGlob;
-  const cmpp_argOp opNotGlob;
-  const cmpp_argOp opNot;
-  const cmpp_argOp opDefined;
-#define cmpp_argOps_cmp_map(E) E(Eq) E(Neq) E(Lt) E(Le) E(Gt) E(Ge)
-#define E(NAME) const cmpp_argOp op ## NAME;
-  cmpp_argOps_cmp_map(E)
-#undef E
-} cmpp_argOps = {
-  .opAnd = {
-    .ttype = cmpp_tt_OpAnd,
-    .arity = 2,
-    .assoc = 0,
-    .xCall = 0//cmpp_argOp_f_logical2
-  },
-  .opOr = {
-    .ttype = cmpp_tt_OpOr,
-    .arity = 2,
-    .assoc = 0,
-    .xCall = 0//cmpp_argOp_f_logical2
-  },
-  .opGlob = {
-    .ttype = cmpp_tt_OpGlob,
-    .arity = 2,
-    .assoc = 0,
-    .xCall = 0//cmpp_argOp_f_glob
-  },
-  .opNotGlob = {
-    .ttype = cmpp_tt_OpNotGlob,
-    .arity = 2,
-    .assoc = 0,
-    .xCall = 0//cmpp_argOp_f_glob
-  },
-  .opNot = {
-    .ttype = cmpp_tt_OpNot,
-    .arity = 1,
-    .assoc = 1,
-    .xCall = 0//cmpp_argOp_f_logical1
-  },
-  .opDefined = {
-    .ttype = cmpp_tt_OpDefined,
-    .arity = 1,
-    .assoc = 1,
-    .xCall = 0//cmpp_argOp_f_defined
-  },
-  /* Comparison ops... */
-#define E(NAME) .op ## NAME = { \
-  .ttype = cmpp_tt_OpCmp ## NAME, .arity = 2, .assoc = 0, \
-  .xCall = cmpp_argOp_f_compare },
-  cmpp_argOps_cmp_map(E)
-#undef E
-};
-
-cmpp_argOp const * cmpp_argOp_for_tt(cmpp_tt_e tt){
-  switch(tt){
-    case cmpp_tt_OpAnd:     return &cmpp_argOps.opAnd;
-    case cmpp_tt_OpOr:      return &cmpp_argOps.opOr;
-    case cmpp_tt_OpGlob:     return &cmpp_argOps.opGlob;
-    case cmpp_tt_OpNot:     return &cmpp_argOps.opNot;
-    case cmpp_tt_OpDefined: return &cmpp_argOps.opDefined;
-#define E(NAME) case cmpp_tt_OpCmp ## NAME: return &cmpp_argOps.op ## NAME;
-  cmpp_argOps_cmp_map(E)
-#undef E
-    default: return NULL;
-  }
-}
-#define argOp(ARG) cmpp_argOp_for_tt((ARG)->ttype)
-
-/**
-   An internal helper for cmpp_argOp_...(). It binds some value of
-   *paArg to column bindNdx of query q and sets *paArg to the next
-   argument to be consumed. This function expects that q is set up to
-   do the right thing when *paArg is a Word-type value (see
-   cmpp_argOp_f_compare()).
-*/
-static void cmpp_argOp__cmp_bind(cmpp * const pp,
-                                 sqlite3_stmt * const q,
-                                 int bindNdx,
-                                 cmpp_arg const ** paArg){
-  cmpp_arg const * const arg = *paArg;
-  assert(arg);
-  switch( ppCode ? 0 : arg->ttype ){
-    case 0: break;
-    case cmpp_tt_Word:
-      /* In this case, q is supposed to be set up to use
-         CMPP__SEL_V_FROM(bindNdx), i.e. it expects the verbatim word
-         and performs the expansion to its value in the query. */
-      cmpp_stmt_bind_textn(pp, q, bindNdx, arg->z, arg->n);
-      *paArg = arg->next;
-      break;
-    case cmpp_tt_StringBT:
-    case cmpp_tt_StringDQ:
-    case cmpp_tt_StringSQ:
-    case cmpp_tt_IntDec:{
-      cmpp__bind_arg(pp, q, bindNdx, arg);
-      *paArg = arg->next;
-      break;
-    }
-    case cmpp_tt_OpNot:
-    case cmpp_tt_OpDefined:
-    case cmpp_tt_GroupParen:{
-      int rv = 0;
-      if( 0==cmpp__arg_toBool(pp, arg, &rv, paArg) ){
-        cmpp_stmt_bind_int(pp, q, bindNdx, rv);
-      }
-      *paArg = arg->next;
-      break;
-    }
-      /* TODO? cmpp_tt_GroupParen */
-    default:
-      cmpp_errf(pp, CMPP_RC_TYPE,
-                   "Invalid argument type (%s) for the comparison "
-                   "queries: %s",
-                   cmpp_tt_cstr(arg->ttype), arg->z);
-  }
-}
-
-/**
-   Internal helper for cmp_argOp_...().
-
-   Expects q to be a query with an integer in result column 0.  This
-   steps/resets the query and applies the given comparison operator's
-   logic to column 0's value, placing the result of the operator in
-   *pResult.
-
-   If q has no result row, a default value of 0 is assumed.
-*/
-static void cmpp_argOp__cmp_apply(cmpp * const pp,
-                                 cmpp_argOp const * const op,
-                                 sqlite3_stmt * const q,
-                                 int * const pResult){
-  if( 0==ppCode ){
-    int rc = cmpp_stmt_step(pp, q, false);
-    assert( SQLITE_ROW==rc || ppCode );
-    if( SQLITE_ROW==rc ){
-      rc = sqlite3_column_int(q, 0);
-    }else{
-      rc = 0;
-    }
-    switch( op->ttype ){
-      case 0: break;
-      case cmpp_tt_OpCmpEq:  *pResult = 0==rc; break;
-      case cmpp_tt_OpCmpNeq: *pResult = 0!=rc; break;
-      case cmpp_tt_OpCmpLt:  *pResult = rc<0;  break;
-      case cmpp_tt_OpCmpLe:  *pResult = rc<=0; break;
-      case cmpp_tt_OpCmpGt:  *pResult = rc>0;  break;
-      case cmpp_tt_OpCmpGe:  *pResult = rc>=0; break;
-      default:
-        cmpp__fatal("Cannot happen: invalid arg mapping");
-    }
-  }
-  cmpp_stmt_reset(pp, q);
-}
-
-/**
-   Applies *paRhs as the RHS of an integer binary operator, the LHS of
-   which is the lhs argument. The result is put in *pResult. On
-   success *paRhs is set to the next argument for the expression to
-   parse.
-*/
-static void cmpp_argOp_applyTo(cmpp *pp,
-                               cmpp_argOp const * const op,
-                               int lhs,
-                               cmpp_arg const ** paRhs,
-                               int * pResult){
-  sqlite3_stmt * q = 0;
-  cmpp_arg const * aRhs = *paRhs;
-  assert(aRhs);
-  q = cmpp_tt_Word==aRhs->ttype
-    ? cmpp__stmt(pp, CmppStmt_cmpVD, false)
-    : cmpp__stmt(pp, CmppStmt_cmpVV, false);
-  if( q ){
-    char numbuf[32];
-    int const nNum = snprintf(numbuf, sizeof(numbuf), "%d", lhs);
-    cmpp_stmt_bind_textn(pp, q, 1, ustr_c(numbuf), nNum);
-    cmpp_argOp__cmp_bind(pp, q, 2, paRhs);
-    cmpp_argOp__cmp_apply(pp, op, q, pResult);
-  }
-}
-
-cmpp_argOp_decl(compare){
-  cmpp_arg const * const vRhs = *pvRhs;
-  sqlite3_stmt * q = 0;
-  /* Select which query to use, depending on whether each
-     of the LHS/RHS are Word tokens. For Word tokens
-     the corresponding query columns get bound to
-     a subquery which resolves the word. Non-word
-     tokens get bound as-is. */
-  if( cmpp_tt_Word==vLhs->ttype ){
-    q = cmpp_tt_Word==vRhs->ttype
-      ? cmpp__stmt(pp, CmppStmt_cmpDD, false)
-      : cmpp__stmt(pp, CmppStmt_cmpDV, false);
-    if(0){
-      g_warn("\nvLhs=%s %s\nvRhs=%s %s\n",
-             cmpp_tt_cstr(vLhs->ttype), vLhs->z,
-             cmpp_tt_cstr(vRhs->ttype), vRhs->z);
-    }
-  }else if( cmpp_tt_Word==vRhs->ttype ){
-    q = cmpp__stmt(pp, CmppStmt_cmpVD, false);
-  }else{
-    q = cmpp__stmt(pp, CmppStmt_cmpVV, false);
-  }
-  if( q ){
-    //cmpp_stmt_bind_textn(pp, q, 1, vLhs->z, vLhs->n);
-    cmpp_argOp__cmp_bind(pp, q, 1, &vLhs);
-    cmpp_argOp__cmp_bind(pp, q, 2, pvRhs);
-    cmpp_argOp__cmp_apply(pp, op, q, pResult);
-  }
-}
-
-#undef cmpp_argOp_decl
-
-#if 0
-static inline int cmpp_dxt_isBinOp(cmpp_tt tt){
-  cmpp_argOp const * const a = cmpp_argOp_for_tt(tt);
-  return a ? 2==a->arity : 0;
-}
-
-static inline int cmpp_dxt_isUnaryOp(cmpp_tt tt){
-  return tt==cmpp_tt_OpNot || cmpp_tt_OpDefined;
-}
-
-static inline int cmpp_dxt_isGroup(cmpp_tt tt){
-  return tt==cmpp_tt_GroupParen || tt==cmpp_tt_GroupBrace || cmpp_tt_GroupSquiggly;
-}
-#endif
-
-int cmpp__arg_evalSubToInt(cmpp *pp,
-                           cmpp_arg const *arg,
-                           int * pResult){
-  cmpp_args sub = cmpp_args_empty;
-  if( 0==cmpp_args_parse(pp, &sub, arg->z, arg->n, 0) ){
-    cmpp__args_evalToInt(pp, &sub, pResult);
-  }
-  cmpp_args_cleanup(&sub);
-  return ppCode;
-}
-
-int cmpp__args_evalToInt(cmpp * const pp,
-                         cmpp_args const *pArgs,
-                         int * pResult){
-  if( ppCode ) return ppCode;
-
-  cmpp_arg const * pNext = 0;
-  cmpp_arg const * pPrev = 0;
-  int result = *pResult;
-  cmpp_b osL = cmpp_b_empty;
-  cmpp_b osR = cmpp_b_empty;
-  static int level = 0;
-  ++level;
-
-#define lout(fmt,...) if(0) g_stderr("%.*c" fmt, level*2, ' ', __VA_ARGS__)
-
-  //lout("START %s(): %s\n", __func__, pArgs->pimpl->buf.argsRaw.z);
-  for( cmpp_arg const *arg = pArgs->arg0;
-       arg && 0==ppCode;
-       pPrev = arg, arg = pNext ){
-    pNext = arg->next;
-    if( cmpp_tt_Noop==arg->ttype ){
-      arg = pPrev /* help the following arg to DTRT */;
-      continue;
-    }
-    cmpp_argOp const * const thisOp = argOp(arg);
-    cmpp_argOp const * const nextOp = pNext ? argOp(pNext) : 0;
-    if( 0 ){
-      lout("arg: %s @%p %s\n",
-           cmpp__tt_cstr2(arg->ttype, true), arg, arg->z);
-      if(1){
-        if( pPrev ) lout("  prev arg: %s %s\n",
-                         cmpp__tt_cstr2(pPrev->ttype, true), pPrev->z);
-        if( pNext ) lout("  next arg: %s %s\n",
-                         cmpp__tt_cstr2(pNext->ttype, true), pNext->z);
-      }
-    }
-    if( thisOp ){ /* Basic validation */
-      if( !pNext ){
-        serr("Missing '%s' RHS.",
-             cmpp__tt_cstr2(thisOp->ttype, false));
-        break;
-      }else if( !pPrev && 2==thisOp->arity  ){
-        serr("Missing %s LHS.",
-             cmpp__tt_cstr2(thisOp->ttype, false));
-        break;
-      }
-      if( nextOp && nextOp->arity>1 ){
-        serr("Invalid '%s' RHS: %s", arg->z, pNext->z);
-        break;
-      }
-    }
-
-    switch( arg->ttype ){
-
-      case cmpp_tt_OpNot:
-      case cmpp_tt_OpDefined:
-        if( pPrev && !argOp(pPrev) ){
-          cmpp_errf(pp, CMPP_RC_CANNOT_HAPPEN,
-                       "We expected to have consumed '%s' by "
-                       "this point.",
-                       pPrev->z);
-        }else{
-          cmpp__arg_toBool(pp, arg, &result, &pNext);
-        }
-        break;
-
-      case cmpp_tt_OpAnd:
-      case cmpp_tt_OpOr:{
-        assert( pNext );
-        assert( pPrev );
-        /* Reminder to self: we can't add short-circuiting of the RHS
-           right now because the handling of chained unary ops on the
-           RHS is handled via cmpp__arg_toBool(). */
-        int rv = 0;
-        if( 0==cmpp__arg_toBool(pp, pNext, &rv, &pNext) ){
-          if( cmpp_tt_OpAnd==arg->ttype ) result = result && rv;
-          else result = result || rv;
-        }
-        //g_warn("post-and/or pNext=%s\n", pNext ? pNext->z : 0);
-        break;
-      }
-
-      case cmpp_tt_OpNotGlob:
-      case cmpp_tt_OpGlob:{
-        assert( pNext );
-        assert( pPrev );
-        assert( pNext!=arg );
-        assert( pPrev!=arg );
-        if( cmpp_arg_interpolate(pp, pNext, &osL, 0) ){
-          break;
-        }
-        unsigned char const * const zGlob = osL.z;
-        if( 0==cmpp_arg_interpolate(pp, pPrev, &osR, 0) ){
-          if( 0 ){
-            g_warn("zGlob=[%s] z=[%s]", zGlob, osR.z);
-          }
-          result = 0==sqlite3_strglob((char const *)zGlob,
-                                      (char const *)osR.z);
-          if( cmpp_tt_OpNotGlob==arg->ttype ){
-            result = !result;
-          }
-          //g_warn("\nzGlob=%s\nz=%s\nresult=%d", zGlob, z, result);
-        }
-        pNext = pNext->next;
-        break;
-      }
-
-#define E(NAME) case cmpp_tt_OpCmp ## NAME:
-      cmpp_argOps_cmp_map(E) {
-        cmpp_argOp const * const prevOp = pPrev ? argOp(pPrev) : 0;
-        if( prevOp ){
-          /* Chained operators */
-          cmpp_argOp_applyTo(pp, thisOp, result, &pNext, &result);
-        }else{
-          assert( pNext );
-          assert( pPrev );
-          assert( thisOp );
-          assert( thisOp->xCall );
-          thisOp->xCall(pp, thisOp, pPrev, &pNext, &result);
-        }
-        break;
-      }
-#undef E
-
-#define checkConsecutiveNonOps                             \
-      if( pPrev && !argOp(pPrev) ){                        \
-        serr("Illegal consecutive non-operators: %s %s",   \
-             pPrev->z, arg->z);                            \
-        break;                                             \
-      }(void)0
-
-      case cmpp_tt_IntDec:
-      case cmpp_tt_StringBT:
-      case cmpp_tt_StringDQ:
-      case cmpp_tt_StringSQ:
-        checkConsecutiveNonOps;
-        if( !cmpp_is_int(arg->z, arg->n, &result) ){
-          /* This is mostly for and/or ops. glob will reach back and
-             grab arg->z. */
-          result = 0;
-        }
-        break;
-      case cmpp_tt_Word:
-        checkConsecutiveNonOps;
-        cmpp__get_int(pp, arg->z, arg->n, &result);
-        break;
-      case cmpp_tt_GroupParen:{
-        checkConsecutiveNonOps;
-        cmpp_args sub = cmpp_args_empty;
-        if( 0==cmpp_args_parse(pp, &sub, arg->z, arg->n, 0) ){
-          cmpp__args_evalToInt(pp, &sub, &result);
-        }
-        cmpp_args_cleanup(&sub);
-        break;
-      }
-      case cmpp_tt_GroupBrace:{
-        checkConsecutiveNonOps;
-        cmpp_b b = cmpp_b_empty;
-        if( 0==cmpp_call_str(pp, arg->z, arg->n, &b, 0) ){
-          cmpp_is_int(b.z, b.n, &result);
-        }
-        cmpp_b_clear(&b);
-        break;
-      }
-#undef checkConsecutiveNonOps
-      default:
-        assert( arg->z );
-        serr("Illegal expression token %s: %s",
-             cmpp__tt_cstr2(arg->ttype, true), arg->z);
-    }/*switch(arg->ttype)*/
-  }/* foreach arg */
-  if( 0 ){
-    lout("END   %s() result=%d\n",  __func__, result);
-  }
-  --level;
-  if( !ppCode ){
-    *pResult = result;
-  }
-  cmpp_b_clear(&osL);
-  cmpp_b_clear(&osR);
-  return ppCode;
-#undef lout
-}
-
-#undef argOp
-#undef cmpp_argOp_decl
-
-/**
    Workaround for legacy (pre-2026-08-30) behaviour: trim
    leading spaces and one leading newline on groups. We do not
    really want cmpp_tizer_next() to do that so we'll account
@@ -16457,6 +16269,10 @@ CMPP__EXPORT(int, cmpp_args_parse)(cmpp * const pp,
       if( ppCode ) break;
     }
   }/*foreach token*/
+  if( rc ){
+    /* Tokenizer errors lack location info. */
+    cmpp__args_tzerr_uplift(pp, &tz);
+  }
   //g_stderr("rc=%s argc=%d\n", cmpp_rc_cstr(ppCode), pArgs->args.n);
 end:
   cmpp_b_return(pp, bUnesc);
@@ -16580,14 +16396,16 @@ CMPP__EXPORT(int,cmpp_arg_parse)(
     pOut->ttype = cmpp_tt_EOF;
     return 0;
   }
-  if( zo+tok->nInner>=zOutEnd-1 ){
+  if( zo+tok->nInner>=zOutEnd ){
+    /* We need room for tok->nInner bytes plus a NUL, the last of
+       which must land before zOutEnd. */
     cmpp_errf(pp, CMPP_RC_RANGE,
                  "Ran out of output space (%u bytes) while "
                  "parsing an argument",
                  (unsigned)(zOutEnd-*pzOut));
   }else{
     cmpp__squiggly_strip_lead(tok);
-    pOut->n = tok->n;
+    pOut->n = tok->nInner;
     memcpy(zo, tok->zInner, tok->nInner);
     zo += tok->nInner;
     *zo++ = 0;
@@ -16605,77 +16423,38 @@ CMPP__EXPORT(int,cmpp_arg_parse)(
   return ppCode;
 }
 
-int cmpp__arg_toBool(cmpp * const pp, cmpp_arg const *arg,
-                    int * pResult, cmpp_arg const **pNext){
-  switch( ppCode ? 0 : arg->ttype ){
-    case 0: break;
-
-    case cmpp_tt_Word:
-      *pNext = arg->next;
-      *pResult = cmpp__get_bool(pp, arg->z, arg->n);
-      break;
-
-    case cmpp_tt_IntDec:
-      *pNext = arg->next;
-      cmpp_is_int(arg->z, arg->n, pResult)/*was already validated*/;
-      break;
-
-    case cmpp_tt_StringBT:
-    case cmpp_tt_StringDQ:
-    case cmpp_tt_StringSQ:{
-      int rc = 0;
-      *pNext = arg->next;
-      if( cmpp_is_int(arg->z, arg->n, &rc) ){
-        *pResult = rc;
-      }else{
-        *pResult = arg->n>0 && 0!=memcmp("0\0", arg->z, 2);
-      }
+/**
+   Appends word arg to ob, expanding each [...] in it via
+   cmpp_call_str(), as in Tcl: a[b c]d is "a", the output of calling
+   "b c", then "d". Returns ppCode.
+*/
+static int cmpp__word_with_calls(cmpp * const pp, cmpp_arg const * const arg,
+                                 cmpp_b * const ob){
+  unsigned char const * z = arg->z;
+  unsigned char const * const zEnd = z + arg->n;
+  unsigned char const * zLit = z /* start of pending literal text */;
+  while( z<zEnd && !ppCode ){
+    if( '\\'==*z && z+1<zEnd ){
+      z += 2;
+      continue;
+    }else if( '['!=*z ){
+      ++z;
+      continue;
+    }
+    unsigned char const * zClose = z;
+    if( cmpp__find_closing(0, &zClose, zEnd) ){
+      return cmpp_errf(pp, CMPP_RC_SYNTAX,
+                       "Did not find closing ']' in: %.*s",
+                       (int)arg->n, arg->z);
+    }
+    if( z>zLit && cmpp_b_append4(pp, ob, zLit, (cmpp_size_t)(z-zLit)) ){
       break;
     }
-
-    case cmpp_tt_GroupParen:{
-      *pNext = arg->next;
-      cmpp_args sub = cmpp_args_empty;
-      if( 0==cmpp_args_parse(pp, &sub, arg->z, arg->n, 0) ){
-        cmpp__args_evalToInt(pp, &sub, pResult);
-      }
-      cmpp_args_cleanup(&sub);
-      break;
-    }
-
-    case cmpp_tt_OpDefined:
-      if( !arg->next ){
-        serr("Missing '%s' RHS.", arg->z);
-      }else if( cmpp_tt_Word!=arg->next->ttype ){
-        serr( "Invalid '%s' RHS: %s", arg->z, arg->next->z);
-      }else{
-        cmpp_arg const * aOperand = arg->next;
-        *pNext = aOperand->next;
-        if( aOperand->n>1
-            && '#'==aOperand->z[0]
-            && !!cmpp__d_search3(pp, (char const*)aOperand->z+1,
-                                 cmpp__d_search3_F_NO_DLL) ){
-          *pResult = 1;
-        }else{
-          *pResult = cmpp__has(pp, (char const *)aOperand->z,
-                               aOperand->n);
-        }
-      }
-      break;
-
-    case cmpp_tt_OpNot:{
-      assert( arg->next && "See cmpp_args__not_simplify()");
-      assert( cmpp_tt_OpNot!=arg->next->ttype && "See cmpp_args__not_simplify()");
-      if( 0==cmpp__arg_toBool(pp, arg->next, pResult, pNext) ){
-        *pResult = !*pResult;
-      }
-      break;
-    }
-
-    default:
-      serr("Invalid token type %s for %s(): %s",
-           cmpp__tt_cstr2(arg->ttype, true), __func__, arg->z);
-      break;
+    cmpp_call_str(pp, z+1, (cmpp_strlen_t)(zClose-z-1), ob, 0);
+    z = zLit = zClose + 1;
+  }
+  if( !ppCode && zEnd>zLit ){
+    cmpp_b_append4(pp, ob, zLit, (cmpp_size_t)(zEnd-zLit));
   }
   return ppCode;
 }
@@ -16683,24 +16462,13 @@ int cmpp__arg_toBool(cmpp * const pp, cmpp_arg const *arg,
 CMPP__EXPORT(int, cmpp_arg_interpolate)(cmpp * const pp, cmpp_arg const *arg,
                                         cmpp_b * ob, cmpp_flag32_t flags){
   /**
-     Reminder to self: this function specifically does not do any
-     expression evaluation of its arguments. Please avoid the
-     temptation to make it do so. Unless it proves necessary.  Or
-     useful. Even then, though, consider the implications deeply
-     before doing so.
-
-     2026-09-21: The above still currently applies but we're going to
-     want expressions if/when the v1 expression cruft is replaced with
-     v2.
+     Expression evaluation of (...) args is opt-in via
+     cmpp_arg_interpolate_PARENS_EXPR.
   */
   if( !ob ){
-    if( arg->interp ){
-      ob = cmpp_b_reuse(arg->interp);
-    }else{
-      return cmpp_errf(pp, CMPP_RC_MISUSE,
-                       "%s() only accepts a NULL cmpp_b if arg->interp "
-                       "is not NULL.", __func__);
-    }
+    return cmpp_errf(pp, CMPP_RC_MISUSE,
+                     "%s() only accepts a NULL cmpp_b if arg->interp "
+                     "is not NULL.", __func__);
   }
   switch( ppCode
           ? 0
@@ -16710,8 +16478,25 @@ CMPP__EXPORT(int, cmpp_arg_interpolate)(cmpp * const pp, cmpp_arg const *arg,
     case 0:
       break;
     case cmpp_tt_Word:
+      if( (cmpp_arg_interpolate_BRACE_CALL & flags)
+          && !(cmpp_arg_interpolate_NO_BRACE_CALL & flags)
+          && memchr(arg->z, '[', arg->n) ){
+        /* e.g. a[call]b. Such a word cannot be a define name. */
+        cmpp__word_with_calls(pp, arg, ob);
+        break;
+      }
       if( 0==(flags & cmpp_arg_interpolate_NO_DEFINES) ){
         cmpp__get_b(pp, arg->z, arg->n, ob, true);
+        break;
+      }
+      goto theDefault;
+    case cmpp_tt_GroupParen:
+      if( cmpp_arg_interpolate_PARENS_EXPR & flags ){
+        int64_t i = 0;
+        if( 0==cmpp__expr_eval_paren(pp, arg, &i)
+            && cmpp_b_append_i64(ob, i) ){
+          cmpp_err(pp, ob->errCode, 0, 0);
+        }
         break;
       }
       goto theDefault;
@@ -16742,133 +16527,23 @@ int cmpp__bind_arg(cmpp * const pp, sqlite3_stmt * const q,
            (int)arg->n, arg->z);
   }
   switch( arg->ttype ){
+    case cmpp_tt_Word:
+    case cmpp_tt_GroupParen:
+    case cmpp_tt_GroupBrace:{
+      cmpp_b * const os = cmpp_b_borrow(pp);
+      if( os
+          && 0==cmpp_arg_interpolate(pp, arg, os,
+                                     cmpp_arg_interpolate_BRACE_CALL
+                                     | cmpp_arg_interpolate_PARENS_EXPR) ){
+        cmpp_stmt_bind_textn(pp, q, bindNdx, os->z, (int)os->n);
+      }
+      cmpp_b_return(pp, os);
+      break;
+    }
     default:
-    case cmpp_tt_IntDec:
-    case cmpp_tt_StringBT:
-    case cmpp_tt_StringDQ:
-    case cmpp_tt_StringSQ:
       cmpp_stmt_bind_textn(pp, q, bindNdx, arg->z, (int)arg->n);
       break;
-
-    case cmpp_tt_Word:{
-      cmpp_b os = cmpp_b_empty;
-      if( 0==cmpp_arg_interpolate(pp, arg, &os, 0) ){
-        if( 0 ){
-          g_warn("bind #%d <<%s>> => <<%.*s>>",
-                 bindNdx, arg->z, (int)os.n, os.z);
-        }
-        cmpp_stmt_bind_textn(pp, q, bindNdx, os.z, (int)os.n);
-      }
-      cmpp_b_clear(&os);
-      break;
-    }
-
-    case cmpp_tt_GroupParen:{
-      cmpp_args sub = cmpp_args_empty;
-      int i = 0;
-      if( 0==cmpp_args_parse(pp, &sub, arg->z, arg->n, 0)
-          && 0==cmpp__args_evalToInt(pp, &sub, &i) ){
-        /* See comment above about cmpp_tt_Int. */
-        cmpp_stmt_bind_int_text(pp, q, bindNdx, i);
-      }
-      cmpp_args_cleanup(&sub);
-      break;
-    }
-
-    case cmpp_tt_GroupBrace:{
-      cmpp_b b = cmpp_b_empty;
-      cmpp_call_str(pp, arg->z, arg->n, &b, 0);
-      cmpp_stmt_bind_textn(pp, q, bindNdx, b.z, b.n);
-      cmpp_b_clear(&b);
-      break;
-    }
-
   }
-  return ppCode;
-}
-
-/**
-   If a is in li->list, return its non-const pointer from li->list
-   (O(1)), else return NULL.
-*/
-static cmpp_arg * CmppArgList_arg_nc(CmppArgList *li, cmpp_arg const * a){
-  if( li->na && a>=li->list && a<(li->list + li->na) ){
-    return li->list + (a - li->list);
-  }
-  return NULL;
-}
-
-/**
-   To be called only by cmpp_dx_args_parse() and only if the current
-   directive asked for it via cmpp_d::flags cmpp_d_F_NOT_SIMPLIFY.
-
-   Filter chains of "not" operators from pArgs, removing unnecessary
-   ones. Also collapse "not glob" into a single cmpp_tt_OpNotGlob argument.
-   Performs some basic validation as well to simplify downstream
-   operations.  Returns p->err.code and is a no-op if that's set
-   before this is called.
-*/
-static int cmpp_args__not_simplify(cmpp * const pp, cmpp_args *pArgs){
-  cmpp_arg * pPrev = 0;
-  cmpp_arg * pNext = 0;
-  CmppArgList * const ali = &pArgs->pimpl->argli;
-  pArgs->argc = 0;
-  for( cmpp_arg * arg = ali->n ? &ali->list[0] : NULL;
-       arg && !ppCode;
-       pPrev=arg, arg = pNext ){
-    pNext = CmppArgList_arg_nc(ali, arg->next);
-    assert( pNext || !arg->next );
-    if( cmpp_tt_OpNot==arg->ttype ){
-      if( !pNext ){
-        serr("Missing '%s' RHS", arg->z);
-        break;
-      }
-      cmpp_argOp const * const nop = cmpp_argOp_for_tt(pNext->ttype);
-      if( nop && nop->arity>1 && cmpp_tt_OpGlob!=nop->ttype ){
-        serr("Illegal '%s' RHS: binary '%s' operator",
-             arg->z, pNext->z);
-        break;
-      }
-      int bNeg = 1;
-      if( '!'==*arg->z ){
-        /* odd number of ! == negate */
-        bNeg = arg->n & 1;
-      }
-      while( pNext && cmpp_tt_OpNot==pNext->ttype ){
-        bNeg = !bNeg;
-        arg->next = pNext = CmppArgList_arg_nc(ali, pNext->next);
-      }
-      if( pNext && cmpp_tt_OpGlob==pNext->ttype ){
-        /* Transform it to a cmpp_tt_OpNotGlob or cmpp_tt_OpGlob. */
-        assert( pNext->z > arg->z + arg->n );
-        arg->n = pNext->z + pNext->n - arg->z;
-        arg->next = pNext->next;
-        arg->ttype = bNeg
-          ? cmpp_tt_OpNotGlob
-          : pNext->ttype;
-        ++pArgs->argc;
-      }else if( pPrev ){
-        if( bNeg ){
-          ++pArgs->argc;
-        }else{
-          /* Snip this node out. */
-          pPrev->next = pNext;
-        }
-      }else{
-        assert( 0==pArgs->argc );
-        ++pArgs->argc;
-        if( !bNeg ){
-          arg->ttype = cmpp_tt_Noop;
-        }
-      }
-      /* Potential bug in waiting/fixme: by eliding all nots we are
-      ** changing the behavior from forced coercion to bool to
-      ** coercion to whatever the LHS wants. */
-    }else{
-      ++pArgs->argc;
-    }
-  }
-  pArgs->arg0 = pArgs->argc ? &ali->list[0] : NULL;
   return ppCode;
 }
 
@@ -16878,11 +16553,7 @@ CMPP__EXPORT(int, cmpp_dx_args_parse)(cmpp_dx *dx, cmpp_args *args){
       | ((cmpp_f_F_NO_SQUIGGLY_HACK & dx->d->flags)
          ? cmpp_args_F_NO_SQUIGGLY_HACK
          : 0/* legacy compatibility */);
-    if( 0==cmpp_args_parse(dx->pp, args, dx->args.z,
-                           dx->args.nz, flags)
-        && (cmpp_f_F_NOT_SIMPLIFY & dx->d->flags) ){
-      cmpp_args__not_simplify(dx->pp, args);
-    }
+    cmpp_args_parse(dx->pp, args, dx->args.z, dx->args.nz, flags);
   }
   return dxppCode;
 }
@@ -16904,23 +16575,6 @@ int cmpp__each_parse_args(cmpp *pp,
   return ppCode;
 }
 
-/* Helper for cmpp_kav_each() and friends. */
-static
-int cmpp__each_paren_expr(cmpp *pp, cmpp_arg const * arg,
-                          unsigned char * pOut, size_t nOut){
-  cmpp_args sub = cmpp_args_empty;
-  int rc = cmpp_args_parse(pp, &sub, arg->z, arg->n, 0);
-  if( 0==rc ){
-    int d = 0;
-    rc = cmpp__args_evalToInt(pp, &sub, &d);
-    if( 0==rc ){
-      snprintf((char *)pOut, nOut, "%d", d);
-    }
-  }
-  cmpp_args_cleanup(&sub);
-  return rc;
-}
-
 CMPP__EXPORT(int, cmpp_kav_each)(cmpp *pp,
                                  unsigned char const *zBegin,
                                  cmpp_strlen_t nIn,
@@ -16936,7 +16590,6 @@ CMPP__EXPORT(int, cmpp_kav_each)(cmpp *pp,
   cmpp_b * const bVal = bKey ? cmpp_b_borrow(pp) : 0;
   if( !bVal ) goto end;
   bool const reqArrow = 0==(cmpp_kav_each_F_NO_ARROW & flags);
-  unsigned char exprBuf[32] = {0};
   cmpp_size_t const nz = cmpp__strlenu(zBegin,nIn);
   cmpp_flag32_t a2bK = 0, a2bV = 0 /*cmpp_arg_interpolate() flags*/;
   assert( zBegin );
@@ -16961,6 +16614,9 @@ CMPP__EXPORT(int, cmpp_kav_each)(cmpp *pp,
   if( cmpp_kav_each_F_CALL_VAL & flags ){
     a2bV |= cmpp_arg_interpolate_BRACE_CALL;
     flags |= cmpp_kav_each_F_EXPAND_VAL;
+  }
+  if( cmpp_kav_each_F_PARENS_EXPR & flags ){
+    a2bV |= cmpp_arg_interpolate_PARENS_EXPR;
   }
   cmpp_arg const * aNext = 0;
   for( cmpp_arg const * aKey = args.arg0;
@@ -17000,15 +16656,9 @@ CMPP__EXPORT(int, cmpp_kav_each)(cmpp *pp,
       zKey = aKey->z;
       nKey = aKey->n;
     }
-    if( cmpp_tt_GroupParen==aVal->ttype
-        && (cmpp_kav_each_F_PARENS_EXPR & flags) ){
-      if( cmpp__each_paren_expr(pp, aVal, &exprBuf[0],
-                                sizeof(exprBuf)-1) ){
-        break;
-      }
-      zVal = &exprBuf[0];
-      nVal = cmpp__strlenu(zVal, -1);
-    }else if( cmpp_kav_each_F_EXPAND_VAL & flags ){
+    if( (cmpp_kav_each_F_EXPAND_VAL & flags)
+        || (cmpp_tt_GroupParen==aVal->ttype
+            && (cmpp_kav_each_F_PARENS_EXPR & flags)) ){
       if( cmpp_arg_interpolate(pp, aVal, cmpp_b_reuse(bVal),
                              a2bV) ){
         break;
@@ -17045,7 +16695,6 @@ CMPP__EXPORT(int, cmpp_str_each)(cmpp *pp,
      those same buffers. */
   cmpp_b ob = cmpp_b_empty;
   cmpp_args args = cmpp_args_empty;
-  unsigned char exprBuf[32] = {0};
   cmpp_size_t const nz = cmpp__strlenu(zBegin,nIn);
   assert( zBegin );
 
@@ -17061,16 +16710,13 @@ CMPP__EXPORT(int, cmpp_str_each)(cmpp *pp,
     /* Expand the key/value parts if needed... */
     unsigned char const *zVal;
     cmpp_size_t nVal;
-    if( cmpp_tt_GroupParen==arg->ttype
-        && (cmpp_kav_each_F_PARENS_EXPR & flags) ){
-      if( cmpp__each_paren_expr(pp, arg, &exprBuf[0],
-                                sizeof(exprBuf)-1) ){
-        break;
-      }
-      zVal = &exprBuf[0];
-      nVal = cmpp__strlenu(zVal, -1);
-    }else if( cmpp_kav_each_F_EXPAND_VAL & flags ){
-      if( cmpp_arg_interpolate(pp, arg, cmpp_b_reuse(&ob), 0) ){
+    if( (cmpp_kav_each_F_EXPAND_VAL & flags)
+        || (cmpp_tt_GroupParen==arg->ttype
+            && (cmpp_kav_each_F_PARENS_EXPR & flags)) ){
+      if( cmpp_arg_interpolate(pp, arg, cmpp_b_reuse(&ob),
+                               (cmpp_kav_each_F_PARENS_EXPR & flags)
+                               ? cmpp_arg_interpolate_PARENS_EXPR
+                               : 0) ){
         break;
       }
       zVal = ob.z;
@@ -17143,8 +16789,1149 @@ int cmpp_arg_consume_as_file(
   return dxppCode;
 }
 
-
 cmpp__ListType_impl(CmppArgList,cmpp_arg)
+#include <assert.h>
+#include <stdarg.h>
+
+const cmpp__xval cmpp__xval_empty = cmpp__xval_empty_m;
+
+/**
+   Operator IDs for the expression evaluator. These are deliberately
+   decoupled from cmpp_tt_e and cmpp__tt_tok_op() so that this
+   evaluator's grammar can differ from Itch's SQL-based one.
+*/
+enum CmppXOp {
+  XOp_none = 0,
+  XOp_or, XOp_and, XOp_not, XOp_bang, XOp_defined,
+  XOp_eq, XOp_ne, XOp_glob, XOp_notGlob, XOp_in, XOp_notIn,
+  XOp_lt, XOp_le, XOp_gt, XOp_ge,
+  XOp_plus, XOp_minus, XOp_mul, XOp_div, XOp_mod,
+  /** Recognized but intentionally unsupported operators. */
+  XOp_unsupported
+};
+
+/**
+   Binding powers, loosest to tightest. Binary operators parse their
+   RHS at their own power (left-associative). Prefix "not" parses its
+   operand at BP_NOT, so it covers comparisons (SQL-style: "not a = 3"
+   is "not (a = 3)"). Prefix "!", "-", and "defined" parse their
+   operand at BP_PREFIX, so they bind only to the next operand
+   (C-style).
+*/
+enum {
+  BP_NONE = 0,
+  BP_OR,
+  BP_AND,
+  BP_NOT,
+  BP_EQ,
+  BP_REL,
+  BP_ADD,
+  BP_MUL,
+  BP_PREFIX
+};
+
+/** Parser state. */
+typedef struct CmppXP CmppXP;
+struct CmppXP {
+  cmpp__expr const * ex;
+  cmpp * pp;
+  cmpp_tizer * tz;
+  /** Current (look-ahead) token. Copied from tz->token. */
+  cmpp_token tok;
+  /** XOp_... classification of this->tok, or 0. */
+  int op;
+  /** If >0, parse without evaluating (short-circuit). */
+  int skip;
+};
+
+/**
+   Returns the current error code: from p->ex->xErrCode() if set, else
+   from p->pp.
+*/
+static int cmpp__xp_rc(CmppXP const * const p){
+  return p->ex->xErrCode
+    ? p->ex->xErrCode(p->ex)
+    : p->pp->pimpl->err.code;
+}
+#define xpCode cmpp__xp_rc(p)
+
+/**
+   Reports an error at position zAt, which should point into the
+   current tokenizer's input. If p->ex->xErr is set, the error is
+   passed on to it, else it is reported via p->pp and, if there is an
+   active directive, includes the precise location. Returns the
+   resulting error code.
+*/
+static int cmpp__xp_err(CmppXP * const p, unsigned char const * zAt,
+                        int rc, char const *zFmt, ...){
+  cmpp * const pp = p->pp;
+  int const rcOld = xpCode;
+  if( rcOld ) return rcOld;
+  va_list va;
+  va_start(va, zFmt);
+  if( p->ex->xErr ){
+    char * const zMsg = sqlite3_vmprintf(zFmt, va);
+    if( zMsg ){
+      rc = p->ex->xErr(p->ex, p->tz, zAt, rc, zMsg);
+      sqlite3_free(zMsg);
+    }else{
+      rc = cmpp_err(pp, CMPP_RC_OOM, 0, 0);
+    }
+  }else{
+    cmpp_dx * const dx = pp->pimpl->dx;
+    unsigned char const * zOld = 0;
+    if( dx && zAt ){
+      zOld = dx->pimpl->zErrAt;
+      dx->pimpl->zErrAt = zAt;
+    }
+    rc = cmpp_errfv(pp, rc, zFmt, va);
+    if( dx && zAt ){
+      dx->pimpl->zErrAt = zOld;
+    }
+  }
+  va_end(va);
+  return rc;
+}
+
+/**
+   Returns the XOp_... for the given token, or 0 if it is not an
+   operator. Only word tokens can be operators: "and" is the string
+   "and", not the operator.
+
+   Spellings which this grammar intentionally does not provide (eq,
+   ne, mod) are not operators here, so they are usable as define
+   names. Symbolic operators which the tokenizer recognizes but this
+   grammar does not support resolve to XOp_unsupported so that they
+   get a useful error.
+*/
+static int cmpp__xp_classify(cmpp_token const * const t){
+  unsigned char const * const z = t->z;
+  switch( t->ttype ){
+    case cmpp_tt_Word: break;
+    case cmpp_tt_IntDec:
+      /* The tokenizer reports a lone + or - as IntDec. */
+      if( 1==t->n && ('-'==*z || '+'==*z) ) break;
+      return XOp_none;
+    case cmpp_tt_OpNot:
+      /* The tokenizer tags runs of ! as OpNot. */
+      break;
+    default:
+      return XOp_none;
+  }
+  switch( t->n ){
+    case 1:
+      switch( *z ){
+        case '=': return XOp_eq;
+        case '<': return XOp_lt;
+        case '>': return XOp_gt;
+        case '!': return XOp_bang;
+        case '+': return XOp_plus;
+        case '-': return XOp_minus;
+        case '*': return XOp_mul;
+        case '/': return XOp_div;
+        case '%': return XOp_mod;
+        case '&': case '|': case '~': case '^':
+          return XOp_unsupported;
+      }
+      return XOp_none;
+    case 2:
+#define M(A,B) (A==z[0] && B==z[1])
+      if( M('=','=') ) return XOp_eq;
+      if( M('!','=') ) return XOp_ne;
+      if( M('<','=') ) return XOp_le;
+      if( M('>','=') ) return XOp_ge;
+      if( M('&','&') ) return XOp_and;
+      if( M('|','|') ) return XOp_or;
+      if( M('o','r') ) return XOp_or;
+      if( M('i','n') ) return XOp_in;
+      if( M('<','>') || M('<','<') || M('>','>') ) return XOp_unsupported;
+#undef M
+      break;
+    case 3:
+      if( 0==memcmp(z, "and", 3) ) return XOp_and;
+      if( 0==memcmp(z, "not", 3) ) return XOp_not;
+      if( 0==memcmp(z, "<<<", 3) ) return XOp_unsupported;
+      break;
+    case 4:
+      if( 0==memcmp(z, "glob", 4) ) return XOp_glob;
+      break;
+    case 7:
+      if( 0==memcmp(z, "defined", 7) ) return XOp_defined;
+      break;
+  }
+  if( '!'==*z ){
+    /* A run of !!! is a run of negations. */
+    unsigned char const * zz = z;
+    unsigned char const * const ze = z + t->n;
+    while( zz<ze && '!'==*zz ) ++zz;
+    if( zz==ze ) return XOp_bang;
+  }
+  return XOp_none;
+}
+
+/** Returns the left binding power of binary operator op, or 0 if op
+    is not a binary operator. */
+static int cmpp__xp_lbp(int op){
+  switch( op ){
+    case XOp_or: return BP_OR;
+    case XOp_and: return BP_AND;
+    case XOp_eq: case XOp_ne:
+    case XOp_glob: case XOp_notGlob:
+    case XOp_in: case XOp_notIn:
+      return BP_EQ;
+    case XOp_lt: case XOp_le: case XOp_gt: case XOp_ge:
+      return BP_REL;
+    case XOp_plus: case XOp_minus: return BP_ADD;
+    case XOp_mul: case XOp_div: case XOp_mod: return BP_MUL;
+    default: return 0;
+  }
+}
+
+/** Advances to the next token. Returns 0 or an error code. */
+static int cmpp__xp_next(CmppXP * const p){
+  if( cmpp_tizer_next(p->tz, cmpp_tizer_next_SKIP_NL
+                      | cmpp_tizer_next_SKIP_C_COMMENTS) ){
+    /* Move the tokenizer's error, which lacks location info, into
+       the error state, with location info. */
+    int rc = p->ex->xTzErr
+      ? p->ex->xTzErr(p->ex, p->tz)
+      : cmpp__args_tzerr_uplift(p->pp, p->tz);
+    if( !rc ){
+      rc = cmpp__xp_err(p, p->tz->token.z, CMPP_RC_SYNTAX,
+                        "Tokenization error in expression.");
+    }
+    return rc;
+  }
+  p->tok = p->tz->token;
+  p->op = cmpp__xp_classify(&p->tok);
+  return 0;
+}
+
+/**
+   If [z,z+n) is an optionally-signed decimal integer which fits in
+   int64_t, sets *pOut to its value and returns 1. If it looks like an
+   integer but is out of range, returns -1. Else returns 0.
+
+   This does not use strtoll() because that requires a NUL-terminated
+   input and does not cleanly report overflow.
+*/
+static int cmpp__xp_parse_int(unsigned char const *z, cmpp_size_t n,
+                              int64_t *pOut){
+  unsigned char const * const ze = z + n;
+  bool neg = false;
+  bool overflow = false;
+  uint64_t u = 0;
+  if( z<ze && ('-'==*z || '+'==*z) ){
+    neg = '-'==*z;
+    ++z;
+  }
+  if( z==ze ) return 0;
+  for( ; z<ze; ++z ){
+    if( *z<'0' || *z>'9' ) return 0;
+    unsigned const d = (unsigned)(*z - '0');
+    if( !overflow ){
+      if( u > (UINT64_MAX - d) / 10 ) overflow = true;
+      else u = u*10 + d;
+    }
+  }
+  uint64_t const lim = (uint64_t)INT64_MAX + (neg ? 1 : 0);
+  if( overflow || u>lim ) return -1;
+  *pOut = neg ? (int64_t)(0 - u) : (int64_t)u;
+  return 1;
+}
+
+void cmpp__xval_clear(cmpp * const pp, cmpp__xval * const v){
+  if( v->b ){
+    cmpp_b_return(pp, v->b);
+  }
+  *v = cmpp__xval_empty;
+}
+
+/** Sets v to integer i, freeing any string state. */
+static void cmpp__xval_set_int(cmpp * const pp, cmpp__xval * const v,
+                               int64_t i){
+  cmpp__xval_clear(pp, v);
+  v->type = cmpp__xval_INT;
+  v->i = i;
+}
+
+int cmpp__xval_str(cmpp * const pp, cmpp__xval * const v){
+  if( ppCode ) return ppCode;
+  v->type = cmpp__xval_STR;
+  if( !v->b ){
+    v->b = cmpp_b_borrow(pp);
+    if( !v->b ) return ppCode;
+  }
+  cmpp_b_reuse(v->b);
+  return 0;
+}
+
+/**
+   If v is an integer, or a string which unambiguously looks like an
+   integer, sets *pOut to its value and returns true, else returns
+   false.
+*/
+static bool cmpp__xval_intish(cmpp__xval const * const v, int64_t *pOut){
+  if( cmpp__xval_INT==v->type ){
+    *pOut = v->i;
+    return true;
+  }
+  return v->b && 1==cmpp__xp_parse_int(v->b->z, v->b->n, pOut);
+}
+
+/**
+   Points *pz and *pn to v's string form. buf must be at least 24 bytes
+   and is used for the string form of integers.
+*/
+static void cmpp__xval_bytes(cmpp__xval const * const v, char * buf,
+                             unsigned char const **pz, cmpp_size_t *pn){
+  if( cmpp__xval_INT==v->type ){
+    int const n = snprintf(buf, 24, "%" PRIi64, v->i);
+    *pz = (unsigned char const *)buf;
+    *pn = (cmpp_size_t)n;
+  }else if( v->b && v->b->z ){
+    *pz = v->b->z;
+    *pn = v->b->n;
+  }else{
+    *pz = (unsigned char const *)"";
+    *pn = 0;
+  }
+}
+
+int cmpp__xval_to_int(cmpp * const pp, cmpp__xval const * const v,
+                      int64_t * const pOut){
+  if( ppCode ) return ppCode;
+  if( cmpp__xval_INT==v->type ){
+    *pOut = v->i;
+    return 0;
+  }
+  *pOut = 0;
+  if( !v->b || !v->b->n ) return 0;
+  unsigned char const * z = v->b->z;
+  unsigned char const * const zEnd = z + v->b->n;
+  cmpp_skip_snl(&z, zEnd);
+  unsigned char const * zDigits = z;
+  if( zDigits<zEnd && ('-'==*zDigits || '+'==*zDigits) ) ++zDigits;
+  unsigned char const * zTail = zDigits;
+  while( zTail<zEnd && *zTail>='0' && *zTail<='9' ) ++zTail;
+  if( zTail==zDigits ) return 0 /* no leading integer */;
+  if( -1==cmpp__xp_parse_int(z, (cmpp_size_t)(zTail - z), pOut) ){
+    return cmpp_errf(pp, CMPP_RC_RANGE,
+                     "Integer is out of range: %.*s",
+                     (int)(zTail - z), z);
+  }
+  return 0;
+}
+
+bool cmpp__xval_truth(cmpp__xval const * const v){
+  if( cmpp__xval_INT==v->type ) return 0!=v->i;
+  if( !v->b ) return false;
+  return cmpp_simple_truth(v->b->z, (cmpp_strlen_t)v->b->n);
+}
+
+int cmpp__expr_operand_core(cmpp__expr const * ex,
+                            cmpp_tizer * tz,
+                            cmpp_token const * tok,
+                            cmpp_flag32_t flags,
+                            cmpp__xval * out){
+  cmpp * const pp = ex->pp;
+  (void)flags;
+  if( cmpp__xval_str(pp, out) ) return ppCode;
+  switch( tok->ttype ){
+    case cmpp_tt_Word:
+      cmpp__get_b(pp, tok->z, tok->n, out->b, true);
+      break;
+    case cmpp_tt_StringSQ:
+    case cmpp_tt_StringDQ:
+    case cmpp_tt_StringBT:
+      if( cmpp_token_content(tz, tok, out->b, 0) ){
+        cmpp_err(pp, CMPP_RC_OOM, 0, 0);
+      }
+      break;
+    case cmpp_tt_GroupBrace:
+      cmpp_call_str(pp, tok->zInner, tok->nInner, out->b, 0);
+      break;
+    case cmpp_tt_GroupSquiggly:
+      /* Reserved for lists (e.g. as the RHS of "in"). */
+      return cmpp_errf(pp, CMPP_RC_SYNTAX,
+                       "{...} is not (yet) permitted in expressions.");
+    default:
+      return cmpp_errf(pp, CMPP_RC_SYNTAX,
+                       "Unhandled operand type %s: %.*s",
+                       cmpp_tt_cstr(tok->ttype),
+                       (int)tok->n, tok->z);
+  }
+  return ppCode;
+}
+
+static int cmpp__xp_expr(CmppXP * const p, int minBp, cmpp__xval * rv);
+
+/**
+   Parses a sub-expression in a (...) group token.
+*/
+static int cmpp__xp_group(CmppXP * const p, cmpp_token const * const g,
+                          cmpp__xval * const rv){
+  cmpp_tizer sub = cmpp_tizer_empty;
+  cmpp_tizer * const oldTz = p->tz;
+  cmpp_tizer_init_sub(oldTz, g, &sub);
+  p->tz = &sub;
+  if( 0==cmpp__xp_next(p) ){
+    if( cmpp_tt_EOF==p->tok.ttype ){
+      cmpp__xp_err(p, g->z, CMPP_RC_SYNTAX,
+                   "Empty (...) in expression.");
+    }else if( 0==cmpp__xp_expr(p, BP_NONE, rv)
+              && cmpp_tt_EOF!=p->tok.ttype ){
+      cmpp__xp_err(p, p->tok.z, CMPP_RC_SYNTAX,
+                   "Expecting an operator but got: %.*s",
+                   (int)p->tok.n, p->tok.z);
+    }
+  }
+  p->tz = oldTz;
+  cmpp_tizer_dtor(&sub);
+  return xpCode;
+}
+
+/**
+   Parses a single operand, including any prefix operators, and
+   advances past it.
+*/
+static int cmpp__xp_prefix(CmppXP * const p, cmpp__xval * const rv){
+  cmpp * const pp = p->pp;
+  cmpp_token const t = p->tok;
+  int const op = p->op;
+  switch( op ){
+    case XOp_none: break;
+    case XOp_not:
+    case XOp_bang:{
+      /* Count a run of ! for its parity. */
+      unsigned nNeg = 1;
+      if( XOp_bang==op ) nNeg = t.n;
+      if( cmpp__xp_next(p) || cmpp__xp_expr(p, XOp_not==op
+                                            ? BP_NOT : BP_PREFIX, rv) ){
+        return xpCode;
+      }
+      if( !p->skip ){
+        bool b = cmpp__xval_truth(rv);
+        if( nNeg & 1 ) b = !b;
+        cmpp__xval_set_int(pp, rv, b);
+      }
+      return 0;
+    }
+    case XOp_minus:{
+      if( cmpp__xp_next(p) || cmpp__xp_expr(p, BP_PREFIX, rv) ){
+        return xpCode;
+      }
+      if( !p->skip ){
+        int64_t i = 0;
+        if( !cmpp__xval_intish(rv, &i) ){
+          return cmpp__xp_err(p, t.z, CMPP_RC_TYPE,
+                              "Non-integer operand for unary '-'.");
+        }
+        cmpp__xval_set_int(pp, rv, (int64_t)(0 - (uint64_t)i));
+      }
+      return 0;
+    }
+    case XOp_defined:{
+      if( cmpp__xp_next(p) ) return xpCode;
+      if( cmpp_tt_Word!=p->tok.ttype || p->op ){
+        return cmpp__xp_err(p, p->tok.z ? p->tok.z : t.z,
+                            CMPP_RC_SYNTAX,
+                            "'defined' requires a name operand.");
+      }
+      if( !p->skip ){
+        cmpp_token const * const w = &p->tok;
+        int got;
+        if( w->n>1 && '#'==w->z[0] ){
+          /* defined #foo => is directive foo available? */
+          cmpp_b * const b = cmpp_b_borrow(pp);
+          if( !b ) return xpCode;
+          if( 0==cmpp_b_append4(pp, b, w->z+1, w->n-1) ){
+            got = !!cmpp__d_search3(pp, (char const*)b->z,
+                                    cmpp__d_search3_F_NO_DLL);
+          }else{
+            got = 0;
+          }
+          cmpp_b_return(pp, b);
+        }else{
+          got = cmpp__has(pp, (char const *)w->z, w->n);
+        }
+        if( xpCode ) return xpCode;
+        cmpp__xval_set_int(pp, rv, got);
+      }
+      return cmpp__xp_next(p);
+    }
+    case XOp_unsupported:
+      return cmpp__xp_err(p, t.z, CMPP_RC_SYNTAX,
+                          "Unsupported operator: %.*s",
+                          (int)t.n, t.z);
+    default:
+      return cmpp__xp_err(p, t.z, CMPP_RC_SYNTAX,
+                          "Expecting an operand but got operator: %.*s",
+                          (int)t.n, t.z);
+  }
+  /* A plain operand. */
+  switch( t.ttype ){
+    case cmpp_tt_EOF:
+      return cmpp__xp_err(p, t.z, CMPP_RC_SYNTAX,
+                          "Expecting an operand but reached "
+                          "the end of the expression.");
+    case cmpp_tt_GroupParen:
+      if( cmpp__xp_group(p, &t, rv) ) return xpCode;
+      break;
+    case cmpp_tt_IntDec:{
+      int64_t i = 0;
+      if( 1!=cmpp__xp_parse_int(t.z, t.n, &i) ){
+        return cmpp__xp_err(p, t.z, CMPP_RC_RANGE,
+                            "Integer is out of range: %.*s",
+                            (int)t.n, t.z);
+      }
+      if( !p->skip ) cmpp__xval_set_int(pp, rv, i);
+      break;
+    }
+    case cmpp_tt_GroupSquiggly:
+      /* The core resolver rejects these: they're reserved for lists
+         (e.g. as the RHS of "in"). Itch treats them as strings. */
+    case cmpp_tt_Word:
+    case cmpp_tt_StringSQ:
+    case cmpp_tt_StringDQ:
+    case cmpp_tt_StringBT:
+    case cmpp_tt_GroupBrace:
+      if( !p->skip ){
+        cmpp_dx * const dx = pp->pimpl->dx;
+        unsigned char const * zOld = 0;
+        if( dx ){
+          /* Errors from the resolver get reported at this token. */
+          zOld = dx->pimpl->zErrAt;
+          dx->pimpl->zErrAt = t.z;
+        }
+        int const rc = p->ex->xOperand(p->ex, p->tz, &t, 0, rv);
+        if( dx ) dx->pimpl->zErrAt = zOld;
+        if( rc ) return rc;
+        if( xpCode ) return xpCode;
+      }
+      break;
+    default:
+      return cmpp__xp_err(p, t.z, CMPP_RC_SYNTAX,
+                          "Unexpected %s token in expression: %.*s",
+                          cmpp_tt_cstr(t.ttype), (int)t.n, t.z);
+  }
+  return cmpp__xp_next(p);
+}
+
+/** Applies a comparison operator. */
+static void cmpp__xp_compare(CmppXP * const p, int op,
+                             cmpp__xval * const lhs,
+                             cmpp__xval const * const rhs){
+  int64_t a = 0, b = 0;
+  int c;
+  if( cmpp__xval_intish(lhs, &a) && cmpp__xval_intish(rhs, &b) ){
+    c = a<b ? -1 : (a>b);
+  }else{
+    char bufL[24], bufR[24];
+    unsigned char const *zL, *zR;
+    cmpp_size_t nL, nR;
+    cmpp__xval_bytes(lhs, bufL, &zL, &nL);
+    cmpp__xval_bytes(rhs, bufR, &zR, &nR);
+    c = memcmp(zL, zR, nL<nR ? nL : nR);
+    if( 0==c ) c = nL<nR ? -1 : (nL>nR);
+  }
+  bool r;
+  switch( op ){
+    case XOp_eq: r = 0==c; break;
+    case XOp_ne: r = 0!=c; break;
+    case XOp_lt: r = c<0; break;
+    case XOp_le: r = c<=0; break;
+    case XOp_gt: r = c>0; break;
+    case XOp_ge: r = c>=0; break;
+    default: assert(!"not a comparison op"); r = false;
+  }
+  cmpp__xval_set_int(p->pp, lhs, r);
+}
+
+/** Applies an arithmetic operator. */
+static int cmpp__xp_arith(CmppXP * const p, int op,
+                          cmpp_token const * const tOp,
+                          cmpp__xval * const lhs,
+                          cmpp__xval const * const rhs){
+  int64_t a = 0, b = 0;
+  if( !cmpp__xval_intish(lhs, &a) || !cmpp__xval_intish(rhs, &b) ){
+    return cmpp__xp_err(p, tOp->z, CMPP_RC_TYPE,
+                        "Non-integer operand for '%.*s'.",
+                        (int)tOp->n, tOp->z);
+  }
+  uint64_t const ua = (uint64_t)a, ub = (uint64_t)b;
+  int64_t r = 0;
+  switch( op ){
+    case XOp_plus:  r = (int64_t)(ua + ub); break;
+    case XOp_minus: r = (int64_t)(ua - ub); break;
+    case XOp_mul:   r = (int64_t)(ua * ub); break;
+    case XOp_div:
+    case XOp_mod:
+      if( 0==b ){
+        return cmpp__xp_err(p, tOp->z, CMPP_RC_RANGE,
+                            "Division by zero.");
+      }
+      if( -1==b ){
+        /* Avoid the INT64_MIN / -1 trap. */
+        r = XOp_div==op ? (int64_t)(0 - ua) : 0;
+      }else{
+        r = XOp_div==op ? a / b : a % b;
+      }
+      break;
+    default: assert(!"not an arithmetic op");
+  }
+  cmpp__xval_set_int(p->pp, lhs, r);
+  return 0;
+}
+
+/**
+   The core of the precedence climber: parses an operand, then
+   consumes binary operators which bind more tightly than minBp.
+*/
+static int cmpp__xp_expr(CmppXP * const p, int minBp, cmpp__xval * rv){
+  cmpp * const pp = p->pp;
+  if( cmpp__xp_prefix(p, rv) ) return xpCode;
+  cmpp__xval rhs = cmpp__xval_empty;
+  while( 0==xpCode ){
+    cmpp_token const tOp = p->tok;
+    int op = p->op;
+    if( cmpp_tt_EOF==tOp.ttype ) break;
+    if( XOp_none==op ){
+      cmpp__xp_err(p, tOp.z, CMPP_RC_SYNTAX,
+                   "Expecting an operator but got: %.*s",
+                   (int)tOp.n, tOp.z);
+      break;
+    }else if( XOp_unsupported==op ){
+      cmpp__xp_err(p, tOp.z, CMPP_RC_SYNTAX,
+                   "Unsupported operator: %.*s",
+                   (int)tOp.n, tOp.z);
+      break;
+    }
+    cmpp_tizer tzSave = cmpp_tizer_empty;
+    if( XOp_not==op ){
+      /* Infix "not" is only legal as "not glob" and "not in". */
+      tzSave = *p->tz;
+      if( cmpp__xp_next(p) ) break;
+      if( XOp_glob==p->op ) op = XOp_notGlob;
+      else if( XOp_in==p->op ) op = XOp_notIn;
+      else{
+        cmpp__xp_err(p, tOp.z, CMPP_RC_SYNTAX,
+                     "Infix 'not' must be followed by 'glob' or 'in'.");
+        break;
+      }
+    }
+    int const lbp = cmpp__xp_lbp(op);
+    if( !lbp ){
+      cmpp__xp_err(p, tOp.z, CMPP_RC_SYNTAX,
+                   "Expecting a binary operator but got: %.*s",
+                   (int)tOp.n, tOp.z);
+      break;
+    }
+    if( lbp<=minBp ){
+      if( XOp_notGlob==op || XOp_notIn==op ){
+        /* Un-read the "glob" or "in". */
+        *p->tz = tzSave;
+        p->tok = tOp;
+        p->op = XOp_not;
+      }
+      break;
+    }
+    if( XOp_in==op || XOp_notIn==op ){
+      /* Reserved. The RHS will need to be resolved as a list, which
+         is what cmpp__expr_operand_LIST is reserved for. */
+      cmpp__xp_err(p, tOp.z, CMPP_RC_UNSUPPORTED,
+                   "The 'in' operator is reserved but not yet "
+                   "implemented.");
+      break;
+    }
+    if( cmpp__xp_next(p) ) break;
+    bool shortCircuit = false;
+    if( !p->skip && (XOp_and==op || XOp_or==op) ){
+      bool const t = cmpp__xval_truth(rv);
+      shortCircuit = XOp_and==op ? !t : t;
+      cmpp__xval_set_int(pp, rv, t);
+    }
+    if( shortCircuit ) ++p->skip;
+    cmpp__xp_expr(p, lbp, &rhs);
+    if( shortCircuit ) --p->skip;
+    if( xpCode || p->skip || shortCircuit ){
+      cmpp__xval_clear(pp, &rhs);
+      continue;
+    }
+    switch( op ){
+      case XOp_and:
+      case XOp_or:
+        /* Not short-circuited, so the result is the RHS's truth. */
+        cmpp__xval_set_int(pp, rv, cmpp__xval_truth(&rhs));
+        break;
+      case XOp_eq: case XOp_ne:
+      case XOp_lt: case XOp_le: case XOp_gt: case XOp_ge:
+        cmpp__xp_compare(p, op, rv, &rhs);
+        break;
+      case XOp_glob:
+      case XOp_notGlob:{
+        char bufL[24], bufR[24];
+        unsigned char const *zL, *zR;
+        cmpp_size_t nL, nR;
+        cmpp_b * const bL = cmpp_b_borrow(pp);
+        cmpp_b * const bR = cmpp_b_borrow(pp);
+        if( bL && bR ){
+          /* sqlite3_strglob() needs NUL-terminated inputs. */
+          cmpp__xval_bytes(rv, bufL, &zL, &nL);
+          cmpp__xval_bytes(&rhs, bufR, &zR, &nR);
+          if( 0==cmpp_b_append4(pp, bL, zL, nL)
+              && 0==cmpp_b_append4(pp, bR, zR, nR) ){
+            bool m = 0==sqlite3_strglob(
+              bR->z ? (char const *)bR->z : "",
+              bL->z ? (char const *)bL->z : "");
+            if( XOp_notGlob==op ) m = !m;
+            cmpp__xval_set_int(pp, rv, m);
+          }
+        }
+        cmpp_b_return(pp, bL);
+        cmpp_b_return(pp, bR);
+        break;
+      }
+      default:
+        cmpp__xp_arith(p, op, &tOp, rv, &rhs);
+        break;
+    }
+    cmpp__xval_clear(pp, &rhs);
+  }
+  cmpp__xval_clear(pp, &rhs);
+  return xpCode;
+}
+
+int cmpp__expr_eval(cmpp__expr const * ex,
+                    unsigned char const * z, cmpp_size_t n,
+                    cmpp__xval * rv){
+  cmpp * const pp = ex->pp;
+  cmpp_tizer tz = cmpp_tizer_empty;
+  CmppXP xp = {
+    .ex = ex, .pp = pp, .tz = &tz,
+    .tok = cmpp_token_empty_m, .op = 0,
+    .skip = (cmpp__expr_F_PARSE_ONLY & ex->flags) ? 1 : 0
+  };
+  CmppXP * const p = &xp /* for the xpCode macro */;
+  if( xpCode ) return xpCode;
+  cmpp__xval_clear(pp, rv);
+  cmpp_tizer const * const tzParent = ex->tzParent;
+  cmpp_tizer_init(&tz, tzParent ? tzParent->err : &pp->pimpl->err,
+                  z, (cmpp_strlen_t)n);
+  if( tzParent ){
+    tz.name = cmpp_tizer_name(tzParent);
+    if( cmpp_tizer_contains(tzParent, z) ){
+      /* Lets error reporting calculate line numbers relative to the
+         parent's input. */
+      tz.parent = tzParent;
+    }
+  }
+  if( 0==cmpp__xp_next(p) ){
+    if( cmpp_tt_EOF==p->tok.ttype ){
+      cmpp__xp_err(p, z, CMPP_RC_SYNTAX,
+                   "An empty expression is not permitted.");
+    }else{
+      cmpp__xp_expr(p, BP_NONE, rv);
+      /* cmpp__xp_expr() only stops early on error or EOF. */
+      assert( xpCode || cmpp_tt_EOF==p->tok.ttype );
+    }
+  }
+  cmpp_tizer_dtor(&tz);
+  int const rc = xpCode;
+  if( rc ) cmpp__xval_clear(pp, rv);
+  return rc;
+}
+
+int cmpp__expr_eval_core(cmpp *pp, unsigned char const * z,
+                         cmpp_size_t n, cmpp__xval * rv){
+  cmpp__expr const ex = {
+    .pp = pp, .xOperand = cmpp__expr_operand_core, .state = 0,
+    .flags = 0, .tzParent = 0, .xErr = 0, .xErrCode = 0, .xTzErr = 0
+  };
+  return cmpp__expr_eval(&ex, z, n, rv);
+}
+
+int cmpp__expr_eval_int(cmpp *pp, unsigned char const * z,
+                        cmpp_size_t n, int64_t * pOut){
+  cmpp__xval v = cmpp__xval_empty;
+  if( 0==cmpp__expr_eval_core(pp, z, n, &v) ){
+    cmpp__xval_to_int(pp, &v, pOut);
+  }
+  cmpp__xval_clear(pp, &v);
+  return ppCode;
+}
+
+int cmpp__expr_eval_paren(cmpp *pp, cmpp_arg const * arg,
+                          int64_t * pOut){
+  assert( cmpp_tt_GroupParen==arg->ttype );
+  /* Prefer the token's range, which points back into the source (so
+     errors can report their location), over arg->z, which may be a
+     copy. */
+  return arg->token.zInner
+    ? cmpp__expr_eval_int(pp, arg->token.zInner, arg->token.nInner, pOut)
+    : cmpp__expr_eval_int(pp, arg->z, arg->n, pOut);
+}
+
+#undef xpCode
+#include <assert.h>
+#include <stdarg.h>
+
+/**
+   Resets q. Unlike cmpp_stmt_reset(), this does not re-report the
+   error of a failed step, which cmpp__json_step() has already
+   reported (possibly as a data error, which must not end up in pp).
+*/
+static void cmpp__json_reset(sqlite3_stmt * const q){
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
+}
+
+CMPP__EXPORT(bool, cmpp_json_valid)(cmpp *pp, unsigned char const *z,
+                                    cmpp_strlen_t n, int flags){
+  bool rv = false;
+  n = cmpp__strlenu(z, n);
+  if( n && flags>0 && flags<16 ){
+    /* ^^^^ json_valid() is picky about its flags argument.  We skip
+       processing for that case because it can put pp into an error
+       state which the caller is not likely to check for because who
+       would after such an innocuous function? */
+    sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_jsonValid, false);
+    if( q ){
+      cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
+      cmpp_stmt_bind_int(pp, q, 2, flags);
+      if( SQLITE_ROW==cmpp_stmt_step(pp, q, false) ){
+        rv = 0!=sqlite3_column_int(q, 0);
+      }
+      cmpp__json_reset(q);
+    }
+  }
+  return rv;
+}
+
+static inline bool cmpp__json_is_container(cmpp * const pp,
+                                           char opener,
+                                           char closer,
+                                           unsigned char const * const z,
+                                           cmpp_strlen_t n, bool allowJson5){
+  n = cmpp__strlenu(z, n);
+  return (
+    n>1
+    && z[0]==(unsigned char)opener
+    && z[n-1]==(unsigned char)closer
+  ) ? (
+    n==2
+    ? true
+    : cmpp_json_valid(pp, z, n, allowJson5 ? 3 : 1)
+  ) : false;
+}
+
+CMPP__EXPORT(bool,cmpp_json_is_list)(cmpp *pp,
+                                     unsigned char const * const z,
+                                     cmpp_strlen_t n, bool allowJson5){
+  return cmpp__json_is_container(pp, '[', ']', z, n, allowJson5);
+}
+
+CMPP__EXPORT(bool,cmpp_json_is_object)(cmpp *pp,
+                                       unsigned char const * const z,
+                                       cmpp_strlen_t n, bool allowJson5){
+  return cmpp__json_is_container(pp, '{', '}', z, n, allowJson5);
+}
+
+CMPP__EXPORT(int, cmpp_json_key_to_path)(cmpp *pp, int mode,
+                                         unsigned char const *z,
+                                         cmpp_strlen_t n, cmpp_b * bKey){
+  if( ppCode ) return ppCode;
+  n = cmpp__strlenu(z, n);
+  if( !n ){
+    return cmpp_b_append4(pp, bKey, mode
+                          ? "$[]"
+                          : "$.\0"/*illegal, but let SQLite report that*/,
+                          3);
+  }
+  if( '$'==z[0] && (1==n || (mode ? '['==z[1] : '.'==z[1])) ){
+    return cmpp_b_append4(pp, bKey, z, n);
+  }
+  /* This does not superficially look like a JSON path prefix, make it
+     look like one. */
+  unsigned char const * zz = 0;
+  cmpp_size_t nn = 0;
+  if( '$'==z[0] && '.'==z[1] ){
+    zz = z+2;
+    nn = n - 2;
+  }else{
+    zz = z;
+    nn = n;
+  }
+  cmpp_b_append(bKey, mode ? "$[" : "$.", 2);
+  cmpp_b_append(bKey, zz, nn);
+  if( mode ) cmpp_b_append_ch(bKey, ']');
+  if( bKey->errCode ) cmpp_err(pp, bKey->errCode, 0, 0);
+  return ppCode;
+}
+
+CMPP__EXPORT(int, cmpp_json_canonicalize)(cmpp *pp, unsigned char const *z,
+                                          cmpp_size_t n, cmpp_b *b,
+                                          bool append){
+  sqlite3_stmt * const q =
+    cmpp__stmt(pp, CmppStmt_jsonSelf, false);
+  if( !q ) return ppCode;
+  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
+  if( SQLITE_ROW==cmpp_stmt_step(pp, q, false) ){
+    z = sqlite3_column_blob(q,0);
+    n = sqlite3_column_bytes(q,0);
+    //g_warn("canon=%.*s", (int)n, z);
+    cmpp_b_append4(pp, append ? b : cmpp_b_reuse(b), z, n);
+  }
+  cmpp__json_reset(q);
+  return ppCode;
+}
+
+/**
+   Reports a data error via err if it is not NULL, else via pp.
+   Returns rc (or CMPP_RC_OOM if reporting fails).
+*/
+static int cmpp__json_err(cmpp * const pp, cmpp_errinfo * const err,
+                          int rc, char const * zFmt, ...){
+  va_list va;
+  va_start(va, zFmt);
+  rc = err
+    ? cmpp_errinfo_setv(err, rc, zFmt, va)
+    : cmpp_errfv(pp, rc, zFmt, va);
+  va_end(va);
+  return rc;
+}
+
+/**
+   sqlite3_step() wrapper for JSON queries. Returns SQLITE_ROW or
+   SQLITE_DONE on success. On error it returns 0 after reporting the
+   error: SQLITE_NOMEM goes to pp and all others (e.g. malformed JSON
+   or a bad path) are data errors.
+*/
+static int cmpp__json_step(cmpp * const pp, cmpp_errinfo * const err,
+                           sqlite3_stmt * const q){
+  if( ppCode ) return 0;
+  int const rc = sqlite3_step(q);
+  switch( rc ){
+    case SQLITE_ROW:
+    case SQLITE_DONE:
+      return rc;
+    case SQLITE_NOMEM:
+      cmpp_err(pp, CMPP_RC_OOM, 0, 0);
+      return 0;
+    default:
+      cmpp__json_err(pp, err, CMPP_RC_SYNTAX, "%s",
+                     sqlite3_errmsg(sqlite3_db_handle(q)));
+      return 0;
+  }
+}
+
+/**
+   Runs q, which must produce one text value, and replaces out's
+   contents with it. q must have been fetched with cmpp__stmt() and
+   is reset before returning. Returns 0 on success.
+*/
+static int cmpp__json_step_to(cmpp * const pp, cmpp_errinfo * const err,
+                              sqlite3_stmt * const q, cmpp_b * const out){
+  int rc = 0;
+  switch( cmpp__json_step(pp, err, q) ){
+    case SQLITE_ROW:{
+      unsigned char const * const z = sqlite3_column_text(q, 0);
+      int const n = sqlite3_column_bytes(q, 0);
+      cmpp_b_reuse(out);
+      rc = cmpp_b_append4(pp, out, z, (cmpp_size_t)n);
+      break;
+    }
+    case SQLITE_DONE:
+      cmpp_b_reuse(out);
+      break;
+    default:
+      rc = ppCode ? ppCode : (err ? err->code : CMPP_RC_ERROR);
+      break;
+  }
+  cmpp__json_reset(q);
+  return rc;
+}
+
+CMPP__EXPORT(int, cmpp_json_check)(cmpp *pp, cmpp_errinfo *err,
+                                   int type, unsigned char const *z,
+                                   cmpp_strlen_t n){
+  if( ppCode ) return ppCode;
+  n = cmpp__strlenu(z, n);
+  bool const isList = cmpp_json_LIST==type;
+  if( isList
+      ? cmpp_json_is_list(pp, z, n, true)
+      : cmpp_json_is_object(pp, z, n, true) ){
+    return 0;
+  }
+  return ppCode ? ppCode
+    : cmpp__json_err(pp, err, CMPP_RC_TYPE,
+                     "Value is not %s: %.*s",
+                     isList ? "a list" : "an object", (int)n, z);
+}
+
+CMPP__EXPORT(int, cmpp_json_length)(cmpp *pp, cmpp_errinfo *err,
+                                    int type, unsigned char const *z,
+                                    cmpp_strlen_t n, int64_t *pOut){
+  n = cmpp__strlenu(z, n);
+  int rc = cmpp_json_check(pp, err, type, z, n);
+  if( rc ) return rc;
+  sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_jsonLength, false);
+  if( !q ) return ppCode;
+  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_STATIC);
+  switch( cmpp__json_step(pp, err, q) ){
+    case SQLITE_ROW:
+      *pOut = sqlite3_column_int64(q, 0);
+      break;
+    case SQLITE_DONE:
+      *pOut = 0;
+      break;
+    default:
+      rc = ppCode ? ppCode : (err ? err->code : CMPP_RC_ERROR);
+      break;
+  }
+  cmpp__json_reset(q);
+  return rc;
+}
+
+/**
+   Converts key [zKey,zKey+nKey) to a JSON path in bKey, rejecting
+   the path "$", which would replace the whole container.
+*/
+static int cmpp__json_key(cmpp *pp, cmpp_errinfo *err, int type,
+                          unsigned char const *zKey, cmpp_size_t nKey,
+                          cmpp_b * bKey){
+  if( 1==nKey && '$'==zKey[0] ){
+    return cmpp__json_err(pp, err, CMPP_RC_MISUSE,
+                          "JSON path key '$' is not legal "
+                          "in this context.");
+  }
+  return cmpp_json_key_to_path(pp, cmpp_json_LIST==type,
+                               zKey, nKey, cmpp_b_reuse(bKey));
+}
+
+CMPP__EXPORT(int, cmpp_json_get)(cmpp *pp, cmpp_errinfo *err, int type,
+                                 unsigned char const *z,
+                                 cmpp_strlen_t n,
+                                 unsigned char const *zKey,
+                                 cmpp_strlen_t nKey,
+                                 cmpp_b *out){
+  n = cmpp__strlenu(z, n);
+  nKey = cmpp__strlenu(zKey, nKey);
+  int rc = cmpp_json_check(pp, err, type, z, n);
+  if( rc ) return rc;
+  cmpp_b * const bKey = cmpp_b_borrow(pp);
+  if( !bKey ) return ppCode;
+  sqlite3_stmt * q = 0;
+  if( 0==(rc = cmpp__json_key(pp, err, type, zKey, nKey, bKey))
+      && (q = cmpp__stmt(pp, CmppStmt_jsonGet, false)) ){
+    /* TRANSIENT because out may own z. */
+    cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_TRANSIENT);
+    cmpp_stmt_bind_textx(pp, q, 2, bKey->z, bKey->n, SQLITE_STATIC);
+    rc = cmpp__json_step_to(pp, err, q, out);
+  }else if( !rc ){
+    rc = ppCode;
+  }
+  cmpp_b_return(pp, bKey);
+  return rc;
+}
+
+CMPP__EXPORT(int, cmpp_json_set)(cmpp *pp, cmpp_errinfo *err, int type,
+                                 cmpp_b *c,
+                                 unsigned char const *zKey,
+                                 cmpp_strlen_t nKey,
+                                 unsigned char const *zVal,
+                                 cmpp_strlen_t nVal){
+  nKey = cmpp__strlenu(zKey, nKey);
+  int rc = cmpp_json_check(pp, err, type, c->z, c->n);
+  if( rc ) return rc;
+  cmpp_b * const bKey = cmpp_b_borrow(pp);
+  if( !bKey ) return ppCode;
+  sqlite3_stmt * q = 0;
+  if( 0==(rc = cmpp__json_key(pp, err, type, zKey, nKey, bKey))
+      && (q = cmpp__stmt(pp, CmppStmt_jsonSet, false)) ){
+    cmpp_stmt_bind_textx(pp, q, 1, c->z, c->n, SQLITE_TRANSIENT);
+    cmpp_stmt_bind_textx(pp, q, 2, bKey->z, bKey->n, SQLITE_STATIC);
+    cmpp_stmt_bind_textx(pp, q, 3, zVal, cmpp__strlenu(zVal, nVal),
+                         SQLITE_STATIC);
+    rc = cmpp__json_step_to(pp, err, q, c);
+  }else if( !rc ){
+    rc = ppCode;
+  }
+  cmpp_b_return(pp, bKey);
+  return rc;
+}
+
+CMPP__EXPORT(int, cmpp_json_append)(cmpp *pp, cmpp_errinfo *err,
+                                    cmpp_b *list,
+                                    unsigned char const *zVal,
+                                    cmpp_strlen_t nVal){
+  int rc = cmpp_json_check(pp, err, cmpp_json_LIST, list->z, list->n);
+  if( rc ) return rc;
+  sqlite3_stmt * const q = cmpp__stmt(pp, CmppStmt_jsonAppend, false);
+  if( !q ) return ppCode;
+  cmpp_stmt_bind_textx(pp, q, 1, list->z, list->n, SQLITE_TRANSIENT);
+  cmpp_stmt_bind_textx(pp, q, 2, zVal, cmpp__strlenu(zVal, nVal),
+                       SQLITE_STATIC);
+  return cmpp__json_step_to(pp, err, q, list);
+}
+
+CMPP__EXPORT(int, cmpp_json_slice)(cmpp *pp, cmpp_errinfo *err,
+                                   unsigned char const *z,
+                                   cmpp_strlen_t n,
+                                   int64_t iFrom, int64_t iTo,
+                                   cmpp_b *out){
+  n = cmpp__strlenu(z, n);
+  int rc = cmpp_json_check(pp, err, cmpp_json_LIST, z, n);
+  if( rc ) return rc;
+  if( iFrom<0 ){
+    return cmpp__json_err(pp, err, CMPP_RC_RANGE,
+                          "List slice indexes may not be negative.");
+  }
+  sqlite3_stmt * const q =
+    cmpp__stmt(pp, iTo<0 ? CmppStmt_jsonSliceFrom : CmppStmt_jsonSlice,
+               false);
+  if( !q ) return ppCode;
+  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_TRANSIENT);
+  cmpp_stmt_bind_int(pp, q, 2, iFrom);
+  if( iTo>=0 ) cmpp_stmt_bind_int(pp, q, 3, iTo);
+  return cmpp__json_step_to(pp, err, q, out);
+}
+
+CMPP__EXPORT(int, cmpp_json_each)(cmpp *pp, cmpp_errinfo *err, int type,
+                                  unsigned char const *z,
+                                  cmpp_strlen_t n,
+                                  cmpp_json_each_f callback,
+                                  void *state){
+  n = cmpp__strlenu(z, n);
+  int rc = cmpp_json_check(pp, err, type, z, n);
+  if( rc || 2==n/*empty container*/ ) return rc;
+  sqlite3_stmt * q = 0;
+  if( cmpp_stmt_prepare(pp, &q,
+                        "SELECT key, value FROM json_each(?1)"
+                        " ORDER BY key", -1) ){
+    /* Not a cached statement because callback may recurse. */
+    return ppCode;
+  }
+  /* TRANSIENT because callback might modify z's owner. */
+  cmpp_stmt_bind_textx(pp, q, 1, z, n, SQLITE_TRANSIENT);
+  while( 0==rc ){
+    int const src = cmpp__json_step(pp, err, q);
+    if( SQLITE_ROW!=src ){
+      if( !src ) rc = ppCode ? ppCode : (err ? err->code : CMPP_RC_ERROR);
+      break;
+    }
+    /* A JSON null comes back as an SQL NULL. Pass it on as an empty
+       string. */
+    unsigned char const * zK = sqlite3_column_text(q, 0);
+    cmpp_size_t const nK = (cmpp_size_t)sqlite3_column_bytes(q, 0);
+    unsigned char const * zV = sqlite3_column_text(q, 1);
+    cmpp_size_t const nV = (cmpp_size_t)sqlite3_column_bytes(q, 1);
+    rc = callback(state, zK ? zK : ustr_c(""), nK,
+                  zV ? zV : ustr_c(""), nV);
+  }
+  sqlite3_finalize(q) /* see cmpp__json_reset() */;
+  return rc;
+}
 
 
 #if CMPP_ENABLE_DLLS && !defined(CMPP_OMIT_D_MODULE)
@@ -18615,9 +19402,10 @@ CMPP__EXPORT(void, cmpp_tizer_init_sub)(cmpp_tizer const *tzParent,
                                         cmpp_token const * tok,
                                         cmpp_tizer * tzSub){
   if( !tok ) tok = &tzParent->token;
-  cmpp_tizer_inherit(tzParent, tzSub);
-  //tzSub->name = cmpp_tizer_name(tzParent);
+  /* Init first: cmpp_tizer_init() overwrites all of tzSub, and
+     cmpp_tizer_inherit() needs tzSub's input range. */
   cmpp_tizer_init(tzSub, tzParent->err, tok->zInner, tok->nInner);
+  cmpp_tizer_inherit(tzParent, tzSub);
 }
 
 CMPP__EXPORT(void, cmpp_tizer_dtor)(cmpp_tizer * tz){
@@ -18658,14 +19446,14 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
         }
         /* Skip C-style comments */
         z += 2;
-        while( z+1<zEnd && '*'!=*z && '/'!=z[1] ){
+        while( z+1<zEnd && !('*'==*z && '/'==z[1]) ){
           ++z;
         }
-        if( z==zEnd || '*'!=*z ){
+        if( z+1>=zEnd ){
           cmpp_tizer_errpos_set(tz, tok->z);
           rc = cmpp_tizer_err_setf(tz, CMPP_RC_SYNTAX,
-                                   "Did not find closing */ for ",
-                                   "C comment.");
+                                   "Did not find closing */ "
+                                   "for C comment.");
           break;
         }
         assert( z+1<zEnd && '*'==*z && '/'==z[1] );
@@ -18798,7 +19586,14 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
         goto do_word;
       }
       case '\r':
-        if( z<zEnd && '\n'==z[1] ){
+        if( z+1<zEnd && '\n'==z[1] ){
+          if( tok->ttype && !zEsc ){
+            /* End the pending token before the CR, else the CR
+               becomes part of it. The next call will see the CRNL
+               as an EOL. */
+            keepGoing = false;
+            break;
+          }
           ++z;
           goto do_nl;
         }else{
@@ -18852,6 +19647,23 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
       case '"': case '`': case '\'':{
         if( tok->ttype || zEsc ){
           /* Scratch that - this is a continuation */
+          if( '['==*z && !zEsc ){
+            /* As in Tcl, a [...] within a word is part of that word,
+               spaces and all, e.g. a[set x 1]b or <[...]>. Consume
+               through its matching ']'. */
+            unsigned char const * zClose = z;
+            if( cmpp__find_closing(0, &zClose, zEnd) ){
+              tz->errToken = *tok;
+              rc = cmpp_tizer_err_setf(tz, CMPP_RC_SYNTAX,
+                                       "Did not find closing character "
+                                       "for '['.");
+              break;
+            }
+            z = zClose + 1;
+            tok->ttype = cmpp_tt_Word;
+            tz->atBOX = false;
+            break;
+          }
           goto do_word;
         }
         //g_warn("*z=%c isEsc=%d", *z, (int)!!zEsc);
@@ -18869,33 +19681,30 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
                    (int)tok->nInner, tok->zInner);
           }
           if( z<zEnd ){
-            if( !cmpp_tizer_terminates_group(tty, *z) ){
+            if( cmpp_tt_GroupBrace==tty
+                && !cmpp_tizer_terminates_group(tty, *z) ){
+              /* As in Tcl, [...] followed by more word characters,
+                 e.g. [set x 1]b or [a][b], is a single word. Keep
+                 going as a word. */
+              tok->ttype = cmpp_tt_Word;
+              tok->zInner = 0;
+              tok->nInner = 0;
+            }else if( !cmpp_tizer_terminates_group(tty, *z) ){
               /* We're eventually going to want to support a Tcl-like
                  bellybutton operation, in which case this has to be
                  patched. Or maybe we'll use JS syntax for that
                  instead: ...$x vs. {*}$x. */
               tz->errToken = *tok;
-              cmpp_size_t col = 0, ln = 0;
-              cmpp_token_lc(tz, tok, &ln, &col);
-              if( 1 ){
-                g_warn("<<%.*s>> => <<%.*s>>",
-                       (int)(z+1 - tok->z), tok->z);
-              }
               rc = cmpp_tizer_err_setf(tz, CMPP_RC_SYNTAX,
-                                       "Trailing junk after group "
-                                       "token (char=%c) opened at script line "
-                                       "%d column %d.",
-                                       *z, (int)ln, (int)col);
+                                       "Trailing junk (char=%c) after "
+                                       "group token.", *z);
             }
           }
         }else{
-          cmpp_size_t col = 0, ln = 0;
-          cmpp_token_lc(tz, 0, &ln, &col);
+          tz->errToken = *tok;
           rc = cmpp_tizer_err_setf(tz, CMPP_RC_SYNTAX,
                                    "Did not find closing character "
-                                    "for '%c' opened at script line %d "
-                                    "column %d.",
-                                    (char)chOpen, (int)ln, (int)col);
+                                   "for '%c'.", (char)chOpen);
         }
         tz->atBOX = false;
         break;
@@ -18952,11 +19761,9 @@ static int cmpp_tizer_next_impl(cmpp_tizer * const tz, cmpp_flag32_t flags){
       tok->n = tok->nInner = 0;
       tok->zInner = z;
     }else if( zEsc ){
-      cmpp_size_t col = 0;
-      cmpp_size_t const ln =
-        cmpp_count_nl(tz->zBegin, tz->zEnd, zEsc, &col);
-      rc = cmpp_tizer_err_setf(tz, CMPP_RC_SYNTAX,  "Stray escape sequence "
-                                "near line %d column %d.", (int)ln, (int)col);
+      cmpp_tizer_errpos_set(tz, zEsc);
+      rc = cmpp_tizer_err_setf(tz, CMPP_RC_SYNTAX,
+                               "Stray escape sequence.");
     }else{
       assert( z>tok->z );
       tok->n = (cmpp_size_t)(z - tok->z);

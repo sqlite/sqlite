@@ -741,6 +741,12 @@ static int qrfDisplayWidth(const char *zIn, sqlite3_int64 nByte, int *pnNL){
           nNL++;
           if( n>mx ) mx = n;
           n = 0;
+        }else{
+          /* Any other control character is shown by qrfAppendWithTabs()
+          ** as a one-column-wide Control Picture symbol, and is counted as
+          ** one column by qrfWrapLine().  Count it as one column here too,
+          ** so that columns are wide enough to hold it. */
+          n++;
         }
         z++;
       }
@@ -1095,6 +1101,7 @@ static int qrfTitleLimit(char *zIn, int N){
   unsigned char *z = (unsigned char*)zIn;
   int n = 0;
   unsigned char *zEllipsis = 0;
+  int nEllipsis = 0;     /* Display width of the text before zEllipsis */
   while( 1 /*exit-by-break*/ ){
     if( z[0]<' ' ){
       int k;
@@ -1111,20 +1118,24 @@ static int qrfTitleLimit(char *zIn, int N){
         z++;
       }
     }else if( (0x80&z[0])==0 ){
-      if( n>=(N-3) && zEllipsis==0 ) zEllipsis = z;
+      if( n>=(N-3) && zEllipsis==0 ){ zEllipsis = z; nEllipsis = n; }
       if( n==N ){ z[0] = 0; break; }
       n++;
       z++;
     }else{
       int u = 0;
       int len = sqlite3_qrf_decode_utf8(z, &u);
-      if( n+len>(N-3) && zEllipsis==0 ) zEllipsis = z;
-      if( n+len>N ){ z[0] = 0; break; }
+      int w = sqlite3_qrf_wcwidth(u);   /* Display width, not byte count */
+      if( n+w>(N-3) && zEllipsis==0 ){ zEllipsis = z; nEllipsis = n; }
+      if( n+w>N ){ z[0] = 0; break; }
       z += len;
-      n += sqlite3_qrf_wcwidth(u);
+      n += w;
     }
   }
-  if( zEllipsis && N>=3 ) memcpy(zEllipsis,"...",4);
+  if( zEllipsis && N>=3 ){
+    memcpy(zEllipsis,"...",4);
+    n = nEllipsis + 3;   /* Width of the text kept plus the "..." */
+  }
   return n;
 }
 
@@ -1264,7 +1275,12 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
       break;
     }
     case SQLITE_NULL: {
-      sqlite3_str_appendall(pOut, p->spec.zNull);
+      if( p->spec.eText==QRF_TEXT_Html ){
+        /* The NULL text is user-supplied (--null) and must be escaped */
+        qrfEncodeText(p, pOut, p->spec.zNull);
+      }else{
+        sqlite3_str_appendall(pOut, p->spec.zNull);
+      }
       break;
     }
     case SQLITE_TEXT: {
@@ -2956,7 +2972,7 @@ qrf_reinit:
     }
     case QRF_STYLE_Html: {
       p->spec.eText = QRF_TEXT_Html;
-      p->spec.zNull = "null";
+      if( pSpec->zNull==0 ) p->spec.zNull = "null";
       break;
     }
     case QRF_STYLE_Insert: {

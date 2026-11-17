@@ -78,4 +78,61 @@ do_execsql_test 2.2 {
   SELECT * FROM x
 } {1 same one 2 same two}
 
+#-------------------------------------------------------------------------
+# A single changeset may not contain both changeset ('T') and patchset
+# ('P') table headers. Such a blob is corrupt. Concatenations of
+# changesets with changesets, or of patchsets with patchsets, are fine.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y);
+}
+
+set C1 [changeset_from_sql { INSERT INTO t1 VALUES(1, 'one'); }]
+set C2 [changeset_from_sql { INSERT INTO t2 VALUES(2, 'two'); }]
+set P1 [patchset_from_sql  { INSERT INTO t1 VALUES(3, 'three'); }]
+set P2 [patchset_from_sql  { INSERT INTO t2 VALUES(4, 'four'); }]
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+do_execsql_test -db db2 3.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y);
+}
+
+proc apply_db2 {cs} {
+  list [catch { sqlite3changeset_apply db2 $cs xConflict } msg] $msg
+}
+proc iterate {cs} {
+  set res [list]
+  set rc [catch {
+    sqlite3session_foreach c $cs { lappend res [lindex $c 0] }
+  } msg]
+  if {$rc} { return [list 1 $msg] }
+  list 0 $res
+}
+
+foreach {tn cs} [list \
+  1 [string cat $C1 $P2] \
+  2 [string cat $P1 $C2] \
+  3 [string cat $C1 $P2 $C1] \
+] {
+  do_test 3.2.$tn.1 { apply_db2 $cs } {1 SQLITE_CORRUPT}
+  do_execsql_test -db db2 3.2.$tn.2 {
+    SELECT * FROM t1; SELECT * FROM t2;
+  } {}
+  do_test 3.2.$tn.3 { lindex [iterate $cs] 0 } 1
+  do_test 3.2.$tn.4 {
+    list [catch { sqlite3changeset_invert $cs } msg] $msg
+  } {1 SQLITE_CORRUPT}
+}
+
+do_test 3.3.1 { apply_db2 [string cat $C1 $C2] } {0 {}}
+do_test 3.3.2 { apply_db2 [string cat $P1 $P2] } {0 {}}
+do_execsql_test -db db2 3.3.3 {
+  SELECT * FROM t1; SELECT * FROM t2;
+} {1 one 3 three 2 two 4 four}
+db2 close
+
 finish_test

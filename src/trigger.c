@@ -1399,6 +1399,13 @@ static TriggerPrg *getRowTrigger(
   if( !pPrg ){
     pPrg = codeRowTrigger(pParse, pTrigger, pTab, orconf);
     pParse->db->errByteOffset = -1;
+  }else{
+    /* Check if this trigger is being called recursively. If it is, then
+    ** the VM might hit the trigger nesting limit. */
+    Parse *p;
+    for(p=pParse; p; p=p->pOuterParse){
+      if( pTrigger==p->pTrigCoded ) sqlite3MayAbort(pParse);
+    }
   }
 
   return pPrg;

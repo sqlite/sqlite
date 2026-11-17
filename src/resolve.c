@@ -2113,6 +2113,9 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       assert( pSub!=0 );
       p->pOrderBy = pSub->pOrderBy;
       pSub->pOrderBy = 0;
+      if( ALWAYS(p->pOrderBy) ){
+        sqlite3ConvertedOrderByColl(pParse, pSub, p->pOrderBy);
+      }
     }
 
     /* Process the ORDER BY clause for singleton SELECT statements.

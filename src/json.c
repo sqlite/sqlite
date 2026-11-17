@@ -1404,6 +1404,7 @@ static u32 jsonbValidityCheck(
         if( sz<2 ) return i+1;
       }
       k = i+n+sz;
+      if( z[j]=='0' && j<k-1 ) return j+1;
       while( j<k ){
         if( sqlite3Isdigit(z[j]) ){
           j++;
@@ -1464,7 +1465,7 @@ static u32 jsonbValidityCheck(
           continue;
         }
         if( z[j]=='e' || z[j]=='E' ){
-          if( seen==2 ) return j+1;
+          if( seen==2 || j==i+n ) return j+1;
           if( j==k-1 ) return j+1;
           if( z[j+1]=='+' || z[j+1]=='-' ){
             j++;
@@ -1611,6 +1612,7 @@ json_parse_restart:
           if( pParse->nBlob!=(u32)iStart ) pParse->hasNonstd = 1;
           break;
         }
+      json_parse_label_identifier:
         j += json5Whitespace(&z[j]);
         op = JSONB_TEXT;
         if( sqlite3JsonId1(z[j]) 
@@ -1634,6 +1636,13 @@ json_parse_restart:
       if( pParse->oom ) return -1;
       t = pParse->aBlob[iBlob] & 0x0f;
       if( t<JSONB_TEXT || t>JSONB_TEXTRAW ){
+        if( sqlite3JsonId1(z[j + json5Whitespace(&z[j])]) ){
+          /* JSON5 unquoted label that spells a keyword or special number:
+          ** true, false, null, NaN, Infinity. */
+          pParse->nBlob = iBlob;
+          x = 0;
+          goto json_parse_label_identifier;
+        }
         pParse->iErr = j;
         return -1;
       }
@@ -2089,6 +2098,7 @@ static int jsonConvertTextToBlob(
     if( zJson[i] ){
       i += json5Whitespace(&zJson[i]);
       if( zJson[i] ){
+        pParse->iErr = i;
         if( pCtx ) sqlite3_result_error(pCtx, "malformed JSON", -1);
         jsonParseReset(pParse);
         return 1;
@@ -3253,7 +3263,7 @@ static u32 jsonLookupStep(
         /* Already exists, so json_insert() is a no-op */
       }else if( pParse->eEdit==JEDIT_AINS ){
         /* json_array_insert() */
-        if( zPath[-1]!=']' ){
+        if( zPath[-1]!=']' || iLabel ){
           return JSON_LOOKUP_NOTARRAY;
         }else{
           jsonBlobEdit(pParse, iRoot, 0, pParse->aIns, pParse->nIns);
@@ -3795,8 +3805,11 @@ static void jsonInsertIntoBlob(
     if( zPath[1]==0 ){
       if( eEdit==JEDIT_REPL || eEdit==JEDIT_SET ){
         jsonBlobEdit(p, 0, p->nBlob, ax.aBlob, ax.nBlob);
+      }else if( eEdit==JEDIT_AINS ){
+        rc = JSON_LOOKUP_NOTARRAY;
+      }else{
+        rc = 0;
       }
-      rc = 0;
    }else{
       p->eEdit = eEdit;
       p->nIns = ax.nBlob;

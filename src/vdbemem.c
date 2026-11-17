@@ -710,7 +710,11 @@ static SQLITE_NOINLINE int sqlite3MemRealValueRCSlowPath(
       assert( j<=n/2 );
       zCopy[j] = 0;
       rc = sqlite3AtoF(zCopy, pValue);
-      if( i<n ) rc = -100;
+      if( i<n && rc>0 ){
+        /* Only a prefix was converted. Adjust rc to match would
+        ** sqlite3AtoF() would have done. */
+        rc |= -16;
+      }
       sqlite3DbFree(pMem->db, zCopy);
     }
     return rc;
@@ -1853,7 +1857,7 @@ static int valueFromExpr(
     u8 aff;
     assert( !ExprHasProperty(pExpr, EP_IntValue) );
     aff = sqlite3AffinityType(pExpr->u.zToken,0);
-    rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
+    rc = valueFromExpr(db, pExpr->pLeft, enc, SQLITE_AFF_BLOB, ppVal, pCtx);
     testcase( rc!=SQLITE_OK );
     if( *ppVal ){
 #ifdef SQLITE_ENABLE_STAT4

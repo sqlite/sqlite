@@ -1133,8 +1133,7 @@ do_faultsim_test pagerfault-24 -prep {
 } -body {
   execsql { CREATE TEMP TABLE t1(a, b) }
 } -test {
-  faultsim_test_result {0 {}} \
-    {1 {unable to open a temporary database file for storing temporary tables}}
+  faultsim_test_result {0 {}}
   set ic [db eval { PRAGMA temp.integrity_check }]
   if {$ic != "ok"} { error "Integrity check: $ic" }
 }

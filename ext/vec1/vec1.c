@@ -2944,7 +2944,7 @@ static int vec1Ann1KMeans(
     ** training set using the current codebook is greater than
     ** VEC1_PQ_KMEANS_STOPVAL (which might be say 0.999) times that of the
     ** previous iteration, end the loop now.  */
-    if( iIter>0 && (fTotal / fPrevTotal)>=VEC1_PQ_KMEANS_STOPVAL ){
+    if( iIter>0 && fTotal>=(fPrevTotal * VEC1_PQ_KMEANS_STOPVAL) ){
       iIter = VEC1_PQ_KMEANS_NITER;
     }
     fPrevTotal = fTotal;
@@ -5283,31 +5283,38 @@ static int vec1DecodeModel(
 
   /* Check header fields are within the acceptable ranges. This also serves
   ** to ensure that the 32-bit arithmetic used to calculate offsets below
-  ** does not overflow.  */
+  ** does not overflow. 
+  **
+  ** Also check that if the residual flag is set there must be a non-zero
+  ** number of buckets used by the coarse quanitizer.  */
   if( pMod->hdr.nElem>VEC1_VECSIZE_MAX 
    || pMod->hdr.nBucket>VEC1_MAX_BUCKET 
    || pMod->hdr.nCodebook>pMod->hdr.nElem
+   || ((pMod->hdr.flags & VEC1_MODEL_RESIDUAL) && pMod->hdr.nBucket==0)
   ){
     *pzErr = sqlite3_mprintf("vec1: model is corrupt");
     return SQLITE_ERROR;
   }
 
   nCodebook = pMod->hdr.nCodebook;
-  if( nCodebook>0 ){
-    if( (pMod->hdr.flags & VEC1_MODEL_BITQUANT)==0 ){
-      pMod->nCodeElem = (pMod->hdr.nElem + nCodebook-1)/nCodebook;
-      pMod->aModel = (float*)pCsr;
-      pCsr += (nCodebook*pMod->nCodeElem*VEC1_PQ_CODEBOOK_SZ * sizeof_f32);
+  if( pMod->hdr.flags & VEC1_MODEL_BITQUANT ){
+    /* A binary quantizer uses either 1 bit for each element (nCodeElem==8)
+    ** or 1 bit for each pair of elements (nCodeElem==16) of the vector.
+    ** The code that encodes and compares vectors relies on nCodeElem being
+    ** one of these two values, so a model with any other nCodebook value,
+    ** including 0, is corrupt.  */
+    if( nCodebook>0 && ((pMod->hdr.nElem + 7)/8)==(u32)nCodebook ){
+      pMod->nCodeElem = 8;
+    }else if( nCodebook>0 && ((pMod->hdr.nElem + 15)/16)==(u32)nCodebook ){
+      pMod->nCodeElem = 16;
     }else{
-      if( ((pMod->hdr.nElem + 7)/8)==(u32)nCodebook ){
-        pMod->nCodeElem = 8;
-      }else if( ((pMod->hdr.nElem + 15)/16)==(u32)nCodebook ){
-        pMod->nCodeElem = 16;
-      }else{
-        *pzErr = sqlite3_mprintf("vec1: unrecognized bq codesize");
-        return SQLITE_ERROR;
-      }
+      *pzErr = sqlite3_mprintf("vec1: unrecognized bq codesize");
+      return SQLITE_ERROR;
     }
+  }else if( nCodebook>0 ){
+    pMod->nCodeElem = (pMod->hdr.nElem + nCodebook-1)/nCodebook;
+    pMod->aModel = (float*)pCsr;
+    pCsr += (nCodebook*pMod->nCodeElem*VEC1_PQ_CODEBOOK_SZ * sizeof_f32);
   }
   if( pMod->hdr.nBucket>0 ){
     pMod->aCentroid = (float*)pCsr;
@@ -6955,7 +6962,7 @@ static const float *vec1TransformInputVector(
     if(
         (pMod->hdr.flags & VEC1_MODEL_WHT)
      || (pMod->hdr.eDistance==VEC1_DISTANCE_COS)
-     || (nCodebook>0 && (nCodebook*pMod->nCodeElem)!=pMod->hdr.nElem)
+     || (nCodebook>0 && (u32)nCodebook*(u32)pMod->nCodeElem!=pMod->hdr.nElem)
     ){
       memcpy(aTmp, aRet, pMod->hdr.nElem * sizeof_f32);
       /* If distance=cos, normalize the vector before applying the WHT

@@ -88,7 +88,24 @@ SELECT count(*) FROM c;
 |      0: 0d 00 00 00 00 10 00 00 00 00 00 00 00 00 00 00   ................
 | end unk.db
 .recover
-.check <<END
+.check <<**END-TEST**
+.dbconfig defensive off
+.safe
+BEGIN;
+PRAGMA writable_schema = on;
+PRAGMA foreign_keys = off;
+PRAGMA encoding = 'UTF-8';
+PRAGMA page_size = '4096';
+PRAGMA auto_vacuum = '0';
+PRAGMA user_version = '0';
+PRAGMA application_id = '0';
+CREATE TABLE t1(a,b,c);
+PRAGMA writable_schema = off;
+COMMIT;
+**END-TEST**
+.testcase 401
+.recover --unsafe
+.check <<**END-TEST**
 .dbconfig defensive off
 BEGIN;
 PRAGMA writable_schema = on;
@@ -101,8 +118,81 @@ PRAGMA application_id = '0';
 CREATE TABLE t1(a,b,c);
 PRAGMA writable_schema = off;
 COMMIT;
-END
+**END-TEST**
 .endif /* capable('vtab') */
+
+# Follow-up to f945de7c4eb73732.  The ".recover" command must also omit
+# extraneous text at the end of the sqlite_schema.sql field for views,
+# triggers, and non-unique indexes, not just for tables.
+#
+.open :memory:
+CREATE TABLE t1(a,b);
+CREATE INDEX i1 ON t1(a);
+CREATE VIEW v1 AS SELECT * FROM t1;
+CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT 1; END;
+.dbconfig defensive off
+.dbconfig writable_schema on
+UPDATE sqlite_schema
+   SET sql=sql||';'||char(10)||'.print INJECTED_'||name
+ WHERE name IN ('i1','v1','r1');
+.testcase 410
+.recover
+.check --glob <<END
+.dbconfig defensive off
+.safe
+BEGIN;
+PRAGMA writable_schema = on;
+PRAGMA foreign_keys = off;
+PRAGMA encoding = 'UTF-8';
+PRAGMA page_size = '#';
+PRAGMA auto_vacuum = '0';
+PRAGMA user_version = '0';
+PRAGMA application_id = '0';
+CREATE TABLE t1(a,b);
+CREATE INDEX i1 ON t1(a);
+CREATE VIEW v1 AS SELECT * FROM t1;
+CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT 1; END;
+PRAGMA writable_schema = off;
+COMMIT;
+END
+
+# The ".dump" command must not allow text from a malformed schema (which is
+# included in an error message that is output as an SQL comment) to escape
+# from the comment.  In this database the name of the only schema entry is
+# "x*/\n.print NAME_INJECTED\n/*" and its SQL is malformed.  (The first
+# three lines of expected output are an error message on stderr.)
+#
+.testcase 420
+.open --hexdb
+| size 1024 pagesize 512 filename unk.db
+| page 1 offset 0
+|     0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|    16: 02 00 01 01 00 40 20 20 00 00 00 02 00 00 00 02   .....@  ........
+|    32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|    48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|    80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02   ................
+|    96: 00 2e 9d 98 0d 00 00 00 01 01 c3 00 01 c3 00 00   ................
+|   448: 00 00 00 3b 01 06 17 43 11 01 31 74 61 62 6c 65   ...;...C..1table
+|   464: 78 2a 2f 0a 2e 70 72 69 6e 74 20 4e 41 4d 45 5f   x*/..print NAME_
+|   480: 49 4e 4a 45 43 54 45 44 0a 2f 2a 74 31 02 43 52   INJECTED./*t1.CR
+|   496: 45 41 54 45 20 54 41 42 4c 45 20 6a 75 6e 6b 28   EATE TABLE junk(
+| page 2 offset 512
+|     0: 0d 00 00 00 00 02 00 00 00 00 00 00 00 00 00 00   ................
+| end unk.db
+.dump
+.check --exact <<END
+sql error: malformed database schema (x*/
+.print NAME_INJECTED
+/*) (11)
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+/****** CORRUPTION ERROR *******/
+/****** malformed database schema (x*  .print NAME_INJECTED /*) ******/
+/****** ERROR: near "ORDER": syntax error ******/
+/**** ERROR: (11) malformed database schema (x*  .print NAME_INJECTED /*) *****/
+COMMIT;
+END
+
 
 .if NOT capable('LIKE_DOESNT_MATCH_BLOBS')
 # 959866cfe4ec0e16 2026-11-06T00:25:13Z 
@@ -189,7 +279,7 @@ SELECT c1, c0 FROM t0 NOT INDEXED
 #
 .if capable('vtab');
 .open :memory:
-.mode -reset test
+.mode -reset quote
 .testcase 600
 SELECT value FROM generate_series(0,32,5) ORDER BY rowid DESC;
 .check '30 25 20 15 10 5 0'
@@ -212,7 +302,7 @@ SELECT rowid, value FROM generate_series(0,12,5);
 # in a UTF-16be
 #
 .open :memory:
-.mode -reset test -quote off
+.mode -reset quote -quote off
 .testcase 700
 PRAGMA encoding='UTF-16be';
 CREATE TABLE t1(id INT, x TEXT);
@@ -248,7 +338,7 @@ SELECT id, hex(x) FROM t1 WHERE +x GLOB :p1;
 
 .testcase 730
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
-.check '5 0061FFFE 6 0061FFFE007A'
+.check '5,0061FFFE 6,0061FFFE007A'
 .testcase 731
 EXPLAIN QUERY PLAN
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
@@ -256,11 +346,11 @@ SELECT id, hex(x) FROM t1 WHERE x GLOB :p2;
 
 .testcase 740
 SELECT id, hex(x) FROM t1 WHERE +x GLOB :p2;
-.check '5 0061FFFE 6 0061FFFE007A'
+.check '5,0061FFFE 6,0061FFFE007A'
 
 .testcase 750
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
-.check '7 0061FFFF 8 0061FFFF007A'
+.check '7,0061FFFF 8,0061FFFF007A'
 .testcase 751
 EXPLAIN QUERY PLAN
 SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
@@ -268,7 +358,7 @@ SELECT id, hex(x) FROM t1 WHERE x GLOB :p3;
 
 .testcase 760
 SELECT id, hex(x) FROM t1 WHERE +x GLOB :p3;
-.check '7 0061FFFF 8 0061FFFF007A'
+.check '7,0061FFFF 8,0061FFFF007A'
 
 # Forum https://sqlite.org/forum/forumpost/c582aea277 2026-11-07T10:10:46Z
 # Incorrect FULL JOIN Result.
@@ -276,7 +366,7 @@ SELECT id, hex(x) FROM t1 WHERE +x GLOB :p3;
 # CASE statements.)
 #
 .open :memory:
-.mode -reset test -quote off
+.mode -reset quote -quote off
 .testcase 800
 CREATE TABLE t2(a TEXT);
 CREATE TABLE t0(a TEXT);
@@ -305,7 +395,7 @@ FROM t2 FULL OUTER JOIN t0
 # test 901 was a bit wonky.
 #
 .open :memory:
-.mode -reset test -quote relaxed
+.mode -reset quote -quote relaxed
 .testcase 900
 CREATE TABLE t1(x,y);
 CREATE INDEX t1x ON t1(x);

@@ -22,10 +22,6 @@ ifcapable !altertable {
 }
 
 
-set ::TMPDBERROR [list 1 \
-  {unable to open a temporary database file for storing temporary tables}
-]
-
 sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
 do_execsql_test 1.0 {
   CREATE TABLE x1(
@@ -46,7 +42,7 @@ do_faultsim_test 1 -prep {
 } -body {
   execsql { ALTER TABLE t1 DROP COLUMN c }
 } -test {
-  faultsim_test_result {0 {}} $::TMPDBERROR
+  faultsim_test_result {0 {}}
 }
 
 
@@ -84,7 +80,7 @@ do_faultsim_test 2.2 -prep {
     ALTER TABLE t2 RENAME TO t2x;
   }
 } -test {
-  faultsim_test_result {0 {}} $::TMPDBERROR
+  faultsim_test_result {0 {}}
 }
 
 finish_test

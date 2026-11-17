@@ -1328,6 +1328,10 @@ int sqlite3_fileio_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
+
+  /* REMINDER: Changes here should be reflected in the ".safe" command
+  ** of the CLI.
+  */
   rc = sqlite3_create_function(db, "readfile", 1, 
                                SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
                                readfileFunc, 0, 0);

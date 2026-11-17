@@ -1508,9 +1508,9 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       ** it is or not) and if it is an aggregate, that could change the meaning
       ** of the whole query.
       */
-      Expr *pB = sqlite3Expr(pParse->db, TK_STRING, N ? "true" : "false");
-      if( pB ) sqlite3ExprIdToTrueFalse(pB);
+      Expr *pB = sqlite3ExprInt32(pParse->db, N!=0);
       if( !ExprHasProperty(A, EP_HasFunc) ){
+        if( pB ) pB->op2 = 1;
         sqlite3ExprUnmapAndDelete(pParse, A);
         A = pB;
       }else{

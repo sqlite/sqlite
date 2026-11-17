@@ -411,7 +411,7 @@ static void substrFunc(
     if( p1<0 ){
       if( p2<0 ){
         p2 = 0;
-      }else{
+      }else if( argc==3 ){
         p2 += p1;
       }
       p1 = 0;

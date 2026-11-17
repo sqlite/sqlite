@@ -45,7 +45,6 @@ do_faultsim_test 1 -faults oom* -prep {
       {1 {SQLITE_CONSTRAINT - UNIQUE constraint failed: target.x}} \
       {1 SQLITE_CONSTRAINT} \
       {1 SQLITE_NOMEM} \
-      {1 {SQLITE_NOMEM - unable to open a temporary database file for storing temporary tables}} \
       {1 {SQLITE_NOMEM - out of memory}} 
 }
 

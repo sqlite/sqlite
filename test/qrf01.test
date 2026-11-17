@@ -337,6 +337,20 @@ do_test 1.71 {
 <td>Ἀμήν
 </tr>
 }
+do_test 1.71.1 {
+  set result "\n[db format -style html -null XX {SELECT * FROM t1}]"
+} {
+<tr>
+<td>1
+<td>2.5
+<td>three
+</tr>
+<tr>
+<td>BLOB
+<td>XX
+<td>Ἀμήν
+</tr>
+}
 do_test 1.72 {
   set result "\n[db format -style html {
      SELECT 'ab<cd' AS a, 'ab&cd' as b,

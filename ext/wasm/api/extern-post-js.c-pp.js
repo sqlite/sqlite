@@ -109,7 +109,7 @@ export default
     if( !s ) return s;
     if( s.indexOf(':')>=0 || s.indexOf('//')>=0 ){
       console.warn(
-        "Rejecting path string",key," because it does not look",
+        "Rejecting path string",key,"because it does not look",
         "like a local path:",s
       );
       return null;

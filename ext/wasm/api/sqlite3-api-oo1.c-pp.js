@@ -1966,7 +1966,8 @@ sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
           }else{ // !int32, !bigint
             val = Number(val);
-            if(wasm.bigIntEnabled && Number.isInteger(val)){
+            if(wasm.bigIntEnabled && Number.isInteger(val)
+               && util.bigIntFits64(val)){
               m = capi.sqlite3_bind_int64;
             }else{
               m = capi.sqlite3_bind_double;

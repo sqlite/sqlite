@@ -4485,6 +4485,7 @@ int sqlite3_test_control(int op, ...){
         sqlite3ShowWinFunc(0);
 #endif
         sqlite3ShowSelect(0);
+        sqlite3ShowSelectAsSql(0);
       }
 #endif
       break;
@@ -4833,31 +4834,40 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_TUNING)
     /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, *piValue)
     **
-    ** If "id" is an integer between 1 and SQLITE_NTUNE then set the value
-    ** of the id-th tuning parameter to *piValue.  If "id" is between -1
-    ** and -SQLITE_NTUNE, then write the current value of the (-id)-th
-    ** tuning parameter into *piValue.
+    ** If "id" is an integer between 1 and N (where N is the number of
+    ** tuning parameters) then set the value of the id-th tuning parameter
+    ** to *piValue.  If "id" is between -1 and -N, then write the current
+    ** value of the (-id)-th tuning parameter into *piValue.  If "id" is
+    ** zero, return the number of tuning parameters (N).
     **
-    ** Tuning parameters are for use during transient development builds,
+    ** Tuning parameters are for use during development builds,
     ** to help find the best values for constants in the query planner.
-    ** Access tuning parameters using the Tuning(ID) macro.  Set the
+    ** Access tuning parameters using the Tuning(D,ID) macro.  Set the
     ** parameters in the CLI using ".testctrl tune ID VALUE".
     **
-    ** Transient use only.  Tuning parameters should not be used in
-    ** checked-in code.
+    ** See source code comments
+    **
+    ** Tuning parameters apply across all database connections for a process.
+    **
+    ** This interface is not threadsafe.  Do not change tuning parameters
+    ** while database connections are running on other threads.
     */
     case SQLITE_TESTCTRL_TUNE: {
       int id = va_arg(ap, int);
       int *piValue = va_arg(ap, int*);
-      if( id>0 && id<=SQLITE_NTUNE ){
-        Tuning(id) = *piValue;
-      }else if( id<0 && id>=-SQLITE_NTUNE ){
-        *piValue = Tuning(-id);
-      }else{
+      int N = sqlite3Tuning[0];
+      if( id>N || id<(-N) ){
         rc = SQLITE_NOTFOUND;
+        break;
+      }
+      rc = SQLITE_OK;
+      if( id>0 ){
+        sqlite3Tuning[id] = *piValue;
+      }else if( id<=0 ){
+        *piValue = sqlite3Tuning[-id];
       }
       break;
     }

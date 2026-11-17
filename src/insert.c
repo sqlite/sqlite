@@ -620,6 +620,18 @@ static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
 }
 
 /*
+** Return true if any expression in the expression-list passed as the
+** only argument contains a COLLATE operator.
+*/
+static int exprListHasCollate(ExprList *pRow){
+  int ii;
+  for(ii=0; ii<pRow->nExpr; ii++){
+    if( ExprHasProperty(pRow->a[ii].pExpr, EP_Collate) ) return 1;
+  }
+  return 0;
+}
+
+/*
 ** This function is called by the parser for the second and subsequent
 ** rows of a multi-row VALUES clause. Argument pLeft is the part of
 ** the VALUES clause already parsed, argument pRow is the vector of values
@@ -668,7 +680,15 @@ static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
 **       because the complex rules SQLite uses (see function 
 **       sqlite3SubqueryColumnTypes() in select.c) to determine the effective
 **       affinity of such a column for all rows require access to all values in
-**       the column simultaneously. 
+**       the column simultaneously.
+**
+**    e) The new row, or the row that would become the first row of the
+**       co-routine, contains a COLLATE operator. This ensures that the
+**       columns of a co-routine never have a collation sequence (see
+**       multiSelectCollSeq() in select.c). Each explicit COLLATE in a VALUES
+**       clause is instead part of an ordinary SELECT in a UNION ALL
+**       compound, where it is available when the collation sequence for a
+**       compound SELECT column is determined.
 */
 Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 
@@ -677,6 +697,8 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
    || sqlite3ExprListIsConstant(pParse, pRow, 1)==0   /* condition (c) above */
    || (pLeft->pSrc->nSrc==0 &&
        exprListIsNoAffinity(pParse,pLeft->pEList)==0) /* condition (d) above */
+   || exprListHasCollate(pRow)                        /* condition (e) above */
+   || (pLeft->pSrc->nSrc==0 && exprListHasCollate(pLeft->pEList))
    || IN_SPECIAL_PARSE
   ){
     /* The co-routine method cannot be used. Fall back to UNION ALL. */
@@ -718,7 +740,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
         pRet->pSrc->nSrc = 1;
         pRet->pPrior = pLeft->pPrior;
         pRet->op = pLeft->op;
-        if( pRet->pPrior ) pRet->selFlags |= SF_Values;
+        pRet->selFlags |= SF_Values;
         pLeft->pPrior = 0;
         pLeft->op = TK_SELECT;
         assert( pLeft->pNext==0 );
@@ -944,7 +966,11 @@ void sqlite3Insert(
   ** single row (the common case) then keep that one row of values
   ** and discard the other (unused) parts of the pSelect object
   */
-  if( pSelect && (pSelect->selFlags & SF_Values)!=0 && pSelect->pPrior==0 ){
+  if( pSelect
+   && (pSelect->selFlags & SF_Values)!=0
+   && pSelect->pPrior==0
+   && pSelect->pSrc->nSrc==0
+  ){
     pList = pSelect->pEList;
     pSelect->pEList = 0;
     sqlite3SelectDelete(db, pSelect);
@@ -2269,6 +2295,12 @@ void sqlite3GenerateConstraintChecks(
           onError = OE_Ignore;  /* DO NOTHING is the same as INSERT OR IGNORE */
         }else{
           onError = OE_Update;  /* DO UPDATE */
+          /* The excluded.* values used by the DO UPDATE must have
+          ** column affinity applied before the rowid conflict check. */
+          if( bAffinityDone==0 ){
+            sqlite3TableAffinity(v, pTab, regNewData+1);
+            bAffinityDone = 1;
+          }
         }
       }
       if( pUpsertClause!=pUpsert ){
@@ -2428,6 +2460,14 @@ void sqlite3GenerateConstraintChecks(
     VdbeNoopComment((v, "prep index %s", pIdx->zName));
     iThisCur = iIdxCur+ix;
 
+    /* If an OE_Replace resolution earlier in the constraint checks may
+    ** have already deleted a conflicting row, and evaluating the partial
+    ** index WHERE clause or an indexed expression for this index might
+    ** raise an error, then a statement journal may be required to undo
+    ** the deletion.  */
+    if( seenReplace && (pIdx->pPartIdxWhere || pIdx->aColExpr) ){
+      sqlite3MultiWrite(pParse);
+    }
 
     /* Skip partial indices for which the WHERE clause is not true */
     if( pIdx->pPartIdxWhere ){
@@ -3112,6 +3152,9 @@ static int xferOptimization(
   if( pSelect->pSrc->a[0].fg.isSubquery ){
     return 0;   /* FROM clause cannot contain a subquery */
   }
+  if( pSelect->pSrc->a[0].fg.isIndexedBy ){
+    return 0;   /* FROM clause cannot have an INDEXED BY clause */
+  }
   if( pSelect->pWhere ){
     return 0;   /* SELECT may not have a WHERE clause */
   }
@@ -3279,15 +3322,17 @@ static int xferOptimization(
   }
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-  /* Disallow the transfer optimization if the destination table contains
-  ** any foreign key constraints.  This is more restrictive than necessary.
-  ** But the main beneficiary of the transfer optimization is the VACUUM
-  ** command, and the VACUUM command disables foreign key constraints.  So
-  ** the extra complication to make this rule less restrictive is probably
-  ** not worth the effort.  Ticket [6284df89debdfa61db8073e062908af0c9b6118e]
-  */
+  /* Disallow the transfer optimization if foreign key processing is
+  ** enabled and the destination table is either the child or the parent
+  ** of any foreign key constraint.  This is more restrictive than
+  ** necessary.  But the main beneficiary of the transfer optimization is
+  ** the VACUUM command, and the VACUUM command disables foreign key
+  ** constraints.  So the extra complication to make this rule less
+  ** restrictive is probably not worth the effort. Ticket 
+  ** [6284df89debdfa61db8073e062908af0c9b6118e] and bugs forum post 
+  ** [2026-11-04T20:24:15Z].  */
   assert( IsOrdinaryTable(pDest) );
-  if( (db->flags & SQLITE_ForeignKeys)!=0 && pDest->u.tab.pFKey!=0 ){
+  if( sqlite3FkRequired(pParse, pDest, 0, 0) ){
     return 0;
   }
 #endif

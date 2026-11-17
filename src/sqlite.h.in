@@ -476,6 +476,7 @@ int sqlite3_exec(
 #define SQLITE_NOTADB      26   /* File opened that is not a database file */
 #define SQLITE_NOTICE      27   /* Notifications from sqlite3_log() */
 #define SQLITE_WARNING     28   /* Warnings from sqlite3_log() */
+#define SQLITE_MOVED       29   /* Internal use only:  Cursor moved */
 #define SQLITE_ROW         100  /* sqlite3_step() has another row ready */
 #define SQLITE_DONE        101  /* sqlite3_step() has finished executing */
 /* end-of-error-codes */
@@ -5566,7 +5567,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** <tr><td> INTEGER  <td>   BLOB    <td> Same as INTEGER->TEXT
 ** <tr><td>  FLOAT   <td> INTEGER   <td> [CAST] to INTEGER
 ** <tr><td>  FLOAT   <td>   TEXT    <td> ASCII rendering of the float
-** <tr><td>  FLOAT   <td>   BLOB    <td> [CAST] to BLOB
+** <tr><td>  FLOAT   <td>   BLOB    <td> Same as FLOAT->TEXT
 ** <tr><td>  TEXT    <td> INTEGER   <td> [CAST] to INTEGER
 ** <tr><td>  TEXT    <td>  FLOAT    <td> [CAST] to REAL
 ** <tr><td>  TEXT    <td>   BLOB    <td> No change

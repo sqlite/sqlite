@@ -1586,7 +1586,7 @@ exprAnalyze_restart:
   ** the vector on the LHS that the virtual term represents.
   **
   ** This only works if the RHS is a simple SELECT (not a compound) that does
-  ** not use window functions.
+  ** not use window functions or a LIMIT clause.
   */
   else if( pExpr->op==TK_IN
    && pTerm->u.x.iField==0
@@ -1597,6 +1597,8 @@ exprAnalyze_restart:
    && pExpr->x.pSelect->pWin==0
 #endif
    && (pExpr->x.pSelect->selFlags & SF_MinMaxAgg)==0
+   && pExpr->x.pSelect->pLimit==0
+   /* ^-- See bug 2026-11-04T00:59:22Z */
    && pWC->op==TK_AND
    && pExpr->x.pSelect->pEList->nExpr <= UMXV(pTerm->nChild)
    /* ^-- See bug 2026-06-04T10:00:49Z */

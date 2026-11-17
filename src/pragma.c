@@ -381,13 +381,22 @@ static void pragmaFunclistLine(
 ** Generate code to output a single-column result row with a value of the
 ** string held in register 3.  Decrement the result count in register 1
 ** and halt if the maximum number of result rows have been issued.
+**
+** If iCol is not negative, then after the result row has been output,
+** also load column iCol of cursor iCur into register 3. This is to ensure
+** the cursor's column cache is valid after it is invalidated by the
+** OP_ResultRow.
 */
-static int integrityCheckResultRow(Vdbe *v){
+static int integrityCheckResultRow(Vdbe *v, int iCur, int iCol){
   int addr;
   sqlite3VdbeAddOp2(v, OP_ResultRow, 3, 1);
   addr = sqlite3VdbeAddOp3(v, OP_IfPos, 1, sqlite3VdbeCurrentAddr(v)+2, 1);
   VdbeCoverage(v);
   sqlite3VdbeAddOp0(v, OP_Halt);
+  if( iCol>=0 ){
+    sqlite3VdbeAddOp3(v, OP_Column, iCur, iCol, 3);
+    sqlite3VdbeTypeofColumn(v, 3);
+  }
   return addr;
 }
 
@@ -1791,7 +1800,7 @@ void sqlite3Pragma(
          sqlite3MPrintf(db, "*** in database %s ***\n", db->aDb[i].zDbSName),
          P4_DYNAMIC);
       sqlite3VdbeAddOp3(v, OP_Concat, 2, 3, 3);
-      integrityCheckResultRow(v);
+      integrityCheckResultRow(v, 0, -1);
       sqlite3VdbeJumpHere(v, addr);
 
       /* Check that the indexes all have the right number of rows */
@@ -1817,7 +1826,7 @@ void sqlite3Pragma(
             VdbeCoverageNeverNull(v);
             sqlite3VdbeLoadString(v, 4, pIdx->zName);
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 2, 3);
-            integrityCheckResultRow(v);
+            integrityCheckResultRow(v, 0, -1);
             sqlite3VdbeJumpHere(v, addr);
           }
           cnt++;
@@ -1884,21 +1893,16 @@ void sqlite3Pragma(
         */
         assert( !IsVirtual(pTab) );
         if( HasRowid(pTab) ){
-          mxCol = -1;
-          for(j=0; j<pTab->nCol; j++){
-            if( (pTab->aCol[j].colFlags & COLFLAG_VIRTUAL)==0 ) mxCol++;
-          }
-          if( mxCol==pTab->iPKey ) mxCol--;
+          mxCol = pTab->nNVCol-1;
         }else{
           /* COLFLAG_VIRTUAL columns are not included in the WITHOUT ROWID
           ** PK index column-count, so there is no need to account for them
           ** in this case. */
           mxCol = sqlite3PrimaryKeyIndex(pTab)->nColumn-1;
         }
-        if( mxCol>=0 ){
-          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, mxCol, 3);
-          sqlite3VdbeTypeofColumn(v, 3);
-        }
+        assert( mxCol>=0 );
+        sqlite3VdbeAddOp3(v, OP_Column, iDataCur, mxCol, 3);
+        sqlite3VdbeTypeofColumn(v, 3);
 
         if( !isQuick ){
           if( pPk ){
@@ -1912,7 +1916,7 @@ void sqlite3Pragma(
                    "row not in PRIMARY KEY order for %s",
                     pTab->zName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-            integrityCheckResultRow(v);
+            integrityCheckResultRow(v, iDataCur, mxCol);
             sqlite3VdbeJumpHere(v, a1);
             sqlite3VdbeJumpHere(v, a1+1);
             for(j=0; j<pPk->nKeyCol; j++){
@@ -2049,7 +2053,7 @@ void sqlite3Pragma(
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
           }
           sqlite3VdbeResolveLabel(v, labelError);
-          integrityCheckResultRow(v);
+          integrityCheckResultRow(v, iDataCur, mxCol);
           sqlite3VdbeResolveLabel(v, labelOk);
         }
         /* Verify CHECK constraints */
@@ -2071,7 +2075,7 @@ void sqlite3Pragma(
             zErr = sqlite3MPrintf(db, "CHECK constraint failed in %s",
                 pTab->zName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
-            integrityCheckResultRow(v);
+            integrityCheckResultRow(v, 0, -1);
             sqlite3VdbeResolveLabel(v, addrCkOk);
           }
           sqlite3ExprListDelete(db, pCheck);
@@ -2103,7 +2107,7 @@ void sqlite3Pragma(
                                  "value for row ", pIdx->zName),
               P4_DYNAMIC);
             sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
-            integrityCheckResultRow(v);
+            integrityCheckResultRow(v, 0, -1);
             sqlite3VdbeAddOp2(v, OP_Goto, 0, ckUniq);
 
             sqlite3VdbeJumpHere(v, jmp2);
@@ -2113,7 +2117,7 @@ void sqlite3Pragma(
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
             jmp5 = sqlite3VdbeLoadString(v, 4, pIdx->zName);
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
-            jmp4 = integrityCheckResultRow(v);
+            jmp4 = integrityCheckResultRow(v, 0, -1);
             sqlite3VdbeResolveLabel(v, ckUniq);
 
             /* The OP_IdxRowid opcode is an optimized version of OP_Column
@@ -2193,7 +2197,7 @@ void sqlite3Pragma(
             VdbeCoverageNeverNull(v);
             sqlite3VdbeLoadString(v, 4, pIdx->zName);
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 2, 3);
-            integrityCheckResultRow(v);
+            integrityCheckResultRow(v, 0, -1);
             sqlite3VdbeJumpHere(v, addr);
             iPart++;
           }
@@ -2232,7 +2236,7 @@ void sqlite3Pragma(
         pTab->nTabRef++;
         sqlite3VdbeAppendP4(v, pTab, P4_TABLEREF);
         a1 = sqlite3VdbeAddOp1(v, OP_IsNull, 3); VdbeCoverage(v);
-        integrityCheckResultRow(v);
+        integrityCheckResultRow(v, 0, -1);
         sqlite3VdbeJumpHere(v, a1);
         continue;
       }
@@ -3032,11 +3036,13 @@ static int pragmaVtabFilter(
   int i, j;
   StrAccum acc;
   char *zSql;
+  int type0 = SQLITE_NULL;
 
   UNUSED_PARAMETER(idxNum);
   UNUSED_PARAMETER(idxStr);
   pragmaVtabCursorClear(pCsr);
   j = (pTab->pName->mPragFlg & PragFlg_Result1)!=0 ? 0 : 1;
+  if( argc>0 ) type0 = sqlite3_value_type(argv[0]);
   for(i=0; i<argc; i++, j++){
     const char *zText = (const char*)sqlite3_value_text(argv[i]);
     assert( j<ArraySize(pCsr->azArg) );
@@ -3055,7 +3061,11 @@ static int pragmaVtabFilter(
   }
   sqlite3_str_appendall(&acc, pTab->pName->zName);
   if( pCsr->azArg[0] ){
-    sqlite3_str_appendf(&acc, "=%Q", pCsr->azArg[0]);
+    if( type0<=SQLITE_FLOAT ){
+      sqlite3_str_appendf(&acc, "=%s", pCsr->azArg[0]);
+    }else{
+      sqlite3_str_appendf(&acc, "=%Q", pCsr->azArg[0]);
+    }
   }
   zSql = sqlite3StrAccumFinish(&acc);
   if( zSql==0 ) return SQLITE_NOMEM;
@@ -3089,7 +3099,9 @@ static int pragmaVtabColumn(
   if( i<pTab->iHidden ){
     sqlite3_result_value(ctx, sqlite3_column_value(pCsr->pPragma, i));
   }else{
-    sqlite3_result_text(ctx, pCsr->azArg[i-pTab->iHidden],-1,SQLITE_TRANSIENT);
+    int k = i - pTab->iHidden;
+    if( (pTab->pName->mPragFlg & PragFlg_Result1)==0 ) k++;
+    sqlite3_result_text(ctx, pCsr->azArg[k],-1,SQLITE_TRANSIENT);
   }
   return SQLITE_OK;
 }

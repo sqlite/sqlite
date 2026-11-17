@@ -2640,12 +2640,19 @@ status:
 # Validate that various generated files in the source tree
 # are up-to-date.
 #
-srctree-check:	$(TOP)\tool\srctree-check.tcl
+srctree-check:	$(TOP)\tool\srctree-check.tcl tuning-verify
 	$(TCLSH_CMD) $(TOP)\tool\srctree-check.tcl
+
+# Verify that the Tuning(D,ID) macros in the source code agree with the
+# defaults in the sqlite3Tuning[] array of src/global.c.  This is part of
+# srctree-check, and thus of devtest.
+#
+tuning-verify:	$(TOP)\tool\tuningverify.tcl
+	$(TCLSH_CMD) $(TOP)\tool\tuningverify.tcl "$(TOP:\=/)"
 
 # Testing for a release
 #
-releasetest: verify-source
+releasetest: tuning-verify verify-source
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
 
 # xdevtest is like releasetest, except that it skips the

@@ -116,4 +116,34 @@ do_execsql_test 1.7.4 {
   SELECT * FROM t1 ORDER BY a;
 } {1 1 1 2 2 2}
 
+# Forum post f2c49ee062: an idle EXPLAIN statement must not be re-stepped
+# against Table objects freed by a schema reset that was caused by DDL
+# run on another connection.  EXPLAIN never runs OP_Transaction, so it
+# never notices the stale schema cookie on its own.
+#
+reset_db
+sqlite3 db2 test.db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1,2);
+}
+proc explain_p4 {db sql opcode} {
+  set res [list]
+  $db eval $sql {if {$opcode==$::op} {lappend res $p4}}
+  return $res
+}
+foreach {tn sql op} {
+  1 {EXPLAIN DELETE FROM t1 WHERE a>5}  Delete
+  2 {EXPLAIN DELETE FROM t1}            Clear
+  3 {EXPLAIN INSERT INTO t1 VALUES(5,6)} Insert
+  4 {EXPLAIN UPDATE t1 SET b=b+1}       Insert
+} {
+  set ::op $op
+  do_test 2.$tn.1 { explain_p4 db $sql $op } t1
+  db2 eval {CREATE TABLE tz(z); DROP TABLE tz;}
+  do_execsql_test 2.$tn.2 { SELECT count(*) FROM t1 } 1
+  do_test 2.$tn.3 { explain_p4 db $sql $op } t1
+}
+db2 close
+
 finish_test
