@@ -488,7 +488,7 @@ void sqlite3_str_vappendf(
             testcase( szPrefix==0 );
             testcase( szPrefix==1 );
             testcase( szPrefix==2 );
-            width -= (infop->flags>>PREFIXOFST)&3;
+            width -= szPrefix;
           }
           if( precision<width-(prefix!=0) ){
             precision = width-(prefix!=0);
