@@ -10644,12 +10644,15 @@ Pager *sqlite3BtreePager(Btree *p){
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /*
-** Record an OOM error during integrity_check
+** Record an OOM error during integrity_check if rc is SQLITE_NOMEM
+** or SQLITE_IOERR_NOMEM.
 */
-static void checkOom(IntegrityCk *pCheck){
-  pCheck->rc = SQLITE_NOMEM;
-  pCheck->mxErr = 0;  /* Causes integrity_check processing to stop */
-  if( pCheck->nErr==0 ) pCheck->nErr++;
+static void checkOom(IntegrityCk *pCheck, int rc){
+  if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
+    pCheck->rc = SQLITE_NOMEM;
+    pCheck->mxErr = 0;  /* Causes integrity_check processing to stop */
+    if( pCheck->nErr==0 ) pCheck->nErr++;
+  }
 }
 
 /*
@@ -10702,7 +10705,7 @@ static void checkAppendMsg(
   sqlite3_str_vappendf(&pCheck->errMsg, zFormat, ap);
   va_end(ap);
   if( pCheck->errMsg.accError==SQLITE_NOMEM ){
-    checkOom(pCheck);
+    checkOom(pCheck, SQLITE_NOMEM);
   }
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
@@ -10768,7 +10771,7 @@ static void checkPtrmap(
 
   rc = ptrmapGet(pCheck->pBt, iChild, &ePtrmapType, &iPtrmapParent);
   if( rc!=SQLITE_OK ){
-    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ) checkOom(pCheck);
+    checkOom(pCheck, rc);
     checkAppendMsg(pCheck, "Failed to read ptrmap key=%u", iChild);
     return;
   }
@@ -10964,9 +10967,9 @@ static int checkTreePage(
   pCheck->v1 = iPage;
   pCheck->nAbove++;
   if( (rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0 ){
+    checkOom(pCheck, rc);
     checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
-    if( rc==SQLITE_IOERR_NOMEM ) pCheck->rc = SQLITE_NOMEM;
     goto end_of_check;
   }
   if( pCheck->nAbove > BTCURSOR_MAX_DEPTH ){
@@ -11267,7 +11270,7 @@ int sqlite3BtreeIntegrityCheck(
 
   sCheck.aPgRef = sqlite3MallocZero((sCheck.nCkPage / 8)+ 1);
   if( !sCheck.aPgRef ){
-    checkOom(&sCheck);
+    checkOom(&sCheck, SQLITE_NOMEM);
     goto integrity_ck_cleanup;
   }
   sCheck.heap = (u32*)sqlite3Malloc( pBt->pageSize*2 );
@@ -11275,7 +11278,7 @@ int sqlite3BtreeIntegrityCheck(
   sCheck.mxHeap = pBt->pageSize/2 - 1;
 #endif
   if( sCheck.heap==0 ){
-    checkOom(&sCheck);
+    checkOom(&sCheck, SQLITE_NOMEM);
     goto integrity_ck_cleanup;
   }
 
