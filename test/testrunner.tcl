@@ -1514,6 +1514,10 @@ proc add_c_jobs {buildname patternlist} {
   foreach f [glob -nocomplain $dir/*.c] {
     set prg [string range [file tail $f] 0 end-2]
 
+    # Programs whose names begin with "win" are for Windows only.
+    #
+    if {[string match win* $prg] && $TRG(platform)!="win"} continue
+
     set cmd ""
     if {$TRG(platform)=="win"} {
       foreach cp {sqlite3.lo *.h *.c} {
