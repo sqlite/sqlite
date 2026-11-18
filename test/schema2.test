@@ -143,6 +143,8 @@ do_test schema2-4.4 {
 # a database is DETACHed (but not when one is ATTACHed).
 #
 ifcapable attach {
+  # Do not attach a test2.db left behind by an earlier script.
+  forcedelete test2.db
   do_test schema2-5.1 {
     set sql {SELECT * FROM abc;}
     set ::STMT [sqlite3_prepare_v2 $::DB $sql -1 TAIL]

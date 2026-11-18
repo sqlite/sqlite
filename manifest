@@ -1,5 +1,5 @@
-C Fix\sthe\smodeof=\squery\sparameter\sto\sURI\sfilenames\sso\sthat\smisuse\sdoes\snot\ncause\san\sassertion\sfault\sor\smemory\sleak.\n[bugs:/info/2026-11-18T19:07:34Z|Bug\s2026-11-18T19:07:34Z]
-D 2026-11-18T19:50:21.026
+C Fix\sdeletion\sof\sscratch\sdbs\sin\sseveral\stests.\sTest\sscripts\sonly,\sno\scode\schanges.\sBelated\sBug\s3\sfrom\sthe\s[/timeline?r=bugs-ac23256beb|bugs-ac23256beb\sreport].
+D 2026-11-18T19:58:03.964
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1680,8 +1680,8 @@ F test/savepoint7.test 24c69af86d750c80d51cf6500fde9270717f2b6e5658f055b5e75af75
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test f5eccd84923bb2f19dad894ecbb9ec44ad9082e716d3f5c5618d9a3e8b20c377
 F test/scanstatus2.test c6a513911e41b9ca146ee249096b3c671a382ec695743834671c0e86822538eb
-F test/schema.test e615575f2d756df4629596523f11d9322384ecf9f980e58c774cff80ff041c33
-F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
+F test/schema.test 779ec4df7c63ef4551a3bf4137c03eb13da695be7b4012aa8b29f19883187ce8
+F test/schema2.test a4255a9f0cd6c27aac680c0f20f6a585aacc6d3fbd6020c3301ab404593b0201
 F test/schema3.test 8ed4ae66e082cdd8b1b1f22d8549e1e7a0db4527a8e6ee8b6193053ee1e5c9ce
 F test/schema4.test 3b26c9fa916abb6dadf894137adcf41b7796f7b9
 F test/schema5.test 29699b4421f183c8f0e88bd28ce7d75d13ea653e
@@ -1790,7 +1790,7 @@ F test/stmtrand.test 340e2ea4841c5cdc02d36e33739769c5d907ab529b12bb535407def0e41
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
 F test/strict1.test 66560d4e192c32da1fb845851cf561d687881137a988a5792fe0fc439721070e
 F test/strict2.test b22c7a98b5000aef937f1990776497f0e979b1a23bc4f63e2d53b00e59b20070
-F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
+F test/subjournal.test d5c1ace7231e654b4f50425be7aa3aa9fe817935f7b0a49d6db05b9b29dfe687
 F test/subquery.test 0a8fc4fc4eb04b9ee40b17f2cc5416aacfbf756b583fa8880b801e395d5abb36
 F test/subquery2.test ab96ff3fa9c4e3dce0d699f74e61c50250ed4335bc8f400e127707d552a8999e
 F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
@@ -1802,7 +1802,7 @@ F test/swarmvtab.test 250231404fcac88f61a6c147bb0e3a118ed879278cd3ccb0ae2d3a729e
 F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27cbd0aa5c
 F test/swarmvtab3.test 41a3ab47cb7a834d4e5336425103b617410a67bb95d335ef536f887587ece073
 F test/swarmvtabfault.test 8a67a9f27c61073a47990829e92bc0c64420a807cb642b15a25f6c788210ed95
-F test/symlink.test 79017a7aad68a8e15b8eaa9b50acd68ebc51c214c814dc7089fe0a3ad805fcab
+F test/symlink.test 272907584c562e2e6a16575c63adc9fbe7b30c95c1c1fca6cb95ab955dc39ce5
 F test/symlink2.test 3cf7f09dcf3cf74541f5fdb1ede3c731e4e35d2018d85efc61e32ac114435ce3
 F test/sync.test a619e407ede58a7b6e3e44375328628559fc9695a9c24c47cb5690a866b0031b
 F test/sync2.test 06152269ed73128782c450c355988fe8dd794d305833af75e1a5e79edd4dae47
@@ -2314,8 +2314,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b087f898c948cfa0034e95ae4114b25d295447f3872e98f9927d05bc2627a656
-R eb12e34adcdb01748e7bd5be4b40a38e
-U drh
-Z 1c9a6b693f027b0de6c69c4ea5604a21
+P c2b40f017ba5ad6f2e5985874aace3d7ce53b681c40bcb522515dd2edfc2cd4a
+R c850455875addf292680be370cfee3a4
+U stephan
+Z 61c9351d440b59a14b09d33cd9bd384e
 # Remove this line to create a well-formed Fossil manifest.
