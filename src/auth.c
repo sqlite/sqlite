@@ -124,6 +124,68 @@ int sqlite3AuthReadCol(
   return rc;
 }
 
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+static int authGenColWalk(Walker *pWalker, Expr *pExpr);
+
+/*
+** Column iCol of table pTab is a generated column.  Invoke the authorizer
+** for each column that the generated-column expression reads and for each
+** SQL function that it calls.  Return SQLITE_IGNORE if the authorizer
+** says to ignore any of the columns, or SQLITE_DENY if there is an error.
+*/
+static int authGenColRead(Parse *pParse, Table *pTab, int iCol){
+  Walker w;
+  Expr *pX = sqlite3ColumnExpr(pTab, &pTab->aCol[iCol]);
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = authGenColWalk;
+  w.pParse = pParse;
+  w.u.pTab = pTab;
+  sqlite3WalkExpr(&w, pX);
+  return w.eCode;
+}
+
+/* Walker callback for authGenColRead(). */
+static int authGenColWalk(Walker *pWalker, Expr *pExpr){
+  Parse *pParse = pWalker->pParse;
+  Table *pTab = pWalker->u.pTab;
+  int rc = SQLITE_OK;
+  if( pExpr->op==TK_FUNCTION ){
+    rc = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0, pExpr->u.zToken, 0);
+    if( rc ){
+      sqlite3ErrorMsg(pParse, "not authorized to use function: %#T", pExpr);
+      pWalker->eCode = SQLITE_DENY;
+      return WRC_Abort;
+    }
+  }else if( pExpr->op==TK_COLUMN && ExprUseYTab(pExpr) ){
+    int iCol = pExpr->iColumn;
+    int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+    const char *zCol;
+    if( iCol>=0 ){
+      zCol = pTab->aCol[iCol].zCnName;
+    }else if( pTab->iPKey>=0 ){
+      zCol = pTab->aCol[pTab->iPKey].zCnName;
+    }else{
+      zCol = "ROWID";
+    }
+    rc = sqlite3AuthReadCol(pParse, pTab->zName, zCol, iDb);
+    if( rc==SQLITE_DENY ){
+      pWalker->eCode = SQLITE_DENY;
+      return WRC_Abort;
+    }
+    if( rc==SQLITE_IGNORE ){
+      pWalker->eCode = SQLITE_IGNORE;
+    }else if( iCol>=0 && (pTab->aCol[iCol].colFlags & COLFLAG_GENERATED)!=0 ){
+      rc = authGenColRead(pParse, pTab, iCol);
+      if( rc ){
+        pWalker->eCode = rc;
+        return rc==SQLITE_DENY ? WRC_Abort : WRC_Continue;
+      }
+    }
+  }
+  return WRC_Continue;
+}
+#endif /* SQLITE_OMIT_GENERATED_COLUMNS */
+
 /*
 ** The pExpr should be a TK_COLUMN expression.  The table referred to
 ** is in pTabList or else it is the NEW or OLD table of a trigger.  
@@ -181,7 +243,19 @@ void sqlite3AuthRead(
   assert( iDb>=0 && iDb<pParse->db->nDb );
   if( SQLITE_IGNORE==sqlite3AuthReadCol(pParse, pTab->zName, zCol, iDb) ){
     pExpr->op = TK_NULL;
+    return;
   }
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  /* A generated column exposes the columns it is computed from, so apply
+  ** the authorizer to those too. */
+  if( iCol>=0
+   && pParse->nErr==0
+   && (pTab->aCol[iCol].colFlags & COLFLAG_GENERATED)!=0
+   && authGenColRead(pParse, pTab, iCol)==SQLITE_IGNORE
+  ){
+    pExpr->op = TK_NULL;
+  }
+#endif
 }
 
 /*
