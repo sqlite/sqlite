@@ -638,7 +638,9 @@ static int fts5StorageLoadTotals(Fts5Storage *p, int bCache){
   int rc = SQLITE_OK;
   if( p->bTotalsValid==0 ){
     rc = sqlite3Fts5IndexGetAverages(p->pIndex, &p->nTotalRow, p->aTotalSize);
-    p->bTotalsValid = bCache;
+    if( rc==SQLITE_OK ){
+      p->bTotalsValid = bCache;
+    }
   }
   return rc;
 }
