@@ -9828,7 +9828,7 @@ static int isHereDoc(const char *z){
 */
 static char *captureHereDoc(ShellState *p, const char *zTerminator){
   int nTerminator = strlen30(zTerminator);
-  sqlite3_str *pHeredoc = sqlite3_str_new(p->db);
+  sqlite3_str *pHeredoc = sqlite3_str_new(0);
   char zLine[2000];
   while( shell_fgets(p, zLine,sizeof(zLine),p->in) ){
     if( strchr(zLine,'\n') ) p->lineno++;
@@ -9935,7 +9935,7 @@ static int dotCmdCheck(ShellState *p){
     dotCmdError(p, 0, "no .testcase is active", 0);
     return 1;
   }
-  pPattern = sqlite3_str_new(p->db);
+  pPattern = sqlite3_str_new(0);
   for(i=1; i<nArg; i++){
     char *z = azArg[i];
     if( z[0]=='-' && z[1]=='-' && z[2]!=0 ) z++;
@@ -14062,7 +14062,7 @@ static int runOneSqlLine(
     END_TIMER(p);
   }
   if( rc || zErrMsg ){
-    sqlite3_str *pPrefix = sqlite3_str_new(p->db);
+    sqlite3_str *pPrefix = sqlite3_str_new(0);
     const char *zErrorTail;
     const char *zErrorType;
     if( zErrMsg==0 ){

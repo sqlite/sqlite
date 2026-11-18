@@ -126,6 +126,30 @@ ok
 END
 .endif /* if capable('rtree') */
 
+# The CLI's own text should not be subject to SQLITE_LIMIT_LENGTH.
+# That includes the "Error near line N of FILE:" prefix, the .check
+# pattern, and heredoc text.  Test 521 uses a 40-character script name
+# so that the prefix alone is longer than the 50 byte limit.
+#
+.open :memory:
+.testcase 520
+SELECT writefile('misc02-520-xxxxxxxxxxxxxxxxxxxxxxxxx.sql',
+                 'SELECT zeroblob(200);');
+.check 21
+.testcase 521
+.limit length 50
+.read misc02-520-xxxxxxxxxxxxxxxxxxxxxxxxx.sql
+.check -glob "*rror near line 1 of misc02-520-*: string or blob too big*"
+.testcase 522
+.print xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+.check xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+.testcase 523
+.print xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+.check <<END
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+END
+.limit length 1000000
+
 .if capable('geopoly')
 # Geopoly: same problem as above for the _shape blob. A 200-vertex polygon is
 # 1207 bytes as JSON but 1604 bytes as a blob, so with a 1500 byte limit
