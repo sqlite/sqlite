@@ -1,5 +1,5 @@
-C Have\ssession\stests\sclear\stheir\slog\scallbacks.\s(Bug\s2)
-D 2026-11-18T16:46:28.026
+C Fix\sunintended\stest\sexclusions.\s(Bug\s4)
+D 2026-11-18T16:47:28.354
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1605,7 +1605,7 @@ F test/pcache2.test 8a801d2b8e4b0ebb99701f026a67a9e84634c8aa24799a842c44003b9325
 F test/pcacheleak.test b01e2bf0cde8140e3fdb44a251aa09e7377cd8ea4585305c25074da274352c14
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
 F test/percentile.test fd78896fa882fa4fbf693640097859721f3629926c2ccf804af5bcb7001fd35b
-F test/permutations.test c919e9d9b9d17faccd543128ac714efbba0606c7051bcb54f264006eecdb4627
+F test/permutations.test 19dd920a9693248f8a3bd6b144b323ffa23b67e994c5a41739a1a8845b59f51c
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 7d07b7bb76e273215d6a20c4f83c3062cc28976c737ccb70a686025801e86c8f
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -2314,8 +2314,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1a9ca48f4fdaa4f774a955988d21f0a101af2cb95e28603a3c7ec3a84b0225ca
-R ad2e43ec6627a7689f4be4a1b3e1fcec
+P 627934537824282dec8ce20296db733629232452b580932b4317c8496ae4754c
+R c5b6038c408a7b40834a39782620d7f2
 U stephan
-Z 623e39d7e9daf07df22157a14169762d
+Z 69f39f2a59d5d8a86389bc96fe45f2da
 # Remove this line to create a well-formed Fossil manifest.
