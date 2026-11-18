@@ -1,5 +1,5 @@
-C Fix\sissues\son\sUPSERT\swith\sa\sUNIQUE\sindex\swith\sduplicate\scolumns.\n[bugs:/info/2026-11-16T13:32:44Z|Bug\s2026-11-16T13:32:44Z]
-D 2026-11-18T23:42:43.923
+C Fix\stest-case\sproblems\son\sWindows\sintroduced\sby\s[f377150d867f7333]\s-\s\nforcedelete\strying\sto\sdelete\sa\sdatabase\sfile\sout\sfrom\sunder\san\sactive\nconnection,\swhich\sis\snot\sallowed\son\sWindows.
+D 2026-11-18T23:58:33.502
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -974,7 +974,7 @@ F test/backcompat.test f2431465ed668f09fc3f6998e56e893a1506ccea6e8b6f409f085f759
 F test/backup.test 3b08fd4af69f0fa786931103a31f4542b184aba16e239e5f22b18c3c2476697f
 F test/backup2.test b153553ee5667b0748b43346b0725fbf80ce1f5544613bf087d669778b60ec56
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
-F test/backup5.test 36656e6dc4be7bbffb5fc906f43b6cd40121351b642cff878988e6f768f5e574
+F test/backup5.test fa7eea8876d11664691d68f4d85909f0f1923033ebf5f709bc90ca1c8bc29c21
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
 F test/badutf.test cff75b714866a4ffa0cdda252eb8fe8765483f5872c0076223c92d52b4fffd1b
@@ -2116,7 +2116,7 @@ F test/walfault.test 09b8ad7e52d2f54bce50e31aa7ea51412bb9f70ac13c74e669ddcd8b48b
 F test/walfault2.test e039ac66c78d5561683cacde04097213cdad3b58e2b3f3fe1112862217bfd915
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/waliter.test 9f28ec73c38148852558257d1bbe4c43f2ff49b9a651d860d09dac9067e5b0dd
-F test/walmode.test faa09e52c1a2e983026ef60914d2077d0485a98fc99978c63e0e4f12e6c95127
+F test/walmode.test b777f0962b9040328a262a6bee4f72a63e4cf84c3b2b04ee4d3da6f9c6c7d676
 F test/walnoshm.test 844b3eb7d8e8ee76c834ef723babec57b0be51fa52ef7e321c289ed0fe3cddc2
 F test/waloverwrite.test 649e1252906954f3f8b6463a7e08be3f4c7510ef7d66c7262fec746ad9151d51
 F test/walpersist.test 8d78a1ec91299163451417b451a2bac3481f8eb9f455b1ca507a6625c927ca6e
@@ -2314,8 +2314,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f153195f03c53d73a0349dfe5d24811906dd82412dedf77ba255f2d49dea7be6
-R 65cfc71804e7d32de507650b5bb4e944
+P 809f8c15282180a784c20f0702cbf6853ca62d69ee756853162571bb5e947d5e
+R 19d286f25a05b356816c721acb5c459a
 U drh
-Z 67cc55cb846ec550aa5aeedc115fcd33
+Z 04a3de329bbbeb6d961165a0f7deb35b
 # Remove this line to create a well-formed Fossil manifest.
