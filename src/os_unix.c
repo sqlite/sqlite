@@ -4823,7 +4823,7 @@ static void unixShmPurge(unixFile *pFd){
 #endif
     for(i=0; i<p->nRegion; i+=nShmPerMap){
       if( p->hShm>=0 ){
-        osMunmap(p->apRegion[i], p->szRegion);
+        osMunmap(p->apRegion[i], (i64)p->szRegion*nShmPerMap);
       }else{
         sqlite3_free(p->apRegion[i]);
       }
