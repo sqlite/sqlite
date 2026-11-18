@@ -9824,18 +9824,23 @@ static int isHereDoc(const char *z){
 /*
 ** Capture lines of input text up until a line that matches zTerminator.
 ** Return a memory buffer (allocated using sqlite3_malloc64()) that
-** contains the complete text, without the terminator.
+** contains the complete text, without the terminator.  The buffer is
+** never NULL, even if the text is empty.
 */
 static char *captureHereDoc(ShellState *p, const char *zTerminator){
   int nTerminator = strlen30(zTerminator);
   sqlite3_str *pHeredoc = sqlite3_str_new(0);
+  char *zHeredoc;
   char zLine[2000];
   while( shell_fgets(p, zLine,sizeof(zLine),p->in) ){
     if( strchr(zLine,'\n') ) p->lineno++;
     if( cli_strncmp(zTerminator,zLine,nTerminator)==0 ) break;
     sqlite3_str_appendall(pHeredoc, zLine);
   }
-  return sqlite3_str_finish(pHeredoc);
+  zHeredoc = sqlite3_str_finish(pHeredoc);
+  if( zHeredoc==0 ) zHeredoc = sqlite3_mprintf("");
+  shell_check_oom(zHeredoc);
+  return zHeredoc;
 }
 
 /*

@@ -150,6 +150,14 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 END
 .limit length 1000000
 
+# An empty heredoc on .read used to crash the CLI.
+#
+.testcase 530
+.read <<END
+END
+SELECT 42;
+.check 42
+
 .if capable('geopoly')
 # Geopoly: same problem as above for the _shape blob. A 200-vertex polygon is
 # 1207 bytes as JSON but 1604 bytes as a blob, so with a 1500 byte limit
