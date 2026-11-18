@@ -1,5 +1,5 @@
-C In\sfts5,\savoid\sdropping\sthe\serror\scode\sif\san\serror\soccurs\swhile\sloading\sthe\s"averages"\srecord.\sReport\s[bugs:/info/2026-11-18T15:49:15Z\s|\s2026-11-18T15:49:15Z].
-D 2026-11-18T16:42:25.547
+C Correct\sa\smiscalculation\sin\sunixShmPurge().\s(Bug\s1)
+D 2026-11-18T16:44:40.644
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -795,7 +795,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 713336d0c646720a9ccbd5bc6fe217bb4924dd28adea25d83a2af5346cb030e6
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c 3a197098579c23169d1db8ef93fe9b5131a8e4c489c7d157fe053c9e593f1831
+F src/os_unix.c c4c9d7c80d42d5a5eb34e5220524d5eac1420b588efdda69fa6014f104b4ccab
 F src/os_win.c 74473c76517956865581f12e4afc06c09a499ea70002cf9cedb3316301138be8
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c f50bf390020a1ac466ccaab442c111f46fa1e6ee09a390f2eef322d6b44bfaad
@@ -2314,8 +2314,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7320819bffa5151e7597a161030366287095e7f03ffaf78f440ae6bfe00e48b1
-R 62796f6326580bbfe93c6938c4659b86
-U dan
-Z c1b5c7f8120c0ab097a2e576ecdc2b36
+P cdfee84529f91944db807842a7c5cb92f74e4f0d7082a53d8cacf3a47e88c34e
+R f2b91573584cbc4f54f017c41314efcc
+T *branch * bugs-ac23256beb
+T *sym-bugs-ac23256beb *
+T -sym-trunk * Cancelled\sby\sbranch.
+U stephan
+Z ae2b920c8478e501512ae9a935a8df48
 # Remove this line to create a well-formed Fossil manifest.
