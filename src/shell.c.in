@@ -7999,34 +7999,40 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
 
   for(i=1; i<nArg; i++){
     char *z = azArg[i];
-    int n;
     if( z[0]=='-' && z[1]=='-' ) z++;
-    n = strlen30(z);
-    if( n<=17 && memcmp("-ignore-freelist", z, n)==0 ){
+    if( optionMatch(z,"ignore-freelist") ){
       bFreelist = 0;
     }else
-    if( n<=12 && memcmp("-recovery-db", z, n)==0 && i<(nArg-1) ){
+    if( optionMatch(z, "recovery-db") ){
       /* This option determines the name of the ATTACH-ed database used
       ** internally by the recovery extension.  The default is "" which
       ** means to use a temporary database that is automatically deleted
       ** when closed.  This option is undocumented and might disappear at
       ** any moment. */
+      if( i+1>=nArg ){
+        dotCmdError(pState, i, "missing argument", 0);
+        return 1;
+      }
       i++;
       zRecoveryDb = azArg[i];
     }else
-    if( n<=15 && memcmp("-lost-and-found", z, n)==0 && i<(nArg-1) ){
+    if( optionMatch(z, "lost-and-found") ){
+      if( i+1>=nArg ){
+        dotCmdError(pState, i, "missing argument", 0);
+        return 1;
+      }
       i++;
       zLAF = azArg[i];
     }else
-    if( n<=10 && memcmp("-no-rowids", z, n)==0 ){
+    if( optionMatch(z,"no-rowids") ){
       bRowids = 0;
     }else
-    if( n<=7 && memcmp("-unsafe", z, n)==0 ){
+    if( optionMatch(z,"unsafe") ){
       bUnsafe = 1;
     }
     else{
-      cli_printf(stderr,"unexpected option: %s\n", azArg[i]);
-      showHelp(pState->out, azArg[0]);
+      dotCmdError(pState, i, "unknown mode",
+                  "Use \".help .recover\" for more info");
       return 1;
     }
   }
