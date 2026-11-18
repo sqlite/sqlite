@@ -584,13 +584,16 @@ static int lookupName(
           if( pExpr->iTable==EXCLUDED_TABLE_NUMBER ){
             testcase( iCol==(-1) );
             assert( ExprUseYTab(pExpr) );
+            pExpr->iColumn = iCol;
+            pExpr->y.pTab = pTab;
             if( IN_RENAME_OBJECT ){
-              pExpr->iColumn = iCol;
-              pExpr->y.pTab = pTab;
               eNewExprOp = TK_COLUMN;
             }else{
               pExpr->iTable = pNC->uNC.pUpsert->regData +
                  sqlite3TableColumnToStorage(pTab, iCol);
+              /* Keep the column identity so that the register has the
+              ** affinity and collation of the column. */
+              pExpr->op2 = TK_COLUMN;
               eNewExprOp = TK_REGISTER;
             }
           }else

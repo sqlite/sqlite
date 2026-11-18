@@ -173,3 +173,56 @@ SELECT fullkey FROM json_each(x'5C29615C1331');
 .testcase 565
 SELECT fullkey FROM json_each(x'5C28615C1331');
 .check '$."a\\"'
+
+#***********************************************************************
+# Bug 2026-11-18T08:08:53Z
+#
+# The excluded.* values of an UPSERT must have the affinity and collating
+# sequence of the column they came from, just like the same values read
+# from the table.
+#
+#   https://sqlite.org/bugs/info/dcf6e09adc1bfd53
+#
+.open :memory:
+.mode -reset list -colsep ' ' -rowsep ' '
+.testcase 600
+CREATE TABLE t7(a TEXT, n TEXT COLLATE NOCASE, u INT UNIQUE);
+INSERT INTO t7 VALUES('2','ABC',1);
+.check
+.testcase 610
+SELECT a=2, n='abc', n IN ('abc'), a BETWEEN 2 AND 2 FROM t7;
+.check 1 1 1 1
+.testcase 620
+INSERT INTO t7 VALUES(2,'ABC',1) ON CONFLICT(u) DO UPDATE
+  SET a = (excluded.a=2) || (excluded.n='abc') || (excluded.n IN ('abc'))
+          || (excluded.a BETWEEN 2 AND 2);
+SELECT a FROM t7;
+.check 1111
+.testcase 630
+CREATE TABLE t8(n TEXT COLLATE NOCASE, u INT UNIQUE);
+INSERT INTO t8 VALUES('ABC',1);
+INSERT INTO t8 VALUES('ABC',1) ON CONFLICT(u) DO UPDATE
+  SET n='updated' WHERE excluded.n='abc';
+SELECT n FROM t8;
+.check updated
+.testcase 640
+CREATE TABLE t9(x INT, u INT UNIQUE);
+INSERT INTO t9 VALUES(5,1);
+INSERT INTO t9 VALUES('5',1) ON CONFLICT(u) DO UPDATE
+  SET x = typeof(excluded.x) || (excluded.x=5) || (excluded.x='5');
+SELECT x FROM t9;
+.check integer11
+.testcase 650
+CREATE TABLE t10(id INTEGER PRIMARY KEY, b, c TEXT);
+INSERT INTO t10 VALUES(1,'x','y');
+INSERT INTO t10 VALUES(1,'p','q') ON CONFLICT(id) DO UPDATE
+  SET b = excluded.id || excluded.b, c = excluded.c;
+SELECT id, b, c FROM t10;
+.check 1 1p q
+.testcase 660
+CREATE TABLE t11(s TEXT, i INT, u INT UNIQUE);
+INSERT INTO t11 VALUES('10',10,1);
+INSERT INTO t11 VALUES(10,10,1) ON CONFLICT(u) DO UPDATE
+  SET s = 'seen' WHERE t11.s=excluded.s AND t11.i=excluded.i;
+SELECT s FROM t11;
+.check seen
