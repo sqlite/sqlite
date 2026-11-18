@@ -343,3 +343,20 @@ PRAGMA integrity_check;
 SELECT group_concat(rowid) FROM t32;
 SELECT group_concat(rowid||':'||a) FROM t33;
 .check ok 1,3,4 1:1,2:99,3:3,4:11
+
+#***********************************************************************
+# Bug 2026-11-04
+#
+# Assertion fault following misuse of the modeof= query parameter.
+#
+.open :memory:
+.if capable('unix')
+.testcase 900
+.shell rm -f no-such-file-misc03-900.db
+VACUUM INTO 'file:no-such-file-misc03-900.db?modeof';
+.check
+.testcase 901
+.shell rm -f no-such-file-misc03-900.db
+VACUUM INTO 'file:no-such-file-misc03-900.db?modeof=nonsense';
+.check
+.endif /* capable('unix') */

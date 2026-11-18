@@ -1,5 +1,5 @@
-C Merge\sfixes\sfrom\sthe\sbugs-ac23256beb.\s\sThis\scompletes\severything\sneeded\nto\sfix\sall\sof\sthe\sissues\senumerated\sby\n[bugs:/info/2026-11-18T13:50:26Z|bug\sreport\s2026-11-18T13:50:26Z].
-D 2026-11-18T19:15:34.390
+C Fix\sthe\smodeof=\squery\sparameter\sto\sURI\sfilenames\sso\sthat\smisuse\sdoes\snot\ncause\san\sassertion\sfault\sor\smemory\sleak.\n[bugs:/info/2026-11-18T19:07:34Z|Bug\s2026-11-18T19:07:34Z]
+D 2026-11-18T19:50:21.026
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -795,7 +795,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 713336d0c646720a9ccbd5bc6fe217bb4924dd28adea25d83a2af5346cb030e6
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c c4c9d7c80d42d5a5eb34e5220524d5eac1420b588efdda69fa6014f104b4ccab
+F src/os_unix.c 9a32d6da684744b88e20fe7536a75acd08e0c01f0cd5600505aad34c974faf1e
 F src/os_win.c 74473c76517956865581f12e4afc06c09a499ea70002cf9cedb3316301138be8
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c f50bf390020a1ac466ccaab442c111f46fa1e6ee09a390f2eef322d6b44bfaad
@@ -1528,7 +1528,7 @@ F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc01.sql a84ecfe6cb0b6fe3c0e1033404f2d5bf52f2f61ea867f4fc5531a45462de0125
 F test/misc02.sql b678b008b01c37210043d2db629d83782c49579008835e577672e983bc6527fc
-F test/misc03.sql 4fc1db3e363cd83427f05e488819ce7368b8f2654fc7f53df3149307368ce465
+F test/misc03.sql 065efb429f6060082ae43f0134d21ba599051bf6638d604bb8632f7c5802c58f
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2314,9 +2314,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 22f08258b603f746d3d08d759130eb63db0c328dfbfc4adb1b5182f40140b99e ccff4f46939029149697aa5c962a6827d7036102184867003d93070505b056b6
-R 60f9409db5a364a4f27d30ba9b897f96
-T +closed ccff4f46939029149697aa5c962a6827d7036102184867003d93070505b056b6
+P b087f898c948cfa0034e95ae4114b25d295447f3872e98f9927d05bc2627a656
+R eb12e34adcdb01748e7bd5be4b40a38e
 U drh
-Z 7b9cac14413e36825488ec3e6130fd85
+Z 1c9a6b693f027b0de6c69c4ea5604a21
 # Remove this line to create a well-formed Fossil manifest.

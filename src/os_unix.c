@@ -6502,7 +6502,7 @@ static int findCreateFileMode(
     ** that file.  */
     const char *z = sqlite3_uri_parameter(zPath, "modeof");
     if( z ){
-      rc = getFileMode(z, pMode, pUid, pGid);
+      (void)getFileMode(z, pMode, pUid, pGid);
     }
   }
   return rc;
