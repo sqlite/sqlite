@@ -69,3 +69,48 @@ SELECT printf('U+%04X', unicode(x)) FROM t1
  WHERE x LIKE '퟿%' ESCAPE '^';
 .check 'U+D7FF U+D7FF'
 
+
+#***********************************************************************
+#
+# An index on a generated column must not change the type of a matching
+# expression elsewhere in the query.  The index affinity string lumps all
+# numeric affinities together, so a REAL column could replace an integer
+# expression, or the reverse.
+#
+#   https://sqlite.org/bugs/info/c667229a15161954
+#
+.open :memory:
+.mode -reset list -colsep ' ' -rowsep ' '
+
+.testcase 200
+CREATE TABLE t2(
+  v INT,
+  g REAL AS (CAST(v AS INT)) VIRTUAL,
+  h INT AS (CAST(v AS REAL)) VIRTUAL,
+  r REAL AS (v*1.0) VIRTUAL
+);
+INSERT INTO t2(v) VALUES(9);
+CREATE INDEX t2g ON t2(g);
+CREATE INDEX t2h ON t2(h);
+CREATE INDEX t2r ON t2(r);
+.check ''
+
+.testcase 210
+SELECT CAST(v AS INT), typeof(CAST(v AS INT)) FROM t2 NOT INDEXED WHERE g>0;
+.check '9 integer'
+
+.testcase 220
+SELECT CAST(v AS INT), typeof(CAST(v AS INT)) FROM t2 WHERE g>0;
+.check '9 integer'
+
+.testcase 230
+SELECT CAST(v AS REAL), typeof(CAST(v AS REAL)) FROM t2 NOT INDEXED WHERE h>0;
+.check '9.0 real'
+
+.testcase 240
+SELECT CAST(v AS REAL), typeof(CAST(v AS REAL)) FROM t2 WHERE h>0;
+.check '9.0 real'
+
+.testcase 250
+SELECT v*1.0, typeof(v*1.0) FROM t2 WHERE r>0;
+.check '9.0 real'

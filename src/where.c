@@ -6856,6 +6856,10 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
       pExpr = pIdx->aColExpr->a[i].pExpr;
     }else if( j>=0 && (pTab->aCol[j].colFlags & COLFLAG_VIRTUAL)!=0 ){
       pExpr = sqlite3ColumnExpr(pTab, &pTab->aCol[j]);
+      /* The index affinity string does not distinguish REAL from the other
+      ** numeric affinities, so check for that mismatch here. */
+      if( (pTab->aCol[j].affinity==SQLITE_AFF_REAL)
+           !=(sqlite3ExprAffinity(pExpr)==SQLITE_AFF_REAL) ) continue;
     }else{
       continue;
     }
