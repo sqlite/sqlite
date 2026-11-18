@@ -1695,3 +1695,111 @@ SELECT a FROM w1;
 .testcase 3300
 SELECT format('%#010x,%#010X,%#010o,%#010d',255,255,255,255);
 .check 0x000000ff,0X000000FF,0000000377,0000000255
+
+# Bug 2026-11-04T20:26:34Z sqlite.org/bugs/info/7e102e0e60dd6227
+# Bug 2026-11-04T21:09:58Z sqlite.org/bugs/info/113506a561057568
+#
+# dbstat did not honor a non-BINARY collation on the name column, and
+# took pgsize and pgoffset from the wrong database when the schema is
+# chosen by a "schema=" constraint.
+#
+.open :memory:
+.mode list
+CREATE TABLE ds1(x);
+CREATE TABLE dsn(k TEXT COLLATE NOCASE);
+INSERT INTO dsn VALUES('DS1');
+
+.testcase 3400
+SELECT name FROM dbstat WHERE name='DS1' COLLATE NOCASE;
+.check ds1
+
+.testcase 3410
+SELECT name FROM dbstat WHERE 'DS1' COLLATE NOCASE = name;
+.check ds1
+
+.testcase 3420
+SELECT name FROM dbstat WHERE name='ds1  ' COLLATE RTRIM;
+.check ds1
+
+-- Both terms must hold.
+.testcase 3430
+SELECT name FROM dbstat WHERE name='ds1' AND name='DS1' COLLATE NOCASE;
+.check ds1
+
+.testcase 3440
+SELECT name FROM dbstat WHERE name='ds1' AND name='DS2' COLLATE NOCASE;
+.check ''
+
+-- A BINARY comparison is still exact.
+.testcase 3450
+SELECT count(*) FROM dbstat WHERE name='DS1';
+.check 0
+
+.testcase 3460
+SELECT name FROM dbstat WHERE name='ds1';
+.check ds1
+
+.testcase 3470
+SELECT name FROM dbstat WHERE name='ds1' COLLATE BINARY;
+.check ds1
+
+.testcase 3480
+SELECT name FROM dbstat WHERE name=+'DS1';
+.check ''
+
+-- The collation of a joined column applies.
+.testcase 3490
+SELECT k, name FROM dsn JOIN dbstat ON k=name;
+.check DS1|ds1
+
+.testcase 3500
+SELECT k, name FROM dsn LEFT JOIN dbstat ON k=name;
+.check DS1|ds1
+
+.testcase 3510
+SELECT k, name FROM dsn JOIN dbstat ON name=k;
+.check ''
+
+-- Page size and offset come from the database being read.  Give the
+-- TEMP database a different page size from MAIN.
+PRAGMA temp.page_size=1024;
+CREATE TEMP TABLE ts1(x);
+INSERT INTO ts1 VALUES(zeroblob(3000));
+
+.testcase 3600
+SELECT name, pageno, pgoffset, pgsize FROM dbstat
+ WHERE schema='temp' AND pageno<=2 ORDER BY pageno;
+.check <<END
+sqlite_schema|1|0|1024
+ts1|2|1024|1024
+END
+
+-- This includes the overflow pages.
+.testcase 3610
+SELECT DISTINCT pgsize FROM dbstat WHERE schema='temp';
+.check 1024
+
+.testcase 3620
+SELECT count(*) FROM dbstat
+ WHERE schema='main' AND pgsize<>(SELECT page_size FROM pragma_page_size);
+.check 0
+
+.testcase 3630
+SELECT name, pgsize FROM dbstat WHERE schema='temp' AND aggregate=1
+ ORDER BY name;
+.check <<END
+sqlite_schema|1024
+ts1|3072
+END
+
+-- A dbstat table made on TEMP can still read MAIN correctly.
+CREATE VIRTUAL TABLE st USING dbstat(temp);
+
+.testcase 3640
+SELECT count(*) FROM st
+ WHERE schema='main' AND pgsize<>(SELECT page_size FROM pragma_page_size);
+.check 0
+
+.testcase 3650
+SELECT DISTINCT pgsize FROM st WHERE schema='temp';
+.check 1024
