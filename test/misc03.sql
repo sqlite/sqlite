@@ -291,3 +291,55 @@ CREATE TRIGGER tr23 BEFORE UPDATE ON t23 BEGIN SELECT new.a; END;
 UPDATE t23 SET a=5;
 SELECT a, b, c FROM t23;
 .check 5 2 7
+
+#***********************************************************************
+# Bug 2026-11-04
+#
+# OP_NewRowid moves the table cursor, so it must invalidate the cached
+# result of any earlier seek.  Otherwise, in a multi-row UPSERT where a
+# BEFORE UPDATE trigger deletes the conflicting row, the following row is
+# inserted using a stale seek result and ends up out of rowid order.
+#
+#   https://sqlite.org/bugs/info/44ffe36c008ceff4
+#
+.open :memory:
+.mode -reset list -colsep ' ' -rowsep ' '
+.testcase 800
+CREATE TABLE t30(a, e UNIQUE);
+CREATE TRIGGER t30r BEFORE UPDATE ON t30 BEGIN
+  DELETE FROM t30 WHERE rowid=old.rowid;
+END;
+INSERT INTO t30 VALUES(1,1),(2,2),(3,3);
+INSERT INTO t30 VALUES(10,2),(11,11) ON CONFLICT(e) DO UPDATE SET a=99;
+PRAGMA integrity_check(t30);
+.check ok
+.testcase 810
+SELECT rowid, a, e FROM t30 ORDER BY rowid;
+.check 1 1 1 3 3 3 4 11 11
+.testcase 820
+-- The same with three new rows following the conflicting one.
+CREATE TABLE t31(a, e UNIQUE);
+CREATE TRIGGER t31r BEFORE UPDATE ON t31 BEGIN
+  DELETE FROM t31 WHERE rowid=old.rowid;
+END;
+INSERT INTO t31 VALUES(1,1),(2,2),(3,3);
+INSERT INTO t31 VALUES(10,2),(11,11),(12,12),(13,13)
+  ON CONFLICT(e) DO UPDATE SET a=99;
+PRAGMA integrity_check(t31);
+SELECT group_concat(rowid) FROM (SELECT rowid FROM t31);
+.check ok 1,3,4,5,6
+.testcase 830
+-- An AFTER UPDATE trigger, and no trigger at all, must continue to work.
+CREATE TABLE t32(a, e UNIQUE);
+CREATE TRIGGER t32r AFTER UPDATE ON t32 BEGIN
+  DELETE FROM t32 WHERE rowid=old.rowid;
+END;
+INSERT INTO t32 VALUES(1,1),(2,2),(3,3);
+INSERT INTO t32 VALUES(10,2),(11,11) ON CONFLICT(e) DO UPDATE SET a=99;
+CREATE TABLE t33(a, e UNIQUE);
+INSERT INTO t33 VALUES(1,1),(2,2),(3,3);
+INSERT INTO t33 VALUES(10,2),(11,11) ON CONFLICT(e) DO UPDATE SET a=99;
+PRAGMA integrity_check;
+SELECT group_concat(rowid) FROM t32;
+SELECT group_concat(rowid||':'||a) FROM t33;
+.check ok 1,3,4 1:1,2:99,3:3,4:11
