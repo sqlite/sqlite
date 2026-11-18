@@ -114,3 +114,62 @@ SELECT CAST(v AS REAL), typeof(CAST(v AS REAL)) FROM t2 WHERE h>0;
 .testcase 250
 SELECT v*1.0, typeof(v*1.0) FROM t2 WHERE r>0;
 .check '9.0 real'
+
+#***********************************************************************
+# 2026-11-06T00:28:19Z
+# The fullkey and path columns of json_each() and json_tree() must escape
+# a double-quote character in an object label.  A label written in JSON5
+# using single quotes can contain a raw double-quote, which must not be
+# copied into the path unchanged.
+#
+#   https://sqlite.org/bugs/info/53eb99b97a309be9
+#
+.open :memory:
+.mode -reset list -colsep ' ' -rowsep ' '
+.testcase 500
+SELECT fullkey FROM json_each('{''a"b'':1}');
+.check '$."a\"b"'
+.testcase 505
+SELECT json_extract('{''a"b'':1}', fullkey)
+  FROM json_each('{''a"b'':1}');
+.check '1'
+.testcase 510
+SELECT fullkey FROM json_each('{"a\"b":1}');
+.check '$."a\"b"'
+.testcase 515
+SELECT fullkey, path FROM json_tree('{''a"b'':[{''c"d'':2}]}')
+ WHERE atom IS 2 OR key='a"b';
+.check '$."a\"b" $ $."a\"b"[0]."c\"d" $."a\"b"[0]'
+.testcase 520
+SELECT json_extract('{''a"b'':[{''c"d'':2}]}', fullkey)
+  FROM json_tree('{''a"b'':[{''c"d'':2}]}')
+ WHERE atom=2;
+.check '2'
+.testcase 525
+SELECT fullkey FROM json_each('{''a\"b'':1}');
+.check '$."a\"b"'
+.testcase 530
+SELECT fullkey FROM json_each('{''a\\b"c'':1}');
+.check '$."a\\b\"c"'
+.testcase 535
+SELECT json_extract('{''a\\b"c'':1}', fullkey)
+  FROM json_each('{''a\\b"c'':1}');
+.check '1'
+.testcase 540
+SELECT fullkey FROM json_each('{''"'':1}');
+.check '$."\""'
+.testcase 545
+SELECT fullkey FROM json_each(jsonb('{''a"b'':1}'));
+.check '$."a\"b"'
+.testcase 550
+SELECT fullkey FROM json_each('{''ab'':1,''a b'':2}');
+.check '$.ab $."a b"'
+.testcase 555
+SELECT fullkey FROM json_each(x'6C3A615C621331');
+.check '$."a\\b"'
+.testcase 560
+SELECT fullkey FROM json_each(x'5C29615C1331');
+.check '$."a\\"'
+.testcase 565
+SELECT fullkey FROM json_each(x'5C28615C1331');
+.check '$."a\\"'

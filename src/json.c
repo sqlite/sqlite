@@ -5495,7 +5495,20 @@ static void jsonAppendPathName(JsonEachCursor *p){
       }
     }
     if( needQuote ){
-      jsonPrintf(sz+4,&p->path,".\"%.*s\"", sz, z);
+      u8 eLabel = p->sParse.aBlob[p->i] & 0x0f;
+      jsonAppendRaw(&p->path, ".\"", 2);
+      for(i=0; i<sz; i++){
+        char c = z[i];
+        if( c=='\\' && eLabel!=JSONB_TEXTRAW && i+1<sz ){
+          jsonAppendChar(&p->path, c);
+          c = z[++i];
+        }else if( c=='"' || c=='\\' ){
+          jsonAppendChar(&p->path, '\\');
+        }
+        jsonAppendChar(&p->path, c);
+      }
+      jsonAppendChar(&p->path, '"');
+      jsonStringTerminate(&p->path);
     }else{
       jsonPrintf(sz+2,&p->path,".%.*s", sz, z);
     }
@@ -5670,9 +5683,13 @@ static int jsonEachColumn(
     case JEACH_FULLKEY: {
       u64 nBase = p->path.nUsed;
       if( p->nParent ) jsonAppendPathName(p);
-      sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
-                            SQLITE_TRANSIENT, SQLITE_UTF8);
-      p->path.nUsed = nBase;
+      if( p->path.eErr ){
+        sqlite3_result_error_nomem(ctx);
+      }else{
+        sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
+                              SQLITE_TRANSIENT, SQLITE_UTF8);
+        p->path.nUsed = nBase;
+      }
       break;
     }
     case JEACH_PATH: {
