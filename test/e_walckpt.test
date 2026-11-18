@@ -749,6 +749,6 @@ do_test 6.5 {
   wal_checkpoint_v2 db truncate
 } {0 0 0}
 
-
+forcedelete abc.db test.db2 test.db3 test.db4
 
 finish_test

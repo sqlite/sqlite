@@ -991,6 +991,10 @@ do_catchsql_test 24.2 {
 } {1 {zip archive is corrupt}}
 
 # Bug 2026-06-03T10:58:51Z
+#
+# The test requires that there is no file named "x".
+#
+forcedelete x
 do_catchsql_test 25.0 {
   WITH t(v) AS (
     SELECT unhex(

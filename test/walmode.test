@@ -390,4 +390,6 @@ do_execsql_test walmode-8.21 { PRAGMA journal_mode = WAL }    {wal}
 do_execsql_test walmode-8.21 { PRAGMA main.journal_mode }     {wal}
 do_execsql_test walmode-8.22 { PRAGMA two.journal_mode }      {wal}
 
+forcedelete test.db2
+
 finish_test

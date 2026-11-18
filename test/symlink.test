@@ -233,6 +233,8 @@ do_execsql_test -db db2 5.2 {
 } {1 2 3}
 forcedelete test.db2
 
-
+# Remove the directories created by test 4.1 and 4.2.
+#
+forcedelete x y z w
 
 finish_test
