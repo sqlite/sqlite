@@ -273,7 +273,8 @@ static int isLikeOrGlob(
         if( c==0xff                             /* (1) */
          || (u = sqlite3Utf8Read(&z2))>=0xfffd  /* (2) */
          || u==0x7ff                            /* (3) */
-         || ENC(db)==SQLITE_UTF16LE             /* (4) */
+         || u==0xd7ff                           /* (4) */
+         || ENC(db)==SQLITE_UTF16LE             /* (5) */
         ){
           /* Do not accept this character as part of the prefix because
           **   (1)  0xff is not part of any valid UTF-8 character and the
@@ -282,7 +283,9 @@ static int isLikeOrGlob(
           **        start getting into the surrogate pairs in UTF16BE.
           **   (3)  When incrementing this code point to the upper bound,
           **        that would require adding an extra byte to the UTF-8
-          **   (4)  UTF16LE does not compare in sorted order.  Only
+          **   (4)  Incrementing U+d7ff yields U+d800, a surrogate, which
+          **        is not valid in UTF16BE.
+          **   (5)  UTF16LE does not compare in sorted order.  Only
           **        UTF16BE and UTF8 have that property.
           */
           cnt--;
