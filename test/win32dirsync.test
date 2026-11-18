@@ -1,0 +1,104 @@
+# 2026 November 15
+#
+# The author disclaims copyright to this source code.  In place of a
+# legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file tests the win32 VFS directory-sync feature: xDelete() with a
+# true syncDir argument, and the one-time parent-directory sync performed
+# on the first xSync of a newly created journal, WAL, or super-journal
+# file.
+#
+# Failure modes covered (each test binds one):
+#   FM1  winDelete() must not report an error on a healthy directory
+#        (otherwise every synchronous=EXTRA commit breaks).            -> 1.x
+#   FM2  the first xSync of a new journal/WAL must not report an error
+#        (otherwise every transaction on a fresh database breaks).     -> 1.x/2.x
+#
+# The checks that need to observe the directory flush itself - that it
+# happens exactly once on the first xSync() of a new journal and not
+# again, that a failing directory open or a failing FlushFileBuffers() is
+# reported as SQLITE_IOERR_DIR_FSYNC and stays pending so that a later
+# xSync() can retry it, that SQLITE_DISABLE_DIRSYNC turns both paths
+# off, and that a relative name with no separator syncs the current
+# working directory - are in the standalone program test/dirsyncprobe.c.
+# It counts the CreateFileW and FlushFileBuffers calls through the win32
+# VFS xSetSystemCall() interface.  Note that "sqlite3 db test.db" does
+# not exercise a bare filename: xFullPathname() resolves it before the
+# VFS sees it, so only the standalone probe can reach that path.
+#
+# Deliberately not tested: durability across actual power failure.  That
+# is not observable in-process; it would require power-loss injection or
+# block-command tracing, as documented in the forum proposal.
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix win32dirsync
+
+if {$tcl_platform(platform)!="windows"} {
+  finish_test
+  return
+}
+
+# The connection that tester.tcl opened in reset_db() stays open for the
+# whole run; deleting the database file behind it fails on Windows with
+# "permission denied".  So these tests never delete test.db - they close
+# and reopen connections through reset_db instead, which is the pattern
+# the other win32*.test files use.
+
+# ---- 1.x: DELETE-mode, synchronous=EXTRA drives xDelete(syncDir=1) ----
+# The pager passes extraSync (true under synchronous=EXTRA) as the syncDir
+# argument when deleting the rollback journal at commit time.  A healthy
+# directory must not turn that into an error (FM1), and the one-time
+# directory sync of the newly created journal must not either (FM2).
+do_test win32dirsync-1.1 {
+  reset_db
+  db eval {PRAGMA journal_mode=DELETE}
+  db eval {PRAGMA synchronous=EXTRA}
+  db eval {CREATE TABLE t1(a,b); INSERT INTO t1 VALUES(1,2);}
+} {}
+
+do_test win32dirsync-1.2 {
+  db eval {INSERT INTO t1 VALUES(3,4)}
+  db eval {SELECT count(*) FROM t1}
+} {2}
+
+# Multiple commits: the journal is created and deleted once per
+# transaction; each pass exercises both sync paths again.
+do_test win32dirsync-1.3 {
+  for {set i 0} {$i < 5} {incr i} {
+    db eval {INSERT INTO t1 VALUES($i,$i*10)}
+  }
+  db eval {SELECT count(*) FROM t1}
+} {7}
+
+# ---- 2.x: WAL mode (new WAL and SHM files, WAL is created per connection) ----
+do_test win32dirsync-2.1 {
+  reset_db
+  db eval {PRAGMA journal_mode=WAL}
+  db eval {CREATE TABLE t2(a); INSERT INTO t2 VALUES('x')}
+} {}
+
+# One-time directory sync of the new WAL must not report an error (FM2),
+# and a TRUNCATE checkpoint must not either: the checkpoint deletes
+# nothing, but the -wal file is truncated, which is a file operation on
+# the same directory.
+do_test win32dirsync-2.2 {
+  db eval {INSERT INTO t2 VALUES('y')}
+  db eval {PRAGMA wal_checkpoint(TRUNCATE)}
+  file size test.db-wal
+} {0}
+
+# ---- 3.x: integrity across every path above ----
+do_test win32dirsync-3.1 {
+  db close
+  sqlite3 db test.db
+  db eval {PRAGMA integrity_check}
+} {ok}
+
+db close
+finish_test
