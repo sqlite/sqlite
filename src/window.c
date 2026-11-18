@@ -2230,7 +2230,15 @@ static void windowCodeRangeTest(
   sqlite3VdbeAddOp4(v, OP_String8, 0, regString, 0, "", P4_STATIC);
   addrGe = sqlite3VdbeAddOp3(v, OP_Ge, regString, 0, regArith);
   VdbeCoverage(v);
-  if( (op==OP_Ge && !bDesc) || (op==OP_Le && bDesc) ){
+
+  /* For OP_Ge and OP_Gt (ASC), or OP_Le and OP_Lt (DESC), if the condition
+  ** is already true before regVal is added, jump to lbl immediately.
+  ** Mathematically this makes no difference, as regVal is non-negative.
+  ** But floating point rounding (e.g. when a large integer is converted
+  ** to a real for the addition) can cause (X + regVal) to be less than X. */
+  if( (!bDesc && (op==OP_Ge || op==OP_Gt))
+   || ( bDesc && (op==OP_Le || op==OP_Lt))
+  ){
     sqlite3VdbeAddOp3(v, op, reg2, lbl, reg1); VdbeCoverage(v);
   }
   sqlite3VdbeAddOp3(v, OP_Add, regVal, regArith, regArith);

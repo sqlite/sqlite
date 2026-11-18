@@ -1,5 +1,5 @@
-C Improved\sparsing\sof\soptions\sto\sthe\s.recover\scommand\sof\sthe\sCLI.\n[bugs:/info/2026-11-18T16:10:01Z|Bug\s2026-11-18T16:10:01Z]
-D 2026-11-18T16:22:15.769
+C Fix\sprocessing\sof\swindow\sfunction\sRANGE\sframes\sthat\send\sat\s"0.0\sPRECEDING".
+D 2026-11-18T16:23:25.344
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -896,7 +896,7 @@ F src/where.c 38fec73b7bf75e57cdedc5a4a1d27dd261d5ae6df1b5495e0790fc5e93e3df5a
 F src/whereInt.h 4cda70583637b939ee0369d68b85a65a73f45446daa05b0a7cceaa124a317d27
 F src/wherecode.c 4d92075217a2057f296e7e3e8476c929c48e3f3d12259a6ad981756c4efa1deb
 F src/whereexpr.c 845da75d15f93c7828320250577a9c86b3954f988d7d36ff366c625a295bcd5a
-F src/window.c 67f7f64eb4c65aab65deb6d7b7a7143f9633e933a480f719ac9970fc1e0134a6
+F src/window.c a1f677a5c7389735d808dd7d032cc0a03b4ee8d35b7e23c72a6d897f8dd84c35
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
 F test/affinity3.test 9b7d1133e11d5edd7805573c4ab6f3ba73b0b74a1f280d5b130d4bf3506a93ff
@@ -2194,6 +2194,7 @@ F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 15094c1529424e62f798bc679e3fe9dfab6e8ba2f7dfe8c923b6248c31660a7c
 F test/windowpushd.test c420e2265f0e09a0e798d0513a660d71b51602088d81b3dbd038918ee1339dcc
+F test/winrange.test 940fe1e3e16b3495f6f76027d00cf44067e6fe2296942f1753d01b419a48f751
 F test/with1.test e3fe2cbda3e5b0a8a666e596048313ea5895bfafc34dcdcfbd320470879cc68d
 F test/with2.test 9fc63a2676b41dd990960cd122e27cfcc7b36679620e3c0e4b825e82e5b6749f
 F test/with3.test e30369ea27aa27eb1bda4c5e510c8a9f782c8afd2ab99d1a02b8a7f25a5d3e65
@@ -2313,8 +2314,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7cf52a64dd11b58d1f6394b62dc5d17173db97b71b2493d36d818fb34d709760
-R 30cbaef6fc51b0a265b89a491870153f
-U drh
-Z c2ee5785963bdf847296c831b8647187
+P acc4a0c499c66e08c98e24c8945d619ec255f83d95793651489e098dd4f2f664
+R c514599641720993329551e6e1fc0770
+U dan
+Z 9fd4b2846f95d8dd2dfe8abd35e3ad3b
 # Remove this line to create a well-formed Fossil manifest.

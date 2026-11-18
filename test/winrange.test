@@ -1,0 +1,492 @@
+# 2026-11-18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for RANGE "<expr> PRECEDING" and "<expr> FOLLOWING" frame
+# boundaries with numeric values. With Xc the ORDER BY value of the
+# current row, Xi the ORDER BY value of a candidate row and N the value
+# of <expr>, boundaries are defined as (see windowfunctions.html):
+#
+#   ASC   start, N PRECEDING   first row with (Xi>=Xc OR Xi+N>=Xc)
+#   ASC   end,   N PRECEDING   last row with  (Xi<=Xc AND Xi+N<=Xc)
+#   DESC  start, N PRECEDING   first row with (Xi<=Xc OR Xi<=Xc+N)
+#   DESC  end,   N PRECEDING   last row with  (Xi>=Xc AND Xi>=Xc+N)
+#
+#   ASC   start, N FOLLOWING   first row with (Xi>=Xc+N)
+#   ASC   end,   N FOLLOWING   last row with  (Xi<=Xc OR Xi<=Xc+N)
+#   DESC  start, N FOLLOWING   first row with (Xi+N<=Xc)
+#   DESC  end,   N FOLLOWING   last row with  (Xi>=Xc OR Xi+N>=Xc)
+#
+# The expressions are evaluated using SQLite's usual arithmetic - exact
+# if both operands are integers, floating point otherwise. The results
+# are guaranteed to match the definitions above unless all of the
+# following are true:
+#
+#   * N is an integer, not a real value.
+#   * The data contains a mix of integer and real values.
+#   * At least one value, either N or an X value, has a magnitude greater
+#     than 2^53.
+#
+# Even then, each frame is a contiguous range of rows.
+#
+# See also:
+#
+#   https://sqlite.org/bugs/forumpost/61ad9448c9
+#   https://sqlite.org/bugs/forumpost/f6789181df
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix winrange
+
+ifcapable !windowfunc {
+  finish_test
+  return
+}
+
+#-------------------------------------------------------------------------
+# Plain SQL arithmetic results that the tests in 1.* to 4.* depend on.
+#
+do_execsql_test 0.0 {
+  SELECT 0.3+0.1 >= 0.4,     0.7+0.2 >= 0.9,     0.5+0.2 <= 0.7,
+         1.1+0.6 <= 1.7,     0.9999999999999999+1 >= 2.0;
+} {1 0 1 0 1}
+do_execsql_test 0.1 {
+  SELECT -0.3 <= -0.4+0.1,   -0.7 <= -0.9+0.2,   -0.5 >= -0.7+0.2,
+         -1.1 >= -1.7+0.6,   -0.9999999999999999 <= -2.0+1;
+} {0 1 0 1 0}
+
+#-------------------------------------------------------------------------
+# ASC ORDER BY, "<expr> PRECEDING" as the starting boundary.
+#
+reset_db
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x REAL);
+  INSERT INTO t1 VALUES(0.3), (0.4), (0.7), (0.9);
+}
+
+# 0.3+0.1 = 0.4. Frame for 0.4 includes 0.3.
+do_execsql_test 1.1 {
+  SELECT x, group_concat(x, ' ') OVER (
+    ORDER BY x ASC RANGE BETWEEN 0.1 PRECEDING AND CURRENT ROW
+  ) FROM t1 WHERE x IN (0.3, 0.4) ORDER BY x;
+} {0.3 0.3 0.4 {0.3 0.4}}
+
+# 0.7+0.2 = 0.89999999999999991. Frame for 0.9 does not include 0.7.
+do_execsql_test 1.2 {
+  SELECT x, group_concat(x, ' ') OVER (
+    ORDER BY x ASC RANGE BETWEEN 0.2 PRECEDING AND CURRENT ROW
+  ) FROM t1 WHERE x IN (0.7, 0.9) ORDER BY x;
+} {0.7 0.7 0.9 0.9}
+
+#-------------------------------------------------------------------------
+# ASC ORDER BY, "<expr> PRECEDING" as the ending boundary.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(x REAL);
+  INSERT INTO t1 VALUES(0.5), (0.7), (1.1), (1.7);
+}
+
+# 0.5+0.2 = 0.7. Frame for 0.7 contains 0.5.
+do_execsql_test 2.1 {
+  SELECT x, count(*) OVER (
+    ORDER BY x ASC RANGE BETWEEN UNBOUNDED PRECEDING AND 0.2 PRECEDING
+  ) FROM t1 WHERE x IN (0.5, 0.7) ORDER BY x;
+} {0.5 0 0.7 1}
+
+# 1.1+0.6 = 1.7000000000000002. Frame for 1.7 is empty.
+do_execsql_test 2.2 {
+  SELECT x, count(*) OVER (
+    ORDER BY x ASC RANGE BETWEEN UNBOUNDED PRECEDING AND 0.6 PRECEDING
+  ) FROM t1 WHERE x IN (1.1, 1.7) ORDER BY x;
+} {1.1 0 1.7 0}
+
+#-------------------------------------------------------------------------
+# The same as 1.* and 2.*, but mirrored: DESC ORDER BY on negated values.
+# For DESC, <expr> is added to Xc instead of Xi, so the floating point
+# rounding is different and in each case the results differ from those
+# of the ASC tests above.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(x REAL);
+  INSERT INTO t1 VALUES(-0.3), (-0.4), (-0.7), (-0.9);
+  CREATE TABLE t2(x REAL);
+  INSERT INTO t2 VALUES(-0.5), (-0.7), (-1.1), (-1.7);
+}
+
+# -0.4+0.1 = -0.30000000000000004. Frame for -0.4 does not include -0.3.
+do_execsql_test 3.1 {
+  SELECT x, group_concat(x, ' ') OVER (
+    ORDER BY x DESC RANGE BETWEEN 0.1 PRECEDING AND CURRENT ROW
+  ) FROM t1 WHERE x IN (-0.3, -0.4) ORDER BY x DESC;
+} {-0.3 -0.3 -0.4 -0.4}
+
+# -0.9+0.2 = -0.7. Frame for -0.9 includes -0.7.
+do_execsql_test 3.2 {
+  SELECT x, group_concat(x, ' ') OVER (
+    ORDER BY x DESC RANGE BETWEEN 0.2 PRECEDING AND CURRENT ROW
+  ) FROM t1 WHERE x IN (-0.7, -0.9) ORDER BY x DESC;
+} {-0.7 -0.7 -0.9 {-0.7 -0.9}}
+
+# -0.7+0.2 = -0.49999999999999994. Frame for -0.7 is empty.
+do_execsql_test 3.3 {
+  SELECT x, count(*) OVER (
+    ORDER BY x DESC RANGE BETWEEN UNBOUNDED PRECEDING AND 0.2 PRECEDING
+  ) FROM t2 WHERE x IN (-0.5, -0.7) ORDER BY x DESC;
+} {-0.5 0 -0.7 0}
+
+# -1.7+0.6 = -1.1. Frame for -1.7 contains -1.1.
+do_execsql_test 3.4 {
+  SELECT x, count(*) OVER (
+    ORDER BY x DESC RANGE BETWEEN UNBOUNDED PRECEDING AND 0.6 PRECEDING
+  ) FROM t2 WHERE x IN (-1.1, -1.7) ORDER BY x DESC;
+} {-1.1 0 -1.7 1}
+
+#-------------------------------------------------------------------------
+# The example from forum post 61ad9448c9.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t(id INTEGER, x REAL);
+  INSERT INTO t VALUES (1,0.9999999999999999),(2,2.0);
+}
+
+# ASC: 0.9999999999999999+1 = 2.0. Frame for 2.0 includes
+# 0.9999999999999999.
+do_execsql_test 4.1 {
+  SELECT id, count(*) OVER (
+    ORDER BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW
+  ) FROM t ORDER BY id;
+} {1 1 2 2}
+
+# DESC, negated values: -2.0+1 = -1.0. Frame for -2.0 does not include
+# -0.9999999999999999.
+do_execsql_test 4.2 {
+  SELECT id, count(*) OVER (
+    ORDER BY x DESC RANGE BETWEEN 1 PRECEDING AND CURRENT ROW
+  ) FROM (SELECT id, -x AS x FROM t) ORDER BY id;
+} {1 1 2 1}
+
+#-------------------------------------------------------------------------
+# Integer values are handled exactly, including very large values and
+# the extremes of the 64-bit range.
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t(x INTEGER);
+  INSERT INTO t VALUES(9007199254740992),(9007199254740993);
+}
+do_execsql_test 5.1 {
+  SELECT count(*) OVER (ORDER BY x RANGE BETWEEN 0 PRECEDING AND CURRENT ROW),
+         count(*) OVER (ORDER BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW)
+  FROM t ORDER BY x;
+} {1 1 1 2}
+
+reset_db
+do_execsql_test 5.2 {
+  CREATE TABLE t(o INTEGER);
+  INSERT INTO t VALUES(-9223372036854775808),(-9223372036854775807),(5);
+  SELECT o, count(*) OVER (
+    ORDER BY o DESC RANGE BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING
+  ) FROM t ORDER BY o DESC;
+} {5 2 -9223372036854775807 1 -9223372036854775808 0}
+do_execsql_test 5.3 {
+  SELECT o, count(*) OVER (
+    ORDER BY o DESC RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+  ) FROM t ORDER BY o DESC;
+} {5 0 -9223372036854775807 1 -9223372036854775808 2}
+do_execsql_test 5.4 {
+  SELECT o, count(*) OVER (
+    ORDER BY o ASC RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+  ) FROM t ORDER BY o DESC;
+} {5 2 -9223372036854775807 1 -9223372036854775808 0}
+
+# Sums that overflow a 64-bit integer. 9223372036854775807+(-1) does not
+# overflow, but 9223372036854775807+0 or more does, and the result is a
+# REAL greater than every integer value.
+reset_db
+do_execsql_test 5.5 {
+  CREATE TABLE t(x INTEGER);
+  INSERT INTO t VALUES(-9223372036854775808),(0),(9223372036854775807);
+  SELECT x, count(*) OVER (ORDER BY x
+    RANGE BETWEEN 9223372036854775807 PRECEDING AND CURRENT ROW
+  ) FROM t ORDER BY x;
+} {-9223372036854775808 1 0 1 9223372036854775807 2}
+do_execsql_test 5.6 {
+  SELECT x, count(*) OVER (ORDER BY x DESC
+    RANGE BETWEEN 9223372036854775807 PRECEDING AND CURRENT ROW
+  ) FROM t ORDER BY x;
+} {-9223372036854775808 1 0 2 9223372036854775807 1}
+
+#-------------------------------------------------------------------------
+# Infinities. -Inf+Inf is a NaN, which SQLite arithmetic returns as NULL.
+# So in 6.2, -Inf is not within "1e999 PRECEDING" of any row except
+# itself (it is in its own frame because -Inf>=-Inf).
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t(x REAL);
+  INSERT INTO t VALUES(-1e999),(0),(1e999),(1e999);
+  SELECT typeof(-1e999+1e999);
+} {null}
+do_execsql_test 6.1 {
+  SELECT x, count(*) OVER (ORDER BY x RANGE BETWEEN 5 PRECEDING AND CURRENT ROW)
+  FROM t ORDER BY x;
+} {-Inf 1 0.0 1 Inf 2 Inf 2}
+do_execsql_test 6.2 {
+  SELECT x, count(*) OVER (ORDER BY x RANGE BETWEEN 1e999 PRECEDING AND 0 PRECEDING)
+  FROM t ORDER BY x;
+} {-Inf 1 0.0 1 Inf 3 Inf 3}
+
+#-------------------------------------------------------------------------
+# Compare window function results with an oracle that evaluates the
+# definitions in the header comment of this file directly, for a range of
+# frame specifications. Over four data sets, each of which is such that
+# the results are guaranteed to match the definitions:
+#
+#   7.1.*: all integer values, including the 64-bit extremes.
+#   7.2.*: all real values.
+#   7.3.*: a mix of integer and real values, all of magnitude 2^53 or less,
+#          and <expr> values of 2^53 or less.
+#   7.4.*: a mix of integer and real values, including values of magnitude
+#          greater than 2^53, with real <expr> values only.
+#
+
+# Return an SQL expression that is true if row "s" is on the correct side
+# of the boundary $bound (e.g. "1 PRECEDING", "CURRENT ROW") of the frame
+# for current row "c". $se is either "start" or "end", and $dir is ASC
+# or DESC.
+proc oracle_cond {dir se bound} {
+  if {[string match UNBOUNDED* $bound]} { return 1 }
+  if {$bound=="CURRENT ROW"} {
+    set op [expr {($dir=="ASC")==($se=="start") ? ">=" : "<="}]
+    return "s.x$op c.x"
+  }
+  set N [lindex $bound 0]
+  set kind [lindex $bound 1]
+  switch -- "$dir $se $kind" {
+    "ASC start PRECEDING"  { return "(s.x>=c.x OR s.x+$N>=c.x)" }
+    "ASC end PRECEDING"    { return "(s.x<=c.x AND s.x+$N<=c.x)" }
+    "DESC start PRECEDING" { return "(s.x<=c.x OR s.x<=c.x+$N)" }
+    "DESC end PRECEDING"   { return "(s.x>=c.x AND s.x>=c.x+$N)" }
+    "ASC start FOLLOWING"  { return "(s.x>=c.x+$N)" }
+    "ASC end FOLLOWING"    { return "(s.x<=c.x OR s.x<=c.x+$N)" }
+    "DESC start FOLLOWING" { return "(s.x+$N<=c.x)" }
+    "DESC end FOLLOWING"   { return "(s.x>=c.x OR s.x+$N>=c.x)" }
+  }
+  error "bad boundary: $dir $se $bound"
+}
+
+# Each element of $frames is a list of two elements - the start and
+# end boundaries of a frame.
+proc oracle_test {tn frames} {
+  set fn 0
+  foreach f $frames {
+    incr fn
+    lassign $f start end
+    foreach dir {ASC DESC} {
+      set c1 [oracle_cond $dir start $start]
+      set c2 [oracle_cond $dir end $end]
+      do_execsql_test $tn.$fn.$dir "
+        SELECT id, count(*) OVER w, total(id) OVER w FROM t
+        WINDOW w AS (ORDER BY x $dir RANGE BETWEEN $start AND $end)
+        EXCEPT
+        SELECT c.id, count(s.id), total(s.id)
+        FROM t AS c LEFT JOIN t AS s ON ($c1 AND $c2) GROUP BY c.id
+      " {}
+    }
+  }
+}
+
+reset_db
+do_execsql_test 7.1.0 {
+  CREATE TABLE t(id INTEGER PRIMARY KEY, x);
+  INSERT INTO t(x) VALUES
+    (0), (1), (2), (3), (5), (8), (13), (-1), (-7), (100), (1000), (1550),
+    (9007199254740991), (9007199254740992), (9007199254740993),
+    (9007199254740994), (9007199254740995),
+    (4611686018427387392), (4611686018427387604), (4611686018427388204),
+    (9223372036854775806), (9223372036854775807),
+    (-9223372036854775808), (-9223372036854775807), (-9223372036854775806);
+}
+oracle_test 7.1 {
+  {"1 PRECEDING" "CURRENT ROW"}
+  {"550 PRECEDING" "2 FOLLOWING"}
+  {"3 PRECEDING" "1 PRECEDING"}
+  {"UNBOUNDED PRECEDING" "1 PRECEDING"}
+  {"2 PRECEDING" "UNBOUNDED FOLLOWING"}
+  {"CURRENT ROW" "1 FOLLOWING"}
+  {"1 FOLLOWING" "3 FOLLOWING"}
+  {"1 FOLLOWING" "UNBOUNDED FOLLOWING"}
+  {"0 PRECEDING" "0 FOLLOWING"}
+  {"0.5 PRECEDING" "0.5 FOLLOWING"}
+  {"9223372036854775807 PRECEDING" "CURRENT ROW"}
+  {"1e19 PRECEDING" "1e19 FOLLOWING"}
+  {"9007199254740993 PRECEDING" "1 FOLLOWING"}
+}
+
+reset_db
+do_execsql_test 7.2.0 {
+  CREATE TABLE t(id INTEGER PRIMARY KEY, x);
+  INSERT INTO t(x) VALUES
+    (0.0), (0.1), (0.2), (0.3), (0.30000000000000004), (0.4), (0.5), (0.7),
+    (0.9), (0.9999999999999999), (1.0), (1.1), (1.7), (2.0), (-0.3),
+    (-1.0), (-2.5), (10.25), (9007199254740992.0), (9007199254740994.0),
+    (9007199254740996.0), (4611686018427387392.0), (4611686018427388416.0),
+    (9.3e18), (-9.3e18), (1e300), (-1e300);
+}
+oracle_test 7.2 {
+  {"0.1 PRECEDING" "CURRENT ROW"}
+  {"1 PRECEDING" "CURRENT ROW"}
+  {"0.2 PRECEDING" "0.2 FOLLOWING"}
+  {"1 PRECEDING" "0.5 PRECEDING"}
+  {"UNBOUNDED PRECEDING" "0.2 PRECEDING"}
+  {"0.6 PRECEDING" "UNBOUNDED FOLLOWING"}
+  {"CURRENT ROW" "0.7 FOLLOWING"}
+  {"0.1 FOLLOWING" "0.4 FOLLOWING"}
+  {"0.3 FOLLOWING" "UNBOUNDED FOLLOWING"}
+  {"2 PRECEDING" "2 FOLLOWING"}
+  {"0 PRECEDING" "0 FOLLOWING"}
+  {"9007199254740993 PRECEDING" "3 FOLLOWING"}
+  {"1024 PRECEDING" "1024 FOLLOWING"}
+}
+
+reset_db
+do_execsql_test 7.3.0 {
+  CREATE TABLE t(id INTEGER PRIMARY KEY, x);
+  INSERT INTO t(x) VALUES
+    (0), (0.1), (0.2), (0.3), (0.30000000000000004), (0.4), (0.5), (0.7),
+    (0.9), (0.9999999999999999), (1), (1.1), (1.7), (2), (-0.3),
+    (-1), (-2.5), (10.25), (11), (-9007199254740992), (9007199254740991),
+    (9007199254740992), (9007199254740990.5), (-9007199254740990.5),
+    (4503599627370496.5), (4503599627370497);
+}
+oracle_test 7.3 {
+  {"0.1 PRECEDING" "CURRENT ROW"}
+  {"1 PRECEDING" "CURRENT ROW"}
+  {"0.2 PRECEDING" "0.2 FOLLOWING"}
+  {"1 PRECEDING" "0.5 PRECEDING"}
+  {"UNBOUNDED PRECEDING" "0.2 PRECEDING"}
+  {"0.6 PRECEDING" "UNBOUNDED FOLLOWING"}
+  {"CURRENT ROW" "0.7 FOLLOWING"}
+  {"0.1 FOLLOWING" "0.4 FOLLOWING"}
+  {"0.3 FOLLOWING" "UNBOUNDED FOLLOWING"}
+  {"2 PRECEDING" "2 FOLLOWING"}
+  {"0 PRECEDING" "0 FOLLOWING"}
+  {"9007199254740992 PRECEDING" "1 FOLLOWING"}
+  {"0.5 PRECEDING" "0.5 FOLLOWING"}
+}
+
+reset_db
+do_execsql_test 7.4.0 {
+  CREATE TABLE t(id INTEGER PRIMARY KEY, x);
+  INSERT INTO t(x) VALUES
+    (0), (0.5), (1), (2.25), (-3), (-0.75), (100),
+    (9007199254740993), (9007199254740994.0), (9007199254740995),
+    (4611686018427386587), (4611686018427386368.0), (4611686018427387392.0),
+    (4611686018427387604), (4611686018427388204), (4611686018427388416.0),
+    (-2305843009213694763), (-2305843009213694783), (-2.3058430092136934e18),
+    (9223372036854775807), (-9223372036854775808), (9.3e18), (-9.3e18);
+}
+oracle_test 7.4 {
+  {"0.5 PRECEDING" "CURRENT ROW"}
+  {"149.0 PRECEDING" "1011.5 FOLLOWING"}
+  {"1993.0 PRECEDING" "98.5 PRECEDING"}
+  {"UNBOUNDED PRECEDING" "0.0 PRECEDING"}
+  {"300.0 PRECEDING" "UNBOUNDED FOLLOWING"}
+  {"CURRENT ROW" "212.5 FOLLOWING"}
+  {"31.0 FOLLOWING" "212.5 FOLLOWING"}
+  {"31.0 FOLLOWING" "UNBOUNDED FOLLOWING"}
+  {"1e19 PRECEDING" "1e19 FOLLOWING"}
+  {"9007199254740993.0 PRECEDING" "1.0 FOLLOWING"}
+}
+
+#-------------------------------------------------------------------------
+# Data that mixes integer and real values of magnitude greater than 2^53.
+# The results are not defined exactly in this case, but each frame must
+# still be a contiguous range of rows, and aggregates must be consistent
+# with the rows in the frame. This is checked using pseudo-random data for
+# all frame shapes.
+#
+# The values in each data set are distinct, so that the row_number()
+# assigned to each row in the sub-query gives its unique position in the
+# window ordering.
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t(x);
+  CREATE UNIQUE INDEX t_x ON t(x);
+}
+
+expr {srand(8)}
+proc rnd {n} { expr {int(rand()*$n)} }
+proc pick {lst} { lindex $lst [rnd [llength $lst]] }
+
+proc random_value {} {
+  set base [pick {
+    0 9007199254740992 -9007199254740992 4611686018427387904
+    -4611686018427387904 9223372036854775807 -9223372036854775808
+  }]
+  set off [expr {[rnd 4000] - 2000}]
+  set v [expr {$base + $off}]
+  if {$v > 9223372036854775807}  { set v 9223372036854775807 }
+  if {$v < -9223372036854775808} { set v -9223372036854775808 }
+  switch [rnd 3] {
+    0 { return $v }
+    1 { return [format %.17g [expr {double($v)}]] }
+    2 { return [format %.17g [expr {double($v) + [rnd 8]*0.25}]] }
+  }
+}
+
+set offsets {
+  0 0.5 1 2 550 1000 2048 9007199254740993 9007199254740992.0
+  4611686018427387904 9223372036854775807 1e19
+}
+set starts {
+  "UNBOUNDED PRECEDING" "%N PRECEDING" "CURRENT ROW" "%N FOLLOWING"
+}
+set ends {
+  "%N PRECEDING" "CURRENT ROW" "%N FOLLOWING" "UNBOUNDED FOLLOWING"
+}
+
+for {set i 1} {$i <= 200} {incr i} {
+  set vals [list]
+  set nrow [expr {5 + [rnd 25]}]
+  for {set j 0} {$j < $nrow} {incr j} { lappend vals "([random_value])" }
+  execsql "DELETE FROM t; INSERT OR IGNORE INTO t VALUES [join $vals ,]"
+
+  set si [rnd 4]
+  set ei [expr {$si==0 ? [rnd 4] : $si-1+[rnd [expr {5-$si}]]}]
+  if {$ei > 3} { set ei 3 }
+  set start [string map [list %N [pick $offsets]] [lindex $starts $si]]
+  set end   [string map [list %N [pick $offsets]] [lindex $ends $ei]]
+  set dir [pick {ASC DESC}]
+  set frame "ORDER BY x $dir RANGE BETWEEN $start AND $end"
+
+  do_execsql_test 8.$i.\[$frame\] "
+    SELECT count(*) FROM (
+      SELECT count(*) OVER w AS n,
+             json_array_length(json_group_array(pos) OVER w) AS n2,
+             min(pos) OVER w AS mn, max(pos) OVER w AS mx,
+             total(pos) OVER w AS tot
+      FROM (SELECT x, row_number() OVER (ORDER BY x $dir) AS pos FROM t)
+      WINDOW w AS ($frame)
+    ) WHERE NOT (
+      n==n2 AND (
+        (n==0 AND mn IS NULL AND mx IS NULL AND tot==0) OR
+        (n>0 AND mx-mn+1==n AND tot==(mn+mx)*n/2.0)
+      )
+    )
+  " 0
+}
+
+finish_test
