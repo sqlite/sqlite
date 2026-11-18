@@ -954,6 +954,20 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+  if( newmask!=0 && (pTab->tabFlags & TF_HasGenerated)!=0 ){
+    /* If a BEFORE trigger reads a generated column via new.*, then we do
+    ** not know exactly which columns are needed, so load them all */
+    for(i=0; i<pTab->nCol; i++){
+      if( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)!=0
+       && (newmask & MASKBIT32(i<31 ? i : 31))!=0
+      ){
+        newmask = 0xffffffff;
+        break;
+      }
+    }
+  }
+#endif
   for(i=0, k=regNew; i<pTab->nCol; i++, k++){
     if( i==pTab->iPKey ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, k);

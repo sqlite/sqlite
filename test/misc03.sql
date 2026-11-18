@@ -226,3 +226,68 @@ INSERT INTO t11 VALUES(10,10,1) ON CONFLICT(u) DO UPDATE
   SET s = 'seen' WHERE t11.s=excluded.s AND t11.i=excluded.i;
 SELECT s FROM t11;
 .check seen
+
+#***********************************************************************
+# Bug 2026-11-06
+#
+# A BEFORE UPDATE trigger that reads a generated column via new.* must see
+# the value computed from all of the columns, including those that the
+# UPDATE does not assign.
+#
+#   https://sqlite.org/bugs/info/08c13eef95ba8fe2
+#
+.open :memory:
+.mode -reset list -colsep ' ' -rowsep ' '
+.testcase 700
+CREATE TABLE t20(a INT, b INT, c INT AS (a+b));
+INSERT INTO t20 VALUES(1,2);
+CREATE TABLE log20(x);
+CREATE TRIGGER tr20 BEFORE UPDATE ON t20 BEGIN
+  INSERT INTO log20 VALUES(coalesce(new.c,'NULL'));
+END;
+UPDATE t20 SET a=5;
+SELECT x FROM log20;
+.check 7
+.testcase 710
+DELETE FROM log20;
+UPDATE t20 SET b=10;
+SELECT x FROM log20;
+SELECT a, b, c FROM t20;
+.check 15 5 10 15
+.testcase 720
+CREATE TABLE t21(a INT, b INT, c INT AS (a+b) STORED, d INT AS (c*2));
+INSERT INTO t21 VALUES(1,2);
+CREATE TABLE log21(x);
+CREATE TRIGGER tr21 BEFORE UPDATE ON t21
+  WHEN new.c>5 OR new.d>100
+BEGIN
+  INSERT INTO log21 VALUES(coalesce(new.c,'NULL') || '/' || new.d);
+END;
+UPDATE t21 SET a=5;
+SELECT x FROM log21;
+.check 7/14
+.testcase 730
+-- The generated column is beyond the 32nd column, and the column it
+-- depends upon is not.
+CREATE TABLE t22(
+  c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15,
+  c16, c17, c18, c19, c20, c21, c22, c23, c24, c25, c26, c27, c28, c29,
+  c30, c31, c32, c33 INT AS (c0+c1)
+);
+INSERT INTO t22(c0,c1,c2) VALUES(1,2,3);
+CREATE TABLE log22(x);
+CREATE TRIGGER tr22 BEFORE UPDATE ON t22 BEGIN
+  INSERT INTO log22 VALUES(coalesce(new.c33,'NULL'));
+END;
+UPDATE t22 SET c0=5;
+SELECT x FROM log22;
+.check 7
+.testcase 740
+-- A BEFORE trigger that does not read generated columns still works, and
+-- the row ends up with the right values.
+CREATE TABLE t23(a INT, b INT, c INT AS (a+b) STORED);
+INSERT INTO t23 VALUES(1,2);
+CREATE TRIGGER tr23 BEFORE UPDATE ON t23 BEGIN SELECT new.a; END;
+UPDATE t23 SET a=5;
+SELECT a, b, c FROM t23;
+.check 5 2 7
