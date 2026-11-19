@@ -1399,5 +1399,25 @@ do_catchsql_test 8.1 {
   DELETE FROM t WHERE rowid=37;
 } {1 {fts5: corruption in table "t"}}
 
+# Bug 2026-11-19T14:10:05Z.  A read-only MATCH.  Leaf 1 holds a single
+# 105-byte term.  Leaf 2 has no terms, and the first-rowid offset in its
+# header is equal to its szLeaf (0x5a).  fts5SegIterNext() used to accept this
+# and read from leaf 2 using the iLeafOffset left over from leaf 1, which is
+# past the end of the smaller page.  (Visible with ASAN or valgrind.)
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x);
+  INSERT INTO t(rowid, x) VALUES(1, printf('%.*c', 104, 'a'));
+  UPDATE t_data SET block=x'000000000101010001010102' WHERE id=10;
+  INSERT INTO t_data VALUES(137438953474,
+    CAST(x'005a005a' || zeroblob(86) AS BLOB));
+}
+db close
+sqlite3 db test.db
+do_catchsql_test 9.1 {
+  SELECT rowid FROM t(printf('%.*c', 104, 'a'));
+} {1 {database disk image is malformed}}
+
 sqlite3_fts5_may_be_corrupt 0
 finish_test
