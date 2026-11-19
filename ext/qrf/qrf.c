@@ -2217,9 +2217,9 @@ static void qrfColumnar(Qrf *p){
         if( w==1 ){
           /* A double-wide character needs a column at least 2 wide, so
           ** that qrfWrapLine() always makes progress. */
-          int j;
-          for(j=i; j<data.n; j+=nColumn){
-            if( qrfHasWideChar(data.az[j]) ){
+          int jj;
+          for(jj=i; jj<data.n; jj+=nColumn){
+            if( qrfHasWideChar(data.az[jj]) ){
               w = 2;
               break;
             }
