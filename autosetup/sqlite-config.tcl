@@ -622,7 +622,7 @@ proc sqlite-affirm-have-math {featureName} {
     set lfl [get-define lib_log ""]
     undefine lib_log
     if {"" ne $lfl} {
-      user-notice "Forcing requirement of $lfl for $featureName"
+      msg-result "Forcing requirement of $lfl for $featureName"
     }
     define LDFLAGS_MATH $lfl
   }
@@ -1213,7 +1213,7 @@ proc sqlite-check-line-editing {} {
     sqlite-add-shell-opt -DHAVE_LINENOISE=$lnVal
     if {$::sqliteConfig(use-jim-for-codegen) && 2 == $lnVal} {
       define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
-      user-notice "Adding linenoise support to jimsh."
+      msg-result "Adding linenoise support to jimsh."
     } else {
       msg-result "Using linenoise at [file-normalize $dirLn]"
     }
