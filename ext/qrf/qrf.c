@@ -766,6 +766,24 @@ static int qrfDisplayWidth(const char *zIn, sqlite3_int64 nByte, int *pnNL){
 }
 
 /*
+** Return true if the zero-terminated string zIn contains any character
+** that is more than one column wide.
+*/
+static int qrfHasWideChar(const char *zIn){
+  const unsigned char *z = (const unsigned char*)zIn;
+  while( z[0] ){
+    if( z[0]>=0xc0 ){
+      int u = 0;
+      z += sqlite3_qrf_decode_utf8(z, &u);
+      if( sqlite3_qrf_wcwidth(u)>1 ) return 1;
+    }else{
+      z++;
+    }
+  }
+  return 0;
+}
+
+/*
 ** Escape the text starting at byte iStart of pStr, if needed, using the
 ** escape encoding of eEsc, which is either QRF_ESC_Ascii or QRF_ESC_Symbol.
 ** The pStr string is modified appropriately.
@@ -2196,6 +2214,17 @@ static void qrfColumnar(Qrf *p){
       if( p->spec.nWrap>0 && w>p->spec.nWrap ){
         w = p->spec.nWrap;
         data.bMultiRow = 1;
+        if( w==1 ){
+          /* A double-wide character needs a column at least 2 wide, so
+          ** that qrfWrapLine() always makes progress. */
+          int j;
+          for(j=i; j<data.n; j+=nColumn){
+            if( qrfHasWideChar(data.az[j]) ){
+              w = 2;
+              break;
+            }
+          }
+        }
       }
     }else if( (data.bMultiRow==0 || w==1) && data.a[i].mxW>w ){
       data.bMultiRow = 1;
@@ -2323,6 +2352,7 @@ static void qrfColumnar(Qrf *p){
         int iNext = 0;
         int nWS;
         qrfWrapLine(data.a[j].z, data.a[j].w, bWW, &nThis, &nWide, &iNext);
+        assert( iNext>0 || data.a[j].z[0]==0 );
         nWS = data.a[j].w - nWide;
         qrfPrintAligned(p->pOut, &data.a[j], nThis, nWS);
         data.a[j].z += iNext;

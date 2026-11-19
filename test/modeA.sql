@@ -94,6 +94,41 @@ SELECT 'xyz123' AS a, 2 AS b;
 │ 3 │   │
 ╰───┴───╯
 END
+
+# A double-wide character with --wrap 1 must widen the column to 2.
+# This used to loop forever with --limits off.
+.testcase 122
+.mode box --wrap 1 --limits off
+SELECT 'a中b' AS a, 'xyz' AS b;
+.check <<END
+╭────┬───╮
+│ a  │ b │
+╞════╪═══╡
+│ a  │ x │
+│ 中 │ y │
+│ b  │ z │
+╰────┴───╯
+END
+.testcase 123
+.mode box --wrap 1 --linelimit 5
+SELECT '中' AS x;
+.check <<END
+╭────╮
+│ x  │
+╞════╡
+│ 中 │
+╰────╯
+END
+.testcase 124
+.mode box --wrap 1 --limits off
+SELECT 'ab' AS '中';
+.check <<END
+╭────╮
+│ 中 │
+╞════╡
+│ ab │
+╰────╯
+END
 .testcase 130
 .mode tty -wrap 10
 .mode
