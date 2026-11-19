@@ -366,9 +366,9 @@ static int whereScanEquivCollOk(
   const char *zCollName
 ){
   CollSeq *pColl;
-  if( zCollName==0 ) return 1;
   pColl = sqlite3ExprCompareCollSeq(pParse, pTerm->pExpr);
   if( sqlite3IsBinary(pColl) ) return 1;
+  if( zCollName==0 ) return 0;
   return sqlite3StrICmp(pColl->zName, zCollName)==0;
 }
 

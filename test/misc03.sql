@@ -599,3 +599,61 @@ SELECT count(*), sum(t0.rowid*100+t1.rowid*10+t2.rowid)
  WHERE t0.a=t2.c AND t2.d=t1.b
    AND (SELECT count(*) FROM t1 AS z WHERE z.b=t2.c)>0;
 .check 13 2906
+
+# Bug 2026-11-19T21:38:21Z
+# https://sqlite.org/bugs/info/f8a6bebf87002694
+#
+# Transitive constraints.  The equivalence t2.c=t1.b is NOCASE, so t1.b
+# can be substituted for t2.c only where the comparison is NOCASE too.
+# The BINARY term t0.a=t2.c must not be recoded as t0.a=t1.b.
+#
+.open :memory:
+.mode -reset list -colsep ' ' -rowsep ' '
+.testcase 1200
+CREATE TABLE t0(id INTEGER PRIMARY KEY, a);
+CREATE TABLE t1(id INTEGER PRIMARY KEY, b COLLATE NOCASE);
+CREATE TABLE t2(id INTEGER PRIMARY KEY, c COLLATE NOCASE);
+CREATE TABLE t3(id INTEGER PRIMARY KEY, d COLLATE NOCASE);
+INSERT INTO t0(a) VALUES('A');
+INSERT INTO t1(b) VALUES('a');
+INSERT INTO t2(c) VALUES('A');
+INSERT INTO t3(d) VALUES('A');
+ANALYZE;
+SELECT t0.a = t2.c, t2.c = t1.b, t1.b = t3.d FROM t0, t1, t2, t3;
+.check 1 1 1
+.testcase 1210
+SELECT t0.id, t1.id, t2.id, t3.id
+  FROM t1 JOIN t2 JOIN t0 JOIN t3
+ WHERE t0.a = t2.c AND t2.c = t1.b AND t1.b = t3.d
+ ORDER BY 1, 2, 3, 4;
+.check 1 1 1 1
+.testcase 1220
+-- The same with the tables in other orders.
+SELECT t0.id, t1.id, t2.id, t3.id
+  FROM t0 JOIN t1 JOIN t2 JOIN t3
+ WHERE t0.a = t2.c AND t2.c = t1.b AND t1.b = t3.d;
+.check 1 1 1 1
+.testcase 1230
+SELECT t0.id, t1.id, t2.id, t3.id
+  FROM t3 JOIN t2 JOIN t1 JOIN t0
+ WHERE t0.a = t2.c AND t2.c = t1.b AND t1.b = t3.d
+ ORDER BY 1;
+.check 1 1 1 1
+.testcase 1240
+-- A row in t0 that differs from t2.c in case does not match, even though
+-- the NOCASE equivalences would let it match t1.b and t3.d.
+INSERT INTO t0(a) VALUES('a');
+SELECT t0.id, t1.id, t2.id, t3.id
+  FROM t1 JOIN t2 JOIN t0 JOIN t3
+ WHERE t0.a = t2.c AND t2.c = t1.b AND t1.b = t3.d
+ ORDER BY 1, 2, 3, 4;
+.check 1 1 1 1
+.testcase 1250
+-- When the chain is all NOCASE the transitive constraint is still valid.
+CREATE TABLE t4(id INTEGER PRIMARY KEY, e COLLATE NOCASE);
+INSERT INTO t4(e) VALUES('a'),('A'),('b');
+SELECT t4.id, t1.id, t2.id
+  FROM t4 JOIN t1 JOIN t2
+ WHERE t4.e = t2.c AND t2.c = t1.b
+ ORDER BY 1, 2, 3;
+.check 1 1 1 2 1 1
