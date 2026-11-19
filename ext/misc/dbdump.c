@@ -302,6 +302,110 @@ static char *safeCommentText(const char *z){
 }
 
 /*
+** Append to pOut whatever text is needed to complete the SQL statement
+** zBase: the end of an unterminated comment or string literal, any missing
+** close-parentheses, "END" for an unterminated trigger, and (if bSemi)
+** the final ";".  This is a copy of appendCompletion() in the CLI.
+**
+** The sql column of sqlite_schema comes from the (possibly hostile)
+** database file.  Without this, a statement ending in an open comment
+** could swallow the ";" and the text that follows it in the output.
+*/
+static void appendCompletion(sqlite3_str *pOut, const char *zBase, int bSemi){
+  sqlite3_int64 R = zBase ? sqlite3_incomplete(zBase) : 0;
+  int cc = (R>>16)&0xff;
+  int nParen = R>>32;
+  int eSemi = (R>>8)&0xff;
+  int eStat = R&0xff;
+  if( cc==0 ){
+    /* no-op */
+  }else if( cc=='-' ){
+    sqlite3_str_appendchar(pOut, 1, '\n');
+  }else if( cc=='/' ){
+    sqlite3_str_append(pOut, "*/", 2);
+  }else{
+    sqlite3_str_appendchar(pOut, 1, cc);
+  }
+  if( nParen>0 ){
+    sqlite3_str_appendf(pOut, "%.*c", nParen, ')');
+  }
+  if( eStat==SQLITE_OK || eStat==SQLITE_EMPTY ){
+    /* Nothing to add */
+  }else if( eSemi==1 ){
+    if( bSemi ) sqlite3_str_append(pOut, ";", 1);
+  }else if( eSemi==2 ){
+    sqlite3_str_append(pOut, "END;", 3+(bSemi!=0));
+  }else if( eSemi==3 ){
+    sqlite3_str_append(pOut, ";END;", 4+(bSemi!=0));
+  }
+}
+
+/*
+** The text in z[] is an SQL statement taken from the sql column of
+** sqlite_schema.  Normally it is exactly one statement.  But if the
+** database file is corrupt or hostile it might contain additional
+** statements after the first one, separated by ";".  Return the number
+** of bytes in the prefix of z[] that form the first complete SQL statement,
+** including its terminating ";".  Set *pbComplete to true if the returned
+** prefix is such a complete statement.  If z[] has no complete statement
+** prefix, return strlen(z) and set *pbComplete to false, in which case
+** the caller should use appendCompletion() to close off the statement.
+**
+** The usual case is that z[] contains no ";" at all, which strchr()
+** detects immediately.  Otherwise each ";" is tried in turn as the end of
+** the statement, using sqlite3_complete() to skip over semicolons that are
+** inside of strings, comments, or CREATE TRIGGER bodies.
+**
+** z[] is modified temporarily but is restored before this routine returns.
+*/
+static int firstStatementLen(char *z, int *pbComplete){
+  char *zSemi = strchr(z, ';');
+  *pbComplete = 0;
+  while( zSemi ){
+    char c = zSemi[1];
+    int rc;
+    zSemi[1] = 0;
+    rc = sqlite3_complete(z);
+    zSemi[1] = c;
+    if( rc ){
+      *pbComplete = 1;
+      return (int)(zSemi + 1 - z);
+    }
+    zSemi = strchr(zSemi+1, ';');
+  }
+  return (int)strlen(z);
+}
+
+/*
+** Send the SQL statement zPrefix+zSql to the output callback, followed
+** by ";\n".  Any text after the first complete statement in zSql is
+** omitted, and appendCompletion() closes off any unterminated comment,
+** string, parenthesis or trigger body.
+*/
+static void output_statement(DState *p, const char *zPrefix, const char *zSql){
+  sqlite3_str *pOut = sqlite3_str_new(p->db);
+  char *z;
+  if( zPrefix ) sqlite3_str_appendall(pOut, zPrefix);
+  if( zSql ) sqlite3_str_appendall(pOut, zSql);
+  z = sqlite3_str_value(pOut);
+  if( z ){
+    int bComplete;
+    int n = firstStatementLen(z, &bComplete);
+    if( n<sqlite3_str_length(pOut) ) sqlite3_str_truncate(pOut, n);
+  }
+  appendCompletion(pOut, sqlite3_str_value(pOut), 1);
+  sqlite3_str_append(pOut, "\n", 1);
+  z = sqlite3_str_finish(pOut);
+  if( z==0 ){
+    p->rc = SQLITE_NOMEM;
+    p->nErr++;
+    return;
+  }
+  p->xCallback(z, p->pArg);
+  sqlite3_free(z);
+}
+
+/*
 ** Send mprintf-formatted content to the output callback.
 */
 static void output_formatted(DState *p, const char *zFormat, ...){
@@ -436,12 +540,10 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     return 0;
   }else{
     if( sqlite3_strglob("CREATE TABLE ['\"]*", zSql)==0 ){
-      p->xCallback("CREATE TABLE IF NOT EXISTS ", p->pArg);
-      p->xCallback(zSql+13, p->pArg);
+      output_statement(p, "CREATE TABLE IF NOT EXISTS ", zSql+13);
     }else{
-      p->xCallback(zSql, p->pArg);
+      output_statement(p, 0, zSql);
     }
-    p->xCallback(";\n", p->pArg);
   }
 
   if( strcmp(zType, "table")==0 ){
@@ -560,14 +662,10 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 
 
 /*
-** Execute a query statement that will generate SQL output.  Print
-** the result columns, comma-separated, on a line and then add a
-** semicolon terminator to the end of that line.
-**
-** If the number of columns is 1 and that column contains text "--"
-** then write the semicolon on a separate line.  That way, if a
-** "--" comment occurs at the end of the statement, the comment
-** won't consume the semicolon terminator.
+** Execute a query statement that will generate SQL output.  The first
+** result column of each row is an SQL statement.  Output that statement,
+** closing any unterminated comment, string, parenthesis or trigger
+** body, followed by a semicolon terminator.
 */
 static void output_sql_from_query(
   DState *p,               /* Query context */
@@ -576,9 +674,6 @@ static void output_sql_from_query(
 ){
   sqlite3_stmt *pSelect;
   int rc;
-  int nResult;
-  int i;
-  const char *z;
   char *zSql;
   va_list ap;
   va_start(ap, zSelect);
@@ -599,21 +694,8 @@ static void output_sql_from_query(
     return;
   }
   rc = sqlite3_step(pSelect);
-  nResult = sqlite3_column_count(pSelect);
   while( rc==SQLITE_ROW ){
-    z = (const char*)sqlite3_column_text(pSelect, 0);
-    p->xCallback(z, p->pArg);
-    for(i=1; i<nResult; i++){
-      p->xCallback(",", p->pArg);
-      p->xCallback((const char*)sqlite3_column_text(pSelect,i), p->pArg);
-    }
-    if( z==0 ) z = "";
-    while( z[0] && (z[0]!='-' || z[1]!='-') ) z++;
-    if( z[0] ){
-      p->xCallback("\n;\n", p->pArg);
-    }else{
-      p->xCallback(";\n", p->pArg);
-    }
+    output_statement(p, 0, (const char*)sqlite3_column_text(pSelect, 0));
     rc = sqlite3_step(pSelect);
   }
   rc = sqlite3_finalize(pSelect);

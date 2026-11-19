@@ -1260,6 +1260,58 @@ static void appendCompletion(
 }
 
 /*
+** The text in z[] is an SQL statement taken from the sql column of
+** sqlite_schema.  Normally it is exactly one statement.  But if the
+** database file is corrupt or hostile it might contain additional
+** statements after the first one, separated by ";".  Return the number
+** of bytes in the prefix of z[] that form the first complete SQL statement,
+** including its terminating ";".  Set *pbComplete to true if the returned
+** prefix is such a complete statement.  If z[] has no complete statement
+** prefix, return strlen(z) and set *pbComplete to false, in which case
+** the caller should use appendCompletion() to close off the statement.
+**
+** The usual case is that z[] contains no ";" at all, which strchr()
+** detects immediately.  Otherwise each ";" is tried in turn as the end of
+** the statement, using sqlite3_complete() to skip over semicolons that are
+** inside of strings, comments, or CREATE TRIGGER bodies.
+**
+** z[] is modified temporarily but is restored before this routine returns.
+*/
+static int firstStatementLen(char *z, int *pbComplete){
+  char *zSemi = strchr(z, ';');
+  *pbComplete = 0;
+  while( zSemi ){
+    char c = zSemi[1];
+    int rc;
+    zSemi[1] = 0;
+    rc = sqlite3_complete(z);
+    zSemi[1] = c;
+    if( rc ){
+      *pbComplete = 1;
+      return (int)(zSemi + 1 - z);
+    }
+    zSemi = strchr(zSemi+1, ';');
+  }
+  return (int)strlen(z);
+}
+
+/*
+** Truncate the SQL text held in pOut so that it contains at most one
+** SQL statement.  See firstStatementLen().  If bSemi is false and the
+** statement was cut off at a ";" then the ";" is also removed, on the
+** assumption that the caller will add its own statement terminator.
+*/
+static void truncateToOneStatement(sqlite3_str *pOut, int bSemi){
+  char *z = sqlite3_str_value(pOut);
+  int bComplete;
+  int n;
+  if( z==0 ) return;
+  n = firstStatementLen(z, &bComplete);
+  if( bComplete && !bSemi ) n--;
+  if( n<sqlite3_str_length(pOut) ) sqlite3_str_truncate(pOut, n);
+}
+
+/*
 ** SQL function:  shell_complete_sql(SQL)
 **                shell_complete_sql(SQL, FLAGS)
 **
@@ -1274,6 +1326,9 @@ static void appendCompletion(
 **   0x01        Include the final semicolon
 **   0x02        Only return the completion text.  Omit the original SQL.
 **   0x04        Assume that SQL has a \n at the end.
+**   0x08        If SQL contains more than one statement, keep only the
+**               first.  Unless 0x01 is also set, the ";" at the end
+**               of that first statement is omitted.
 **
 ** The /C substitution in the CLI prompt is computed using the
 ** equivalent of shell_complete_sql(SQL,3);
@@ -1289,15 +1344,29 @@ static void shell_complete_sql(
 
   if( nVal!=1 && nVal!=2 ) return;
   if( nVal==2 ){
-    flags = 0x7 & sqlite3_value_int64(apVal[1]);
+    flags = 0xf & sqlite3_value_int64(apVal[1]);
   }else{
     flags = 0;
   }
   zSql = (const char*)sqlite3_value_text(apVal[0]);
   if( zSql==0 ) return;
   pOut = sqlite3_str_new(sqlite3_context_db_handle(pCtx));
-  if( (flags & 0x02)==0 ) sqlite3_str_appendall(pOut, zSql);
-  appendCompletion(pOut, zSql, flags & 0x05);
+  if( (flags & 0x08)!=0 ){
+    sqlite3_str_appendall(pOut, zSql);
+    truncateToOneStatement(pOut, (flags & 0x01)!=0);
+    zSql = sqlite3_str_value(pOut);
+    if( flags & 0x02 ){
+      sqlite3_str *pCompletion = sqlite3_str_new(sqlite3_context_db_handle(pCtx));
+      appendCompletion(pCompletion, zSql, flags & 0x05);
+      sqlite3_str_free(pOut);
+      pOut = pCompletion;
+    }else{
+      appendCompletion(pOut, zSql, flags & 0x05);
+    }
+  }else{
+    if( (flags & 0x02)==0 ) sqlite3_str_appendall(pOut, zSql);
+    appendCompletion(pOut, zSql, flags & 0x05);
+  }
   sqlite3_result_str(pCtx, pOut, SQLITE_FINISH);
 }
 
@@ -2069,6 +2138,7 @@ static void shellAddSchemaName(
         }else{
           sqlite3_str_appendall(pOut, zIn);
         }
+        truncateToOneStatement(pOut, 1);
         appendCompletion(pOut, sqlite3_str_value(pOut), 1);
         if( zName
          && aPrefix[i][0]=='V'
@@ -11110,7 +11180,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     p->nErr = 0;
     if( zLike==0 ) zLike = sqlite3_mprintf("true");
     zSql = sqlite3_mprintf(
-      "SELECT name, type, shell_complete_sql(sql) FROM sqlite_schema AS o "
+      "SELECT name, type, shell_complete_sql(sql,8) FROM sqlite_schema AS o "
       "WHERE (%s) AND type=='table'"
       "  AND sql NOT NULL"
       " ORDER BY tbl_name='sqlite_sequence', rowid",
@@ -11120,7 +11190,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     sqlite3_free(zSql);
     if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
       zSql = sqlite3_mprintf(
-        "SELECT shell_complete_sql(sql) FROM sqlite_schema AS o "
+        "SELECT shell_complete_sql(sql,8) FROM sqlite_schema AS o "
         "WHERE (%s) AND sql NOT NULL"
         "  AND type IN ('index','trigger','view') "
         "ORDER BY type COLLATE NOCASE DESC",
@@ -11374,7 +11444,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     }
     open_db(p, 0);
     zSql = sqlite3_mprintf(
-       "SELECT shell_format_schema(shell_complete_sql(sql),%d) FROM"
+       "SELECT shell_format_schema(shell_complete_sql(sql,8),%d) FROM"
        "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
        "     FROM sqlite_schema UNION ALL"
        "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_schema) "
