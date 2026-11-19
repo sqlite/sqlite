@@ -2414,7 +2414,10 @@ static void fts5SegIterNext(
         bNewTerm = 1;
       }
       assert_nc( iOff<pLeaf->szLeaf );
-      if( iOff>pLeaf->szLeaf ){
+      if( iOff>=pLeaf->szLeaf ){
+        /* If iOff==szLeaf then the first rowid offset in the page header
+        ** (or the first term offset) points at the page footer, and
+        ** pIter->iLeafOffset still has its value from the previous page. */
         FTS5_CORRUPT_ITER(p, pIter);
         return;
       }
@@ -5405,7 +5408,10 @@ static void fts5DoSecureDelete(
     }else{
       iStart = fts5GetU16(&aPg[0]);
     }
-    if( iStart>nPg ){
+    if( iStart>=iPgIdx || pSeg->iLeafOffset>iPgIdx ){
+      /* The rowid of the entry being removed, and the start of its position
+      ** list, must be within the leaf content, which ends at szLeaf (iPgIdx).
+      ** The page footer follows. */
       FTS5_CORRUPT_IDX(p);
       sqlite3_free(aIdx);
       return;
@@ -5416,6 +5422,11 @@ static void fts5DoSecureDelete(
 
     if( bDetailNone ){
       int iEnd = pSeg->iLeafOffset - (pSeg->bDel ? 1 + pSeg->nPos : 0);
+      if( iEnd>iPgIdx ){
+        FTS5_CORRUPT_IDX(p);
+        sqlite3_free(aIdx);
+        return;
+      }
       while( iSOP<iEnd ){
         if( aPg[iSOP]==0x00 ) iSOP++;
         if( aPg[iSOP]==0x00 ) iSOP++;
@@ -5431,12 +5442,26 @@ static void fts5DoSecureDelete(
       int nPos = 0;
       iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
       while( iSOP<pSeg->iLeafOffset ){
+        /* nPos is the size of a position-list in bytes, times 2, plus the
+        ** delete flag.  The rowid of the next entry follows it, and must
+        ** come before the position-list of the entry being removed. */
+        if( nPos<0 || (nPos/2)>=pSeg->iLeafOffset-iSOP ){
+          FTS5_CORRUPT_IDX(p);
+          sqlite3_free(aIdx);
+          return;
+        }
         iStart = iSOP + (nPos/2);
         iSOP = iStart + fts5GetVarint(&aPg[iStart], &iDelta);
         iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
       }
-      assert_nc( iSOP==pSeg->iLeafOffset );
-      iNextOff = iSOP + pSeg->nPos;
+      if( iSOP!=pSeg->iLeafOffset || pSeg->nPos<0 ){
+        FTS5_CORRUPT_IDX(p);
+        sqlite3_free(aIdx);
+        return;
+      }
+      /* The position list may extend past the end of this page, but take
+      ** care that iSOP + nPos cannot overflow. */
+      iNextOff = (pSeg->nPos>=iPgIdx-iSOP) ? iPgIdx : iSOP + pSeg->nPos;
     }
   }
 
@@ -5486,6 +5511,11 @@ static void fts5DoSecureDelete(
     if( iNextOff!=iPgIdx ){
       u64 iNextDelta = 0;
       iNextOff += fts5GetVarint(&aPg[iNextOff], &iNextDelta);
+      if( iNextOff>iPgIdx ){
+        FTS5_CORRUPT_IDX(p);
+        sqlite3_free(aIdx);
+        return;
+      }
       iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta + iNextDelta);
     }
   }else if( 
@@ -5505,7 +5535,13 @@ static void fts5DoSecureDelete(
       if( (iKeyOff+iVal)>(u32)iStart ) break;
       iKeyOff += iVal;
     }
-    assert_nc( iKey>=1 );
+    if( iKey<1 || iKeyOff<4 || iKeyOff>=iStart ){
+      /* There must be a term before the doclist.  Terms start after the
+      ** 4-byte page header. */
+      FTS5_CORRUPT_IDX(p);
+      sqlite3_free(aIdx);
+      return;
+    }
 
     /* Set iDelKeyOff to the value of the footer entry to remove from 
     ** the page. */
@@ -5520,6 +5556,7 @@ static void fts5DoSecureDelete(
       u64 nSuffix = 0;
       u64 nPrefix2 = 0;
       u64 nSuffix2 = 0;
+      i64 nNeed;
 
       iDelKeyOff = iNextOff;
       iNextOff += fts5GetVarint(&aPg[iNextOff], &nPrefix2);
@@ -5533,11 +5570,20 @@ static void fts5DoSecureDelete(
       nPrefix = MIN(nPrefix, nPrefix2);
       nSuffix = (nPrefix2 + nSuffix2) - nPrefix;
 
-      if( (iKeyOff+nSuffix)>(u64)iPgIdx || (iNextOff+nSuffix2)>(u64)iPgIdx ){
+      /* Compare by subtraction, not addition, since the varints above can
+      ** be any 64-bit value and a sum could wrap around.  After the first
+      ** three tests nPrefix2 and nSuffix2 are small, so the sum in
+      ** nSuffix cannot have wrapped and the last test is safe. */
+      if( iNextOff>iPgIdx
+       || nSuffix2>(u64)(iPgIdx-iNextOff)
+       || nPrefix2>(u64)pSeg->term.n
+       || (iKeyOff+nSuffix)>(u64)iPgIdx
+      ){
         FTS5_CORRUPT_IDX(p);
       }else{
+        u8 aTmp[10];
         if( iKey==1 && pSeg->iLeafPgno!=1 
-         && nPrefix2<=(u64)pSeg->term.n && nSuffix2>0
+         && nSuffix2>0
         ){
           /* The term being removed is the first on the page, so the %_idx
           ** key for the page is a prefix of it. Replace the key with a
@@ -5552,13 +5598,21 @@ static void fts5DoSecureDelete(
             sqlite3_free(aNew);
           }
         }
+        /* Make sure the replacement for the removed term fits in the space
+        ** between iOff and the start of the next term's suffix. */
+        nNeed = sqlite3Fts5PutVarint(aTmp, nSuffix)
+              + (iKey!=1 ? sqlite3Fts5PutVarint(aTmp, nPrefix) : 0)
+              + (nPrefix2>nPrefix ? (nPrefix2-nPrefix) : 0);
+        if( (i64)iOff + nNeed > iNextOff ){
+          FTS5_CORRUPT_IDX(p);
+          sqlite3_free(aIdx);
+          return;
+        }
         if( iKey!=1 ){
           iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
         }
         iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
-        if( nPrefix2>(u64)pSeg->term.n ){
-          FTS5_CORRUPT_IDX(p);
-        }else if( nPrefix2>nPrefix ){
+        if( nPrefix2>nPrefix ){
           memcpy(&aPg[iOff], &pSeg->term.p[nPrefix], nPrefix2-nPrefix);
           iOff += (nPrefix2-nPrefix);
         }
@@ -5589,6 +5643,13 @@ static void fts5DoSecureDelete(
         int iTermIdx = 0;
         i64 iTermOff = 0;
 
+        /* The page holds a term, so it has a footer. */
+        if( nTermIdx<=0 ){
+          FTS5_CORRUPT_IDX(p);
+          fts5DataRelease(pTerm);
+          sqlite3_free(aIdx);
+          return;
+        }
         while( 1 ){
           u32 iVal = 0;
           int nByte = fts5GetVarint32(&aTermIdx[iTermIdx], iVal);
@@ -5598,7 +5659,7 @@ static void fts5DoSecureDelete(
         }
         nTermIdx = iTermIdx;
 
-        if( iTermOff>pTerm->szLeaf ){
+        if( iTermOff>pTerm->szLeaf || iTermOff<4 ){
           FTS5_CORRUPT_IDX(p);
         }else{
           memmove(&pTerm->p[iTermOff], &pTerm->p[pTerm->szLeaf], nTermIdx);
@@ -5629,6 +5690,12 @@ static void fts5DoSecureDelete(
     int iPrevKeyOut = 0;
     i64 iKeyIn = 0;
 
+    if( nShift<0 ){
+      /* Removing an entry cannot make the page larger. */
+      FTS5_CORRUPT_IDX(p);
+      sqlite3_free(aIdx);
+      return;
+    }
     if( nMove>0 ){
       memmove(&aPg[iOff], &aPg[iNextOff], nMove);
     }
@@ -5645,7 +5712,12 @@ static void fts5DoSecureDelete(
         break;
       }
       if( iKeyIn!=iDelKeyOff ){
-        int iKeyOut = (iKeyIn - (iKeyIn>iOff ? nShift : 0));
+        int iKeyOut = (int)(iKeyIn - (iKeyIn>iOff ? nShift : 0));
+        if( iKeyOut<iPrevKeyOut ){
+          /* Footer entries must be in ascending order. */
+          FTS5_CORRUPT_IDX(p);
+          break;
+        }
         nNewPg += sqlite3Fts5PutVarint(&aPg[nNewPg], iKeyOut - iPrevKeyOut);
         iPrevKeyOut = iKeyOut;
       }
