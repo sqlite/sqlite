@@ -456,3 +456,102 @@ INSERT INTO t52 VALUES(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
        DO UPDATE SET v=excluded.v;
 SELECT v FROM t52;
 .check 5
+
+#***********************************************************************
+# Bug 2026-11-19 (https://sqlite.org/bugs/info/d34952d48e3e3570)
+#
+# A WHERE clause term of the outer query must not be pushed down into a
+# subquery that uses DISTINCT, UNION, INTERSECT, or EXCEPT unless the term
+# gives the same answer for every member of a set of equal rows.  The
+# values 1 and 1.0 are equal but typeof() tells them apart.
+#
+.open :memory:
+.mode -reset list -colsep ' ' -rowsep ' '
+.testcase 1000
+CREATE TABLE a(x COLLATE BINARY);
+CREATE TABLE b(x COLLATE BINARY);
+INSERT INTO a VALUES(1);
+INSERT INTO b VALUES(1.0);
+SELECT x, typeof(x) FROM (SELECT x FROM a EXCEPT SELECT x FROM b)
+ WHERE typeof(x)='integer';
+.check
+.testcase 1010
+-- INTERSECT returns the left value, which satisfies the term.
+SELECT x, typeof(x) FROM (SELECT x FROM a INTERSECT SELECT x FROM b)
+ WHERE typeof(x)='integer';
+.check 1 integer
+.testcase 1020
+-- The same with the arms swapped.  The row is 1.0, which does not.
+SELECT x, typeof(x) FROM (SELECT x FROM b INTERSECT SELECT x FROM a)
+ WHERE typeof(x)='integer';
+.check
+.testcase 1030
+-- Pushing the term into the right-hand arm of EXCEPT is wrong for every
+-- function or operator, not just typeof().
+SELECT x FROM (SELECT x FROM a EXCEPT SELECT x FROM b) WHERE x+0=1;
+SELECT x FROM (SELECT x FROM a EXCEPT SELECT x FROM b) WHERE length(x)=1;
+SELECT x FROM (SELECT x FROM a EXCEPT SELECT x FROM b) WHERE x||''='1';
+.check
+.testcase 1040
+-- For UNION and DISTINCT it is not specified which of two equal rows is
+-- kept.  Check that the answer is the same as when no push-down is possible.
+CREATE TABLE c(x COLLATE BINARY);
+INSERT INTO c VALUES(1.0),(1);
+WITH q AS MATERIALIZED (SELECT DISTINCT x FROM c)
+SELECT (SELECT count(*) FROM (SELECT DISTINCT x FROM c)
+         WHERE typeof(x)='integer')
+     = (SELECT count(*) FROM q WHERE typeof(x)='integer'),
+       (SELECT count(*) FROM (SELECT DISTINCT x FROM c)
+         WHERE typeof(x)='real')
+     = (SELECT count(*) FROM q WHERE typeof(x)='real');
+.check 1 1
+.testcase 1050
+WITH q AS MATERIALIZED (SELECT x FROM a UNION SELECT x FROM b)
+SELECT (SELECT count(*) FROM (SELECT x FROM a UNION SELECT x FROM b)
+         WHERE typeof(x)='integer')
+     = (SELECT count(*) FROM q WHERE typeof(x)='integer'),
+       (SELECT count(*) FROM (SELECT x FROM a UNION SELECT x FROM b)
+         WHERE typeof(x)='real')
+     = (SELECT count(*) FROM q WHERE typeof(x)='real');
+.check 1 1
+.testcase 1060
+-- Comparison and logical operators are safe, and the term is still
+-- pushed down.  Results must be correct either way.
+CREATE TABLE d(x COLLATE BINARY);
+CREATE TABLE e(x COLLATE BINARY);
+INSERT INTO d VALUES(1),(2),(3);
+INSERT INTO e VALUES(2.0);
+SELECT x FROM (SELECT x FROM d EXCEPT SELECT x FROM e) WHERE x>1 AND x<>3;
+SELECT x FROM (SELECT x FROM d EXCEPT SELECT x FROM e) WHERE x=2;
+SELECT x FROM (SELECT x FROM d INTERSECT SELECT x FROM e) WHERE x IN (2,5);
+.check 2
+.testcase 1070
+-- Equal under a non-BINARY collating sequence but distinguishable under BINARY.
+CREATE TABLE n(x TEXT COLLATE NOCASE);
+INSERT INTO n VALUES('a'),('A');
+WITH q AS MATERIALIZED (SELECT DISTINCT x FROM n)
+SELECT (SELECT count(*) FROM (SELECT DISTINCT x FROM n)
+         WHERE x='A' COLLATE BINARY)
+     = (SELECT count(*) FROM q WHERE x='A' COLLATE BINARY);
+.check 1
+.testcase 1080
+-- A DISTINCT arm of a UNION ALL compound.  The rows of the DISTINCT arm
+-- are collapsed even though the compound operator is UNION ALL.
+WITH q AS MATERIALIZED (SELECT DISTINCT x FROM c UNION ALL SELECT x FROM a)
+SELECT (SELECT count(*) FROM (SELECT DISTINCT x FROM c UNION ALL SELECT x FROM a)
+         WHERE typeof(x)='integer')
+     = (SELECT count(*) FROM q WHERE typeof(x)='integer'),
+       (SELECT count(*) FROM (SELECT DISTINCT x FROM c UNION ALL SELECT x FROM a)
+         WHERE typeof(x)='real')
+     = (SELECT count(*) FROM q WHERE typeof(x)='real');
+.check 1 1
+.testcase 1090
+-- The DISTINCT arm is not the last arm.
+WITH q AS MATERIALIZED (SELECT x FROM a UNION ALL SELECT DISTINCT x FROM c)
+SELECT (SELECT count(*) FROM (SELECT x FROM a UNION ALL SELECT DISTINCT x FROM c)
+         WHERE typeof(x)='integer')
+     = (SELECT count(*) FROM q WHERE typeof(x)='integer'),
+       (SELECT count(*) FROM (SELECT x FROM a UNION ALL SELECT DISTINCT x FROM c)
+         WHERE typeof(x)='real')
+     = (SELECT count(*) FROM q WHERE typeof(x)='real');
+.check 1 1

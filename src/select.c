@@ -5283,6 +5283,49 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+
+/*
+** pSrc is a subquery in the FROM clause that uses DISTINCT or a compound
+** operator other than UNION ALL.  Those operations discard rows that are
+** equal to another row, even though the rows may be distinguishable.
+** For example, 1 and 1.0 are equal but typeof() tells them apart.  Return
+** true if the WHERE clause term pWhere gives the same answer for every
+** member of a set of equal rows, and is therefore safe to push down into
+** the subquery.  Return false if it might not be.
+**
+** This is the same test as for moving a HAVING term to the WHERE clause,
+** with every column of the subquery playing the role of a GROUP BY term.
+** See sqlite3ExprIsConstantOrGroupBy().
+*/
+static int pushDownIsEqualityInvariant(
+  Parse *pParse,        /* Parse context */
+  Expr *pWhere,         /* Candidate term from the WHERE clause */
+  SrcItem *pSrc         /* The subquery into which pWhere may be pushed */
+){
+  sqlite3 *db = pParse->db;
+  ExprList *pList = 0;
+  Table *pTab = pSrc->pSTab;
+  int i;
+  int rc;
+  assert( pTab->nCol>0 );
+  for(i=0; i<pTab->nCol; i++){
+    Expr *pCol = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
+    if( pCol==0 ) break;
+    pCol->iTable = pSrc->iCursor;
+    pCol->iColumn = (i16)i;
+    pCol->y.pTab = pTab;
+    pList = sqlite3ExprListAppend(pParse, pList, pCol);
+  }
+  assert( pList!=0 || db->mallocFailed );
+  if( db->mallocFailed ){
+    sqlite3ExprListDelete(db, pList);
+    return 0;
+  }
+  rc = sqlite3ExprIsConstantOrGroupBy(pParse, pWhere, pList);
+  sqlite3ExprListDelete(db, pList);
+  return rc;
+}
+
 /*
 ** Make copies of relevant WHERE clause terms of the outer query into
 ** the WHERE clause of subquery.  Example:
@@ -5388,6 +5431,16 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       case only comes up if SQLite is compiled using
 **       SQLITE_ALLOW_ROWID_IN_VIEW.
 **
+**  (13) If the subquery uses DISTINCT, or is a compound that uses UNION,
+**       INTERSECT, or EXCEPT, then the WHERE clause term may refer to the
+**       result columns of the subquery only as operands of comparison and
+**       logical operators.  Those operations discard rows that are equal
+**       but not identical, such as 1 and 1.0.  A term like typeof(x)='integer'
+**       can be true for one of two equal rows and false for the other, so
+**       applying it before the rows are discarded can change the result.
+**       For EXCEPT and INTERSECT it can even add or remove rows from the
+**       answer.  See pushDownIsEqualityInvariant().
+**
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
 */
@@ -5401,6 +5454,7 @@ static int pushDownWhereTerms(
   Expr *pNew;
   SrcItem *pSrc;        /* The subquery FROM term into which WHERE is pushed */
   int nChng = 0;
+  int bCollapse = 0;    /* Subquery discards rows that are equal */
   pSrc = &pSrcList->a[iSrc];
   if( pWhere==0 ) return 0;
   if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ){
@@ -5415,10 +5469,12 @@ static int pushDownWhereTerms(
     int notUnionAll = 0;
     for(pSel=pSubq; pSel; pSel=pSel->pPrior){
       u8 op = pSel->op;
+      if( pSel->selFlags & SF_Distinct ) bCollapse = 1;
       assert( op==TK_ALL || op==TK_SELECT
            || op==TK_UNION || op==TK_INTERSECT || op==TK_EXCEPT );
       if( op!=TK_ALL && op!=TK_SELECT ){
         notUnionAll = 1;
+        bCollapse = 1;
       }
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSel->pWin ) return 0;    /* restriction (6b) */
@@ -5444,6 +5500,7 @@ static int pushDownWhereTerms(
 #ifndef SQLITE_OMIT_WINDOWFUNC
     if( pSubq->pWin && pSubq->pWin->pPartition==0 ) return 0;
 #endif
+    if( pSubq->selFlags & SF_Distinct ) bCollapse = 1;
   }
 
 #ifdef SQLITE_DEBUG
@@ -5511,6 +5568,9 @@ static int pushDownWhereTerms(
 #endif
 
   if( sqlite3ExprIsSingleTableConstraint(pWhere, pSrcList, iSrc, 1) ){
+    if( bCollapse && !pushDownIsEqualityInvariant(pParse, pWhere, pSrc) ){
+      return nChng;  /* restriction (13) */
+    }
     nChng++;
     pSubq->selFlags |= SF_PushDown;
     while( pSubq ){
