@@ -555,3 +555,47 @@ SELECT (SELECT count(*) FROM (SELECT x FROM a UNION ALL SELECT DISTINCT x FROM c
          WHERE typeof(x)='real')
      = (SELECT count(*) FROM q WHERE typeof(x)='real');
 .check 1 1
+
+# Bug 2026-11-19T21:24:04Z
+# https://sqlite.org/bugs/info/9b101b2d7f859b65
+#
+# The "no match" optimization can make the inner-most outer loop that
+# influences a key delete its auto-index entry when the key matches nothing.
+# If that outer loop was an EXISTS-to-JOIN loop, the label for the
+# deletion was never resolved, giving an infinite loop (and an assertion
+# fault in debug builds).
+#
+.open :memory:
+.mode -reset list -colsep ' ' -rowsep ' '
+.testcase 1100
+CREATE TABLE t0(a);
+CREATE INDEX i0 ON t0(a);
+CREATE TABLE t1(b TEXT);
+INSERT INTO t1 VALUES('x');
+CREATE TABLE t2(c, d TEXT);
+INSERT INTO t2 VALUES('x','x');
+SELECT t0.rowid, t1.rowid, t2.rowid
+  FROM t2 CROSS JOIN t0 JOIN t1
+ WHERE t0.a=t2.c AND t2.d=t1.b
+   AND EXISTS(SELECT 1 FROM t1 AS z WHERE z.b=t2.c)
+ ORDER BY 1;
+.check
+.testcase 1110
+-- The same query with rows in t0, some of which match.  Several rows of
+-- t2 use the same key so that auto-index entries get deleted and reused.
+INSERT INTO t0 VALUES('x'),('y'),('x');
+INSERT INTO t1 VALUES('y'),('x'),('z');
+INSERT INTO t2 VALUES('y','y'),('x','y'),('z','z'),('y','x'),('x','x');
+SELECT count(*), sum(t0.rowid*100+t1.rowid*10+t2.rowid)
+  FROM t2 CROSS JOIN t0 JOIN t1
+ WHERE t0.a=t2.c AND t2.d=t1.b
+   AND EXISTS(SELECT 1 FROM t1 AS z WHERE z.b=t2.c);
+.check 13 2906
+.testcase 1120
+-- Same answer when the EXISTS is written in a way that cannot be turned
+-- into a join.
+SELECT count(*), sum(t0.rowid*100+t1.rowid*10+t2.rowid)
+  FROM t2 CROSS JOIN t0 JOIN t1
+ WHERE t0.a=t2.c AND t2.d=t1.b
+   AND (SELECT count(*) FROM t1 AS z WHERE z.b=t2.c)>0;
+.check 13 2906
