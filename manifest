@@ -1,5 +1,5 @@
-C Fix\san\sinfinite\sloop\sin\sQRF\swith\s.mode\sbox\s--wrap\s1\sand\sdouble-width\scharacters.\s[bugs:14c1b50193|Bug\sreport\s2026-11-19T15:40:01Z].
-D 2026-11-19T18:44:50.562
+C In\ssqlite3_deserialize(),\swhen\sbuilt\swith\sSQLITE_ENABLE_API_ARMOR\sreturn\sSQLITE_MISUSE\sif\sthe\sdb\sis\slarger\sthan\sthe\starget\sbuffer.\sNo\seffect\sin\sother\sbuilds.\s[bugs:7ad3ef9b1d|Report\s2026-11-19T00:48:08Z].
+D 2026-11-19T18:54:51.223
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -781,7 +781,7 @@ F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c b7da5c10a726aacacc9ad7cdcb0667deec643e117591cc69cf9b4b9e7f3e96ff
-F src/memdb.c 6915279b56ca9b6e1cd6549edf83887b0454ac6b9790b48efb7c90cbf935c092
+F src/memdb.c 5978d771e0b7e22af9ac42a7e4dd31d2bc172d4d010421a991d7e54f4c665344
 F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 80b35f95d93bf996ccb3e498535255f2ef1118c78764719a7cd15ab4106ccac9
 F src/mutex.c 8b34ded0298d2e16060ad4b8cdc890f512d2582de7e420dc3b39f20bb6a3f97c
@@ -2315,8 +2315,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3a2cffd44b30049b5a17d4476d90e9a21825434814551800401ffdf002ad0f7b
-R e7e3dcb49449f2da62a57831301ad4be
+P bc34f1a1c2d4f50371bbbf526efe1a7bdb17456207e11ed075bbe2e80fa551de
+R 78b414e66422c78849a9dfeeef54d071
 U stephan
-Z c389cd4fbb2baa983085a55fb7607df8
+Z 5b878557a466d84e3737ee01247a9b4d
 # Remove this line to create a well-formed Fossil manifest.
