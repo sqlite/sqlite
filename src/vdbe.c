@@ -5883,6 +5883,7 @@ case OP_NewRowid: {           /* out2 */
     }
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
+    pC->seekResult = 0;  /* Cursor moved.  Results are stale. */
   }
   pOut->u.i = v;
   break;
