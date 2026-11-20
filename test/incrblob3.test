@@ -310,5 +310,41 @@ do_test 8.5 {
 } {1 {no such table: nosuchdb.t1}}
 
 
+# Bug report b065e113dee5ad2d: a blob handle may not be opened for writing
+# on a column that is read only by the WHERE clause of a partial index.
+# Writing it would leave the index inconsistent with the table.
+#
+do_test 9.1 {
+  execsql {
+    CREATE TABLE t2(a, b, c);
+    CREATE INDEX t2a ON t2(a) WHERE b='y';
+    INSERT INTO t2 VALUES(1, 'n', zeroblob(10));
+    INSERT INTO t2 VALUES(2, 'y', zeroblob(10));
+  }
+  list [catch { db incrblob t2 b 1 } msg] $msg
+} {1 {cannot open indexed column for writing}}
+do_test 9.2 {
+  list [catch { db incrblob t2 a 1 } msg] $msg
+} {1 {cannot open indexed column for writing}}
+do_test 9.3 {
+  set ::blob [db incrblob t2 c 1]
+  puts -nonewline $::blob 0123456789
+  close $::blob
+  execsql { PRAGMA integrity_check }
+} {ok}
+do_test 9.4 {
+  set ::blob [db incrblob -readonly t2 b 1]
+  close $::blob
+} {}
+do_test 9.5 {
+  execsql {
+    CREATE TABLE t3(x, y, z);
+    CREATE INDEX t3x ON t3(x) WHERE y IS NOT NULL AND (z+1)>0;
+    INSERT INTO t3 VALUES(zeroblob(10), zeroblob(10), zeroblob(10));
+  }
+  list [catch { db incrblob t3 y 1 } msg] $msg \
+       [catch { db incrblob t3 z 1 } msg] $msg
+} {1 {cannot open indexed column for writing} 1 {cannot open indexed column for writing}}
+
 db close
 finish_test

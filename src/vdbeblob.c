@@ -117,6 +117,20 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
 }
 
 /*
+** Expression-walker callback used by sqlite3_blob_open().  Set
+** pWalker->eCode to 1 and abort the walk if the expression is a reference
+** to column pWalker->u.n of the table.  A WHERE clause on a partial index
+** refers only to columns of the indexed table.
+*/
+static int blobColumnRef(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN && pExpr->iColumn==pWalker->u.n ){
+    pWalker->eCode = 1;
+    return WRC_Abort;
+  }
+  return WRC_Continue;
+}
+
+/*
 ** Open a blob handle.
 */
 int sqlite3_blob_open(
@@ -237,6 +251,16 @@ int sqlite3_blob_open(
           if( pIdx->aiColumn[j]==iCol || pIdx->aiColumn[j]==XN_EXPR ){
             zFault = "indexed";
           }
+        }
+        if( pIdx->pPartIdxWhere ){
+          /* A column read by a partial index WHERE clause determines which
+          ** rows belong in the index, so it cannot be changed either. */
+          Walker w;
+          memset(&w, 0, sizeof(w));
+          w.xExprCallback = blobColumnRef;
+          w.u.n = iCol;
+          sqlite3WalkExpr(&w, pIdx->pPartIdxWhere);
+          if( w.eCode ) zFault = "indexed";
         }
       }
       if( zFault ){
