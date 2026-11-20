@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sthe\sprevious\scheck-in.
-D 2026-11-20T20:35:00.905
+C Fix\ssigned\sinteger\soverflow\sissues\sin\sFTS3.
+D 2026-11-20T20:37:24.490
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -99,7 +99,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c 386adac2dfcda727cd169f195db7f77e450295e100825f9038b11e7368a50031
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c 3fe728d1980b9bdbdf4e197edeb940b0cd9e4e79bea4ebae611022253d5e036f
+F ext/fts3/fts3_write.c 73866d52b1be364d01645db7529c7f64fab336a570287b4c00af330330e8aa50
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 4fea96ea2c2d434acb50f30554c30de23eeed5847fe4656470e2ebe5113e4d58
@@ -1259,6 +1259,7 @@ F test/fts3corrupt4.test c9ad35ad5560b7d4d3ae895658bda743839d2f206d667f19da0ce6d
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3corrupt6.test 9ea944e3cd17a36c64451059022fabff53bd338a43356d1f49264ce8aa9477ad
 F test/fts3corrupt7.test 49a4ef171a00b7807396c7ee6e88eb11346351551ba986d8484853a80fe887b2
+F test/fts3corrupt8.test 08c4b26bce9b631589cc26c87513e87b027732e1d5518ae169dfb3dbf4fcd996
 F test/fts3cov.test 1e5ecea0e4c1394cea97adcfb9fd3d2d5998fd563dacf465f413e6c7fa5cffb3
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
 F test/fts3defer.test c4526accce368e03ced78978f28607139e336aaad8d5303f307f423e994603a9
@@ -2317,8 +2318,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8d96fe8c9f01f9e55570a59a0f61d6f8cfaf47b4f0707ffc2e1c5a5eb195d498
-R aa55782e4df8d59fda1c11056f85a4ae
+P 8b56ce8206731770230391e18eac31894ecbc7491429ab2819c6d85a4160dbd4
+R 43694aa448e66474dd115c83811437a8
 U drh
-Z fdba784be09ab82276fba0c8e51251bb
+Z b9449ccdd21c2e675708f0ceb7094b5e
 # Remove this line to create a well-formed Fossil manifest.

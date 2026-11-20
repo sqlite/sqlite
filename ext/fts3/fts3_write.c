@@ -4309,6 +4309,13 @@ static int fts3IncrmergeLoad(
       iStart = sqlite3_column_int64(pSelect, 1);
       iLeafEnd = sqlite3_column_int64(pSelect, 2);
       fts3ReadEndBlockField(pSelect, 3, &iEnd, &pWriter->nLeafData);
+      if( pWriter->nLeafData==SMALLEST_INT64 ){
+        /* The value cannot be negated, here or by the caller. The record
+        ** is corrupt. */
+        pWriter->nLeafData = 0;
+        sqlite3_reset(pSelect);
+        return FTS_CORRUPT_VTAB;
+      }
       if( pWriter->nLeafData<0 ){
         pWriter->nLeafData = pWriter->nLeafData * -1;
       }
@@ -4359,7 +4366,14 @@ static int fts3IncrmergeLoad(
         return FTS_CORRUPT_VTAB;
       }
 
-      pWriter->nLeafEst = (int)(((iEnd - iStart)+1)/FTS_MAX_APPENDABLE_HEIGHT);
+      /* Block numbers are never negative and iEnd is never less than iStart.
+      ** Check this so that the arithmetic below cannot overflow. */
+      if( iStart<0 || iEnd<iStart || iEnd==LARGEST_INT64 ){
+        sqlite3_reset(pSelect);
+        return FTS_CORRUPT_VTAB;
+      }
+
+      pWriter->nLeafEst = ((iEnd - iStart)+1)/FTS_MAX_APPENDABLE_HEIGHT;
       pWriter->iStart = iStart;
       pWriter->iEnd = iEnd;
       pWriter->iAbsLevel = iAbsLevel;
