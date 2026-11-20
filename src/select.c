@@ -679,6 +679,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
           pEq->w.iJoin = pE2->iTable;
         }
         p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pEq);
+        if( pParse->nErr ) return 1;
       }
     }
 
