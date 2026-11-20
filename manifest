@@ -1,5 +1,5 @@
-C Fix\sa\ssubtle\sproblem\swith\sthe\stransitive\sconstraint\soptimization\sreported\nin\s[bugs:/info/2026-11-19T21:38:21Z|bug\s2026-11-19T21:38:21Z].
-D 2026-11-19T23:58:05.036
+C Bypass\stests\sin\stest/misc03.sql\sthat\srequire\svirtual\stables\son\sbuilds\sthat\nlack\svirtual\stable\ssupport.
+D 2026-11-20T02:08:04.335
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1530,7 +1530,7 @@ F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc01.sql a84ecfe6cb0b6fe3c0e1033404f2d5bf52f2f61ea867f4fc5531a45462de0125
 F test/misc02.sql b678b008b01c37210043d2db629d83782c49579008835e577672e983bc6527fc
-F test/misc03.sql 7669b04fa7920a9503bdcef96251148031d0aa9c6a8607cbb86d1d19257e4b34
+F test/misc03.sql b4ea43ea2e87e61a8ca59767aaf36c182962b5d48ac77e43161e65a5d9bcf28d
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2316,8 +2316,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2c5a10583cde769d9247b6b45d2faaa476d84953dad8c010495d012af4e25962
-R 807071749b340ba842e522e5a3e23a92
+P 284441d4d8179de21def99bd241e9e19db88e1ee3c901e3c6077cf3485f0ee2b
+R 88b686f3b7ed1b3e426ba97290b62fef
 U drh
-Z 38ddb2cecea4d6725751b6c0d058ac2d
+Z f8056f600936cdeaeff236999db73cdf
 # Remove this line to create a well-formed Fossil manifest.

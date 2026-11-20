@@ -123,6 +123,7 @@ SELECT v*1.0, typeof(v*1.0) FROM t2 WHERE r>0;
 # using single quotes can contain a raw double-quote, which must not be
 # copied into the path unchanged.
 #
+.if capable('vtab')
 .open :memory:
 .mode -reset list -colsep ' ' -rowsep ' '
 .testcase 500
@@ -172,6 +173,7 @@ SELECT fullkey FROM json_each(x'5C29615C1331');
 .testcase 565
 SELECT fullkey FROM json_each(x'5C28615C1331');
 .check '$."a\\"'
+.endif /* capable('vtab') */
 
 #***********************************************************************
 # Bug 2026-11-18T08:08:53Z  sqlite.org/bugs/info/dcf6e09adc1bfd53
