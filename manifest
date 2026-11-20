@@ -1,5 +1,5 @@
-C Prevent\sa\sflush-loop\sin\ssecure-delete\sof\sFTS5\swhich\scould\soverflow\sthe\nCPU\sstack.
-D 2026-11-20T02:11:20.446
+C Fix\san\sissue\swith\sthe\snew\stest/backupnpage.test\sscript\sso\sthat\sit\sworks\non\sall\sconfigurations.
+D 2026-11-20T02:20:05.737
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -978,7 +978,7 @@ F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
 F test/backup5.test fa7eea8876d11664691d68f4d85909f0f1923033ebf5f709bc90ca1c8bc29c21
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
-F test/backupnpage.test 382f3b1c62074d611de43aa167dc839c98163832ddd7d74a992e41f7c4168f62
+F test/backupnpage.test 9add224c20213302d3207cdc9e13f8cae6307d46ab8dc2e0779b8fb266ee3541
 F test/badutf.test cff75b714866a4ffa0cdda252eb8fe8765483f5872c0076223c92d52b4fffd1b
 F test/badutf2.test f310fd3b24a491b6b77bccdf14923b85d6ebcce751068c180d93a6b8ff854399
 F test/basexx1.test f68feda7e6b45b6e2f05180a5b182f1cc1d235db56b5a62de1f149ad8dc0ca8c
@@ -2316,8 +2316,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f0c1b7bf8e76e1935346d34aefde46f334306d0b79c7758f933f4188e3be06b9
-R 93bc2eb3913ecac61ce47ff3caf7f385
+P fa323051b3f9124f7a0321316b24248f12750eb9ab8f79574019469b0e98bb20
+R 512b1b0914c4c55691b5a55110b8625c
 U drh
-Z 7e2acc994e8cbdc0235ef8e5aeb85355
+Z b41c149f3977055f0bb6293f331ec2d9
 # Remove this line to create a well-formed Fossil manifest.

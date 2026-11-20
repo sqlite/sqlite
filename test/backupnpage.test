@@ -69,7 +69,7 @@ proc backup_with_readers {wal dest sql finish} {
 }
 
 proc check_integrity {file} {
-  sqlite3 chk $file -readonly 1
+  sqlite3 chk $file
   set res [catch {chk eval {PRAGMA integrity_check}} msg]
   chk close
   list $res $msg
@@ -99,7 +99,7 @@ do_test 3.0 {
 # The restored content must also be readable afterwards.
 #
 do_test 4.0 {
-  sqlite3 chk test.db2 -readonly 1
+  sqlite3 chk test.db2
   set res [chk eval {SELECT a, b FROM s0}]
   chk close
   set res
