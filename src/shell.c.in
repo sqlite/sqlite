@@ -564,6 +564,7 @@ static const char *qrfQuoteNames[] =
 #define SHFLG_DumpDataOnly   0x00000100 /* .dump show data only */
 #define SHFLG_DumpNoSys      0x00000200 /* .dump omits system tables */
 #define SHFLG_TestingMode    0x00000400 /* allow unsafe testing features */
+#define SHFLG_Verbose        0x00000800 /* The -v option is used */
 
 /*
 ** Macros for testing and setting shellFlgs
@@ -10163,6 +10164,10 @@ static int dotCmdCheck(ShellState *p){
     }else{
       sqlite3_fprintf(stderr, "Got:      [%s]\n", zTest);
     }
+  }else if( ShellHasFlag(p, SHFLG_Verbose) ){
+    /* Report each passing .check when the -v option is used. */
+    sqlite3_fprintf(stdout, "%s:%lld: testcase %s ok\n",
+                    p->zInFile, iStart, p->zTestcase);
   }
   sqlite3_free(zToFree);
   if( !bKeep ){
@@ -14658,6 +14663,7 @@ static const char zOptions[] =
   "   -table               set '.mode table'\n"
   "   -tabs                set '.mode tabs'\n"
   "   -unsafe-testing      allow unsafe commands and modes for testing\n"
+  "   -v                   show each passing .check command\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
   "   -vfstrace            enable tracing of all VFS calls\n"
@@ -15208,6 +15214,8 @@ int SQLITE_CDECL main(int argc, char **argv){
       verify_uninitialized();
       sqlite3_config(SQLITE_CONFIG_SORTERREF_SIZE, (int)sz);
 #endif
+    }else if( cli_strcmp(z,"-v")==0 ){
+      ShellSetFlag(&data, SHFLG_Verbose);
     }else if( cli_strcmp(z,"-vfs")==0 ){
       zVfs = cmdline_option_value(argc, argv, ++i);
 #ifdef SQLITE_HAVE_ZLIB
@@ -15551,6 +15559,8 @@ int SQLITE_CDECL main(int argc, char **argv){
     }else if( cli_strcmp(z,"-sorterref")==0 ){
       i++;
 #endif
+    }else if( cli_strcmp(z,"-v")==0 ){
+      /* No-op.  The SHFLG_Verbose flag should already be set. */
     }else if( cli_strcmp(z,"-vfs")==0 ){
       i++;
     }else if( cli_strcmp(z,"-vfstrace")==0 ){
