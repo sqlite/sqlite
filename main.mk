@@ -2027,11 +2027,6 @@ sqlite3_expert$(T.exe): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqli
 		$(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS.libsqlite3)
 xbin: sqlite3_expert$(T.exe)
 
-dbdump$(T.exe): $(TOP)/ext/misc/dbdump.c sqlite3.o
-	$(T.link) -DDBDUMP_STANDALONE -o $@ \
-		$(TOP)/ext/misc/dbdump.c sqlite3.o $(LDFLAGS.libsqlite3)
-xbin: dbdump$(T.exe)
-
 dbtotxt$(T.exe): $(TOP)/tool/dbtotxt.c
 	$(T.link)-o $@ $(TOP)/tool/dbtotxt.c $(LDFLAGS.configure)
 xbin: dbtotxt$(T.exe)
@@ -2565,7 +2560,7 @@ tidy:
 	rm -f scrub$(T.exe) showshm$(T.exe) sqlite3_checker$(T.exe) loadfts$(T.exe)
 	rm -f index_usage$(T.exe) kvtest$(T.exe) startup$(T.exe) threadtest3$(T.exe)
 	rm -f sessionfuzz$(T.exe) changesetfuzz$(T.exe)
-	rm -f dbdump$(T.exe) dbtotxt$(T.exe) atrc$(T.exe)
+	rm -f dbtotxt$(T.exe) atrc$(T.exe)
 	rm -f threadtest5$(T.exe)
 	rm -f src-verify$(B.exe)
 	rm -f tclsqlite3.c has_tclsh* $(T.tcl.env.sh)

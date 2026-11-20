@@ -1,5 +1,5 @@
-C Add\sthe\s-v\soption\sto\sthe\sCLI,\swhich\sif\spresent\scauses\seach\ssuccessful\s.check\ncommand\sto\sdisplay\sits\sidentify\swith\s"ok"\son\sstandard\soutput.
-D 2026-11-20T10:07:47.969
+C Drop\ssupport\sfor\sthe\sdbdump.c\sextension,\sas\sit\sis\sa\smagnet\sfor\sAI-generated\nbug\sreports.\s\sRemove\sall\sdbdump.c\scode\sand\sreferences\sfrom\sthe\srepository.
+D 2026-11-20T15:23:45.049
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -7,7 +7,7 @@ F AGENTS.md 0897213937da2a978ae0638891965a8fe9c9442ed883547aa7a0008488796080
 F LICENSE.md 3aa673c9c864ea8ee3ac46c7a52d270543a8fb8e1dd7e7b02df8f41dca1b80b6
 F Makefile.in b9e64c91cf8bea2305e1ca88bd3eb022afa93963a8561ea8290c65d4fafec03e
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc cc8e36dea77a17521345fb6070e279d5a7de551408e944e46c032c5d5d6d4cc1
+F Makefile.msc d2536c1504d0218d015af9c7c54b60ed714d4eff259f187b6bd54ba595ca666e
 F README.md f0c758436af182e1307afed58e54aeb2757a8c56e20be876a190200b09368b2e
 F VERSION 80115ed2da2f1a67c6ab9e67c3931a85d37c003bfe7b38989258624219ca6663
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -364,7 +364,7 @@ F ext/jni/src/org/sqlite/jni/wrapper1/WindowFunction.java c7d1452f9ff26175b3c19b
 F ext/jni/src/tests/000-000-sanity.test c3427a0e0ac84d7cbe4c95fdc1cd4b61f9ddcf43443408f3000139478c4dc745
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
 F ext/jni/src/tests/900-001-fts.test bf0ce17a8d082773450e91f2388f5bbb2dfa316d0b676c313c637a91198090f0
-F ext/misc/README.md 6243cdc4d7eb791c41ef0716f3980b8b5f6aa8c61ff76a3958cbf0031c6ebfa7
+F ext/misc/README.md 9fd3ad4705a5cacc07477e872f5467c908dfb23d9d199e00f882130e3585256c
 F ext/misc/amatch.c 4adff7f0b60068010158cb2e805351a96d3306b9eaa154a571003146c6fe59bc
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/appendvfs.c 7ad2cdf861399bff503f7e510bfbbc18a4529752255d9766f3a24ced67cb68c5
@@ -377,7 +377,6 @@ F ext/misc/closure.c e1f115c369790512634db8d19ef4f1e45b6c1658c8fe8a9c362aa65805c
 F ext/misc/completion.c 3f5db28e88c3313103b2dd86d910a2944fd500c46754e473493968ce81e994a4
 F ext/misc/compress.c c4597f0e3c63a5f89af55486490f9d69896b0482898f2ddb8a46aa11e4d13016
 F ext/misc/csv.c f4f3f6418a37d1d20fe62870b06413d48e6095c8deb9a1d5828db14c1cd96ae6
-F ext/misc/dbdump.c 54d9c4525024c244a67d43d0b4acf43956c2183be39dabe93c5a03182447e2c2
 F ext/misc/decimal.c 1c05fbe8a604493f9f7f261081e1caf1842c0ff8159b79ebe56fa9068638677d
 F ext/misc/diskused.c 92c09e9d181c339428b7b3797ae3d09d9e36a6a8542b2e2f4dc358b22e708908
 F ext/misc/eval.c d4ea2d9898fbe4d30d38ff675ee51958d3bb0601a145bade56dee8b8f438cc5b
@@ -733,7 +732,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk ab42a5748d39e4c20d6675964195e0a01b61e0fbcda9878ed6012b817485cd74
+F main.mk 5bd34b4ada021b0ac0712c9f31aee9f900c2a1f1d4c9dd2e0b7aef88f362a915
 F make.bat a136fd0b1c93e89854a86d5f4edcf0386d211e5d5ec2434480f6eea436c7420c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2316,8 +2315,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 102d7b9adb21f8c079993e0d5b76f2d208e074c2a4322dda7682e18b634bf4d1
-R 657ec07b7da91db77c9dd6c48833e693
+P b36768c4676b5163652c1944ffa7a6a6d398e3003604734e28b10a0fb7c11709
+R 634d7494a5baa0a75bac40e847891207
 U drh
-Z 7a905d4a20ae936bd4ac553cc27c95cc
+Z 3c5b65309efd13329f291352a2454036
 # Remove this line to create a well-formed Fossil manifest.
