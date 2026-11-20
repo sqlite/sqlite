@@ -7547,9 +7547,13 @@ int sqlite3changegroup_change_blob(
   const void *pVal, 
   int nVal
 ){
-  sqlite3_int64 nByte = 1 + sessionVarintLen(nVal) + (i64)nVal;
+  sqlite3_int64 nByte;
   int rc = SQLITE_OK;
   SessionBuffer *pBuf = 0;
+
+  /* Unlike text, a blob has no terminator from which to infer a length. */
+  if( nVal<0 ) return SQLITE_RANGE;
+  nByte = 1 + sessionVarintLen(nVal) + (i64)nVal;
 
   if( SQLITE_OK!=(rc = checkChangeParams(pGrp, bNew, iCol, nByte, &pBuf)) ){
     return rc;
