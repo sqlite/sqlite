@@ -659,3 +659,22 @@ SELECT t4.id, t1.id, t2.id
  WHERE t4.e = t2.c AND t2.c = t1.b
  ORDER BY 1, 2, 3;
 .check 1 1 1 2 1 1
+
+#----------------------------------------------------------------------------
+# Bug 2026-11-20T03:13:17Z sqlite.org/bugs/info/618ab5918003277e
+#
+# The URI decoder in the CLI and in the SQLite core should agree on what
+# to do with invalid % escapes.
+#
+.if capable('unix') AND capable('unsafe')
+.mode quote --quote off --rowsep ' '
+.testcase 1300
+.shell rm -f victim victim%zz.db
+.shell echo important >victim
+.open --new file:victim%zz.db
+CREATE TABLE t1(x);
+.check
+.testcase 1310
+SELECT name FROM fsdir('.') WHERE name LIKE '%victim%' ORDER BY name;
+.check ./victim ./victim%zz.db
+.endif /* capable('unix') AND capable('unsafe') */

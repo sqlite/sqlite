@@ -6693,15 +6693,11 @@ static char *shellFilenameFromUri(const char *zFN){
       zOut[j++] = zOut[i];
       continue;
     }
-    d1 = hexDigitValue(zOut[i+1]);
-    if( d1<0 ){
-      zOut[j] = 0;
-      break;
-    }
-    d2 = hexDigitValue(zOut[i+2]);
+    d2 = d1 = hexDigitValue(zOut[i+1]);
+    if( d2>=0 ) d2 = hexDigitValue(zOut[i+2]);
     if( d2<0 ){
-      zOut[j] = 0;
-      break;
+      zOut[j++] = zOut[i];
+      continue;
     }
     zOut[j++] = d1*16 + d2;
     i += 2;
