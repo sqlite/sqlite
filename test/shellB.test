@@ -60,29 +60,6 @@ proc build_loadable {ext srcfile} {
   }
 }
 
-# These tests are now handled by testrunner.tcl
-#
-if {0} {
-  do_clitest if.sql
-  do_clitest modeA.sql
-  do_clitest dblwidth-a.sql
-  do_clitest vt100-a.sql
-  do_clitest regexp1.sql
-  do_clitest imposter1.sql
-  do_clitest sha1.sql
-  do_clitest complete_sql.sql
-  do_clitest clierrors.sql
-  do_clitest overflow1.sql
-  do_clitest fkey08.sql
-  do_clitest fkey09.sql
-  do_clitest dump.sql
-  do_clitest misc01.sql
-  do_clitest dotcmd01.sql
-  do_clitest import01.sql
-  do_clitest intck01.sql
-  do_clitest fptest01.sql
-}
-
 set probe $testdir/probe.txt
 forcedelete $probe
 set f [open $probe wb]
@@ -90,6 +67,7 @@ puts -nonewline $f xyzzy
 close $f
 do_clitest safemode.clitest --safe
 do_clitest shell-parse.clitest --test-parse
+do_clitest fpdigits.clitest --unsafe-testing
 unset -nocomplain ::env(SQLITE_PS1)
 unset -nocomplain ::env(SQLITE_PS2)
 do_clitest shell-prompt.clitest

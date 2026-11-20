@@ -1,46 +1,20 @@
-# 7c7dc3813e784515 2026-11-05T18:09:41Z
-# OP_SeekRowid converts a key that has both a number and its text from
-# the text: assertion, and the wrong row with a short fp_d
-# Alperen Keles
+# 2026-11-20
 #
-.open :memory:
-.mode -reset list
+# ".dbconfig fp_digits" no longer works.  ".testctrl fp_digits" is
+# available, but is read-only without the --unsafe-testing flag, which
+# this invocation is not suppose to have.
+#
 .testcase 100
-CREATE TABLE t(a);
-INSERT INTO t(rowid, a) VALUES
-  (12340,'row 12340'),
-  (12345,'row 12345'),
-  (12350,'row 12350');
-.dbconfig fp_digits 4
-.check 'fp_digits 4'
-
+.dbconfig fp_digits
+.check --glob unknown dbconfig
 .testcase 110
-SELECT a FROM t WHERE rowid = 12345.0;
-.check 'row 12345'
-
-# The sqlar_uncompress() function has the special property
-# below that the sqlite3_value it returns has both a text
-# and an equivalent numeric representation at the same time.
-#
+.testctrl fp_digits
+.check 17
+.if NOT capable('unsafe-testing')
 .testcase 120
-SELECT a FROM t WHERE rowid = sqlar_uncompress(12345.0, 9);
-.check 'row 12345'
-.testcase 121
-SELECT a FROM t WHERE rowid = dualrep(12345);
-.check 'row 12345'
-.testcase 122
-SELECT a FROM t WHERE rowid = dualrep(12345.0);
-.check 'row 12345'
-
-.testcase 130
-SELECT a FROM t WHERE +rowid = sqlar_uncompress(12345.0, 9);
-.check 'row 12345'
-.testcase 131
-SELECT a FROM t WHERE +rowid = dualrep(12345);
-.check 'row 12345'
-.testcase 132
-SELECT a FROM t WHERE +rowid = dualrep(12345.0);
-.check 'row 12345'
+.testctrl fp_digits 4
+.check -glob fp_digits is read-only
+.endif /* NOT capable('unsafe-testing') */
 
 # 45bcbf3580 2026-11-05T18:08:21Z
 # A function result that carries a number and its text keeps
