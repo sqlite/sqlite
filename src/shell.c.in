@@ -1997,6 +1997,12 @@ static void shellCapable(
     res = 1;
     goto capable_finished;
   }
+  /* Special case:  capable('unsafe-testing') is true if the CLI
+  ** was launched with the --unsafe-testing flag */
+  if( sqlite3_stricmp(z, "unsafe-testing")==0 ){
+    res = ShellHasFlag(p,SHFLG_TestingMode);
+    goto capable_finished;
+  }
 
   /* Check special cases likek "vtab" and "fkey" */
   for(i=0; i<sizeof(azInversions)/sizeof(azInversions[0])-1; i+=2){
@@ -11017,7 +11023,6 @@ static int do_meta_command(const char *zLine, ShellState *p){
         { "enable_trigger",     SQLITE_DBCONFIG_ENABLE_TRIGGER        },
         { "enable_view",        SQLITE_DBCONFIG_ENABLE_VIEW           },
         { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
-        { "fp_digits",          SQLITE_DBCONFIG_FP_DIGITS             },
         { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
         { "legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    },
         { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
@@ -13277,6 +13282,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     {"extra_schema_checks",SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS,0,"BOOLEAN"  },
     {"fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, 1,"args..."       },
     {"fk_no_action",       SQLITE_TESTCTRL_FK_NO_ACTION, 0, "BOOLEAN"       },
+    {"fp_digits",          SQLITE_TESTCTRL_FP_DIGITS, 0, "?NDIGIT?"         },
     {"imposter",         SQLITE_TESTCTRL_IMPOSTER,1,"SCHEMA ON/OFF ROOTPAGE"},
     {"internal_functions", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS,0,""          },
     {"json_selfcheck",     SQLITE_TESTCTRL_JSON_SELFCHECK ,0,"BOOLEAN"      },
@@ -13620,6 +13626,21 @@ static int do_meta_command(const char *zLine, ShellState *p){
           x = sqlite3_test_control(testctrl, iSize, aOp);
           cli_printf(p->out, "result: %d\n", x);
           free(aOp);
+          break;
+        }
+        case SQLITE_TESTCTRL_FP_DIGITS: {
+          int nIn = 0;
+          isOk = 1;  /* Output shall be the value of rc2 */
+          rc2 = 0;
+          if( nArg==3 ){
+            if( !ShellHasFlag(p,SHFLG_TestingMode) ){
+              dotCmdError(p, 2, "fp_digits is read-only in this shell", 0);
+              isOk = 3; /* No output after error */
+            }else{
+              nIn = (int)integerValue(azArg[2]);
+            }
+          }
+          sqlite3_test_control(SQLITE_TESTCTRL_FP_DIGITS, p->db, nIn, &rc2);
           break;
         }
         case SQLITE_TESTCTRL_FAULT_INSTALL: {
