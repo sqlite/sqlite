@@ -366,6 +366,7 @@ struct Fts5Index {
   /* Error state. */
   int rc;                         /* Current error code */
   int flushRc;
+  int bInSync;                    /* True while inside sqlite3Fts5IndexSync() */
 
   /* State used by the fts5DataXXX() functions. */
   sqlite3_blob *pReader;          /* RO incr-blob open on %_data table */
@@ -7011,8 +7012,17 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
 */
 int sqlite3Fts5IndexSync(Fts5Index *p){
   assert( p->rc==SQLITE_OK );
+  /* Flushing may run internal SQL statements (e.g. secure-delete updates of
+  ** the %_idx table). If such a statement opens a statement journal it
+  ** invokes the xSavepoint() method of this same table, which lands back
+  ** here before the outer flush has cleared the hash table. Without this
+  ** guard that recurses until the stack overflows. The outer flush is still
+  ** running and will write everything out, so the nested call is a no-op. */
+  if( p->bInSync ) return SQLITE_OK;
+  p->bInSync = 1;
   fts5IndexFlush(p);
   fts5IndexCloseReader(p);
+  p->bInSync = 0;
   return fts5IndexReturn(p);
 }
 
