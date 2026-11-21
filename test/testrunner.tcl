@@ -1514,6 +1514,9 @@ proc add_c_jobs {buildname patternlist} {
   foreach f [glob -nocomplain $dir/*.c] {
     set prg [string range [file tail $f] 0 end-2]
 
+    # Programs named unix-*.c only run on unix.
+    if {$TRG(platform)=="win" && [string match unix-* $prg]} continue
+
     set cmd ""
     if {$TRG(platform)=="win"} {
       foreach cp {sqlite3.lo *.h *.c} {
