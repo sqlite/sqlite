@@ -357,6 +357,7 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real|MEM_IntReal))==MEM_Str );
   rc = sqlite3MemRealValueRC(pRec, &rValue);
   if( rc<=0 ) return;
+  if( rc&0x10 ) return;
   if( (rc&2)==0 && alsoAnInt(pRec, rValue, &pRec->u.i) ){
     pRec->flags |= MEM_Int;
   }else{
