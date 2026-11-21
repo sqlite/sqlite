@@ -166,6 +166,11 @@ static int invalidateTempStorage(Parse *pParse){
         "from within a transaction");
       return SQLITE_ERROR;
     }
+    if( sqlite3BtreeIsInBackup(db->aDb[1].pBt) ){
+      sqlite3ErrorMsg(pParse, "temporary storage cannot be changed "
+        "while a backup is running");
+      return SQLITE_ERROR;
+    }
     sqlite3BtreeClose(db->aDb[1].pBt);
     db->aDb[1].pBt = 0;
     sqlite3ResetAllSchemasOfConnection(db);
