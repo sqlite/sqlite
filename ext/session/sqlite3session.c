@@ -2617,7 +2617,7 @@ static void sessionAppendIdent(
   const char *zStr,               /* String to quote, escape and append */
   int *pRc                        /* IN/OUT: Error code */
 ){
-  int nStr = sqlite3Strlen30(zStr)*2 + 2 + 2;
+  i64 nStr = (i64)sqlite3Strlen30(zStr)*2 + 2 + 2;
   if( 0==sessionBufferGrow(p, nStr, pRc) ){
     char *zOut = (char *)&p->aBuf[p->nBuf];
     const char *zIn = zStr;
