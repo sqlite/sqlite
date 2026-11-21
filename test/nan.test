@@ -277,7 +277,7 @@ do_test nan-4.14 {
       -[string repeat 0 10000].[string repeat 0 324][string repeat 9 10000]
   db eval "INSERT INTO t1 VALUES($small)"
   db eval {SELECT x, typeof(x) FROM t1}
-} {0.0 real}
+} {-0.0 real}
 
 # These tests test some really, really small floating point numbers.
 #

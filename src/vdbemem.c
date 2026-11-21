@@ -17,6 +17,7 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
+#include <math.h>
 
 /* True if X is a power of two.  0 is considered a power of two here.
 ** In other words, return true if X has at most one bit set.
@@ -847,6 +848,7 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem, int bFromText){
     */
     if( pMem->u.r==ix && ix<LARGEST_INT64
      && (!bFromText || ix>SMALLEST_INT64)
+     && (ix || !signbit(pMem->u.r))
     ){
       pMem->u.i = ix;
       MemSetTypeFlag(pMem, MEM_Int);
