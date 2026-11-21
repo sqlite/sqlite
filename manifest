@@ -1,5 +1,5 @@
-C Improved\saccuracy\sin\sconversion\sof\soversize\sJSON\sinteger\sliterals.\n[bugs:/info/2026-11-21T00:00:22Z|Bug\s2026-11-21T00:00:22Z\sitem\s2].
-D 2026-11-21T14:23:45.480
+C Fix\san\suninitialized\sreturn\svalue\sin\ssqlite3_db_config()\s-\sa\sproblem\nintroduced\sby\s[90ba17da84401f92],\sI\sbelieve.
+D 2026-11-21T14:51:12.814
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -774,7 +774,7 @@ F src/insert.c ad4d170d7abf6093b02399c38e9afc84fd9f1a4646a5fc7cdc10dec4a8b3ae38
 F src/json.c 77c4912648ac08a582eab899876d93e3e76d93f8b98275482013fddf03888165
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c c6c1cce7e0bff84544eb73fbedb2d04287779601594c1e13b04913d38596559e
-F src/main.c c8cbe300bc476a6ee58649526a908b64c57ce1211d7bc52ff51921961c095ddf
+F src/main.c ae01ae7affeb142dd6843dcff37bc33ca20bb95c92b2767679fa17a7b9ce1b36
 F src/malloc.c 422f7e0498e1c9ef967f06283b6f2c0b16db6b905d8e06f6dbc8baaa3e4e6c5a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2319,8 +2319,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3b86db209d9c5991cf1f1ac36f153ee70745369d9758be3b338e94749b5a142e
-R 670469c27524e9b5ad88845ef3372de3
+P 0d84af4a8c15e50f089bc96d4671647fd903075859caaee36abd7b1283a12ed6
+R aaa7954cf8a88c329c17882d4314388d
 U drh
-Z 24b9838e3721d717cc7338b2014607e0
+Z 22d6330a648935f7d5484529b16c1f84
 # Remove this line to create a well-formed Fossil manifest.

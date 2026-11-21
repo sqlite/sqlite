@@ -966,7 +966,7 @@ int sqlite3_db_cacheflush(sqlite3 *db){
 */
 int sqlite3_db_config(sqlite3 *db, int op, ...){
   va_list ap;
-  int rc;
+  int rc = SQLITE_ERROR;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
@@ -1027,7 +1027,6 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
 #endif
       };
       unsigned int i;
-      rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
       for(i=0; i<ArraySize(aFlagOp); i++){
         if( aFlagOp[i].op==op ){
           int onoff = va_arg(ap, int);
