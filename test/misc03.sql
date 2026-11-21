@@ -821,3 +821,27 @@ DELETE FROM t1 WHERE a=1;
 DELETE FROM t2 WHERE d=1;
 SELECT (SELECT count(*) FROM t1), (SELECT count(*) FROM t2);
 .check 0,0
+
+#------------------------------------------------------------------------------
+# Bug 2026-11-20T13:00:22Z sqlite.org/bugs/info/73ca911605f0ac09
+# Two %_idx entries with page number INT_MAX should be reported as corruption
+# without signed integer overflow.  The overflow shows up only with UBSan.
+#
+.if capable('unsafe') AND capable('fts5')
+.open :memory:
+.dbconfig defensive off
+.mode --reset quote
+.testcase 1830
+CREATE VIRTUAL TABLE x USING fts5(a);
+INSERT INTO x VALUES('one two');
+UPDATE x_data SET block=x'0000000001010100010187fffffe0087fffffe00' WHERE id=10;
+UPDATE x_data SET id=(1<<37)+2147483647 WHERE id=(1<<37)+1;
+WITH c(i) AS (SELECT 2147483392 UNION ALL SELECT i+1 FROM c WHERE i<2147483646)
+  INSERT INTO x_data SELECT (1<<37)+i, x'00000004' FROM c;
+DELETE FROM x_idx;
+INSERT INTO x_idx VALUES(1,x'01',4294967294),(1,x'02',4294967294);
+.check
+.testcase 1831
+SELECT tryeval('PRAGMA integrity_check') LIKE '%corruption found%';
+.check 1
+.endif /* capable('unsafe') AND capable('fts5') */

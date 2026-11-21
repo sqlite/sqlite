@@ -8724,6 +8724,10 @@ static void fts5IndexIntegrityCheckSegment(
     /* If the leaf in question has already been trimmed from the segment, 
     ** ignore this b-tree entry. Otherwise, load it into memory. */
     if( iIdxLeaf<pSeg->pgnoFirst ) continue;
+    if( iIdxLeaf>pSeg->pgnoLast ){
+      FTS5_CORRUPT_ROWID(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, iIdxLeaf));
+      break;
+    }
     iRow = FTS5_SEGMENT_ROWID(pSeg->iSegid, iIdxLeaf);
     pLeaf = fts5LeafRead(p, iRow);
     if( pLeaf==0 ) break;
