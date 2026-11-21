@@ -1,5 +1,5 @@
-C Block\sa\ssigned\sinteger\soverflow\sin\ssessions\sgiven\sa\sridiculous\sinput.\n[bugs:/info/2026-11-20T12:54:18Z|Bug\s2026-11-20T12:54:18Z]
-D 2026-11-21T19:58:36.791
+C Avoid\ssigned\sinteger\soverflow\sin\sthe\shash\sflush\sthreshold\sof\sFTS5.\nOnly\sreachable\swith\sa\sridiculously\slarge\sinput.\n[bugs:/info/2026-11-20T13:06:16Z|Bug\s2026-11-20T13:06:16Z]
+D 2026-11-21T20:12:29.722
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -114,7 +114,7 @@ F ext/fts5/fts5_aux.c 022066fe72bc15357cd3c3e620b6c566d7e030df859bae65bfc4649591
 F ext/fts5/fts5_buffer.c dcc3f0352339fe79c9d8abbc1c2009bc3469206467880bf43558447ef4f846fb
 F ext/fts5/fts5_config.c 50e98223cd5afd3f4bd4f86ef5ef33d7eaa4ce890c02ee8f22f5a317ecfa32d1
 F ext/fts5/fts5_expr.c 77e1a5e4aa11209d38f488afeb7ee8a96b92c782154d67dedd5ec3c8a36f45aa
-F ext/fts5/fts5_hash.c 341a08ad0153b397b819ef3d7a7959c1dc3c84a6988a431d93dece8bd62ae10e
+F ext/fts5/fts5_hash.c 808b0a31c77aa251e40515653b9e0e627766dcfe624ca257c98e7b0ed2f942fa
 F ext/fts5/fts5_index.c e90ab8a31349fc2336ffed8b64e0af8c8a5a4badfb78a02f47cf29188e521709
 F ext/fts5/fts5_main.c d16e7b639370f4d0a8056c9b2485786321d3e6548cb80254b7c9f23c323748d2
 F ext/fts5/fts5_storage.c b1975c781c2d2e07ed01330545c6c66ed71b860b1abdef6237553489d9cfbee4
@@ -2320,8 +2320,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c6a9e0f1842220dfe6a472b4c503b2a3848d71517495438e843da6ce5c715718
-R c0025dea1957ad37d5cbc7a6be65a450
+P f98100749aa3e55b14f673050adaed4a552f977cbfaf319eb13fb3025dbc56a5
+R d6b8354c34b5f4ca82601a56cdc7f8a4
 U drh
-Z 9f287578e6772c0e07ffbf5a7c265360
+Z 781164525916b98986da3a12a73168dd
 # Remove this line to create a well-formed Fossil manifest.

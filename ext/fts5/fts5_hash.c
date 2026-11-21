@@ -254,6 +254,7 @@ int sqlite3Fts5HashWrite(
   Fts5HashEntry *p;
   u8 *pPtr;
   int nIncr = 0;                  /* Amount to increment (*pHash->pnByte) by */
+  i64 nNew;                       /* New value for (*pHash->pnByte) */
   int bNew;                       /* If non-delete entry should be written */
   
   bNew = (pHash->eDetail==FTS5_DETAIL_FULL);
@@ -385,7 +386,8 @@ int sqlite3Fts5HashWrite(
   }
 
   nIncr += p->nData;
-  *pHash->pnByte += nIncr;
+  nNew = (i64)*pHash->pnByte + nIncr;
+  *pHash->pnByte = (int)(nNew>0x7FFFFFFF ? 0x7FFFFFFF : nNew);
   return SQLITE_OK;
 }
 
