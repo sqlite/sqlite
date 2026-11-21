@@ -6865,7 +6865,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
       ** storing that value in the column converts it to INTEGER. */
       pX = sqlite3ExprSkipCollateAndLikely(pExpr);
       if( ALWAYS(pX) && pX->op==TK_CAST
-       && ALWAYS(sqlite3ExprAffinity(pX)==SQLITE_AFF_NUMERIC) ) continue;
+       && sqlite3ExprAffinity(pX)==SQLITE_AFF_NUMERIC ) continue;
     }else{
       continue;
     }
