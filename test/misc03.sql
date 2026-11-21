@@ -742,3 +742,26 @@ INSERT INTO t2 VALUES(1), (-1);
 SELECT -b, count(*) FROM t1 AS p, t1 AS q RIGHT JOIN t2 ON -b=1
  GROUP BY 1 ORDER BY 1;
 .check -1,1 1,1
+
+#-----------------------------------------------------------------------------
+# Bug 2026-11-21T03:33:40Z sqlite.org/bugs/info/91f1a3bee82ea420
+# An index on a generated column must not replace CAST(x AS NUMERIC),
+# because storing a large REAL in the column converts it to INTEGER.
+#
+.open :memory:
+.mode --reset quote
+CREATE TABLE t1(n, g NUMERIC AS (CAST(n AS NUMERIC)) VIRTUAL);
+INSERT INTO t1(n) VALUES(9007199254740992.0);
+CREATE INDEX t1g ON t1(g, n);
+.testcase 1700
+SELECT typeof(CAST(n AS NUMERIC)), CAST(n AS NUMERIC)/3 FROM t1 NOT INDEXED;
+.check "'real',3002399751580330.5"
+.testcase 1710
+SELECT typeof(CAST(n AS NUMERIC)), CAST(n AS NUMERIC)/3 FROM t1 INDEXED BY t1g;
+.check "'real',3002399751580330.5"
+CREATE TABLE t2(n, g INTEGER AS (CAST(n AS NUMERIC)) VIRTUAL);
+INSERT INTO t2(n) VALUES(9007199254740992.0);
+CREATE INDEX t2g ON t2(g, n);
+.testcase 1720
+SELECT typeof(CAST(n AS NUMERIC)), CAST(n AS NUMERIC)/3 FROM t2 INDEXED BY t2g;
+.check "'real',3002399751580330.5"
