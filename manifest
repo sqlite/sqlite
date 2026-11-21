@@ -1,5 +1,5 @@
-C Minor\sbug\sfix\swith\sSQLITE_FCNTL_NULL_IO\son\sunix.\n[bugs:/info/2026-11-21T08:10:04Z|Bug\s2026-11-21T08:10:04Z]
-D 2026-11-21T14:53:31.589
+C Fix\sa\sUAF\sin\sthe\s(debugging-use-only)\sext/misc/vfslog.c\sextension.
+D 2026-11-21T15:00:14.352
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -419,7 +419,7 @@ F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b360
 F ext/misc/unionvtab.c fe1011f185408b0afd1631fdce8090c4e69ff4eae10a760101e08b624f53bcb1
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
 F ext/misc/uuid.c 37297e61935c2d0c425b742100f904d02c866fdeabe0427fe59aed1543e7c0ec
-F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
+F ext/misc/vfslog.c a87d431b26e159239916b87be1317152fdf1b0e21d46834e710f6d56ac8430e5
 F ext/misc/vfsstat.c 55f15d86e025b79dc9934f9f520a1d255913908d5da229b9466f553292b24827
 F ext/misc/vfstrace.c fc8c393a8316a8c20867b7e6e92908c4f81060c9e1f24d6ad9aefdc91c01dd13
 F ext/misc/vtablog.c c98de6599739c287917d1f46ad52c26f9c17b58c2313ab278c50e31333fd8269
@@ -2320,8 +2320,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bfb850f30f38b8a16328a3e5ef9b15898089f0023a57540cdc6d25fec618d6e7
-R f3f289c4eef867496de3f9b7f7844e1f
+P d34106ad02a2986c3f7e9df4b3b7cc2c766b2ae7cb0fa28c3fcfc52314364c83
+R 11009f4150eb8cc62c83454efa805895
 U drh
-Z b25ea2d6bd450db7b55933c6bb4f5bc4
+Z 2efa9c6f0fb87aa7c2d5ce1a3bb33c1c
 # Remove this line to create a well-formed Fossil manifest.
