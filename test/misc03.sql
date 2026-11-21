@@ -720,3 +720,25 @@ SELECT value = CAST('+85432319487574911862' AS REAL)
 SELECT json_extract('[18446744073709551616]', '$[0]'),
        json_extract('[9223372036854775808]', '$[0]');
 .check 1.8446744073709552e+19,9.2233720368547758e+18
+
+#-----------------------------------------------------------------------------
+# Bug 2026-11-21T15:01:57Z sqlite.org/bugs/forumpost/f5b4fcbc9e
+# NULL cursor dereference in OP_Column: expression index, RIGHT JOIN,
+# and an aggregate over an empty table.
+#
+.open :memory:
+.mode --reset quote
+.testcase 1600
+CREATE TABLE t1(a);
+CREATE TABLE t2(b);
+CREATE INDEX i2 ON t2(-b);
+.check
+.testcase 1610
+SELECT -b, count(*) FROM t1 AS p, t1 AS q RIGHT JOIN t2 ON -b=1;
+.check NULL,0
+INSERT INTO t1 VALUES(1);
+INSERT INTO t2 VALUES(1), (-1);
+.testcase 1620
+SELECT -b, count(*) FROM t1 AS p, t1 AS q RIGHT JOIN t2 ON -b=1
+ GROUP BY 1 ORDER BY 1;
+.check -1,1 1,1

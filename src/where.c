@@ -7702,6 +7702,29 @@ whereBeginError:
 #endif
 
 /*
+** Disable all entries on the Parse.pIdxEpr list that use index cursor
+** iIdxCur.  This is done when the loop that owns the cursor ends, since
+** the cursor is not valid, and might never have been opened, after that.
+*/
+static void disableIndexedExprs(Parse *pParse, int iIdxCur){
+  IndexedExpr *p = pParse->pIdxEpr;
+  while( p ){
+    if( p->iIdxCur==iIdxCur ){
+#ifdef WHERETRACE_ENABLED
+      if( sqlite3WhereTrace & 0x200 ){
+        sqlite3DebugPrintf("Disable pParse->pIdxEpr term {%d,%d}\n",
+                            p->iIdxCur, p->iIdxCol);
+        if( sqlite3WhereTrace & 0x5000 ) sqlite3ShowExpr(p->pExpr);
+      }
+#endif
+      p->iDataCur = -1;
+      p->iIdxCur = -1;
+    }
+    p = p->pIENext;
+  }
+}
+
+/*
 ** Generate the end of the WHERE loop.  See comments on
 ** sqlite3WhereBegin() for additional information.
 */
@@ -7960,6 +7983,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     */
     if( pLevel->pRJ ){
       sqlite3WhereRightJoinLoop(pWInfo, i, pLevel);
+      if( (pLoop->wsFlags & WHERE_INDEXED)!=0
+       && pLoop->u.btree.pIndex->bHasExpr
+      ){
+        disableIndexedExprs(pParse, pLevel->iIdxCur);
+      }
       continue;
     }
 
@@ -8000,23 +8028,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }else{
         last = pWInfo->iEndWhere;
       }
-      if( pIdx->bHasExpr ){
-        IndexedExpr *p = pParse->pIdxEpr;
-        while( p ){
-          if( p->iIdxCur==pLevel->iIdxCur ){
-#ifdef WHERETRACE_ENABLED
-            if( sqlite3WhereTrace & 0x200 ){
-              sqlite3DebugPrintf("Disable pParse->pIdxEpr term {%d,%d}\n",
-                                  p->iIdxCur, p->iIdxCol);
-              if( sqlite3WhereTrace & 0x5000 ) sqlite3ShowExpr(p->pExpr);
-            }
-#endif
-            p->iDataCur = -1;
-            p->iIdxCur = -1;
-          }
-          p = p->pIENext;
-        }
-      }
+      if( pIdx->bHasExpr ) disableIndexedExprs(pParse, pLevel->iIdxCur);
       k = pLevel->addrBody + 1;
 #ifdef SQLITE_DEBUG
       if( db->flags & SQLITE_VdbeAddopTrace ){
