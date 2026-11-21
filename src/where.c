@@ -6851,6 +6851,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
   pTab = pIdx->pTable;
   for(i=0; i<pIdx->nColumn; i++){
     Expr *pExpr;
+    Expr *pX;
     int j = pIdx->aiColumn[i];
     if( j==XN_EXPR ){
       pExpr = pIdx->aColExpr->a[i].pExpr;
@@ -6860,6 +6861,11 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
       ** numeric affinities, so check for that mismatch here. */
       if( (pTab->aCol[j].affinity==SQLITE_AFF_REAL)
            !=(sqlite3ExprAffinity(pExpr)==SQLITE_AFF_REAL) ) continue;
+      /* CAST(x AS NUMERIC) leaves a large REAL value unchanged, but
+      ** storing that value in the column converts it to INTEGER. */
+      pX = sqlite3ExprSkipCollateAndLikely(pExpr);
+      if( ALWAYS(pX) && pX->op==TK_CAST
+       && ALWAYS(sqlite3ExprAffinity(pX)==SQLITE_AFF_NUMERIC) ) continue;
     }else{
       continue;
     }
