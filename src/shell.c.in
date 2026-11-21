@@ -8469,10 +8469,11 @@ static int pickStr(const char *zArg, char **pzErr, ...){
   va_start(ap, pzErr);
   i = 0;
   while( (z = va_arg(ap,const char*))!=0 && z[0]!=0 ){
-    if( cli_strcmp(zArg, z)==0 ) return i;
+    if( cli_strcmp(zArg, z)==0 ) break;
     i++;
   }
   va_end(ap);
+  if( z!=0 && z[0]!=0 ) return i;
   if( pzErr==0 ) return -1;
   n = i;
   pMsg = sqlite3_str_new(0);
