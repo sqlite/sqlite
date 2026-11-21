@@ -3527,6 +3527,16 @@ static void jsonReturnFromBlob(
       if( k==0 ){
         sqlite3_result_int64(pCtx, ival);
       }else if( k==1 ){
+        const char *zInt = (const char*)&pParse->aBlob[i+n];
+        int iX = (zInt[0]=='-' || zInt[0]=='+');
+        if( zInt[iX]!='0' || (zInt[iX+1]!='x' && zInt[iX+1]!='X') ){
+          /* A decimal integer too big for 64 bits.  Convert it the same
+          ** way as CAST(x AS REAL), with a single rounding. */
+          char *z = sqlite3DbStrNDup(db, zInt, (int)sz);
+          if( z==0 ) goto returnfromblob_oom;
+          sqlite3AtoF(z, &rval);
+          sqlite3DbFree(db, z);
+        }
         sqlite3_result_double(pCtx, rval);
       }else{
         goto returnfromblob_malformed;

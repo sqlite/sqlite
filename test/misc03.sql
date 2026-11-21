@@ -698,3 +698,25 @@ UPDATE sqlite_stat1 SET stat = X'7827303027293b0a2e7368656c6c207072696e746620465
 .dump
 .check --glob 7827303027293b --keep
 .check --not --glob .shell
+
+#-----------------------------------------------------------------------------
+# Bug 2026-11-21T00:00:22Z sqlite.org/bugs/info/1b6dc0eaf614f8ef
+# json_extract() misrounds 20-digit integers
+#
+.mode --reset quote
+.testcase 1500
+SELECT json_extract('[85432319487574911862]', '$[0]')
+     = CAST('85432319487574911862' AS REAL);
+.check 1
+.testcase 1510
+SELECT '[-85432319487574911862]' ->> '$[0]'
+     = CAST('-85432319487574911862' AS REAL);
+.check 1
+.testcase 1520
+SELECT value = CAST('+85432319487574911862' AS REAL)
+  FROM json_each('[+85432319487574911862]');
+.check 1
+.testcase 1530
+SELECT json_extract('[18446744073709551616]', '$[0]'),
+       json_extract('[9223372036854775808]', '$[0]');
+.check 1.8446744073709552e+19,9.2233720368547758e+18
