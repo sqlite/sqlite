@@ -1210,3 +1210,63 @@ SELECT if(a,'yes','') AS 'quoted?', b AS string FROM t2 ORDER BY rowid;
 │         │ 1x10        │
 ╰─────────┴─────────────╯
 END
+
+# Bug 2026-11-21T02:47:14Z
+#
+# The words "csv", "html", "tcl", and "json" are both mode names and
+# arguments to --quote.  Following --quote, they change only the quoting
+# of the current mode.  A mode name that is not a quoting keyword still
+# selects a new mode.
+#
+.open :memory:
+CREATE TABLE t1(a,b);
+INSERT INTO t1 VALUES('<"x">',5);
+.mode box
+.testcase 1700
+.mode --quote json
+SELECT a, b FROM t1;
+.check <<END
+╭───────────┬───╮
+│     a     │ b │
+╞═══════════╪═══╡
+│ "<\"x\">" │ 5 │
+╰───────────┴───╯
+END
+.mode box
+.testcase 1710
+.mode --quote html
+SELECT a, b FROM t1;
+.check <<END
+╭───────────────────────┬───╮
+│           a           │ b │
+╞═══════════════════════╪═══╡
+│ &lt;&quot;x&quot;&gt; │ 5 │
+╰───────────────────────┴───╯
+END
+.mode box
+.testcase 1720
+.mode --quote csv
+SELECT a, b FROM t1;
+.check <<END
+╭───────────┬───╮
+│     a     │ b │
+╞═══════════╪═══╡
+│ "<""x"">" │ 5 │
+╰───────────┴───╯
+END
+.mode box
+.testcase 1730
+.mode --quote tcl
+SELECT a, b FROM t1;
+.check <<END
+╭───────────┬───╮
+│     a     │ b │
+╞═══════════╪═══╡
+│ "<\"x\">" │ 5 │
+╰───────────┴───╯
+END
+.mode box
+.testcase 1740
+.mode --quote list
+SELECT a, b FROM t1;
+.check '<"x">|5'
