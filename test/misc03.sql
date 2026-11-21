@@ -678,3 +678,23 @@ CREATE TABLE t1(x);
 SELECT name FROM fsdir('.') WHERE name LIKE '%victim%' ORDER BY name;
 .check ./victim ./victim%zz.db
 .endif /* capable('unix') AND capable('unsafe') */
+
+#-----------------------------------------------------------------------------
+# Bug 2026-11-21T01:05:21Z sqlite.org/bugs/forumpost/6471ec2c5f
+#
+# Command Injection in sqlite3 CLI .fullschema Output
+#
+.open :memory:
+.testcase 1400
+CREATE TABLE t1(a,b,c,d);
+CREATE INDEX t1a ON t1(a);
+INSERT INTO t1 VALUES(111,'aaa',999,'zzz'),('bbb',222,'yyy',888);
+ANALYZE;
+UPDATE sqlite_stat1 SET stat = X'7827303027293b0a2e7368656c6c207072696e74662046554c4c534348454d415f45584543555445440a2d2d';
+.fullschema
+.check --glob 7827303027293b --keep
+.check --not --glob .shell
+.testcase 1410
+.dump
+.check --glob 7827303027293b --keep
+.check --not --glob .shell

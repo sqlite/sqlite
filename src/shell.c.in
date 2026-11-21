@@ -11487,6 +11487,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     }else{
       cli_puts("ANALYZE sqlite_schema;\n", p->out);
       data.mode.eMode = MODE_Insert;
+      data.mode.spec.eText = QRF_TEXT_Sql;
       if( hasStat[1] ){
         data.mode.spec.zTableName = "sqlite_stat1";
         shell_exec(&data, "SELECT * FROM sqlite_stat1", 0);
