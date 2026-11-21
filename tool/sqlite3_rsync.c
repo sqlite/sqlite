@@ -18,6 +18,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
+#include <errno.h>
 #include "sqlite3.h"
 
 static const char zUsage[] =
@@ -336,17 +337,17 @@ static int pclose2(FILE *pIn, FILE *pOut, int childPid){
   fclose(pIn);
   fclose(pOut);
   do{
-    wp = waitpid(0, &rc, WNOHANG);
-    if( wp>0 ){
-      if( WIFEXITED(rc) ){
-        rc = WEXITSTATUS(rc);
-      }else if( WIFSIGNALED(rc) ){
-        rc = WTERMSIG(rc);
-      }else{
-        rc = 0/*???*/;
-      }
-    }
-  } while( wp>0 );
+    wp = waitpid(childPid, &rc, 0);
+  }while( wp<0 && errno==EINTR );
+  if( wp<0 ){
+    rc = 0/*???*/;
+  }else if( WIFEXITED(rc) ){
+    rc = WEXITSTATUS(rc);
+  }else if( WIFSIGNALED(rc) ){
+    rc = WTERMSIG(rc);
+  }else{
+    rc = 0/*???*/;
+  }
   return rc;
 #endif
 }
@@ -2387,7 +2388,10 @@ int main(int argc, char const * const *argv){
         continue;
       }
       replicaSide(&ctx);
-      if( ctx.nHashSent==0 && iRetry==0 ) continue;
+      if( ctx.nHashSent==0 && iRetry==0 ){
+        pclose2(ctx.pIn, ctx.pOut, childPid);
+        continue;
+      }
       break;
     }
   }else if( (zDiv = hostSeparator(ctx.zReplica))!=0 ){
@@ -2443,7 +2447,10 @@ int main(int argc, char const * const *argv){
         continue;
       }
       originSide(&ctx);
-      if( ctx.nHashSent==0 && iRetry==0 ) continue;
+      if( ctx.nHashSent==0 && iRetry==0 ){
+        pclose2(ctx.pIn, ctx.pOut, childPid);
+        continue;
+      }
       break;
     }
   }else{
