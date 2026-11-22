@@ -903,3 +903,31 @@ END;
 INSERT INTO trig VALUES(1);
 SELECT group_concat(n,'/') FROM (SELECT n FROM t ORDER BY id);
 .check 2/2/2
+
+# Bug 2026-10-21T17:15:30Z sqlite.org/bugs/info/b0c03988e8947412
+# FTS5 stores terms in UTF-8 order.  In a UTF-16 database fts5vocab must
+# leave range constraints and ORDER BY on the term column to the core.
+#
+.if capable('fts5')
+.open :memory:
+.mode --reset list
+PRAGMA encoding = 'UTF-16le';
+CREATE VIRTUAL TABLE ft USING fts5(a);
+INSERT INTO ft VALUES('apple '||char(307)||'s b');
+CREATE VIRTUAL TABLE v USING fts5vocab(ft, 'row');
+CREATE TABLE t(term TEXT);
+INSERT INTO t SELECT term FROM v;
+.testcase 1930
+SELECT (SELECT count(*) FROM v WHERE term<'b')
+     = (SELECT count(*) FROM v WHERE +term<'b');
+.check 1
+.testcase 1931
+SELECT (SELECT group_concat(term,'/') FROM
+          (SELECT term FROM v ORDER BY term LIMIT 100))
+     = (SELECT group_concat(term,'/') FROM
+          (SELECT term FROM t ORDER BY term LIMIT 100));
+.check 1
+.testcase 1932
+SELECT count(*) FROM v WHERE term>='b';
+.check 1
+.endif /* capable('fts5') */
