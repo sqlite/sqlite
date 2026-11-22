@@ -1,5 +1,5 @@
-C Fix\sto\sUPDATE\sin\sFTS5\ssecure-delete\swhen\sthe\sdoclist\sis\slarge.\n[bugs:/info/2026-11-20T01:00:44Z|Bugs\s2026-11-20T01:00:44Z]
-D 2026-11-22T15:44:00.820
+C Avoid\ssigned\sinteger\soverflow\swhen\strying\sto\szero-terminate\sa\stransient\sbinding\nand\scorner\scase\swhen\sthe\sbinding\sis\sINT_MAX\sbytes\slong\sand\nSQLite\sis\scompiled\swith\s-DSQLITE_MAX_LENGTH\sas\sINT_MAX.\n[bugs:/info/2026-11-20T13:18:12Z|Bug\s2026-11-20T13:18:12Z]
+D 2026-11-22T16:12:15.340
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -883,7 +883,7 @@ F src/vdbeInt.h 2779a291d7ddc62168243a8cbca2d007fc6c4c279275972e5584e989ab32ea01
 F src/vdbeapi.c 1602b12cae241e086779290985c67f0c843a534cc75bb9eceb4ffa6afd850516
 F src/vdbeaux.c 10b84cc2a38fb7dda4106c0c5d6c0ebf208045bcc840ed09d01586be6180e783
 F src/vdbeblob.c 7df6c53c2490ab255659e7a2798b714a9e00d128e7124e23135a0a398e3bdef8
-F src/vdbemem.c 5c6be98744172950dd5bb56ce179b8707b203a679a2f9aa402ca18e452fa9b8f
+F src/vdbemem.c cae97cc16ee3db30f6a5309df9d39ca85ea2e1a5a6bd811e5c49fdb42b59e4b0
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
 F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b41
 F src/vdbevtab.c c169e332f0e7756f5a98835c09efd4a0e1cd5cde7b2586eec99c4c9ffba8a90b
@@ -2320,8 +2320,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5aab7e6297ab73f62d876045dfc4e6f7b62b1900710e1cc839c4f34f760bdadc
-R d482601ea39e22f8a4442313d308544b
+P a06974818027a09e82208e96144ff95da54d7142e023f3e6777d14c301f7d94b
+R afec247a9df6dc707c78b26757e0d298
 U drh
-Z 3b8d8d0ceefbd79336229890e38b91fc
+Z 9fb9e6439fa7b8848721c604ffbd900a
 # Remove this line to create a well-formed Fossil manifest.

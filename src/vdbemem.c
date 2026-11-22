@@ -1370,6 +1370,10 @@ int sqlite3VdbeMemSetStr(
     testcase( nAlloc==0 );
     testcase( nAlloc==31 );
     testcase( nAlloc==32 );
+#if SQLITE_MAX_LENGTH>=2147483646
+    /* Do not let the allocation size overflow an int. */
+    if( nAlloc>SQLITE_MAX_ALLOCATION_SIZE ) return SQLITE_NOMEM_BKPT;
+#endif
     if( sqlite3VdbeMemClearAndResize(pMem, (int)MAX(nAlloc,32)) ){
       return SQLITE_NOMEM_BKPT;
     }
@@ -1455,6 +1459,10 @@ int sqlite3VdbeMemSetText(
     i64 nAlloc = nByte + 1;
     testcase( nAlloc==31 );
     testcase( nAlloc==32 );
+#if SQLITE_MAX_LENGTH>=2147483647
+    /* Do not let the allocation size overflow an int. */
+    if( nAlloc>SQLITE_MAX_ALLOCATION_SIZE ) return SQLITE_NOMEM_BKPT;
+#endif
     if( sqlite3VdbeMemClearAndResize(pMem, (int)MAX(nAlloc,32)) ){
       return SQLITE_NOMEM_BKPT;
     }
