@@ -931,3 +931,28 @@ SELECT (SELECT group_concat(term,'/') FROM
 SELECT count(*) FROM v WHERE term>='b';
 .check 1
 .endif /* capable('fts5') */
+
+# Bug 2026-11-20T01:00:44Z sqlite.org/bugs/info/e86d30379622da23
+# With secure-delete, a position list whose size field is a multi-byte
+# varint must still be recognized as a delete when it is flushed.
+#
+.if capable('fts5')
+.open :memory:
+.mode --reset list
+CREATE VIRTUAL TABLE ft USING fts5(x);
+INSERT INTO ft(ft,rank) VALUES('secure-delete',1);
+INSERT INTO ft(rowid,x) VALUES(1,'a b'),(2,'a c');
+WITH c(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM c WHERE n<128)
+UPDATE ft SET x=(SELECT group_concat('a',' ') FROM c) WHERE rowid=2;
+UPDATE ft SET x='c d' WHERE rowid=2;
+.testcase 1940
+SELECT group_concat(rowid) FROM ft WHERE ft MATCH 'a';
+.check 1
+.testcase 1941
+INSERT INTO ft(ft) VALUES('integrity-check');
+.check
+DELETE FROM ft WHERE ft MATCH 'a';
+.testcase 1942
+SELECT rowid, x FROM ft;
+.check 2|c d
+.endif /* capable('fts5') */

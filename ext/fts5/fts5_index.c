@@ -5881,12 +5881,19 @@ static void fts5FlushOneHash(Fts5Index *p){
                     continue;
                   }
                 }
-              }else if( (pDoclist[iOff] & 0x01) 
-                && !fts5FlushSecureDelete(p, pStruct, zTerm, nTerm, iRowid)
-              ){
-                if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
-                  iOff++;
-                  continue;
+              }else{
+                /* The delete flag is the low bit of the size varint, which
+                ** is not in the first byte if the size field is multi-byte. */
+                int nDummy = 0;
+                int bDel = 0;
+                fts5GetPoslistSize(&pDoclist[iOff], &nDummy, &bDel);
+                if( bDel
+                 && !fts5FlushSecureDelete(p, pStruct, zTerm, nTerm, iRowid)
+                ){
+                  if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
+                    iOff++;
+                    continue;
+                  }
                 }
               }
             }
