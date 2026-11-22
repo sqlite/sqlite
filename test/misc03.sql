@@ -666,7 +666,7 @@ SELECT t4.id, t1.id, t2.id
 # The URI decoder in the CLI and in the SQLite core should agree on what
 # to do with invalid % escapes.
 #
-.if capable('unix') AND capable('unsafe')
+.if capable('unix') AND capable('unsafe') AND capable('vtab')
 .mode quote --quote off --rowsep ' '
 .testcase 1300
 .shell rm -f victim victim%zz.db
@@ -712,10 +712,12 @@ SELECT json_extract('[85432319487574911862]', '$[0]')
 SELECT '[-85432319487574911862]' ->> '$[0]'
      = CAST('-85432319487574911862' AS REAL);
 .check 1
+.if capable('json_each')
 .testcase 1520
 SELECT value = CAST('+85432319487574911862' AS REAL)
   FROM json_each('[+85432319487574911862]');
 .check 1
+.endif
 .testcase 1530
 SELECT json_extract('[18446744073709551616]', '$[0]'),
        json_extract('[9223372036854775808]', '$[0]');

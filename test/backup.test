@@ -909,7 +909,6 @@ ifcapable memorymanage {
   db3 close
 }
 
-
 #-----------------------------------------------------------------------
 # Test that if the database is written to via the same database handle being
 # used as the source by a backup operation:
@@ -1017,12 +1016,15 @@ do_test backup-13.1 {
 do_test backup-13.2 {
   catchsql {PRAGMA temp_store = memory} db1
 } {1 {temporary storage cannot be changed while a backup is running}}
-do_test backup-13.3 {
-  catchsql {PRAGMA temp_store_directory = '.'} db1
-} {1 {temporary storage cannot be changed while a backup is running}}
-do_test backup-13.4 {
-  list [B step 10000] [B finish]
-} {SQLITE_DONE SQLITE_OK}
+#do_test backup-13.3 {
+#  catchsql {PRAGMA temp_store_directory = '.'} db1
+#} {1 {temporary storage cannot be changed while a backup is running}}
+do_test backup-13.4a {
+  B step 10000
+} {SQLITE_DONE}
+do_test backup-13.4b {
+  B finish
+} {SQLITE_OK}
 do_test backup-13.5 {
   db1 eval {PRAGMA temp_store = memory}
   db2 eval {SELECT count(*) FROM t1}

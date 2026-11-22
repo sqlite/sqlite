@@ -1,5 +1,5 @@
-C Improvements\sto\s"json"\smode\sin\sQRF.\n[bugs:/info/2026-11-22T07:30:35Z|Bug\s2026-11-22T07:30:35Z]
-D 2026-11-22T10:10:48.810
+C Adjustments\sto\stest\scases\sso\sthat\sthey\swork\son\sall\sconfigurations.
+D 2026-11-22T11:35:01.188
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -971,7 +971,7 @@ F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avfs.test 95bb8d04f8edad6dc9e600221d103f7e2cc3da398af84df215a3a819e560c45c
 F test/avtrans.test 7a6eae44763293024b137b53ff824d8500d754dbae060a8d940afbacfc1d4a15
 F test/backcompat.test f2431465ed668f09fc3f6998e56e893a1506ccea6e8b6f409f085f759f431b48
-F test/backup.test a547324158666da79c5f1142cef868b3849326497a3a58bec77a8f825c016f39
+F test/backup.test 069e90ba5ecda48d1bb44876bfedda895d57ec3d9abceec825648353179cbce2
 F test/backup2.test b153553ee5667b0748b43346b0725fbf80ce1f5544613bf087d669778b60ec56
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
 F test/backup5.test fa7eea8876d11664691d68f4d85909f0f1923033ebf5f709bc90ca1c8bc29c21
@@ -1533,7 +1533,7 @@ F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc01.sql fd0012dfad0385437c8b979a4723a8525eb1cc82cdf3b77a0d6edcfd2b9b2513
 F test/misc02.sql b678b008b01c37210043d2db629d83782c49579008835e577672e983bc6527fc
-F test/misc03.sql edd7546375846c6375e9e97588902388a1e636f0e4bc4d317667b8c19af40de8
+F test/misc03.sql d8f69e6e428c3bac5df1ab32e99a5243842ae0fcb42eeabb8f55865bc139ba93
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2320,8 +2320,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b02c160dba41c608a73e99c1f851d4dda81971fe25807af89afeedf4fc34ee7d
-R 1e180ae33c41f6fd9d21ba8ff6b9f7d7
+P ac22af8bd58cb1f6190438cae90f607fe10b96094526b855cafeb84f8855ce05
+R 380cf2b8be0c6df8f8f4eb0cc7e29066
 U drh
-Z f25bb5ddae2169a9f4003ec8e80122d9
+Z d701a9294d4e512ce7b404b2d9dc2b2d
 # Remove this line to create a well-formed Fossil manifest.
