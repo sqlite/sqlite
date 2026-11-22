@@ -7496,6 +7496,7 @@ static void agginfoFree(sqlite3 *db, void *pArg){
 **   *  The outer query is a simple count(*) with no WHERE clause or other
 **      extraneous syntax.
 **   *  None of the subqueries are DISTINCT (forumpost/a860f5fb2e 2025-03-10)
+**   *  None of the subqueries use window functions
 **
 ** Return TRUE if the optimization is undertaken.
 */
@@ -7529,6 +7530,9 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     if( pSub->op!=TK_ALL && pSub->pPrior ) return 0;  /* Must be UNION ALL */
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
     if( pSub->pLimit ) return 0;                      /* No LIMIT clause */
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    if( pSub->pWin ) return 0;                        /* No window functions */
+#endif
     if( pSub->selFlags & (SF_Aggregate|SF_Distinct) ){
        testcase( pSub->selFlags & SF_Aggregate );
        testcase( pSub->selFlags & SF_Distinct );

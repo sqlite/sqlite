@@ -956,3 +956,29 @@ DELETE FROM ft WHERE ft MATCH 'a';
 SELECT rowid, x FROM ft;
 .check 2|c d
 .endif /* capable('fts5') */
+
+# Bug 2026-11-22T17:12:24Z sqlite.org/bugs/forumpost/4d66bb1269
+# The count-of-view optimization must not be applied to the arms of a
+# compound subquery that use window functions.
+#
+.open :memory:
+.mode --reset list
+CREATE TABLE t1(a, b);
+INSERT INTO t1 VALUES(1,2),(3,4);
+.testcase 1950
+SELECT count(*) FROM (
+  SELECT 1 UNION ALL SELECT row_number() OVER () FROM t1 ORDER BY 1
+);
+.check 3
+.testcase 1951
+SELECT count(*) FROM (
+  SELECT a, b FROM t1 UNION ALL
+  SELECT a, last_value(b) OVER (ROWS BETWEEN 1 FOLLOWING AND 1 FOLLOWING)
+    FROM t1 ORDER BY 2
+);
+.check 4
+.testcase 1952
+SELECT count(*) FROM (
+  SELECT row_number() OVER () FROM t1 UNION ALL SELECT 1 ORDER BY 1
+);
+.check 3
