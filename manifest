@@ -1,5 +1,5 @@
-C Teach\stestrunner.tcl\sto\soptionally\suse\sTcl\sdir\simplied\sby\sthe\s./configure-specified\stclConfig.sh,\sfalling\sback\sto\sthat\sof\sthat\sof\sthe\scurrently-running\sinterpreter,\sso\sthat\sit\scan\sbe\sused\swith\scross-compilation.\sProposed\sfix\sfor\s[bugs:36beceeaa1|report\s2026-11-22T14:54:14Z].
-D 2026-11-22T16:59:42.499
+C Use\ssqlite3_value_int64()\sinstead\sof\ssqlite3_value_int()\sin\sone\splace\sdeep\ninside\sWindow\sfunction\sprocessing.\s\sThis\sdoes\snot\sfix\sany\sknown\sbug.\s\sIt\sis\nmerely\sdefense\sin\sdepth.
+D 2026-11-22T17:11:53.585
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -896,7 +896,7 @@ F src/where.c 5c94ae07042663017a8c1c9f9ceca70807ac8bc4f0569a4d5a2504e879d968df
 F src/whereInt.h fc4b79205a5bd2428ddc7b3fe4d6bbeefa3f785a2dde6d1d7532e0dead5bf08d
 F src/wherecode.c feffae7485f8c7c16aa9f1abdabe673408069e91ec7e5705c8804afee7f578c8
 F src/whereexpr.c 845da75d15f93c7828320250577a9c86b3954f988d7d36ff366c625a295bcd5a
-F src/window.c a1f677a5c7389735d808dd7d032cc0a03b4ee8d35b7e23c72a6d897f8dd84c35
+F src/window.c 23b31c5aafdae9a473973b99320b31e6ed220f792ea7bc03b2002014d021ec0e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
 F test/affinity3.test 9b7d1133e11d5edd7805573c4ab6f3ba73b0b74a1f280d5b130d4bf3506a93ff
@@ -2320,8 +2320,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f8429ed7ef1e492c6c609fb6069680a609fe8318792ab192a97a59c6745751aa
-R 3521124a1702da346ad75ee8137348ff
-U stephan
-Z b2077da589161accadd9acb58bf14289
+P 24fac95c650dd7c2e838f53ccffda52b479f0b8d02dd4e6902852963424a44b5
+R d8a2cc63da5141d1366348dedee9b48b
+U drh
+Z 04282c422944ae9623c5c54b9aa96ae1
 # Remove this line to create a well-formed Fossil manifest.
