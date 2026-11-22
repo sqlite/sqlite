@@ -695,6 +695,7 @@ int sqlite3VdbeFrameIsValid(VdbeFrame*);
 void sqlite3VdbeFrameMemDel(void*);      /* Destructor on Mem */
 void sqlite3VdbeFrameDelete(VdbeFrame*); /* Actually deletes the Frame */
 int sqlite3VdbeFrameRestore(VdbeFrame *);
+int sqlite3VdbeOtherWriter(sqlite3*, Vdbe*, Pgno, int);
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 void sqlite3VdbePreUpdateHook(
     Vdbe*,VdbeCursor*,int,const char*,Table*,i64,int,int);

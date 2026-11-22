@@ -4050,6 +4050,20 @@ int sqlite3HasExplicitNulls(Parse *pParse, ExprList *pList){
 }
 
 /*
+** Use the OP_NoWriter opcode to cause the current program to abort
+** if there are concurrent writers on the table iRoot of schema iDb.
+*/
+void sqlite3FailIfConcurrentWriter(
+  Parse *pParse,    /* Parsing context */
+  Pgno iRoot,       /* Root page of the table being altered */
+  int iDb           /* Schema containing the table */
+){
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  assert( v!=0 || pParse->nErr>0 );
+  if( v ) sqlite3VdbeAddOp2(v, OP_NoWriter, (int)iRoot, iDb);
+}
+
+/*
 ** Create a new index for an SQL table.  pName1.pName2 is the name of the index
 ** and pTblList is the name of the table that is to be indexed.  Both will
 ** be NULL for a primary key or an index that is created to satisfy a
@@ -4559,6 +4573,7 @@ void sqlite3CreateIndex(
       if( v==0 ) goto exit_create_index;
 
       sqlite3BeginWriteOperation(pParse, 1, iDb);
+      sqlite3FailIfConcurrentWriter(pParse, pTab->tnum, iDb);
 
       /* Create the rootpage for the index using CreateIndex. But before
       ** doing so, code a Noop instruction and store its address in
