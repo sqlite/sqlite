@@ -3595,7 +3595,7 @@ case OP_MakeRecord: {
   i64 nByte;             /* Data space required for this record */
   i64 nZero;             /* Number of zero bytes at the end of the record */
   int nVarint;           /* Number of bytes in a varint */
-  u32 serial_type;       /* Type field */
+  u64 serial_type;       /* Type field */
   Mem *pData0;           /* First field to be combined into the record */
   Mem *pLast;            /* Last field of the record */
   int nField;            /* Number of fields in the record */
@@ -3781,7 +3781,10 @@ case OP_MakeRecord: {
       }
       nData += len;
       nHdr += sqlite3VarintLen(serial_type);
-      pRec->uTemp = serial_type;
+      pRec->uTemp = (u32)serial_type;
+      /*            ^^^^^---  If the serial_type is too large, then nData
+      ** will be too large too, and we'll get an SQLITE_TOOBIG error below,
+      ** before this truncation does any harm. */
     }
     if( pRec==pData0 ) break;
     pRec--;
