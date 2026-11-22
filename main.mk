@@ -290,6 +290,14 @@ SHELL_OPT ?=
 #
 TCL_CONFIG_SH ?=
 #
+# The command used to run test/testrunner.tcl.  TCL_CONFIG_SH is passed
+# on so that the builds which testrunner.tcl configures link against the
+# same Tcl library as this build, rather than the one which belongs to
+# $(TCLSH_CMD).
+#
+T.testrunner = TCL_CONFIG_SH="$(TCL_CONFIG_SH)" \
+  $(TCLSH_CMD) $(TOP)/test/testrunner.tcl
+#
 # $(HAVE_WASI_SDK) =
 #
 # Set to 1 when building with the WASI SDK. This disables certain
@@ -1901,28 +1909,28 @@ testrunner:	testfixture$(T.exe)
 # one.
 #
 devtest:	srctree-check sourcetest
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
+	$(T.testrunner) mdevtest $(TSTRNNR_OPTS)
 
 mdevtest: srctree-check has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
+	$(T.testrunner) mdevtest $(TSTRNNR_OPTS)
 
 sdevtest: has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
+	$(T.testrunner) sdevtest $(TSTRNNR_OPTS)
 
 retest: has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl retest
+	$(T.testrunner) retest
 
 errors:
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl errors
+	$(T.testrunner) errors
 
 status:
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl status -d 2
+	$(T.testrunner) status -d 2
 
 # Like releasetest, except it omits srctree-check and verify-source so
 # that it can be used on a modified source tree.
 #
 xdevtest: has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
+	$(T.testrunner) release $(TSTRNNR_OPTS)
 
 #
 # Validate that various generated files in the source tree
@@ -1943,7 +1951,7 @@ tuning-verify:	$(TOP)/tool/tuningverify.tcl
 # Testing for a release
 #
 releasetest: srctree-check has_tclsh85 verify-source
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
+	$(T.testrunner) release $(TSTRNNR_OPTS)
 
 #
 # Legacy testing targets, no longer used by the developers and
@@ -1972,7 +1980,7 @@ smoketest:	$(TESTPROGS) fuzzcheck$(T.exe)
 	./testfixture$(T.exe) $(TOP)/test/main.test $(TESTOPTS)
 
 shelltest:
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
+	$(T.testrunner) release shell
 
 # Test performance of floating-point conversions.
 #

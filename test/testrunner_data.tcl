@@ -481,7 +481,15 @@ proc trimscript {text} {
 
 proc make_sh_script {srcdir opts cflags makeOpts configOpts {targets {}}} {
 
-  set tcldir [::tcl::pkgconfig get libdir,install]
+  # If the $TCL_CONFIG_SH env var is set, as the canonical makefile
+  # does, and not empty, use the Tcl installation referred to by it.
+  # Otherwise use the one that this interpreter uses. This is
+  # significant for cross-compilation.
+  if {[info exists ::env(TCL_CONFIG_SH)] && $::env(TCL_CONFIG_SH) ne ""} {
+    set tcldir [file dirname [file normalize $::env(TCL_CONFIG_SH)]]
+  } else {
+    set tcldir [::tcl::pkgconfig get libdir,install]
+  }
   set myopts ""
   if {[info exists ::env(OPTS)]} {
     append myopts "# From environment variable:\n"
