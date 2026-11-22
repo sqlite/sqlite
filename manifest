@@ -1,5 +1,5 @@
-C Use\ssqlite3_value_int64()\sinstead\sof\ssqlite3_value_int()\sin\sone\splace\sdeep\ninside\sWindow\sfunction\sprocessing.\s\sThis\sdoes\snot\sfix\sany\sknown\sbug.\s\sIt\sis\nmerely\sdefense\sin\sdepth.
-D 2026-11-22T17:11:53.585
+C Fail\sbuilding\sthe\stcl\sextension\sif\sthe\sexec'd\scompilation\sreturns\snon-0,\signoring\sstderr\soutput,\srather\sthan\sincorrectly\sclaim\ssuccess.\sAddresses\s[bugs:bedacafc76|bug\sreport\s2026-11-22T15:42:30Z].
+D 2026-11-22T17:26:32.456
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2229,7 +2229,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat 1ee9dbadcc07fc23268025854e97b392bcbad72376b47aee7b22f3797a4f2c87 x
 F tool/build-shell.sh 369c4b171cc877ad974fef691e4da782b4c1e99fe8f4361316c735f64d49280f
-F tool/buildtclext.tcl 9adab8a218dff21ec39e9326980240e57f6f3648488b4815a6b3dcea859bec61
+F tool/buildtclext.tcl 327c05e5b26372d63bed1e0e42319cec614cd338ec280930633955f14a001087
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2320,8 +2320,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 24fac95c650dd7c2e838f53ccffda52b479f0b8d02dd4e6902852963424a44b5
-R d8a2cc63da5141d1366348dedee9b48b
-U drh
-Z 04282c422944ae9623c5c54b9aa96ae1
+P ba8ff30ad37969608f1ab99e59c26fa69c95fd2f4e06a4ede67cf00eb19ea5c7
+R a050008463374f3586e977b4f494dcaf
+U stephan
+Z 4af5d6913d53e374f8c54af54d2974f1
 # Remove this line to create a well-formed Fossil manifest.
