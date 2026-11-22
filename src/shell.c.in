@@ -4188,7 +4188,13 @@ static int shell_exec(
   if( pArg->mode.bAutoScreenWidth ){
     spec.nScreenWidth = shellScreenWidth();
   }
-  if( spec.eBlob==QRF_BLOB_Auto ){
+  if( spec.eBlob==QRF_BLOB_Auto
+   && eStyle!=QRF_STYLE_Json
+   && eStyle!=QRF_STYLE_JObject
+   && eStyle!=QRF_STYLE_Insert
+  ){
+    /* The JSON and INSERT styles override eText, so for them the blob
+    ** format is chosen later, within QRF. */
     switch( spec.eText ){
       case QRF_TEXT_Relaxed: /* fall through */
       case QRF_TEXT_Sql:  spec.eBlob = QRF_BLOB_Sql;   break;

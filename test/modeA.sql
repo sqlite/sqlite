@@ -1270,3 +1270,27 @@ END
 .mode --quote list
 SELECT a, b FROM t1;
 .check '<"x">|5'
+
+# Bug https://sqlite.org/bugs/forumpost/3ade505a97
+# BLOB values must be rendered validly in JSON and INSERT output even if
+# the text-quoting mode is changed.
+#
+.mode --reset json
+.mode --quote relaxed
+.testcase 1800
+SELECT -42 AS id, X'4142' AS raw;
+.check <<END
+[{"id":-42,"raw":"\u0041\u0042"}]
+END
+.mode --reset jobject
+.mode --quote sql
+.testcase 1810
+SELECT X'4142' AS raw;
+.check <<END
+{"raw":"\u0041\u0042"}
+END
+.mode --reset insert
+.mode --quote off
+.testcase 1820
+SELECT X'4142' AS raw;
+.check "INSERT INTO tab VALUES(x'4142');"
