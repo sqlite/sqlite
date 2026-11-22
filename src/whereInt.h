@@ -597,6 +597,7 @@ Bitmask sqlite3WhereExprListUsage(WhereMaskSet*, ExprList*);
 void sqlite3WhereExprAnalyze(SrcList*, WhereClause*);
 void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 int sqlite3WhereLoopBloomable(const WhereLoop*);
+int sqlite3WhereMightRerunAfterWrite(const WhereInfo*);
 
 /*
 ** Bitmasks for the operators on WhereTerm objects.  These are all

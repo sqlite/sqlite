@@ -64,6 +64,19 @@ int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
 }
 
 /*
+** Return true if pWInfo is for a correlated subquery inside of a statement
+** that writes to the database.  Such a subquery runs once for each row
+** and can see rows that earlier runs caused to be written.  Structures
+** built on the first run, such as Bloom filters and automatic indexes,
+** might be out of date by the time a later run uses them.
+*/
+int sqlite3WhereMightRerunAfterWrite(const WhereInfo *pWInfo){
+  if( NEVER(pWInfo->pSelect==0) ) return 0;
+  if( (pWInfo->pSelect->selFlags & SF_Correlated)==0 ) return 0;
+  return DbMaskNonZero(sqlite3ParseToplevel(pWInfo->pParse)->writeMask);
+}
+
+/*
 ** Return the number of ORDER BY terms that are satisfied by the
 ** WHERE clause.  A return of 0 means that the output must be
 ** completely sorted.  A return equal to the number of ORDER BY
@@ -7366,6 +7379,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   if( pWInfo->nLevel>=2
    && OptimizationEnabled(db, SQLITE_BloomFilter)
+   && !sqlite3WhereMightRerunAfterWrite(pWInfo)
   ){
     whereCheckIfBloomFilterIsUseful(pWInfo);
   }

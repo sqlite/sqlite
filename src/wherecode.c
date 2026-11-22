@@ -1625,6 +1625,7 @@ static int findNoMatchContinuation(
   pParent = &pWInfo->a[iParent];
   if( (pParent->pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0
    && (mKey & (mKey-1))==0
+   && !sqlite3WhereMightRerunAfterWrite(pWInfo)
   ){
     for(i=0; i<pLoop->nLTerm; i++){
       Expr *pX = pLoop->aLTerm[i]->pExpr;

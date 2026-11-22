@@ -845,3 +845,59 @@ INSERT INTO x_idx VALUES(1,x'01',4294967294),(1,x'02',4294967294);
 SELECT tryeval('PRAGMA integrity_check') LIKE '%corruption found%';
 .check 1
 .endif /* capable('unsafe') AND capable('fts5') */
+
+# Bug 2026-11-20T23:56:37Z sqlite.org/bugs/info/d239fb99e67aa678
+# A correlated subquery in an UPDATE sees the rows that earlier iterations
+# of the UPDATE have written.  A Bloom filter or an automatic-index deletion
+# that was computed on the first iteration must not hide those rows.
+#
+.open :memory:
+.mode --reset list --colsep ,
+CREATE TABLE s(c,d);
+CREATE TABLE t(id INTEGER PRIMARY KEY,g,k,n);
+CREATE INDEX tk ON t(k);
+INSERT INTO s VALUES(1,1),(1,2),(1,11),(1,12);
+INSERT INTO t VALUES(1,1,1,0),(2,1,2,0),(3,1,3,0);
+ANALYZE;
+DELETE FROM sqlite_stat1;
+INSERT INTO sqlite_stat1 VALUES('s',NULL,'1000000'),('t','tk','10 1'),
+                               ('t',NULL,'10');
+ANALYZE sqlite_schema;
+.testcase 1900
+UPDATE t SET k=CASE WHEN id=1 THEN 11 ELSE k END,
+  n=(SELECT count(*) FROM s JOIN t AS x ON x.k=s.d WHERE s.c=t.g AND x.g=t.g);
+SELECT group_concat(n,'/') FROM (SELECT n FROM t ORDER BY id);
+.check 2/2/2
+.testcase 1910
+CREATE TABLE t0(b);
+CREATE TABLE t1(a,z);
+CREATE TABLE x(id INTEGER PRIMARY KEY,k,v,w);
+CREATE INDEX xk ON x(k);
+INSERT INTO t0 VALUES(1);
+INSERT INTO t1 VALUES(1,50);
+INSERT INTO x VALUES(1,0,0,0),(2,0,0,0);
+UPDATE x SET k=CASE WHEN id=1 THEN 50 ELSE k END,
+  v=(SELECT count(*) FROM t0 CROSS JOIN t1 CROSS JOIN x AS y
+      WHERE t0.b=t1.a AND y.k=t1.z AND x.id>0),
+  w=(SELECT count(*) FROM x AS y WHERE y.k=50 AND x.id>0);
+SELECT group_concat(v||'-'||w,'/') FROM (SELECT v,w FROM x ORDER BY id);
+.check 0-0/1-1
+
+# The same UPDATE as test case 1900, but running inside a trigger.  The
+# write is detected on the top-level Parse, not on the trigger sub-program.
+#
+.testcase 1920
+DROP TABLE t;
+CREATE TABLE t(id INTEGER PRIMARY KEY,g,k,n);
+CREATE INDEX tk ON t(k);
+INSERT INTO t VALUES(1,1,1,0),(2,1,2,0),(3,1,3,0);
+INSERT INTO sqlite_stat1 VALUES('t','tk','10 1'),('t',NULL,'10');
+ANALYZE sqlite_schema;
+CREATE TABLE trig(a);
+CREATE TRIGGER r1 AFTER INSERT ON trig BEGIN
+  UPDATE t SET k=CASE WHEN id=1 THEN 11 ELSE k END,
+    n=(SELECT count(*) FROM s JOIN t AS x ON x.k=s.d WHERE s.c=t.g AND x.g=t.g);
+END;
+INSERT INTO trig VALUES(1);
+SELECT group_concat(n,'/') FROM (SELECT n FROM t ORDER BY id);
+.check 2/2/2
