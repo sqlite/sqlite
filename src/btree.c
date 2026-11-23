@@ -10798,11 +10798,13 @@ static void checkList(
   u32 expected = N;
   int nErrAtStart = pCheck->nErr;
   while( iPage!=0 && pCheck->mxErr ){
+    int rc;
     DbPage *pOvflPage;
     unsigned char *pOvflData;
     if( checkRef(pCheck, iPage) ) break;
     N--;
-    if( sqlite3PagerGet(pCheck->pPager, (Pgno)iPage, &pOvflPage, 0) ){
+    if( (rc = sqlite3PagerGet(pCheck->pPager, (Pgno)iPage, &pOvflPage, 0)) ){
+      checkOom(pCheck, rc);
       checkAppendMsg(pCheck, "failed to get page %u", iPage);
       break;
     }
