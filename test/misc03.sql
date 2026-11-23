@@ -1073,4 +1073,19 @@ PRAGMA integrity_check;
 .testcase 1981
 SELECT count(*) FROM t2 WHERE y='w';
 .check 2
+
+# The OP_OpenWrite of CREATE TABLE AS names a new root page in a register
+# (OPFLAG_P2ISREG).  It must not be mistaken for a write cursor on the
+# existing table whose root page equals the register number, here page 2.
+.open :memory:
+CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+INSERT INTO t1 VALUES(1,'x'),(2,'y');
+CREATE TABLE t3 AS SELECT a, b FROM t1
+ WHERE tryeval(iif(a=1,'CREATE INDEX t1b ON t1(b)',NULL)) IS NULL;
+.testcase 1990
+SELECT count(*) FROM sqlite_schema WHERE name='t1b';
+.check 1
+.testcase 1991
+SELECT count(*) FROM t3;
+.check 2
 .endif /* capable('unsafe') */

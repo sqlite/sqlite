@@ -5327,8 +5327,9 @@ static int vdbeProgramOpensWriter(Op *aOp, int nOp, Pgno iRoot, int iDb){
   for(i=0; i<nOp; i++){
     Op *pOp = &aOp[i];
     if( pOp->opcode==OP_OpenWrite
-     && pOp->p2==(int)iRoot && pOp->p3==iDb
      && (pOp->p5 & OPFLAG_P2ISREG)==0
+     && pOp->p3==iDb
+     && pOp->p2==(int)iRoot
     ){
       return 1;
     }
