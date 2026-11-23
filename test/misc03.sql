@@ -982,3 +982,43 @@ SELECT count(*) FROM (
   SELECT row_number() OVER () FROM t1 UNION ALL SELECT 1 ORDER BY 1
 );
 .check 3
+
+# Bug 2026-11-23T05:50:38Z sqlite.org/bugs/info/15e8d2bde51494d0
+# An inaccuracy in the recent reimplementation of OptimizationEnabled().
+#
+.open :memory:
+.mode -reset list
+.testcase 2000
+CREATE TABLE t(x);
+INSERT INTO t VALUES (1),(2);
+.check
+.testcase 2001
+.testctrl opt +all
+EXPLAIN QUERY PLAN
+SELECT count(*) FROM (SELECT x FROM t UNION ALL SELECT x FROM t);
+.check -glob  All --keep
+.check -notglob CO-ROUTINE
+.testcase 2002
+.testctrl opt +All -CountOfView
+EXPLAIN QUERY PLAN
+SELECT count(*) FROM (SELECT x FROM t UNION ALL SELECT x FROM t);
+.check -glob  '+All -CountOfView' --keep
+.check -glob CO-ROUTINE
+.testcase 2003
+.testctrl opt +All -QueryFlattener
+EXPLAIN QUERY PLAN
+SELECT count(*) FROM (SELECT x FROM t UNION ALL SELECT x FROM t);
+.check -glob  '+All -QueryFlattener' --keep
+.check -glob CO-ROUTINE
+.testcase 2004
+.testctrl opt +all -flatten -countofview
+EXPLAIN QUERY PLAN
+SELECT count(*) FROM (SELECT x FROM t UNION ALL SELECT x FROM t);
+.check -glob  '+All -QueryFlattener -CountOfView' --keep
+.check -glob CO-ROUTINE
+.testcase 2005
+.testctrl opt +All -CursorHints
+EXPLAIN QUERY PLAN
+SELECT count(*) FROM (SELECT x FROM t UNION ALL SELECT x FROM t);
+.check -glob  '+All -CursorHints' --keep
+.check -notglob CO-ROUTINE

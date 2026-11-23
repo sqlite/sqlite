@@ -8350,7 +8350,7 @@ int sqlite3Select(
   }
 
   /* tag-select-0350 */
-  if( OptimizationEnabled(db, SQLITE_QueryFlattener|SQLITE_CountOfView)
+  if( OptimizationEnabled2(db, SQLITE_QueryFlattener, SQLITE_CountOfView)
    && countOfViewOptimization(pParse, p)
   ){
     if( db->mallocFailed ) goto select_end;

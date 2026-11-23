@@ -1977,8 +1977,11 @@ struct sqlite3 {
 /*
 ** Macros for testing whether or not optimizations are enabled or disabled.
 */
-#define OptimizationDisabled(D,M)  (((D)->dbOptFlags&(1ull<<((M)-1)))!=0)
-#define OptimizationEnabled(D,M)   (((D)->dbOptFlags&(1ull<<((M)-1)))==0)
+#define OptMask(M) (1ULL<<((M)-1))
+#define OptimizationDisabled(D,M)  (((D)->dbOptFlags&OptMask(M))!=0)
+#define OptimizationEnabled(D,M)   (((D)->dbOptFlags&OptMask(M))==0)
+#define OptimizationEnabled2(D,M1,M2) \
+                             ((D->dbOptFlags)&(OptMask(M1)|OptMask(M2)))==0
 
 /*
 ** Return true if it OK to factor constant expressions into the initialization
