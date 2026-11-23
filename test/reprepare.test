@@ -153,5 +153,39 @@ for {set ii 0} {$ii < 4} {incr ii} {
 }
 
 
+#-------------------------------------------------------------------------
+# Test case from https://sqlite.org/bugs/forumpost/6255b0d3b7
+#
+# A statement reprepared after a schema change (CREATE INDEX of a partial
+# index on c='x') must be reprepared again when ?1 is rebound, as the new
+# plan depends on the value of ?1.
+#
+reset_db
+
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  CREATE TABLE t2(b INT, c TEXT);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t2 VALUES(1, 'x'), (1, 'y');
+}
+
+proc count_for {stmt val} {
+  sqlite3_bind_text $stmt 1 $val -1
+  sqlite3_step $stmt
+  set n [sqlite3_column_int $stmt 0]
+  sqlite3_reset $stmt
+  return $n
+}
+
+set stmt [sqlite3_prepare_v2 db {
+  SELECT count(*) FROM t1, t2 WHERE b=a AND c=?1
+} -1 dummy]
+
+do_test 4.1 { count_for $stmt x } 1
+do_execsql_test 4.2 { CREATE INDEX i2 ON t2(b) WHERE c='x' }
+do_test 4.3 { count_for $stmt x } 1
+do_test 4.4 { count_for $stmt y } 1
+sqlite3_finalize $stmt
+
 finish_test
 
