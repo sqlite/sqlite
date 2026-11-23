@@ -15628,10 +15628,10 @@ int SQLITE_CDECL main(int argc, char **argv){
       if( z[2] ){
         char *zSaved = argv[i];
         argv[i] = &z[2];
-        arDotCommand(&data, 1, argv+(i-1), argc-(i-1));
+        rc = arDotCommand(&data, 1, argv+(i-1), argc-(i-1));
         argv[i] = zSaved;
       }else{
-        arDotCommand(&data, 1, argv+i, argc-i);
+        rc = arDotCommand(&data, 1, argv+i, argc-i);
       }
       readStdin = 0;
       stdin_is_interactive = 0;
