@@ -4052,6 +4052,9 @@ int sqlite3HasExplicitNulls(Parse *pParse, ExprList *pList){
 /*
 ** Use the OP_NoWriter opcode to cause the current program to abort
 ** if there are concurrent writers on the table iRoot of schema iDb.
+**
+** Calls to this routine must be followed by VdbeCoverage(v) in order to
+** measure coverage of the inserted OP_NoWriter opcode.
 */
 void sqlite3FailIfConcurrentWriter(Parse *pParse, Table *pTab){
   Vdbe *v = sqlite3GetVdbe(pParse);
@@ -4570,7 +4573,7 @@ void sqlite3CreateIndex(
       if( v==0 ) goto exit_create_index;
 
       sqlite3BeginWriteOperation(pParse, 1, iDb);
-      sqlite3FailIfConcurrentWriter(pParse, pTab);
+      sqlite3FailIfConcurrentWriter(pParse, pTab); VdbeCoverage(v);
 
       /* Create the rootpage for the index using CreateIndex. But before
       ** doing so, code a Noop instruction and store its address in

@@ -7213,14 +7213,20 @@ case OP_DbLock: {
 ** database connection is currently running and has opened or can
 ** potentially open a write cursor on the table at root page P1 of
 ** schema P2.
+**
+** Used by DDL statements (ALTER TABLE, CREATE INDEX) to prevent a
+** schema changes from undermining another actively running prepared
+** statement that is writing to the table being modified.
 */
 case OP_NoWriter: {
   assert( pOp->p2>=0 && pOp->p2<db->nDb );
   if( sqlite3VdbeOtherWriter(db, p, (Pgno)pOp->p1, pOp->p2) ){
+    VdbeBranchTaken(1,2);
     rc = SQLITE_LOCKED;
     p->errorAction = OE_Abort;
     goto abort_due_to_error;
   }
+  VdbeBranchTaken(0,2);
   break;
 }
 
