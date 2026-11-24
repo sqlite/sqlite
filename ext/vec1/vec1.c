@@ -3417,6 +3417,13 @@ static void vec1TrainStep(
     ** Transform for binary quantizers. Disable it for other quantizers.  */
     if( p->bWHT<0 ) p->bWHT = (p->eQuant==VEC1_QUANTIZE_BQ);
 
+    /* The WHT transform may not be combined with an OPQ rotation. */
+    if( p->bWHT && p->eQuant==VEC1_QUANTIZE_OPQ ){
+      vec1ResultErrorF(pCtx, "vec1: wht may not be used with opq quantizer");
+      p->rc = SQLITE_ERROR;
+      return;
+    }
+
     /* If no value was specified for "codesize", choose a default. This
     ** is 32 for PQ or OPQ, 0 for "none" quantizer, and (nElem+7)/8 for BQ. */
     if( p->eQuant==VEC1_QUANTIZE_NONE ){
@@ -5291,6 +5298,8 @@ static int vec1DecodeModel(
    || pMod->hdr.nBucket>VEC1_MAX_BUCKET 
    || pMod->hdr.nCodebook>pMod->hdr.nElem
    || ((pMod->hdr.flags & VEC1_MODEL_RESIDUAL) && pMod->hdr.nBucket==0)
+   || ((pMod->hdr.flags & VEC1_MODEL_ROTATE)
+    && (pMod->hdr.flags & VEC1_MODEL_WHT))
   ){
     *pzErr = sqlite3_mprintf("vec1: model is corrupt");
     return SQLITE_ERROR;
