@@ -495,6 +495,9 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     int isStrict = pTab->tabFlags & TF_Strict;
     int isGen = (pCol->colFlags & COLFLAG_GENERATED)!=0;
 
+    /* No concurrent writers of the table being changed */
+    sqlite3FailIfConcurrentWriter(pParse, pTab); VdbeCoverage(v);
+
     /* Make sure the schema version is at least 3.  But do not upgrade
     ** from less than 3 to 4, as that will corrupt any preexisting DESC
     ** index.
@@ -3045,6 +3048,9 @@ void sqlite3AlterSetNotNull(
   pCons = pFirst->z;
   nCons = alterRtrimFragment(pParse->db, pCons, pParse->sLastToken.z - pCons);
 
+  /* No concurrent writers of table being changed */
+  sqlite3FailIfConcurrentWriter(pParse, pTab); VdbeCoverage(pParse->pVdbe);
+
   /* Search for a constraint violation. Throw an exception if one is found. */
   sqlite3NestedParse(pParse,
       "SELECT sqlite_fail('constraint failed', %d) "
@@ -3165,6 +3171,9 @@ void sqlite3AlterAddConstraint(
     );
     sqlite3DbFree(pParse->db, zName);
   }
+
+  /* No concurrent writers of the table being changed */
+  sqlite3FailIfConcurrentWriter(pParse, pTab); VdbeCoverage(pParse->pVdbe);
 
   /* Search for a constraint violation. Throw an exception if one is found. */
   sqlite3NestedParse(pParse,

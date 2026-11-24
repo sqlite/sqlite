@@ -346,5 +346,32 @@ do_test 9.5 {
        [catch { db incrblob t3 z 1 } msg] $msg
 } {1 {cannot open indexed column for writing} 1 {cannot open indexed column for writing}}
 
+# CREATE INDEX must fail while an incremental BLOB write handle is open on
+# the table, since the handle would write the column without updating the
+# new index.  A read-only handle is not a problem.
+#
+do_test 10.1 {
+  execsql {
+    CREATE TABLE t4(a INTEGER PRIMARY KEY, b, c);
+    INSERT INTO t4 VALUES(1, zeroblob(10), 'one');
+  }
+  set ::blob [db incrblob t4 b 1]
+  list [catch { execsql { CREATE INDEX t4b ON t4(b) } } msg] $msg
+} {1 {database table is locked}}
+do_test 10.2 {
+  puts -nonewline $::blob 0123456789
+  close $::blob
+  execsql { CREATE UNIQUE INDEX t4b ON t4(b); PRAGMA integrity_check }
+} {ok}
+do_test 10.3 {
+  set ::blob [db incrblob -readonly t4 c 1]
+  execsql { CREATE INDEX t4c ON t4(c) }
+  read $::blob
+} {one}
+do_test 10.4 {
+  close $::blob
+  execsql { PRAGMA integrity_check }
+} {ok}
+
 db close
 finish_test

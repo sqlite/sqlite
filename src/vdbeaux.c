@@ -1704,7 +1704,7 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 ** Set the value if the iSrcLine field for the previously coded instruction.
 */
 void sqlite3VdbeSetLineNumber(Vdbe *v, int iLine){
-  sqlite3VdbeGetLastOp(v)->iSrcLine = iLine;
+  if( v ) sqlite3VdbeGetLastOp(v)->iSrcLine = iLine;
 }
 #endif /* SQLITE_VDBE_COVERAGE */
 
@@ -5314,6 +5314,49 @@ void sqlite3VdbeSetChanges(sqlite3 *db, i64 nChange){
 */
 void sqlite3VdbeCountChanges(Vdbe *v){
   v->changeCntOn = 1;
+}
+
+/*
+** Return true if the aOp[0..nOp-1] program contains an OP_OpenWrite that
+** opens a write cursor on the table with root page iRoot in database iDb.
+*/
+static int vdbeProgramOpensWriter(Op *aOp, int nOp, Pgno iRoot, int iDb){
+  int i;
+  for(i=0; i<nOp; i++){
+    Op *pOp = &aOp[i];
+    if( pOp->opcode==OP_OpenWrite
+     && (pOp->p5 & OPFLAG_P2ISREG)==0
+     && pOp->p3==iDb
+     && pOp->p2==(int)iRoot
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+** Return true if some statement of database connection db other than
+** pExcept is currently running and might write the table with root page
+** iRoot in database iDb.  The test looks at the bytecode of each running
+** statement and of all of its trigger sub-programs.
+*/
+SQLITE_NOINLINE int sqlite3VdbeOtherWriter(
+  sqlite3 *db,       /* Database connection to scan */
+  Vdbe *pExcept,     /* Disregard this particular prepared statement */
+  Pgno iRoot,        /* Look for cursors on this root page... */
+  int iDb            /* ... of this schema */
+){
+  Vdbe *p;
+  for(p=db->pVdbe; p; p=p->pVNext){
+    SubProgram *pSub;
+    if( p==pExcept || p->eVdbeState!=VDBE_RUN_STATE || p->readOnly ) continue;
+    if( vdbeProgramOpensWriter(p->aOp, p->nOp, iRoot, iDb) ) return 1;
+    for(pSub=p->pProgram; pSub; pSub=pSub->pNext){
+      if( vdbeProgramOpensWriter(pSub->aOp, pSub->nOp, iRoot, iDb) ) return 1;
+    }
+  }
+  return 0;
 }
 
 /*
