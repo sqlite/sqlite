@@ -162,3 +162,65 @@ PRAGMA integrity_check;
 .testcase 250
 PRAGMA quick_check;
 .check row not in PRIMARY KEY order for t1
+
+# Bug 2026-10-26T16:29:54Z sqlite.org/bugs/info/8ca14621a38e3a0b
+# A window-function sum() whose frame sum fits in 64 bits must not fail with
+# an integer overflow just because adding a new row to the frame overflowed
+# before the old rows were removed.
+#
+.open :memory:
+.mode --reset list
+CREATE TABLE t(a, c);
+INSERT INTO t VALUES(1, 9223372036854775807), (10, 1);
+.testcase 300
+SELECT a, sum(c) OVER (ORDER BY a RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING)
+  FROM t;
+.check <<END
+1|9223372036854775807
+10|1
+END
+DELETE FROM t;
+INSERT INTO t VALUES(1,9223372036854775807),(10,1),(20,9223372036854775807),
+                    (30,-1),(40,-9223372036854775807-1),(50,-5);
+.testcase 310
+SELECT a, sum(c) OVER (ORDER BY a RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING)
+  FROM t;
+.check <<END
+1|9223372036854775807
+10|1
+20|9223372036854775807
+30|-1
+40|-9223372036854775808
+50|-5
+END
+
+# Sums that really overflow are still reported as errors.
+#
+DELETE FROM t;
+INSERT INTO t VALUES(1,9223372036854775807),(2,9223372036854775807);
+.testcase 320
+SELECT sum(c) OVER (ORDER BY a ROWS BETWEEN 1 PRECEDING AND CURRENT ROW)
+  FROM t;
+.check --glob '*integer overflow*'
+.testcase 330
+SELECT sum(c) FROM (SELECT 9223372036854775807 AS c UNION ALL SELECT 1
+                    UNION ALL SELECT -1);
+.check --glob '*integer overflow*'
+
+# The frame sum is still out of range after the inverse step, in both
+# directions, so sum() must keep reporting the overflow.
+#
+DELETE FROM t;
+INSERT INTO t VALUES(1,-9223372036854775807),(4,9223372036854775807),
+                    (8,9223372036854775807);
+.testcase 340
+SELECT sum(c) OVER (ORDER BY a RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING)
+  FROM t;
+.check --glob '-9223372036854775807*0*integer overflow*'
+DELETE FROM t;
+INSERT INTO t VALUES(1,9223372036854775807),(4,-9223372036854775807),
+                    (8,-9223372036854775807);
+.testcase 350
+SELECT sum(c) OVER (ORDER BY a RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING)
+  FROM t;
+.check --glob '9223372036854775807*0*integer overflow*'

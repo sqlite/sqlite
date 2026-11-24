@@ -2004,15 +2004,19 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
         if( sqlite3AddInt64(&x, sqlite3_value_int64(argv[0]))==0 ){
           p->iSum = x;
         }else{
+          i64 iVal = sqlite3_value_int64(argv[0]);
           p->ovrfl = 1;
           kahanBabuskaNeumaierInit(p, p->iSum);
           p->approx = 1;
-          kahanBabuskaNeumaierStepInt64(p, sqlite3_value_int64(argv[0]));
+          kahanBabuskaNeumaierStepInt64(p, iVal);
+          p->iSum = (i64)((u64)p->iSum + (u64)iVal);
         }
       }
     }else{
       if( type==SQLITE_INTEGER ){
-        kahanBabuskaNeumaierStepInt64(p, sqlite3_value_int64(argv[0]));
+        i64 iVal = sqlite3_value_int64(argv[0]);
+        kahanBabuskaNeumaierStepInt64(p, iVal);
+        if( p->ovrfl ) p->iSum = (i64)((u64)p->iSum + (u64)iVal);
       }else{
         p->ovrfl = 0;
         kahanBabuskaNeumaierStep(p, sqlite3_value_double(argv[0]));
@@ -2021,6 +2025,25 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   }
 }
 #ifndef SQLITE_OMIT_WINDOWFUNC
+/*
+** If p->ovrfl is set, then the sum so far consisted of integers only and
+** overflowed an i64 at some point.  In that case p->iSum holds the exact
+** value of the sum modulo 2^64, and the Kahan-Babuska-Neumaier accumulator
+** holds an approximation of the true sum that is accurate to far less than
+** 2^63.  If the approximation shows that the true sum is once again within
+** the range of an i64, then it is equal to p->iSum, so return to exact
+** integer arithmetic.  This happens in window frames when an xInverse
+** call removes a row after the xStep call for a new row caused a transient
+** overflow.
+*/
+static void sumRecoverFromOverflow(SumCtx *p){
+  double d = (p->rSum + p->rErr - (double)p->iSum)/18446744073709551616.0;
+  if( d>-0.5 && d<0.5 ){
+    p->approx = 0;
+    p->ovrfl = 0;
+  }
+}
+
 static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
   SumCtx *p;
   int type;
@@ -2050,7 +2073,11 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
       }else{
         kahanBabuskaNeumaierStepInt64(p, LARGEST_INT64);
         kahanBabuskaNeumaierStepInt64(p, 1);
-      }       
+      }
+      if( p->ovrfl ){
+        p->iSum = (i64)((u64)p->iSum - (u64)iVal);
+        sumRecoverFromOverflow(p);
+      }
     }else{
       kahanBabuskaNeumaierStep(p, -sqlite3_value_double(argv[0]));
     }
