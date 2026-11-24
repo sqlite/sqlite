@@ -2424,6 +2424,7 @@ SHELL_DEP = \
     $(TOP)/ext/misc/shathree.c \
     $(TOP)/ext/misc/sqlar.c \
     $(TOP)/ext/misc/strdup.c \
+    $(TOP)/ext/misc/tryeval.c \
     $(TOP)/ext/misc/uint.c \
     $(TOP)/ext/misc/vfstrace.c \
     $(TOP)/ext/misc/windirent.h \
