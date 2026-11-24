@@ -224,3 +224,49 @@ INSERT INTO t VALUES(1,9223372036854775807),(4,-9223372036854775807),
 SELECT sum(c) OVER (ORDER BY a RANGE BETWEEN 5 PRECEDING AND 0 PRECEDING)
   FROM t;
 .check --glob '9223372036854775807*0*integer overflow*'
+
+# Bug 2026-10-26T16:31:22Z sqlite.org/bugs/info/b9dfb3ca9dfc0438
+# Rows that are in no window frame must not be passed to xStep or xInverse
+# when the frame starts with "<expr> FOLLOWING".
+#
+.open :memory:
+.mode --reset list
+CREATE TABLE t(a, c);
+INSERT INTO t VALUES(1, 'x'), (2, x''), (3, 'y');
+.testcase 400
+SELECT a, json_group_array(c)
+  OVER (ORDER BY a ROWS BETWEEN 2 FOLLOWING AND 3 FOLLOWING) FROM t;
+.check <<END
+1|["y"]
+2|[]
+3|[]
+END
+.testcase 410
+SELECT a, json_group_array(c)
+  OVER (ORDER BY a ROWS BETWEEN 5 FOLLOWING AND UNBOUNDED FOLLOWING) FROM t;
+.check <<END
+1|[]
+2|[]
+3|[]
+END
+.testcase 420
+SELECT a, json_group_array(c)
+  OVER (ORDER BY a ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING) FROM t;
+.check --glob '*JSON cannot hold BLOB values*'
+
+# Leading rows are skipped separately in each partition.
+#
+CREATE TABLE u(p, a, c);
+INSERT INTO u VALUES(1,1,'x'),(1,2,x''),(1,3,'y'),(2,1,'z'),(2,2,x''),(2,3,'w');
+.testcase 430
+SELECT p, a, json_group_array(c) OVER (
+    PARTITION BY p ORDER BY a ROWS BETWEEN 2 FOLLOWING AND 3 FOLLOWING
+  ) FROM u;
+.check <<END
+1|1|["y"]
+1|2|[]
+1|3|[]
+2|1|["w"]
+2|2|[]
+2|3|[]
+END

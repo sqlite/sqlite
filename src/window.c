@@ -1628,6 +1628,8 @@ struct WindowCodeArg {
   int regArg;                /* First in array of accumulator registers */
   int eDelete;               /* See above */
   int regRowid;
+  int regSkipStep;           /* Leading rows for AGGSTEP to ignore, or zero */
+  int regSkipInv;            /* Leading rows for AGGINVERSE to ignore, or 0 */
 
   WindowCsrAndReg start;
   WindowCsrAndReg current;
@@ -1691,6 +1693,8 @@ static void windowAggStep(
     int nArg = pWin->bExprArgs ? 0 : windowArgCount(pWin);
     int i;
     int addrIf = 0;
+    int addrSkip = 0;
+    int iSkip;
 
     assert( bInverse==0 || pWin->eStart!=TK_UNBOUNDED );
 
@@ -1769,10 +1773,17 @@ static void windowAggStep(
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0,0,0, (const char*)pColl, P4_COLLSEQ);
       }
       sqlite3MayAbort(pParse);
+      iSkip = bInverse ? p->regSkipInv : p->regSkipStep;
+      if( iSkip ){
+        /* Rows that are in no frame must not reach xStep or xInverse. */
+        addrSkip = sqlite3VdbeAddOp3(v, OP_IfPos, iSkip, 0, 1);
+        VdbeCoverage(v);
+      }
       sqlite3VdbeAddOp3(v, bInverse? OP_AggInverse : OP_AggStep,
                         bInverse, regArg, pWin->regAccum);
       sqlite3VdbeAppendP4(v, pFunc, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u16)nArg);
+      if( addrSkip ) sqlite3VdbeJumpHere(v, addrSkip);
       if( pWin->bExprArgs ){
         sqlite3ReleaseTempRange(pParse, regArg, nArg);
       }
@@ -2913,6 +2924,12 @@ void sqlite3WindowCodeStep(
   pParse->nMem += nInput;
   regRecord = ++pParse->nMem;
   s.regRowid = ++pParse->nMem;
+  if( pMWin->eStart==TK_FOLLOWING && pMWin->eFrmType==TK_ROWS
+   && pMWin->regStartRowid==0
+  ){
+    s.regSkipStep = ++pParse->nMem;
+    s.regSkipInv = ++pParse->nMem;
+  }
 
   /* If the window frame contains an "<expr> PRECEDING" or "<expr> FOLLOWING"
   ** clause, allocate registers to store the results of evaluating each
@@ -2996,6 +3013,12 @@ void sqlite3WindowCodeStep(
     sqlite3VdbeAddOp1(v, OP_ResetSorter, s.current.csr);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, lblWhereEnd);
     sqlite3VdbeJumpHere(v, addrGe);
+  }
+  if( s.regSkipStep ){
+    /* The first <expr> rows of the partition are in no frame.  Keep them
+    ** out of the aggregate, so that xStep and xInverse never see them. */
+    sqlite3VdbeAddOp2(v, OP_Copy, regStart, s.regSkipStep);
+    sqlite3VdbeAddOp2(v, OP_Copy, regStart, s.regSkipInv);
   }
   if( pMWin->eStart==TK_FOLLOWING && pMWin->eFrmType!=TK_RANGE && regEnd ){
     assert( pMWin->eEnd==TK_FOLLOWING );
