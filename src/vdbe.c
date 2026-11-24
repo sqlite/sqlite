@@ -4301,11 +4301,6 @@ case OP_Transaction: {
     testcase( rc==SQLITE_BUSY_SNAPSHOT );
     testcase( rc==SQLITE_BUSY_RECOVERY );
     if( rc!=SQLITE_OK ){
-      if( (rc&0xff)==SQLITE_BUSY ){
-        p->pc = (int)(pOp - aOp);
-        p->rc = rc;
-        goto vdbe_return;
-      }
       goto abort_due_to_error;
     }
 
@@ -9622,13 +9617,18 @@ abort_due_to_error:
   p->rc = rc;
   sqlite3SystemError(db, rc);
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  sqlite3VdbeLogAbort(p, rc, pOp, aOp);
+  if( (rc&0xff)!=SQLITE_BUSY || pOp->opcode!=OP_Transaction ){
+    /* Unless this is an SQLITE_BUSY from an OP_Transaction, log the error. */
+    sqlite3VdbeLogAbort(p, rc, pOp, aOp);
+  }
   if( p->eVdbeState==VDBE_RUN_STATE ) sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) sqlite3OomFault(db);
   if( rc==SQLITE_CORRUPT && db->autoCommit==0 ){
     db->flags |= SQLITE_CorruptRdOnly;
   }
-  rc = SQLITE_ERROR;
+  if( (rc&0xff)!=SQLITE_BUSY ){
+    rc = SQLITE_ERROR;
+  }
   if( resetSchemaOnFault>0 ){
     sqlite3ResetOneSchema(db, resetSchemaOnFault-1, p);
   }
