@@ -3202,6 +3202,9 @@ static void percentValue(sqlite3_context *pCtx){
 **
 ** Return JSON text that describes low-level debug/diagnostic information
 ** about the sqlite3_file object associated with SCHEMA.
+**
+** THIS FUNCTION IS UNDOCUMENTED AND UNTESTED.  It might be removed at
+** any moment.  Do not use in production.  Debugging and testing use only.
 */
 static void filestatFunc(
   sqlite3_context *context,
@@ -3231,7 +3234,7 @@ static void filestatFunc(
       rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_FILESTAT, pStr);
       if( rc ) sqlite3_str_append(pStr, "null", 4);
       fd = sqlite3PagerJrnlFile(pPager);
-      if( fd && fd->pMethods!=0 ){
+      if( fd && fd->pMethods!=0 && fd->pMethods->xFileControl!=0 ){
         sqlite3_str_appendall(pStr, ",\"journal\":");
         rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_FILESTAT, pStr);
         if( rc ) sqlite3_str_append(pStr, "null", 4);
