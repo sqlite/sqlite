@@ -3527,7 +3527,7 @@ vdbe_type_error:
   goto abort_due_to_error;
 }
 
-/* Opcode: Affinity P1 P2 * P4 *
+/* Opcode: Affinity P1 P2 * P4 P5
 ** Synopsis: affinity(r[P1@P2])
 **
 ** Apply affinities to a range of P2 registers starting with P1.
@@ -3535,6 +3535,11 @@ vdbe_type_error:
 ** P4 is a string that is P2 characters long. The N-th character of the
 ** string indicates the column affinity that should be used for the N-th
 ** memory cell in the range.
+**
+** For REAL affinity, if P5 is non-zero and the value is an integer that fits
+** in 6 bytes (and so can be converted to floating point format and back
+** losslessly), mark the value as MEM_IntReal. Otherwise, if P5 is zero or
+** the integer value is too large, convert the value to a Mem_Real value. 
 */
 case OP_Affinity: {
   const char *zAffinity;   /* The affinity to be applied */
@@ -3549,9 +3554,16 @@ case OP_Affinity: {
     assert( zAffinity[0]==SQLITE_AFF_NONE || memIsValid(pIn1) );
     applyAffinity(pIn1, zAffinity[0], encoding);
     if( zAffinity[0]==SQLITE_AFF_REAL && (pIn1->flags & MEM_Int)!=0 ){
-      pIn1->u.r = (double)pIn1->u.i;
-      pIn1->flags |= MEM_Real;
-      pIn1->flags &= ~(MEM_Int|MEM_Str);
+      if( pOp->p5
+       && pIn1->u.i<=140737488355327LL && pIn1->u.i>=-140737488355328LL
+      ){
+        pIn1->flags |= MEM_IntReal;
+        pIn1->flags &= ~MEM_Int;
+      }else{
+        pIn1->u.r = (double)pIn1->u.i;
+        pIn1->flags |= MEM_Real;
+        pIn1->flags &= ~(MEM_Int|MEM_Str);
+      }
     }
     REGISTER_TRACE((int)(pIn1-aMem), pIn1);
     zAffinity++;

@@ -187,6 +187,26 @@ do_execsql_test 6.2 {
     SELECT x, typeof(x) FROM s;
 } {0.0 real}
 
+# The same problem could occur when a column value is replaced by a
+# constant taken from the WHERE clause of a partial index (see
+# exprPartidxExprLookup()). The OP_Affinity applied to the constant
+# must produce a true REAL, not an IntReal that is later written into
+# a sorter or ephemeral table as an integer.
+#
+do_execsql_test 6.3 {
+  CREATE TABLE p1(x REAL, y);
+  INSERT INTO p1 VALUES(5, 1);
+  CREATE INDEX p1y ON p1(y) WHERE x=5;
+  SELECT x, typeof(x) FROM p1 WHERE x=5 AND y=1;
+} {5.0 real}
+do_execsql_test 6.4 {
+  WITH s AS MATERIALIZED (SELECT if(1,x) AS v FROM p1 WHERE x=5 AND y=1)
+    SELECT v, typeof(v) FROM s;
+} {5.0 real}
+do_execsql_test 6.5 {
+  SELECT if(1,x) AS v FROM p1 WHERE x=5 AND y=1 ORDER BY v||'';
+} {5.0}
+
 ifcapable vtab {
 # Bug 2026-08-23T15:39:59Z with the revised fix on 2026-08-29
 #
@@ -327,5 +347,77 @@ ifcapable foreignkey&&vtab {
     SELECT "table", rowid, parent FROM pragma_foreign_key_check;
   } {c 2 p}
 }
+
+# https://sqlite.org/forum/forumpost/ba5116742b
+#
+# Integer-valued REAL values should be stored using the compact integer
+# encoding in WITHOUT ROWID tables and in index entries written by INSERT
+# and UPDATE.
+#
+proc intreal_imposter {obj tbl cols} {
+  set root [db one {SELECT rootpage FROM sqlite_schema WHERE name=$obj}]
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $root
+  db eval "CREATE TABLE $tbl\($cols, PRIMARY KEY($cols)) WITHOUT ROWID"
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
+}
+
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t1(k INTEGER PRIMARY KEY, v REAL);
+  INSERT INTO t1 VALUES(1, 0.0), (2, 5), (3, 8.5);
+  CREATE INDEX t1v ON t1(v);
+
+  CREATE TABLE t2(k INTEGER PRIMARY KEY, v REAL);
+  CREATE INDEX t2v ON t2(v);
+  INSERT INTO t2 VALUES(1, 0.0), (2, 5), (3, 8.5);
+
+  CREATE TABLE t3(k INTEGER PRIMARY KEY, v REAL) WITHOUT ROWID;
+  INSERT INTO t3 VALUES(1, 0.0), (2, 5), (3, 8.5);
+
+  CREATE TABLE t4(k INTEGER PRIMARY KEY, v REAL, z);
+  CREATE INDEX t4v ON t4(v);
+  INSERT INTO t4 VALUES(1, 1.5, 0), (2, 1.5, 0), (3, 1.5, 0);
+  UPDATE t4 SET v=CASE k WHEN 1 THEN 0.0 WHEN 2 THEN 5 ELSE 8.5 END;
+}
+
+# All tables return REAL values to the user.
+do_execsql_test 9.1 {
+  SELECT group_concat(v || ':' || typeof(v), ' ') FROM t1;
+  SELECT group_concat(v || ':' || typeof(v), ' ') FROM t2;
+  SELECT group_concat(v || ':' || typeof(v), ' ') FROM t3;
+  SELECT group_concat(v || ':' || typeof(v), ' ') FROM t4;
+} {
+  {0.0:real 5.0:real 8.5:real} {0.0:real 5.0:real 8.5:real}
+  {0.0:real 5.0:real 8.5:real} {0.0:real 5.0:real 8.5:real}
+}
+
+intreal_imposter t1v i1 {v,k}
+intreal_imposter t2v i2 {v,k}
+intreal_imposter t3  i3 {k,v}
+intreal_imposter t4v i4 {v,k}
+
+# Index created after the table was populated.
+do_execsql_test 9.2 {
+  SELECT v, typeof(v) FROM i1 ORDER BY k;
+} {0 integer 5 integer 8.5 real}
+
+# Index entries written by INSERT.
+do_execsql_test 9.3 {
+  SELECT v, typeof(v) FROM i2 ORDER BY k;
+} {0 integer 5 integer 8.5 real}
+
+# WITHOUT ROWID table records written by INSERT.
+do_execsql_test 9.4 {
+  SELECT v, typeof(v) FROM i3 ORDER BY k;
+} {0 integer 5 integer 8.5 real}
+
+# Index entries written by UPDATE.
+do_execsql_test 9.5 {
+  SELECT v, typeof(v) FROM i4 ORDER BY k;
+} {0 integer 5 integer 8.5 real}
+
+do_execsql_test 9.6 {
+  PRAGMA integrity_check;
+} {ok}
 
 finish_test

@@ -215,6 +215,7 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
   if( i ){
     if( iReg ){
       sqlite3VdbeAddOp4(v, OP_Affinity, iReg, i, 0, zColAff, i);
+      sqlite3VdbeChangeP5(v, 1);
     }else{
       assert( sqlite3VdbeGetLastOp(v)->opcode==OP_MakeRecord
               || sqlite3VdbeDb(v)->mallocFailed );
