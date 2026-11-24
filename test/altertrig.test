@@ -167,14 +167,6 @@ foreach {tn alter update final} {
     UPDATE t1 SET b=1 FROM t3 JOIN t1 AS x ON x.abc=t3.e
   }
 
-  13 {
-    ALTER TABLE t1 RENAME a TO abc
-  } {
-    UPDATE t1 SET b=1 FROM t3 JOIN t4 ON t1.a=t4.e
-  } {
-    UPDATE t1 SET b=1 FROM t3 JOIN t4 ON t1.abc=t4.e
-  }
-
   14 {
     ALTER TABLE t4 RENAME TO abc
   } {

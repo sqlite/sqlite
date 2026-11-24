@@ -364,3 +364,78 @@ ALTER TABLE w1 RENAME COLUMN k TO kk;
 .testcase 630
 SELECT sql FROM sqlite_schema WHERE name='vw';
 .check CREATE VIEW vw AS SELECT 1 AS x FROM w1 AS a JOIN w1 AS b USING(m, kk, z)
+
+# The ON clause of an UPDATE-FROM trigger step does not see the UPDATE
+# target.  Unqualified "p" in the ON clause is ua.p, not ut.p.
+#
+CREATE TABLE ut(p, q);
+CREATE TABLE ua(p, k);
+CREATE TABLE ub(y);
+CREATE TABLE uz(c);
+CREATE TRIGGER utr AFTER INSERT ON ub BEGIN
+  UPDATE ut SET q = ua.k FROM ua JOIN ub ON ub.y = p WHERE ut.p = ua.k;
+END;
+INSERT INTO ut VALUES(1, 0);
+INSERT INTO ua VALUES(1, 1);
+INSERT INTO ub VALUES(1);
+.testcase 700
+SELECT q FROM ut;
+.check 1
+.testcase 710
+ALTER TABLE uz RENAME COLUMN c TO d;
+.check
+.testcase 720
+ALTER TABLE uz RENAME TO uz2;
+.check
+# Renaming ua.p changes the ON clause.  Renaming ut.p does not.
+.testcase 730
+ALTER TABLE ua RENAME COLUMN p TO pa;
+.check
+.testcase 740
+SELECT sql FROM sqlite_schema WHERE name='utr';
+.check <<EOT
+CREATE TRIGGER utr AFTER INSERT ON ub BEGIN
+  UPDATE ut SET q = ua.k FROM ua JOIN ub ON ub.y = pa WHERE ut.p = ua.k;
+END
+EOT
+.testcase 750
+ALTER TABLE ut RENAME COLUMN p TO pt;
+.check
+.testcase 760
+SELECT sql FROM sqlite_schema WHERE name='utr';
+.check <<EOT
+CREATE TRIGGER utr AFTER INSERT ON ub BEGIN
+  UPDATE ut SET q = ua.k FROM ua JOIN ub ON ub.y = pa WHERE ut.pt = ua.k;
+END
+EOT
+
+# USING and NATURAL joins in an UPDATE-FROM step ignore the target too.
+#
+CREATE TABLE vt(p, q);
+CREATE TABLE va(p, k);
+CREATE TABLE vb(p);
+CREATE TABLE vs(x);
+CREATE TRIGGER vtr1 AFTER INSERT ON vs BEGIN
+  UPDATE vt SET q = va.k FROM va JOIN vb USING(p) WHERE vt.p = va.k;
+END;
+CREATE TRIGGER vtr2 AFTER DELETE ON vs BEGIN
+  UPDATE vt SET q = va.k FROM va NATURAL JOIN vb WHERE vt.p = va.k;
+END;
+CREATE TRIGGER vtr3 AFTER UPDATE ON vs BEGIN
+  UPDATE vt SET q = 5 WHERE p=new.x;
+  INSERT INTO vb SELECT x FROM vs;
+  DELETE FROM vb WHERE p=old.x;
+END;
+.testcase 770
+ALTER TABLE vs RENAME TO vs2;
+.check
+.testcase 780
+ALTER TABLE vt RENAME COLUMN q TO qq;
+.check
+.testcase 790
+INSERT INTO vt VALUES(2,0);
+INSERT INTO va VALUES(2,2);
+INSERT INTO vb VALUES(2);
+INSERT INTO vs2 VALUES(0);
+SELECT qq FROM vt;
+.check 2

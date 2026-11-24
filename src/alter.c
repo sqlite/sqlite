@@ -1467,6 +1467,29 @@ static void renameSetENames(ExprList *pEList, int val){
 }
 
 /*
+** pSrc is a copy of the FROM clause of a trigger step.  The first entry is
+** the target table of the step.  For an UPDATE-FROM step the remaining
+** entries are a nested subquery at runtime, so their ON and USING clauses
+** and NATURAL joins do not see the target.  Mimic that by moving the target
+** to the end of pSrc and by deleting the ON clauses.  The caller resolves
+** the ON clauses of the original separately, against pSrc less its last
+** entry.
+*/
+static void renameHideTarget(sqlite3 *db, SrcList *pSrc){
+  SrcItem tmp = pSrc->a[0];
+  int i;
+  memmove(&pSrc->a[0], &pSrc->a[1], (pSrc->nSrc-1)*sizeof(SrcItem));
+  pSrc->a[pSrc->nSrc-1] = tmp;
+  for(i=0; i<pSrc->nSrc; i++){
+    SrcItem *pItem = &pSrc->a[i];
+    if( pItem->fg.isUsing==0 ){
+      sqlite3ExprDelete(db, pItem->u3.pOn);
+      pItem->u3.pOn = 0;
+    }
+  }
+}
+
+/*
 ** Resolve all symbols in the trigger at pParse->pNewTrigger, assuming
 ** it was read from the schema of database zDb. Return SQLITE_OK if
 ** successful. Otherwise, return an SQLite error code and leave an error
@@ -1505,10 +1528,12 @@ static int renameResolveTrigger(Parse *pParse){
     if( rc==SQLITE_OK && pStep->pSrc ){
       SrcList *pSrc = sqlite3SrcListDup(db, pStep->pSrc, 0);
       if( pSrc ){
-        Select *pSel = sqlite3SelectNew(
+        Select *pSel;
+        Upsert *pUpsert = 0;
+        renameHideTarget(db, pSrc);
+        pSel = sqlite3SelectNew(
             pParse, pStep->pExprList, pSrc, 0, 0, 0, 0, 0, 0
         );
-        Upsert *pUpsert = 0;
         if( pSel==0 ){
           pStep->pExprList = 0;
           pSrc = 0;
@@ -1534,6 +1559,7 @@ static int renameResolveTrigger(Parse *pParse){
         }
 
         sNC.pSrcList = pSrc;
+        if( pSrc ) pSrc->nSrc--;
         if( ALWAYS(pStep->pSrc) ){
           int i;
           for(i=0; i<pStep->pSrc->nSrc && rc==SQLITE_OK; i++){
@@ -1547,6 +1573,7 @@ static int renameResolveTrigger(Parse *pParse){
             }
           }
         }
+        if( pSrc ) pSrc->nSrc++;
         if( db->mallocFailed ){
           rc = SQLITE_NOMEM;
         }
