@@ -142,3 +142,23 @@ SELECT count(*) FROM sqlite_schema WHERE name='t1b';
 SELECT count(*) FROM t3;
 .check 2
 .endif /* capable('unsafe') */
+
+# Bug 2026-11-23T10:18:04Z sqlite.org/bugs/info/e3c6cf1958519524
+# PRAGMA quick_check must detect WITHOUT ROWID rows that are out of
+# PRIMARY KEY order, just as PRAGMA integrity_check does.
+#
+.open :memory:
+.dbconfig defensive off
+.mode --reset list
+CREATE TABLE t1(k TEXT COLLATE BINARY PRIMARY KEY, v) WITHOUT ROWID;
+INSERT INTO t1 VALUES('Z','upper'),('a','lower');
+PRAGMA writable_schema=ON;
+UPDATE sqlite_schema SET sql=replace(sql,'COLLATE BINARY','COLLATE NOCASE')
+ WHERE type='table' AND name='t1';
+PRAGMA writable_schema=RESET;
+.testcase 240
+PRAGMA integrity_check;
+.check row not in PRIMARY KEY order for t1
+.testcase 250
+PRAGMA quick_check;
+.check row not in PRIMARY KEY order for t1
