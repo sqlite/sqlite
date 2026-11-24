@@ -14,7 +14,7 @@
 ** production use.  The interface might change.  This file might go out
 ** of support and disappear at any moment.  Do not depend on this extension.
 **
-** Apparent from comments in the code, this extension is undocumented.
+** Apart from comments in the code, this extension is undocumented.
 **
 ** This SQLite extension implements the SQL function tryeval(). The tryeval()
 ** function takes zero or more arguments, each of which is an SQL statement.
@@ -28,6 +28,10 @@
 **
 ** Update:  Also the expire(V) and expire(V,N) functions.  See comments
 ** below for details.
+**
+** Update (2026-11-24):  If any argument to tryeval() is the magic string
+** "FAIL" then if the next argument returns an error, that error is
+** propagated up to the caller of tryeval() instead of being ignored.
 **
 ** The purpose of this function is to help evaluate recursive
 ** behavior, and expecially the bug report at
@@ -59,11 +63,16 @@ static void tryEvalFunc(
   int bDone = 0;          /* True if a row with non-NULL first column seen */
   int rc;                 /* Result from sqlite3 API calls */
   int i;                  /* Loop counter */
+  int bFail = 0;          /* True if "FAIL" seen */
 
   db = sqlite3_context_db_handle(context);
   for(i=0; !bDone && i<argc; i++){
     zSql = (const char*)sqlite3_value_text(argv[i]);
     if( zSql==0 ) continue;
+    if( strcmp(zSql,"FAIL")==0){
+      bFail = 1;
+      continue;
+    }
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
     if( rc==SQLITE_OK ){
       while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
@@ -72,8 +81,18 @@ static void tryEvalFunc(
         bDone = 1;
         break;
       }
+    }else if( bFail ){
+      sqlite3_result_error(context, sqlite3_errmsg(db), -1);
+      sqlite3_result_error_code(context, rc);
+      sqlite3_finalize(pStmt);
+      break;
     }
-    sqlite3_finalize(pStmt);
+    rc = sqlite3_finalize(pStmt);
+    if( bFail && rc ){
+      sqlite3_result_error(context, sqlite3_errmsg(db), -1);
+      sqlite3_result_error_code(context, rc);
+      break;
+    }
   }
 }
 

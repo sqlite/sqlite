@@ -4885,8 +4885,8 @@ static const char *(azHelp[]) = {
   ".sha3sum ...             Compute a SHA3 hash of database content",
   "    Options:",
   "      --schema              Also hash the sqlite_schema table",
-  "      --sha3-224            Use the sha3-224 algorithm",
-  "      --sha3-256            Use the sha3-256 algorithm (default)",
+  "      --sha3-224            Use the sha3-224 algorithm (default)",
+  "      --sha3-256            Use the sha3-256 algorithm",
   "      --sha3-384            Use the sha3-384 algorithm",
   "      --sha3-512            Use the sha3-512 algorithm",
   "    Any other argument is a LIKE pattern for tables to hash",
@@ -5686,6 +5686,7 @@ static void open_db(ShellState *p, int openFlags){
         aData = readHexDb(p, &nData);
       }
       if( aData==0 ){
+        free(zToFree);
         return;
       }
       rc = sqlite3_deserialize(p->db, "main", aData, nData, nData,
@@ -7082,10 +7083,11 @@ static int lintFkeyIndexes(
         break;
       }else{
         if( bGroupByParent
-        && (bVerbose || res==0)
-        && (zPrev==0 || sqlite3_stricmp(zParent, zPrev))
+         && (bVerbose || res==0)
+         && (zPrev==0 || sqlite3_stricmp(zParent, zPrev))
         ){
-          cli_printf(out, "-- Parent table %s\n", zParent);
+          cli_printf(out, "-- Parent table %s\n", 
+            strchr(zParent,'\n')!=0 ? "(REDACTED)" : zParent);
           sqlite3_free(zPrev);
           zPrev = sqlite3_mprintf("%s", zParent);
         }
@@ -15628,10 +15630,10 @@ int SQLITE_CDECL main(int argc, char **argv){
       if( z[2] ){
         char *zSaved = argv[i];
         argv[i] = &z[2];
-        arDotCommand(&data, 1, argv+(i-1), argc-(i-1));
+        rc = arDotCommand(&data, 1, argv+(i-1), argc-(i-1));
         argv[i] = zSaved;
       }else{
-        arDotCommand(&data, 1, argv+i, argc-i);
+        rc = arDotCommand(&data, 1, argv+i, argc-i);
       }
       readStdin = 0;
       stdin_is_interactive = 0;
