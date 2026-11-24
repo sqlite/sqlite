@@ -439,3 +439,62 @@ INSERT INTO vb VALUES(2);
 INSERT INTO vs2 VALUES(0);
 SELECT qq FROM vt;
 .check 2
+
+# Bug 321efb6baaa6d6b3: ALTER TABLE RENAME COLUMN rewrites references
+# in the arguments of a table-valued function in the FROM clause of an
+# UPDATE-FROM trigger step.  The arguments can see the target table, the
+# earlier FROM terms, and OLD and NEW.
+#
+CREATE TABLE tg(id INTEGER, payload TEXT);
+CREATE TABLE tf(x INTEGER);
+CREATE TRIGGER tgr AFTER INSERT ON tf BEGIN
+  UPDATE tg SET id=tg.id FROM json_each(tg.payload) AS j WHERE j.value=new.x;
+END;
+.testcase 800
+ALTER TABLE tg RENAME COLUMN payload TO payload2;
+.check
+.testcase 810
+SELECT sql FROM sqlite_schema WHERE name='tgr';
+.check <<EOT
+CREATE TRIGGER tgr AFTER INSERT ON tf BEGIN
+  UPDATE tg SET id=tg.id FROM json_each(tg.payload2) AS j WHERE j.value=new.x;
+END
+EOT
+CREATE TABLE sg(j);
+CREATE TABLE dg(y);
+CREATE TRIGGER sgr AFTER INSERT ON sg BEGIN
+  UPDATE dg SET y=je.value FROM json_each(new.j) AS je;
+END;
+.testcase 820
+ALTER TABLE sg RENAME COLUMN j TO jj;
+.check
+.testcase 830
+SELECT sql FROM sqlite_schema WHERE name='sgr';
+.check <<EOT
+CREATE TRIGGER sgr AFTER INSERT ON sg BEGIN
+  UPDATE dg SET y=je.value FROM json_each(new.jj) AS je;
+END
+EOT
+.testcase 840
+INSERT INTO dg VALUES(0);
+INSERT INTO sg VALUES('[5,6]');
+SELECT y FROM dg;
+.check 6
+
+# The arguments can also name an earlier FROM term.
+#
+CREATE TABLE ag(x);
+CREATE TABLE bg(y);
+CREATE TRIGGER agr AFTER DELETE ON ag BEGIN
+  UPDATE bg SET y=je.value FROM ag AS q, json_each(q.x) AS je;
+END;
+.testcase 850
+ALTER TABLE ag RENAME COLUMN x TO xx;
+.check
+.testcase 860
+SELECT sql FROM sqlite_schema WHERE name='agr';
+.check <<EOT
+CREATE TRIGGER agr AFTER DELETE ON ag BEGIN
+  UPDATE bg SET y=je.value FROM ag AS q, json_each(q.xx) AS je;
+END
+EOT

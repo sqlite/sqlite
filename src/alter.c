@@ -1559,7 +1559,6 @@ static int renameResolveTrigger(Parse *pParse){
         }
 
         sNC.pSrcList = pSrc;
-        if( pSrc ) pSrc->nSrc--;
         if( ALWAYS(pStep->pSrc) ){
           int i;
           for(i=0; i<pStep->pSrc->nSrc && rc==SQLITE_OK; i++){
@@ -1569,11 +1568,16 @@ static int renameResolveTrigger(Parse *pParse){
               sqlite3SelectPrep(pParse, p->u4.pSubq->pSelect, 0);
             }
             if( p->fg.isUsing==0 ){
+              /* The ON clause does not see the target, which is last. */
+              pSrc->nSrc--;
               rc = sqlite3ResolveExprNames(&sNC, p->u3.pOn);
+              pSrc->nSrc++;
+            }
+            if( p->fg.isTabFunc ){
+              rc = sqlite3ResolveExprListNames(&sNC, p->u1.pFuncArg);
             }
           }
         }
-        if( pSrc ) pSrc->nSrc++;
         if( db->mallocFailed ){
           rc = SQLITE_NOMEM;
         }
@@ -1644,6 +1648,9 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
         if( p->fg.isSubquery ){
           assert( p->u4.pSubq!=0 );
           sqlite3WalkSelect(pWalker, p->u4.pSubq->pSelect);
+        }
+        if( p->fg.isTabFunc ){
+          sqlite3WalkExprList(pWalker, p->u1.pFuncArg);
         }
         if( p->fg.isUsing==0 ){
           sqlite3WalkExpr(pWalker, p->u3.pOn);
