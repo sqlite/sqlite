@@ -1022,3 +1022,18 @@ EXPLAIN QUERY PLAN
 SELECT count(*) FROM (SELECT x FROM t UNION ALL SELECT x FROM t);
 .check -glob  '+All -CursorHints' --keep
 .check -notglob CO-ROUTINE
+
+# Bug 2026-11-24T00:38:16Z sqlite.org/bugs/info/cf6cdf9e03f298c7
+# Command Injection via .lint fkey-indexes -groupbyparent Output in SQLite
+# sqlite3 CLI
+#
+.open :memory:
+.mode -reset list
+.testcase 2100
+CREATE TABLE "t1
+.print hi"(id INTEGER PRIMARY KEY);
+CREATE TABLE child(pid INTEGER REFERENCES "t1
+.print hi"(id));
+.lint fkey-indexes -groupbyparent
+.check --notglob .print --keep
+.check --glob REDACTED

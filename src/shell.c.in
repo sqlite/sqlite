@@ -7082,10 +7082,11 @@ static int lintFkeyIndexes(
         break;
       }else{
         if( bGroupByParent
-        && (bVerbose || res==0)
-        && (zPrev==0 || sqlite3_stricmp(zParent, zPrev))
+         && (bVerbose || res==0)
+         && (zPrev==0 || sqlite3_stricmp(zParent, zPrev))
         ){
-          cli_printf(out, "-- Parent table %s\n", zParent);
+          cli_printf(out, "-- Parent table %s\n", 
+            strchr(zParent,'\n')!=0 ? "(REDACTED)" : zParent);
           sqlite3_free(zPrev);
           zPrev = sqlite3_mprintf("%s", zParent);
         }
