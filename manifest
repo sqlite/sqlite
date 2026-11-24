@@ -1,5 +1,5 @@
-C Fix\sPRAGMA\squick_check\sso\sthat\sit\sverifies\sPRIMARY\sKEY\sorder\son\s\nWITHOUT\sROWID\stables.\n[bugs:/info/2026-11-23T10:18:04Z|Bug\s2026-11-23T10:18:04Z]
-D 2026-11-24T11:49:06.107
+C In\sthe\svfsstat\sand\sappendvfs\sextensions,\sensure\sthat\sa\sfailed\sregistration\sdoes\snot\sleave\sa\sdangling\spointer\swhich\sthe\snext\sxOpen()\swill\sstep\son.\s[bug:4a07d3f1c7|Bug\sreport\s2026-11-23T10:22:11Z]\srevealed\svfsstat\sand\sthe\ssame\sproblem\swas\sfound\sin\sappendvfs\swhile\stesting\sthat.
+D 2026-11-24T13:01:20.876
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -367,7 +367,7 @@ F ext/jni/src/tests/900-001-fts.test bf0ce17a8d082773450e91f2388f5bbb2dfa316d0b6
 F ext/misc/README.md 9fd3ad4705a5cacc07477e872f5467c908dfb23d9d199e00f882130e3585256c
 F ext/misc/amatch.c 4adff7f0b60068010158cb2e805351a96d3306b9eaa154a571003146c6fe59bc
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c 7ad2cdf861399bff503f7e510bfbbc18a4529752255d9766f3a24ced67cb68c5
+F ext/misc/appendvfs.c 8e153e9e7489b8de83fdd47e531aa3a15682facfe50e9fc364aeac45fb9df691
 F ext/misc/base64.c 722e78bbe96753358e8ac2567df876964ac21961cbce37422d146202b6108870
 F ext/misc/base85.c c713c7c81b05558c488cbdd8c68d612d5a97f9f0b8adf1167148dd7c89ce3f96
 F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be6fcf
@@ -420,7 +420,7 @@ F ext/misc/unionvtab.c fe1011f185408b0afd1631fdce8090c4e69ff4eae10a760101e08b624
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
 F ext/misc/uuid.c 37297e61935c2d0c425b742100f904d02c866fdeabe0427fe59aed1543e7c0ec
 F ext/misc/vfslog.c a87d431b26e159239916b87be1317152fdf1b0e21d46834e710f6d56ac8430e5
-F ext/misc/vfsstat.c 55f15d86e025b79dc9934f9f520a1d255913908d5da229b9466f553292b24827
+F ext/misc/vfsstat.c 815f8b759fe290e569f36b9b4167628ee4f599e72b407ba9c78e64c70c15e9a4
 F ext/misc/vfstrace.c fc8c393a8316a8c20867b7e6e92908c4f81060c9e1f24d6ad9aefdc91c01dd13
 F ext/misc/vtablog.c c98de6599739c287917d1f46ad52c26f9c17b58c2313ab278c50e31333fd8269
 F ext/misc/wholenumber.c e41953e078894e66a0ff05dd6c76a61f904828c9a4620c7255fac26754f30d3a
@@ -1028,6 +1028,7 @@ F test/c/changeblob2.c e2945375732e52c38b9af5d81d40a7973f1c4f18120bd24f178833d67
 F test/c/malloc1.c 2869384011b5dc1f019ddd94e5248a1f2dfd07db06c6ce854793c91da173b811
 F test/c/snprintf1.c a66a1ce1195bd409740a60ebeea008686ce3fbacb445840fc0a45419823b7f3f
 F test/c/unix-nullio1.c b2727819f8d52b4474c61f6348a19def1c83e21da3f6c20dbb00141fe35ebff9
+F test/c/vfsstatfault.c b66e96a35a80b14bcbe7d453de6c70ad181d4ebe58f600ec31d8f745456275dd
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
@@ -2321,8 +2322,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0e5615d3d377741495b5ac1736cb78f261bcfcb0d247d9cfbb2fd6e78f6f4321
-R 4f03a7d56f30272507613fc6282a893d
-U drh
-Z 5fbeef8e2d2bf2fa18248a6dc0f5993d
+P 7922cfe9c7bf786f0544e6a78599077ccb63aedf32caedcf19a3f53962530760
+R cef06d0aaed5c073a3dc9e6b6811fc61
+U stephan
+Z d2b202750ddaf3ee7996119203a8c7bd
 # Remove this line to create a well-formed Fossil manifest.
