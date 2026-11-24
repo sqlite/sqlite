@@ -270,3 +270,97 @@ SELECT p, a, json_group_array(c) OVER (
 2|2|[]
 2|3|[]
 END
+
+# Bug 2026-11-23T10:03:39Z sqlite.org/bugs/info/a8ad4f0ac1ec7999
+# ALTER TABLE RENAME COLUMN rewrites USING(x) in a join of the table with
+# itself, since the column is renamed on both sides of the join.
+#
+.open :memory:
+.mode --reset list
+CREATE TABLE t(c INTEGER, v INTEGER);
+INSERT INTO t VALUES(1, 7);
+CREATE VIEW v1 AS
+  SELECT a.v AS av, b.v AS bv FROM t AS a JOIN t AS b USING(c);
+CREATE VIEW v2 AS
+  SELECT x.v FROM t x JOIN t y USING(c) LEFT JOIN t z USING(c);
+CREATE TABLE sink(out);
+CREATE TABLE fire(x);
+CREATE TRIGGER tr AFTER INSERT ON fire BEGIN
+  INSERT INTO sink SELECT a.v+b.v FROM t AS a JOIN t AS b USING(c);
+END;
+.testcase 500
+ALTER TABLE t RENAME COLUMN c TO c_new;
+.check
+.testcase 510
+SELECT av+bv FROM v1;
+.check 14
+.testcase 520
+SELECT v FROM v2;
+.check 7
+.testcase 530
+INSERT INTO fire VALUES(1);
+SELECT out FROM sink;
+.check 14
+.testcase 540
+SELECT count(*) FROM sqlite_schema WHERE sql LIKE '%USING(c_new)%';
+.check 3
+
+# A USING between two different tables cannot be renamed on one side only.
+#
+CREATE TABLE p(k, a);
+CREATE TABLE q(k, b);
+CREATE VIEW vpq AS SELECT a, b FROM p JOIN q USING(k);
+.testcase 550
+ALTER TABLE p RENAME COLUMN k TO kk;
+.check --glob '*error in view vpq after rename: cannot join using column k - column not*'
+
+# Same, but renaming the column of the table on the right of the join.
+#
+.testcase 560
+ALTER TABLE q RENAME COLUMN k TO kk;
+.check --glob '*error in view vpq after rename: cannot join using column k - column not*'
+
+# An earlier table in the FROM clause that does not have the column is
+# passed over when looking for the left side of the USING.
+#
+CREATE TABLE o1(k, m);
+CREATE TABLE o2(z);
+CREATE VIEW vo AS SELECT 1 AS x FROM o2 JOIN o1 AS a JOIN o1 AS b USING(k);
+.testcase 570
+ALTER TABLE o1 RENAME COLUMN k TO kk;
+.check
+.testcase 580
+SELECT sql FROM sqlite_schema WHERE name='vo';
+.check CREATE VIEW vo AS SELECT 1 AS x FROM o2 JOIN o1 AS a JOIN o1 AS b USING(kk)
+
+# Joins with ON and NATURAL clauses are left to the other rename logic.
+#
+CREATE TABLE n1(k, m);
+INSERT INTO n1 VALUES(1, 2);
+CREATE VIEW vn AS
+  SELECT a.m FROM n1 AS a JOIN n1 AS b ON a.k=b.k JOIN n1 AS d USING(k)
+  JOIN n1 AS f ON a.m NATURAL JOIN n1 AS e;
+.testcase 590
+ALTER TABLE n1 RENAME COLUMN k TO kk;
+.check
+.testcase 600
+SELECT m FROM vn;
+.check 2
+.testcase 610
+SELECT sql FROM sqlite_schema WHERE name='vn';
+.check <<END
+CREATE VIEW vn AS
+  SELECT a.m FROM n1 AS a JOIN n1 AS b ON a.kk=b.kk JOIN n1 AS d USING(kk)
+  JOIN n1 AS f ON a.m NATURAL JOIN n1 AS e
+END
+
+# Only the USING names that match the renamed column are rewritten.
+#
+CREATE TABLE w1(k, m, z);
+CREATE VIEW vw AS SELECT 1 AS x FROM w1 AS a JOIN w1 AS b USING(m, k, z);
+.testcase 620
+ALTER TABLE w1 RENAME COLUMN k TO kk;
+.check
+.testcase 630
+SELECT sql FROM sqlite_schema WHERE name='vw';
+.check CREATE VIEW vw AS SELECT 1 AS x FROM w1 AS a JOIN w1 AS b USING(m, kk, z)
