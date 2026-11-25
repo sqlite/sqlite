@@ -809,6 +809,7 @@ struct RenameCtx {
   int iCol;                       /* Index of column being renamed */
   Table *pTab;                    /* Table being ALTERed */
   const char *zOld;               /* Old column name */
+  char *zErr;                     /* Error message, or NULL */
 };
 
 #ifdef SQLITE_DEBUG
@@ -1082,14 +1083,14 @@ static RenameToken *renameTokenFind(
 }
 
 /*
-** Add to pCtx the names in USING clauses of pSrc that refer to the column
-** being renamed.  A USING(x) term names a column in the table on its right
-** and in the first table on its left that has such a column.  The name can
-** only be renamed when both of those are the table being altered, as in a
-** self-join.  Otherwise, the names in the two tables would no longer match,
-** and the rename fails when the schema is tested afterwards.
+** Check the joins in pSrc for a USING clause or a NATURAL join that
+** involves the column being renamed.  Renaming such a column could change
+** the meaning of the join, so record an error message in pCtx->zErr.
+** A USING(x) term, and a NATURAL join, names a column in the table on its
+** right and in the first table on its left that has such a column.  The
+** column is involved if either of those tables is the one being altered.
 */
-static void renameColumnUsingNames(
+static void renameColumnJoinCheck(
   Parse *pParse,
   RenameCtx *pCtx,
   const SrcList *pSrc
@@ -1100,23 +1101,37 @@ static void renameColumnUsingNames(
   zOld = pCtx->pTab->aCol[pCtx->iCol].zCnName;
   for(i=1; i<pSrc->nSrc; i++){
     const SrcItem *pItem = &pSrc->a[i];
-    int j;
+    const IdList *pUsing;
+    Table *pLeft = 0;
+    int j, k;
     if( pItem->fg.isUsing==0 ) continue;
-    if( pItem->pSTab!=pCtx->pTab ) continue;
+    pUsing = pItem->u3.pUsing;
+    for(k=0; k<pUsing->nId; k++){
+      if( 0==sqlite3_stricmp(pUsing->a[k].zName, zOld) ) break;
+    }
+    if( k>=pUsing->nId ) continue;
     for(j=0; ALWAYS(j<i); j++){
-      Table *pLeft = pSrc->a[j].pSTab;
-      if( ALWAYS(pLeft) && sqlite3ColumnIndex(pLeft, zOld)>=0 ){
-        if( pLeft==pCtx->pTab ){
-          const IdList *pUsing = pItem->u3.pUsing;
-          int k;
-          for(k=0; k<pUsing->nId; k++){
-            if( 0==sqlite3_stricmp(pUsing->a[k].zName, zOld) ){
-              renameTokenFind(pParse, pCtx, (const void*)pUsing->a[k].zName);
-            }
-          }
-        }
-        break;
+      pLeft = pSrc->a[j].pSTab;
+      if( ALWAYS(pLeft) && sqlite3ColumnIndex(pLeft, zOld)>=0 ) break;
+    }
+    if( pItem->pSTab==pCtx->pTab || pLeft==pCtx->pTab ){
+      int isNat = pItem->fg.isSynthUsing;
+      const char *zPrep;
+      const char *zName;
+      if( pParse->pNewTable ){
+        zPrep = isNat ? "in VIEW" : "of VIEW";
+        zName = pParse->pNewTable->zName;
+      }else{
+        zPrep = "within TRIGGER";
+        zName = pParse->pNewTrigger->zName;
       }
+      sqlite3DbFree(pParse->db, pCtx->zErr);
+      pCtx->zErr = sqlite3MPrintf(pParse->db,
+          "cannot rename %s because it %s %s %s", zOld,
+          isNat ? "participates in a NATURAL JOIN"
+                : "appears in a USING clause",
+          zPrep, zName);
+      return;
     }
   }
 }
@@ -1132,7 +1147,7 @@ static int renameColumnSelectCb(Walker *pWalker, Select *p){
     testcase( p->selFlags & SF_CopyCte );
     return WRC_Prune;
   }
-  renameColumnUsingNames(pWalker->pParse, pWalker->u.pRename, p->pSrc);
+  renameColumnJoinCheck(pWalker->pParse, pWalker->u.pRename, p->pSrc);
   renameWalkWith(pWalker, p);
   return WRC_Continue;
 }
@@ -1847,6 +1862,10 @@ static void renameColumnFunc(
   }
 
   assert( rc==SQLITE_OK );
+  if( sCtx.zErr ){
+    sqlite3_result_error(context, sCtx.zErr, -1);
+    goto renameColumnFunc_cleanup;
+  }
   rc = renameEditSql(context, &sCtx, zSql, zNew, bQuote);
 
 renameColumnFunc_done:
@@ -1860,8 +1879,10 @@ renameColumnFunc_done:
     }
   }
 
+renameColumnFunc_cleanup:
   renameParseCleanup(&sParse);
   renameTokenFree(db, sCtx.pList);
+  sqlite3DbFree(db, sCtx.zErr);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   db->xAuth = xAuth;
 #endif

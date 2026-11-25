@@ -272,8 +272,9 @@ SELECT p, a, json_group_array(c) OVER (
 END
 
 # Bug 2026-11-23T10:03:39Z sqlite.org/bugs/info/a8ad4f0ac1ec7999
-# ALTER TABLE RENAME COLUMN rewrites USING(x) in a join of the table with
-# itself, since the column is renamed on both sides of the join.
+# ALTER TABLE RENAME COLUMN refuses to rename a column that appears in a
+# USING clause or in a NATURAL join of a view or trigger, since the
+# rename could change the meaning of the join.
 #
 .open :memory:
 .mode --reset list
@@ -281,44 +282,56 @@ CREATE TABLE t(c INTEGER, v INTEGER);
 INSERT INTO t VALUES(1, 7);
 CREATE VIEW v1 AS
   SELECT a.v AS av, b.v AS bv FROM t AS a JOIN t AS b USING(c);
-CREATE VIEW v2 AS
-  SELECT x.v FROM t x JOIN t y USING(c) LEFT JOIN t z USING(c);
+.testcase 500
+ALTER TABLE t RENAME COLUMN c TO c_new;
+.check --glob 'cannot rename c because it appears in a USING clause of VIEW v1'
+.testcase 510
+SELECT name FROM pragma_table_info('t') ORDER BY cid;
+.check <<EOT
+c
+v
+EOT
+.testcase 520
+SELECT av+bv FROM v1;
+.check 14
+
+# The same check applies to a SELECT in a trigger.
+#
+DROP VIEW v1;
 CREATE TABLE sink(out);
 CREATE TABLE fire(x);
 CREATE TRIGGER tr AFTER INSERT ON fire BEGIN
   INSERT INTO sink SELECT a.v+b.v FROM t AS a JOIN t AS b USING(c);
 END;
-.testcase 500
-ALTER TABLE t RENAME COLUMN c TO c_new;
-.check
-.testcase 510
-SELECT av+bv FROM v1;
-.check 14
-.testcase 520
-SELECT v FROM v2;
-.check 7
 .testcase 530
-INSERT INTO fire VALUES(1);
-SELECT out FROM sink;
-.check 14
+ALTER TABLE t RENAME COLUMN c TO c_new;
+.check --glob 'cannot rename c because it appears in a USING clause within TRIGGER tr'
 .testcase 540
-SELECT count(*) FROM sqlite_schema WHERE sql LIKE '%USING(c_new)%';
-.check 3
+ALTER TABLE t RENAME COLUMN v TO v_new;
+.check
+DROP TRIGGER tr;
 
-# A USING between two different tables cannot be renamed on one side only.
+# Renaming the column on either side of a join between different tables.
 #
 CREATE TABLE p(k, a);
 CREATE TABLE q(k, b);
 CREATE VIEW vpq AS SELECT a, b FROM p JOIN q USING(k);
 .testcase 550
 ALTER TABLE p RENAME COLUMN k TO kk;
-.check --glob '*error in view vpq after rename: cannot join using column k - column not*'
-
-# Same, but renaming the column of the table on the right of the join.
-#
+.check --glob 'cannot rename k because it appears in a USING clause of VIEW vpq'
 .testcase 560
 ALTER TABLE q RENAME COLUMN k TO kk;
-.check --glob '*error in view vpq after rename: cannot join using column k - column not*'
+.check --glob 'cannot rename k because it appears in a USING clause of VIEW vpq'
+
+# A table that does not have the USING column is not part of the join.
+#
+CREATE TABLE r(k);
+.testcase 570
+ALTER TABLE r RENAME COLUMN k TO kk;
+.check
+.testcase 580
+SELECT sql FROM sqlite_schema WHERE name='vpq';
+.check CREATE VIEW vpq AS SELECT a, b FROM p JOIN q USING(k)
 
 # An earlier table in the FROM clause that does not have the column is
 # passed over when looking for the left side of the USING.
@@ -326,44 +339,81 @@ ALTER TABLE q RENAME COLUMN k TO kk;
 CREATE TABLE o1(k, m);
 CREATE TABLE o2(z);
 CREATE VIEW vo AS SELECT 1 AS x FROM o2 JOIN o1 AS a JOIN o1 AS b USING(k);
-.testcase 570
-ALTER TABLE o1 RENAME COLUMN k TO kk;
-.check
-.testcase 580
-SELECT sql FROM sqlite_schema WHERE name='vo';
-.check CREATE VIEW vo AS SELECT 1 AS x FROM o2 JOIN o1 AS a JOIN o1 AS b USING(kk)
-
-# Joins with ON and NATURAL clauses are left to the other rename logic.
-#
-CREATE TABLE n1(k, m);
-INSERT INTO n1 VALUES(1, 2);
-CREATE VIEW vn AS
-  SELECT a.m FROM n1 AS a JOIN n1 AS b ON a.k=b.k JOIN n1 AS d USING(k)
-  JOIN n1 AS f ON a.m NATURAL JOIN n1 AS e;
 .testcase 590
-ALTER TABLE n1 RENAME COLUMN k TO kk;
-.check
-.testcase 600
-SELECT m FROM vn;
-.check 2
-.testcase 610
-SELECT sql FROM sqlite_schema WHERE name='vn';
-.check <<END
-CREATE VIEW vn AS
-  SELECT a.m FROM n1 AS a JOIN n1 AS b ON a.kk=b.kk JOIN n1 AS d USING(kk)
-  JOIN n1 AS f ON a.m NATURAL JOIN n1 AS e
-END
+ALTER TABLE o1 RENAME COLUMN k TO kk;
+.check --glob 'cannot rename k because it appears in a USING clause of VIEW vo'
 
-# Only the USING names that match the renamed column are rewritten.
+# The left side of the USING can be a table after another one that lacks
+# the column.
 #
-CREATE TABLE w1(k, m, z);
-CREATE VIEW vw AS SELECT 1 AS x FROM w1 AS a JOIN w1 AS b USING(m, k, z);
+CREATE TABLE u0(z);
+CREATE TABLE u1(k);
+CREATE TABLE u2(k);
+CREATE VIEW vu AS SELECT 1 AS x FROM u0 JOIN u1 JOIN u2 USING(k);
+.testcase 595
+ALTER TABLE u1 RENAME COLUMN k TO kk;
+.check --glob 'cannot rename k because it appears in a USING clause of VIEW vu'
+
+# Only the first earlier table that has the column is on the left side
+# of the USING.  The middle table can be renamed.
+#
+CREATE TABLE l0(k);
+CREATE TABLE l1(k);
+CREATE TABLE l2(k);
+CREATE VIEW vl AS SELECT 1 AS x FROM l0 JOIN l1 JOIN l2 USING(k);
+.testcase 600
+ALTER TABLE l1 RENAME COLUMN k TO kk;
+.check
+.testcase 610
+ALTER TABLE l0 RENAME COLUMN k TO kk;
+.check --glob 'cannot rename k because it appears in a USING clause of VIEW vl'
+
+# Joins with an ON clause are not affected.  Only the names in the USING
+# list matter.
+#
+CREATE TABLE w1(k, m, z, u);
+CREATE VIEW vw AS
+  SELECT 1 AS x FROM w1 AS a JOIN w1 AS b ON a.k=b.k JOIN w1 AS c USING(m,z);
 .testcase 620
 ALTER TABLE w1 RENAME COLUMN k TO kk;
 .check
 .testcase 630
-SELECT sql FROM sqlite_schema WHERE name='vw';
-.check CREATE VIEW vw AS SELECT 1 AS x FROM w1 AS a JOIN w1 AS b USING(m, kk, z)
+ALTER TABLE w1 RENAME COLUMN u TO uu;
+.check
+.testcase 640
+ALTER TABLE w1 RENAME COLUMN z TO zz;
+.check --glob 'cannot rename z because it appears in a USING clause of VIEW vw'
+
+# A subquery with its own USING clause after another one has been found.
+#
+CREATE TABLE s1(k);
+CREATE VIEW vsq AS SELECT 1 AS x FROM s1 AS a JOIN s1 AS b USING(k)
+  JOIN (SELECT 1 FROM s1 AS c JOIN s1 AS d USING(k)) AS e;
+.testcase 650
+ALTER TABLE s1 RENAME COLUMN k TO kk;
+.check --glob 'cannot rename k because it appears in a USING clause of VIEW vsq'
+
+# NATURAL joins, in a view and in a trigger.
+#
+CREATE TABLE m1(c, x);
+CREATE TABLE m2(c, y);
+CREATE VIEW nv AS SELECT x, y FROM m1 NATURAL JOIN m2;
+.testcase 660
+ALTER TABLE m1 RENAME COLUMN c TO cc;
+.check --glob 'cannot rename c because it participates in a NATURAL JOIN in VIEW nv'
+.testcase 670
+ALTER TABLE m2 RENAME COLUMN c TO cc;
+.check --glob 'cannot rename c because it participates in a NATURAL JOIN in VIEW nv'
+.testcase 680
+ALTER TABLE m1 RENAME COLUMN x TO xx;
+.check
+DROP VIEW nv;
+CREATE TRIGGER ntr AFTER INSERT ON fire BEGIN
+  INSERT INTO sink SELECT y FROM m1 NATURAL JOIN m2;
+END;
+.testcase 690
+ALTER TABLE m1 RENAME COLUMN c TO cc;
+.check --glob 'cannot rename c because it participates in a NATURAL JOIN within TRIGGER ntr'
 
 # The ON clause of an UPDATE-FROM trigger step does not see the UPDATE
 # target.  Unqualified "p" in the ON clause is ua.p, not ut.p.
