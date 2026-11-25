@@ -548,3 +548,33 @@ CREATE TRIGGER agr AFTER DELETE ON ag BEGIN
   UPDATE bg SET y=je.value FROM ag AS q, json_each(q.xx) AS je;
 END
 EOT
+
+# Bug 8abc8ee9f75e296a: An SQLITE_TOOBIG error in the middle of a multi-row
+# write rolls back the entire transaction, as does SQLITE_FULL.  A read-only
+# statement that gets SQLITE_TOOBIG does not roll back the transaction.
+#
+.open :memory:
+.mode --reset list
+.limit length 1000
+CREATE TABLE tb(x);
+BEGIN;
+INSERT INTO tb VALUES(1);
+.testcase 900
+INSERT INTO tb SELECT CASE WHEN value<5 THEN 'a' ELSE zeroblob(2000) END
+  FROM generate_series(1,10);
+.check --glob '*string or blob too big*'
+.testcase 910
+COMMIT;
+.check --glob '*cannot commit - no transaction is active*'
+.testcase 920
+SELECT count(*) FROM tb;
+.check 0
+BEGIN;
+INSERT INTO tb VALUES(2);
+.testcase 930
+SELECT zeroblob(2000) FROM tb;
+.check --glob '*string or blob too big*'
+.testcase 940
+COMMIT;
+SELECT count(*) FROM tb;
+.check 1
