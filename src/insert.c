@@ -180,6 +180,9 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
   int i;
   char *zColAff;
   if( pTab->tabFlags & TF_Strict ){
+    /* OP_TypeCheck can raise an SQLITE_CONSTRAINT_DATATYPE error after
+    ** some rows have already been changed. */
+    sqlite3MayAbort(sqlite3VdbeParser(v));
     if( iReg==0 ){
       /* Move the previous opcode (which should be OP_MakeRecord) forward
       ** by one slot and insert a new OP_TypeCheck where the current
