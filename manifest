@@ -1,5 +1,5 @@
-C For\sa\srow-value\sinequality\sagainst\sa\svirtual\stable\scolumn\sin\sa\sWHERE\sclause\s(e.g.\sWHERE\s(a,\sb)\s>\s(...)),\sdo\snot\sincorrectly\suse\sa\scollation\ssequence\sattached\sto\sthe\ssecond\sor\ssubsequent\svector\selement\swhen\scomparing\sthe\sfirst\selements\stogether.\sThis\sis\ssimilar\sto\s[1aa6415b8e],\sbut\sfor\svirtual\stables.\sReport\s[bugs:/info/2026-11-25T00:58:52Z\s|\s2026-11-25T00:58:52Z].
-D 2026-11-25T07:22:24.966
+C Improve\serror\spropagation\sin\sthe\scompletion\sextension.\s[bugs:238acde3c8|Bug\sreport\s2026-11-25T00:55:42Z].
+D 2026-11-25T10:02:05.317
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -374,7 +374,7 @@ F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be
 F ext/misc/btreeinfo.c 5fe97f798a9ee90e92b3031ed7969ec3f558661bb36b821c3ba045a17cfb951c
 F ext/misc/cksumvfs.c 83414e220e6cdfb29929f3154a24f32ff219d9794690bcb1b2db48f668651b35
 F ext/misc/closure.c e1f115c369790512634db8d19ef4f1e45b6c1658c8fe8a9c362aa65805c8a900
-F ext/misc/completion.c 3f5db28e88c3313103b2dd86d910a2944fd500c46754e473493968ce81e994a4
+F ext/misc/completion.c 1207e7e0aeb0cdff8f23051df13f233d38835b259606bd21b871615774c20311
 F ext/misc/compress.c c4597f0e3c63a5f89af55486490f9d69896b0482898f2ddb8a46aa11e4d13016
 F ext/misc/csv.c f4f3f6418a37d1d20fe62870b06413d48e6095c8deb9a1d5828db14c1cd96ae6
 F ext/misc/decimal.c 1c05fbe8a604493f9f7f261081e1caf1842c0ff8159b79ebe56fa9068638677d
@@ -2322,8 +2322,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7f5c44d8c0c8ae6bd59d093d8d832a1a5bb94967c2a07a37c13ded995cba3053
-R a782139a9bab14de01be8018cd491bb3
-U dan
-Z a574e8ff5d3fc04024baae47d4122d18
+P 5638530c80169a224ddfddbb7329509a01267fd75fa95a8d2331f3656e6207dc
+R 0cf4484a337e022948ca3b98bd50cb9d
+U stephan
+Z 571e47defcf5bb783c5a61ea1171ccfc
 # Remove this line to create a well-formed Fossil manifest.

@@ -182,6 +182,18 @@ static int completionClose(sqlite3_vtab_cursor *cur){
 }
 
 /*
+** Propagate the most recent error message from the database
+** connection into the virtual table. Returns rc unless copying
+** of the error fails, in which case it returns SQLITE_NOMEM.
+*/
+static int completionError(completion_cursor *pCur, int rc){
+  sqlite3_vtab *pVtab = pCur->base.pVtab;
+  sqlite3_free(pVtab->zErrMsg);
+  pVtab->zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pCur->db));
+  return pVtab->zErrMsg ? rc : SQLITE_NOMEM;
+}
+
+/*
 ** Advance a completion_cursor to its next row of output.
 **
 ** The ->ePhase, ->j, and ->pStmt fields of the completion_cursor object
@@ -215,8 +227,9 @@ static int completionNext(sqlite3_vtab_cursor *cur){
       }
       case COMPLETION_DATABASES: {
         if( pCur->pStmt==0 ){
-          sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1,
-                             &pCur->pStmt, 0);
+          rc = sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1,
+                                  &pCur->pStmt, 0);
+          if( rc ) return completionError(pCur, rc);
         }
         iCol = 1;
         eNextPhase = COMPLETION_TABLES;
@@ -228,7 +241,12 @@ static int completionNext(sqlite3_vtab_cursor *cur){
           sqlite3_str* pStr = sqlite3_str_new(pCur->db);
           char *zSql = 0;
           const char *zSep = "";
-          sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
+          rc = sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1,
+                                  &pS2, 0);
+          if( rc ){
+            sqlite3_free(sqlite3_str_finish(pStr));
+            return completionError(pCur, rc);
+          }
           while( sqlite3_step(pS2)==SQLITE_ROW ){
             const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
             sqlite3_str_appendf(pStr,
@@ -242,10 +260,10 @@ static int completionNext(sqlite3_vtab_cursor *cur){
           zSql = sqlite3_str_finish(pStr);
           if( zSql==0 ) return SQLITE_NOMEM;
           if( rc==SQLITE_OK ){
-            sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+            rc = sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
           }
           sqlite3_free(zSql);
-          if( rc ) return rc;
+          if( rc ) return completionError(pCur, rc);
         }
         iCol = 0;
         eNextPhase = COMPLETION_COLUMNS;
@@ -257,7 +275,12 @@ static int completionNext(sqlite3_vtab_cursor *cur){
           sqlite3_str *pStr = sqlite3_str_new(pCur->db);
           char *zSql = 0;
           const char *zSep = "";
-          sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
+          rc = sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1,
+                                  &pS2, 0);
+          if( rc ){
+            sqlite3_free(sqlite3_str_finish(pStr));
+            return completionError(pCur, rc);
+          }
           while( sqlite3_step(pS2)==SQLITE_ROW ){
             const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
             sqlite3_str_appendf(pStr,
@@ -273,10 +296,10 @@ static int completionNext(sqlite3_vtab_cursor *cur){
           zSql = sqlite3_str_finish(pStr);
           if( zSql==0 ) return SQLITE_NOMEM;
           if( rc==SQLITE_OK ){
-            sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+            rc = sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
           }
           sqlite3_free(zSql);
-          if( rc ) return rc;
+          if( rc ) return completionError(pCur, rc);
         }
         iCol = 0;
         eNextPhase = COMPLETION_EOF;
@@ -296,7 +319,7 @@ static int completionNext(sqlite3_vtab_cursor *cur){
         rc = sqlite3_finalize(pCur->pStmt);
         pCur->pStmt = 0;
         pCur->ePhase = eNextPhase;
-        if( rc ) return rc;
+        if( rc ) return completionError(pCur, rc);
         continue;
       }
     }
