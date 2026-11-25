@@ -308,12 +308,6 @@
 */
 #define FTS3_MAX_BTREE_HEIGHT 48
 
-typedef struct Fts3HashWrapper Fts3HashWrapper;
-struct Fts3HashWrapper {
-  Fts3Hash hash;                  /* Hash table */
-  int nRef;                       /* Number of pointers to this object */
-};
-
 static int fts3EvalNext(Fts3Cursor *pCsr);
 static int fts3EvalStart(Fts3Cursor *pCsr);
 static int fts3TermSegReaderCursor(
@@ -533,6 +527,17 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
 
   assert( p->nPendingData==0 );
   assert( p->pSegments==0 );
+
+  /* Remove this table from the list of connected tables, if it was ever
+  ** added to it.  */
+  if( p->pWrapper ){
+    Fts3Table **pp;
+    for(pp=&p->pWrapper->pTabList; *pp!=p; pp=&(*pp)->pNextTab){
+      assert( *pp );
+    }
+    *pp = p->pNextTab;
+    p->pWrapper = 0;
+  }
 
   /* Free any prepared statements held */
   sqlite3_finalize(p->pSeekStmt);
@@ -1550,7 +1555,11 @@ fts3_init_out:
       pTokenizer->pModule->xDestroy(pTokenizer);
     }
   }else{
+    Fts3HashWrapper *pWrapper = (Fts3HashWrapper*)pAux;
     assert( p->pSegments==0 );
+    p->pWrapper = pWrapper;
+    p->pNextTab = pWrapper->pTabList;
+    pWrapper->pTabList = p;
     *ppVTab = &p->base;
   }
   return rc;
@@ -4095,6 +4104,7 @@ static void hashDestroy(void *p){
   Fts3HashWrapper *pHash = (Fts3HashWrapper *)p;
   pHash->nRef--;
   if( pHash->nRef<=0 ){
+    assert( pHash->pTabList==0 );
     sqlite3Fts3HashClear(&pHash->hash);
     sqlite3_free(pHash);
   }
@@ -4173,9 +4183,6 @@ int sqlite3Fts3Init(sqlite3 *db){
   if( rc!=SQLITE_OK ) return rc;
 #endif
 
-  rc = sqlite3Fts3InitAux(db);
-  if( rc!=SQLITE_OK ) return rc;
-
   sqlite3Fts3SimpleTokenizerModule(&pSimple);
   sqlite3Fts3PorterTokenizerModule(&pPorter);
 
@@ -4187,6 +4194,7 @@ int sqlite3Fts3Init(sqlite3 *db){
   }else{
     sqlite3Fts3HashInit(&pHash->hash, FTS3_HASH_STRING, 1);
     pHash->nRef = 1;
+    pHash->pTabList = 0;
   }
 
   /* Load the built-in tokenizers into the hash table */
@@ -4236,6 +4244,10 @@ int sqlite3Fts3Init(sqlite3 *db){
     if( rc==SQLITE_OK ){
       pHash->nRef++;
       rc = sqlite3Fts3InitTok(db, (void *)pHash, hashDestroy);
+    }
+    if( rc==SQLITE_OK ){
+      pHash->nRef++;
+      rc = sqlite3Fts3InitAux(db, pHash, hashDestroy);
     }
   }
 

@@ -1881,3 +1881,21 @@ SELECT term FROM vocab WHERE (term, col) IN (SELECT 'bbb', 'body');
 SELECT term FROM vocab WHERE (col, term) IN (SELECT 'body', 'BBB');
 .check BBB
 .endif /* capable('fts5') */
+
+# https://sqlite.org/bugs/forumpost/6af70eefef
+# fts4aux does not know about the order=DESC option of the FTS4 table
+# it reads, so it decodes the doclists as ascending and miscounts.
+#
+.if capable('fts4aux')
+.open :memory:
+CREATE VIRTUAL TABLE ft USING fts4(x, order=DESC);
+CREATE VIRTUAL TABLE fa USING fts4aux(ft);
+INSERT INTO ft(docid,x) VALUES(42,'a c'),(11,'a c'),(7,'b');
+INSERT INTO ft(ft) VALUES('optimize');
+DELETE FROM ft WHERE docid=11;
+UPDATE ft SET x='a' WHERE docid=42;
+.testcase 3800
+SELECT group_concat(term||','||documents||','||occurrences, ' ')
+  FROM fa WHERE col='*';
+.check "a,1,1 b,1,1"
+.endif /* capable('fts4aux') */

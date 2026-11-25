@@ -23,6 +23,7 @@ typedef struct Fts3auxCursor Fts3auxCursor;
 struct Fts3auxTable {
   sqlite3_vtab base;              /* Base class used by SQLite core */
   Fts3Table *pFts3Tab;
+  Fts3HashWrapper *pWrapper;      /* List of connected fts3/4 tables */
 };
 
 struct Fts3auxCursor {
@@ -57,7 +58,7 @@ struct Fts3auxCursor {
 */
 static int fts3auxConnectMethod(
   sqlite3 *db,                    /* Database connection */
-  void *pUnused,                  /* Unused */
+  void *pAux,                     /* Fts3HashWrapper object */
   int argc,                       /* Number of elements in argv array */
   const char * const *argv,       /* xCreate/xConnect argument array */
   sqlite3_vtab **ppVtab,          /* OUT: New sqlite3_vtab object */
@@ -70,8 +71,6 @@ static int fts3auxConnectMethod(
   sqlite3_int64 nByte;            /* Bytes of space to allocate here */
   int rc;                         /* value returned by declare_vtab() */
   Fts3auxTable *p;                /* Virtual table object to return */
-
-  UNUSED_PARAMETER(pUnused);
 
   /* The user should invoke this in one of two forms:
   **
@@ -108,6 +107,7 @@ static int fts3auxConnectMethod(
   p->pFts3Tab->zName = &p->pFts3Tab->zDb[nDb+1];
   p->pFts3Tab->db = db;
   p->pFts3Tab->nIndex = 1;
+  p->pWrapper = (Fts3HashWrapper*)pAux;
 
   memcpy((char *)p->pFts3Tab->zDb, zDb, nDb);
   memcpy((char *)p->pFts3Tab->zName, zFts3, nFts3);
@@ -369,6 +369,49 @@ static int fts3auxNextMethod(sqlite3_vtab_cursor *pCursor){
 }
 
 /*
+** The fts4aux table passed as the only argument reads the data structures
+** of an fts3/4 table. This function sets the bDescIdx flag of the
+** Fts3Table object used to do so to match the "order=" option of the
+** fts3/4 table, which is only available in its CREATE VIRTUAL TABLE
+** statement.
+**
+** To do this, a "PRAGMA table_info" is run to ensure that the fts3/4 table
+** is connected, then the list of connected fts3/4 tables in the
+** Fts3HashWrapper object is searched for it. Newer tables are at the start
+** of the list, so if there is also a stale object for an older table of the
+** same name waiting to be disconnected, the current one is found first.
+**
+** If the fts3/4 table cannot be found, bDescIdx is set to 0. SQLITE_OK is
+** returned in this case, and in all others except an OOM.
+*/
+static int fts3auxConfigureTable(Fts3auxTable *p){
+  Fts3Table *pFts3 = p->pFts3Tab;
+  Fts3Table *pTab;
+  char *zSql;
+  int rc;
+
+  zSql = sqlite3_mprintf("PRAGMA %Q.table_info(%Q)", pFts3->zDb, pFts3->zName);
+  if( zSql==0 ) return SQLITE_NOMEM;
+  rc = sqlite3_exec(pFts3->db, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+
+  /* An error other than OOM, for example because the target is an fts3/4
+  ** table that uses a tokenizer that is not available, is ignored here.  */
+  if( rc==SQLITE_NOMEM ) return rc;
+
+  pFts3->bDescIdx = 0;
+  for(pTab=p->pWrapper->pTabList; pTab; pTab=pTab->pNextTab){
+    if( sqlite3_stricmp(pTab->zName, pFts3->zName)==0
+     && sqlite3_stricmp(pTab->zDb, pFts3->zDb)==0
+    ){
+      pFts3->bDescIdx = pTab->bDescIdx;
+      break;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** xFilter - Initialize a cursor to point at the start of its data.
 */
 static int fts3auxFilterMethod(
@@ -453,6 +496,9 @@ static int fts3auxFilterMethod(
   }
   pCsr->iLangid = iLangVal;
 
+  rc = fts3auxConfigureTable((Fts3auxTable*)pCursor->pVtab);
+  if( rc!=SQLITE_OK ) return rc;
+
   rc = sqlite3Fts3SegReaderCursor(pFts3, iLangVal, 0, FTS3_SEGCURSOR_ALL,
       pCsr->filter.zTerm, pCsr->filter.nTerm, 0, isScan, &pCsr->csr
   );
@@ -529,7 +575,11 @@ static int fts3auxRowidMethod(
 ** Register the fts3aux module with database connection db. Return SQLITE_OK
 ** if successful or an error code if sqlite3_create_module() fails.
 */
-int sqlite3Fts3InitAux(sqlite3 *db){
+int sqlite3Fts3InitAux(
+  sqlite3 *db,                    /* Database handle */
+  Fts3HashWrapper *pWrapper,      /* Context pointer for module */
+  void(*xDestroy)(void*)          /* Destructor for pWrapper */
+){
   static const sqlite3_module fts3aux_module = {
      0,                           /* iVersion      */
      fts3auxConnectMethod,        /* xCreate       */
@@ -559,7 +609,9 @@ int sqlite3Fts3InitAux(sqlite3 *db){
   };
   int rc;                         /* Return code */
 
-  rc = sqlite3_create_module(db, "fts4aux", &fts3aux_module, 0);
+  rc = sqlite3_create_module_v2(
+      db, "fts4aux", &fts3aux_module, (void*)pWrapper, xDestroy
+  );
   return rc;
 }
 
