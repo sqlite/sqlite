@@ -363,6 +363,23 @@ static SQLITE_NOINLINE const char *indexInAffinityOk(
 }
 
 /*
+** pX is the expression of a WHERE clause term for which the LHS is a
+** vector. Return the collation sequence used by the comparison that the
+** term applies to the leftmost column of the comparison (see
+** whereRangeVectorLen for handling of subsequent columns).
+*/
+static CollSeq *whereVectorTermCollSeq(Parse *pParse, Expr *pX){
+  Expr *pL, *pR;
+  assert( pX->pLeft && pX->pLeft->op==TK_VECTOR );
+  if( pX->op==TK_IN ) return sqlite3ExprCompareCollSeq(pParse, pX);
+  pL = sqlite3VectorFieldSubexpr(pX->pLeft, 0);
+  pR = sqlite3VectorFieldSubexpr(pX->pRight, 0);
+  assert( pX->op>=TK_GT && pX->op<=TK_GE );
+  if( ExprHasProperty(pX, EP_Commuted) ) SWAP(Expr*, pL, pR);
+  return sqlite3BinaryCompareCollSeq(pParse, pL, pR);
+}
+
+/*
 ** pTerm is a WO_EQUIV term "X=Y" that whereScanNext() might use to add
 ** Y to the equivalence class of X. Return true if any of the following
 ** are true:
@@ -450,15 +467,8 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
                 }
                 assert(pX->pLeft);
                 if( pX->pLeft->op==TK_VECTOR ){
-                  /* A vector inequality such as (a,b)>(?,?). This term
-                  ** constrains only the first field, so the collation is
-                  ** that of the first pair of fields only. */
-                  Expr *pL = sqlite3VectorFieldSubexpr(pX->pLeft, 0);
-                  Expr *pR = sqlite3VectorFieldSubexpr(pX->pRight, 0);
                   assert( pTerm->u.x.iField==0 );
-                  assert( pX->op>=TK_GT && pX->op<=TK_GE );
-                  if( ExprHasProperty(pX, EP_Commuted) ) SWAP(Expr*, pL, pR);
-                  pColl = sqlite3BinaryCompareCollSeq(pParse, pL, pR);
+                  pColl = whereVectorTermCollSeq(pParse, pX);
                 }else{
                   pColl = sqlite3ExprCompareCollSeq(pParse, pX);
                 }
@@ -4719,7 +4729,11 @@ const char *sqlite3_vtab_collation(sqlite3_index_info *pIdxInfo, int iCons){
     int iTerm = pIdxInfo->aConstraint[iCons].iTermOffset;
     Expr *pX = termFromWhereClause(pHidden->pWC, iTerm)->pExpr;
     if( pX->pLeft ){
-      pC = sqlite3ExprCompareCollSeq(pHidden->pParse, pX);
+      if( pX->pLeft->op==TK_VECTOR ){
+        pC = whereVectorTermCollSeq(pHidden->pParse, pX);
+      }else{
+        pC = sqlite3ExprCompareCollSeq(pHidden->pParse, pX);
+      }
     }
     zRet = (pC ? pC->zName : sqlite3StrBINARY);
   }

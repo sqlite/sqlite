@@ -1835,3 +1835,67 @@ SELECT count(*) FROM st
 .testcase 3650
 SELECT DISTINCT pgsize FROM st WHERE schema='temp';
 .check 1024
+
+#***********************************************************************
+#
+# A row-value comparison against a virtual table must not pass the
+# virtual table a constraint on the first field that is incompatible
+# with that field's collation. Here the NOCASE collation from b.bound
+# applies to the first field, so 'BBB' must be returned.
+#
+#   https://sqlite.org/bugs/forumpost/34befe5871
+#
+.if capable('fts5')
+.open :memory:
+.mode list
+CREATE TABLE bounds(bound TEXT COLLATE NOCASE, tie TEXT);
+INSERT INTO bounds VALUES('bbb', 'body');
+CREATE TABLE ordinary(term TEXT, col TEXT);
+INSERT INTO ordinary VALUES
+  ('BBB', 'body'), ('bbb', 'body'), ('ccc', 'body');
+CREATE VIRTUAL TABLE docs
+USING fts5(body, tokenize='trigram case_sensitive 1');
+INSERT INTO docs(body) VALUES('BBB'),('bbb'),('ccc');
+CREATE VIRTUAL TABLE vocab USING fts5vocab(docs, 'col');
+
+.testcase 3700
+SELECT o.term FROM bounds AS b CROSS JOIN ordinary AS o
+ WHERE (b.bound, b.tie) <= (o.term, o.col COLLATE BINARY)
+ ORDER BY o.term;
+.check <<END
+BBB
+bbb
+ccc
+END
+
+.testcase 3710
+SELECT v.term FROM bounds AS b CROSS JOIN vocab AS v
+ WHERE b.bound <= v.term
+ ORDER BY v.term;
+.check <<END
+BBB
+bbb
+ccc
+END
+
+.testcase 3720
+SELECT v.term FROM bounds AS b CROSS JOIN vocab AS v
+ WHERE (b.bound, b.tie) <= (v.term, v.col COLLATE BINARY)
+ ORDER BY v.term;
+.check <<END
+BBB
+bbb
+ccc
+END
+
+# A vector IN constraint passed to a virtual table has no right-hand
+# vector. sqlite3_vtab_collation() must not try to read one.
+#
+.testcase 3730
+SELECT term FROM vocab WHERE (term, col) IN (SELECT 'bbb', 'body');
+.check bbb
+
+.testcase 3740
+SELECT term FROM vocab WHERE (col, term) IN (SELECT 'body', 'BBB');
+.check BBB
+.endif /* capable('fts5') */
