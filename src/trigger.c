@@ -1404,7 +1404,7 @@ static TriggerPrg *getRowTrigger(
     ** the VM might hit the trigger nesting limit. */
     Parse *p;
     for(p=pParse; p; p=p->pOuterParse){
-      if( pTrigger==p->pTrigCoded ) sqlite3MayAbort(pParse);
+      if( pTrigger==p->pTrigCoded ){ sqlite3MayAbort(pParse); }
     }
   }
 

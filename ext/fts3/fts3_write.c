@@ -3346,6 +3346,11 @@ static int fts3SegmentMerge(
 int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
   int rc = SQLITE_OK;
   int i;
+  u8 bIgnoreSavepoint = p->bIgnoreSavepoint;
+
+  /* The statements run by the flush must not cause xSavepoint() to start
+  ** a second, nested flush. */
+  p->bIgnoreSavepoint = 1;
         
   for(i=0; rc==SQLITE_OK && i<p->nIndex; i++){
     rc = fts3SegmentMerge(p, p->iPrevLangid, i, FTS3_SEGCURSOR_PENDING);
@@ -3373,6 +3378,7 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
     }
   }
 
+  p->bIgnoreSavepoint = bIgnoreSavepoint;
   if( rc==SQLITE_OK ){
     sqlite3Fts3PendingTermsClear(p);
   }

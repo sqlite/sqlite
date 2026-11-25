@@ -176,8 +176,10 @@ void sqlite3FinishCoding(Parse *pParse){
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) pParse->rc = SQLITE_ERROR;
   }
+#ifdef SQLITE_UNSOUND_OMITSTMTJRNL_OPT
   assert( !pParse->isMultiWrite
        || sqlite3VdbeAssertMayAbort(v, pParse->mayAbort));
+#endif
   if( v ){
     if( pParse->bReturning ){
       Returning *pReturning;
@@ -226,8 +228,12 @@ void sqlite3FinishCoding(Parse *pParse){
         pSchema->iGeneration               /* P4 */
       );
       if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
+#ifndef SQLITE_UNSOUND_OMITSTMTJRNL_OPT
+      VdbeComment((v, "usesStmtJournal=%d", pParse->isMultiWrite));
+#else
       VdbeComment((v,
             "usesStmtJournal=%d", pParse->mayAbort && pParse->isMultiWrite));
+#endif
     }while( ++iDb<db->nDb );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     for(i=0; i<pParse->nVtabLock; i++){
@@ -5564,6 +5570,7 @@ void sqlite3MultiWrite(Parse *pParse){
   pToplevel->isMultiWrite = 1;
 }
 
+#ifdef SQLITE_UNSOUND_OMITSTMTJRNL_OPT
 /*
 ** The code generator calls this routine if is discovers that it is
 ** possible to abort a statement prior to completion.  In order to
@@ -5579,11 +5586,25 @@ void sqlite3MultiWrite(Parse *pParse){
 ** particular, it prevents us from writing an effective
 ** implementation of sqlite3AssertMayAbort()) and so we have chosen
 ** to take the safe route and skip the optimization.
+**
+** UPDATE: 2026-11-25
+** The optimization enabled here (since 2009) is unsound.  Almost
+** any prepared statement might abort on SQLITE_TOOBIG, and if it does
+** the statement journal is required.  So we should always use a statement
+** journal on a multi-row write.  This is a small performance penalty that is
+** more than compensated for by other unrelated optimizations added during
+** the same release (3.55.0).  However, the performance penalty might be
+** larger in some workloads that we do not foresee.  So for now there is
+** also a compile-time option "-DSQLITE_UNSOUND_OMITSTMTJRNL_OPT" that
+** restores the unsound omit-statement-journal optimization.  The use of
+** this compile-time option is discouraged.   It will likely be removed
+** in the future.
 */
 void sqlite3MayAbort(Parse *pParse){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
   pToplevel->mayAbort = 1;
 }
+#endif /* SQLITE_UNSOUND_OMITSTMTJRNL_OPT */
 
 /*
 ** Code an OP_Halt that causes the vdbe to return an SQLITE_CONSTRAINT

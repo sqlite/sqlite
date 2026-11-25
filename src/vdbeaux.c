@@ -679,6 +679,7 @@ void sqlite3VdbeReusable(Vdbe *p){
   }
 }
 
+#ifdef SQLITE_UNSOUND_OMITSTMTJRNL_OPT
 #ifdef SQLITE_DEBUG /* sqlite3AssertMayAbort() logic */
 
 /*
@@ -851,6 +852,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   return !mayAbort;                                             /* 5. */
 }
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
+#endif /* SQLITE_UNSOUND_OMITSTMTJRNL_OPT */
 
 #ifdef SQLITE_DEBUG
 /*
@@ -2730,7 +2732,11 @@ void sqlite3VdbeMakeReady(
   assert( EIGHT_BYTE_ALIGNMENT(&x.pSpace[x.nFree]) );
 
   resolveP2Values(p, &nArg);
+#ifdef SQLITE_UNSOUND_OMITSTMTJRNL_OPT
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
+#else
+  p->usesStmtJournal = pParse->isMultiWrite;
+#endif
   if( pParse->explain ){
     if( nMem<10 ) nMem = 10;
     p->explain = pParse->explain;

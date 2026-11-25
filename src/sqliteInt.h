@@ -3955,7 +3955,9 @@ struct Parse {
                        ** and ALTER TABLE ADD COLUMN. */
 #endif
   bft disableTriggers:1; /* True to disable triggers */
+#ifdef SQLITE_UNSOUND_OMITSTMTJRNL_OPT
   bft mayAbort :1;     /* True if statement may throw an ABORT exception */
+#endif
   bft hasCompound :1;  /* Need to invoke convertCompoundSelectToSubquery() */
   bft bReturning :1;   /* Coding a RETURNING trigger */
   bft bHasExists :1;   /* Has a correlated "EXISTS (SELECT ....)" expression */
@@ -5354,7 +5356,11 @@ void sqlite3CompleteInsertion(Parse*,Table*,int,int,int,int*,int,int,int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, u8, int, u8*, int*, int*);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 void sqlite3MultiWrite(Parse*);
-void sqlite3MayAbort(Parse*);
+#ifdef SQLITE_UNSOUND_OMITSTMTJRNL_OPT
+  void sqlite3MayAbort(Parse*);
+#else
+# define sqlite3MayAbort(X) /*no-op*/
+#endif  
 void sqlite3HaltConstraint(Parse*, int, int, char*, i8, u8);
 void sqlite3UniqueConstraint(Parse*, int, Index*);
 void sqlite3RowidConstraint(Parse*, int, Table*);

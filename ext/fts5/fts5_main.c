@@ -145,6 +145,7 @@ struct Fts5FullTable {
   Fts5Global *pGlobal;            /* Global (connection wide) data */
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
   int iSavepoint;                 /* Successful xSavepoint()+1 */
+  int bIgnoreSavepoint;           /* True to ignore savepoint callbacks */
 
 #ifdef SQLITE_DEBUG
   struct Fts5TransactionState ts;
@@ -1940,7 +1941,7 @@ static int fts5ContentlessUpdate(
 **   3. Values for each of the nCol matchable columns.
 **   4. Values for the two hidden columns (<tablename> and "rank").
 */
-static int fts5UpdateMethod(
+static int fts5UpdateImpl(
   sqlite3_vtab *pVtab,            /* Virtual table handle */
   int nArg,                       /* Size of argument array */
   sqlite3_value **apVal,          /* Array of arguments */
@@ -2114,6 +2115,27 @@ static int fts5UpdateMethod(
 }
 
 /*
+** Implementation of xUpdate().  The SQL statements that this runs on the
+** shadow tables may open statement journals, which invoke the xSavepoint()
+** method of this table.  Ignore those calls.  They must not flush the
+** pending data in the middle of an index operation.
+*/
+static int fts5UpdateMethod(
+  sqlite3_vtab *pVtab,            /* Virtual table handle */
+  int nArg,                       /* Size of argument array */
+  sqlite3_value **apVal,          /* Array of arguments */
+  sqlite_int64 *pRowid            /* OUT: The affected (or effected) rowid */
+){
+  Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
+  int bSave = pTab->bIgnoreSavepoint;
+  int rc;
+  pTab->bIgnoreSavepoint = 1;
+  rc = fts5UpdateImpl(pVtab, nArg, apVal, pRowid);
+  pTab->bIgnoreSavepoint = bSave;
+  return rc;
+}
+
+/*
 ** Implementation of xSync() method. 
 */
 static int fts5SyncMethod(sqlite3_vtab *pVtab){
@@ -2121,7 +2143,9 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_SYNC, 0);
   pTab->p.pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
+  pTab->bIgnoreSavepoint = 1;
   rc = sqlite3Fts5FlushToDisk(&pTab->p);
+  pTab->bIgnoreSavepoint = 0;
   pTab->p.pConfig->pzErrmsg = 0;
   return rc;
 }
@@ -3154,7 +3178,9 @@ static int fts5RenameMethod(
 ){
   int rc;
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
+  pTab->bIgnoreSavepoint = 1;
   rc = sqlite3Fts5StorageRename(pTab->pStorage, zName);
+  pTab->bIgnoreSavepoint = 0;
   return rc;
 }
 
@@ -3172,8 +3198,11 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   int rc = SQLITE_OK;
 
+  if( pTab->bIgnoreSavepoint ) return SQLITE_OK;
   fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
+  pTab->bIgnoreSavepoint = 1;
   rc = sqlite3Fts5FlushToDisk((Fts5Table*)pVtab);
+  pTab->bIgnoreSavepoint = 0;
   if( rc==SQLITE_OK ){
     pTab->iSavepoint = iSavepoint+1;
   }
@@ -3188,9 +3217,12 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   int rc = SQLITE_OK;
+  if( pTab->bIgnoreSavepoint ) return SQLITE_OK;
   fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
   if( (iSavepoint+1)<pTab->iSavepoint ){
+    pTab->bIgnoreSavepoint = 1;
     rc = sqlite3Fts5FlushToDisk(&pTab->p);
+    pTab->bIgnoreSavepoint = 0;
     if( rc==SQLITE_OK ){
       pTab->iSavepoint = iSavepoint;
     }
@@ -3206,6 +3238,7 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   int rc = SQLITE_OK;
+  if( pTab->bIgnoreSavepoint ) return SQLITE_OK;
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
   fts5TripCursors(pTab);
   if( (iSavepoint+1)<=pTab->iSavepoint ){
