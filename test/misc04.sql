@@ -548,3 +548,46 @@ CREATE TRIGGER agr AFTER DELETE ON ag BEGIN
   UPDATE bg SET y=je.value FROM ag AS q, json_each(q.xx) AS je;
 END
 EOT
+
+# Bugs f0f9b448c47ae1b0 and b262313c7e78437a: A datatype error on a STRICT
+# table in the middle of a multi-row INSERT or UPDATE inside a transaction
+# rolls back the statement, but not the entire transaction.
+#
+.open :memory:
+.mode --reset list
+CREATE TABLE s1(a INTEGER) STRICT;
+CREATE TABLE s2(b);
+INSERT INTO s2 VALUES(1), ('x');
+BEGIN;
+.testcase 1000
+INSERT INTO s1 SELECT b FROM s2 ORDER BY rowid;
+.check --glob '*cannot store TEXT value in INTEGER column s1.a*'
+.testcase 1010
+SELECT count(*) FROM s1;
+.check 0
+COMMIT;
+CREATE TABLE s3(c INTEGER) STRICT;
+INSERT INTO s3 VALUES(1), (2);
+BEGIN;
+.testcase 1020
+UPDATE s3 SET c = iif(c=1, 10, 'x');
+.check --glob '*cannot store TEXT value in INTEGER column s3.c*'
+.testcase 1030
+SELECT group_concat(c) FROM s3;
+.check 1,2
+COMMIT;
+
+# A multi-row write to one table that reads a virtual generated column of
+# a STRICT table needs a statement journal, since the type check of the
+# column can raise an error.  This case checks the debugging assert() that
+# compares Parse.mayAbort against the generated code.
+#
+CREATE TABLE s4(a INTEGER, b INTEGER AS (a+1) VIRTUAL) STRICT;
+INSERT INTO s4(a) VALUES(1),(3);
+CREATE TABLE s5(x);
+BEGIN;
+INSERT INTO s5 SELECT b FROM s4 ORDER BY a;
+.testcase 1040
+SELECT group_concat(x) FROM s5;
+.check 2,4
+COMMIT;

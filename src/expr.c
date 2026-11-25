@@ -4679,6 +4679,7 @@ void sqlite3ExprCodeGeneratedColumn(
    && (pTab->tabFlags & TF_Strict)!=0
   ){
     int p3 = 2+(int)(pCol - pTab->aCol);
+    sqlite3MayAbort(pParse);
     sqlite3VdbeAddOp4(v, OP_TypeCheck, regOut, 1, p3, (char*)pTab, P4_TABLE);
   }else if( pCol->affinity>=SQLITE_AFF_TEXT ){
     sqlite3VdbeAddOp4(v, OP_Affinity, regOut, 1, 0, &pCol->affinity, 1);

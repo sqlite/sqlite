@@ -249,6 +249,24 @@ typedef struct Fts3SegReader Fts3SegReader;
 typedef struct Fts3MultiSegReader Fts3MultiSegReader;
 
 typedef struct MatchinfoBuffer MatchinfoBuffer;
+typedef struct Fts3HashWrapper Fts3HashWrapper;
+
+/*
+** An instance of this structure is allocated for each database handle
+** that the fts3 extension is registered with. It is passed as the context
+** pointer to the fts3, fts4, fts4aux and fts3tokenize modules, and to
+** the fts3_tokenizer() function.
+**
+** pTabList is a linked list (through Fts3Table.pNextTab) of all fts3/4
+** virtual table objects currently connected via this database handle.
+** Newer objects are inserted at the head of the list. It is used by
+** fts4aux to find the options (e.g. "order=DESC") of the table it reads.
+*/
+struct Fts3HashWrapper {
+  Fts3Hash hash;                  /* Hash table of tokenizers */
+  int nRef;                       /* Number of pointers to this object */
+  Fts3Table *pTabList;            /* List of connected fts3/4 tables */
+};
 
 /*
 ** A connection to a fulltext index is an instance of the following
@@ -271,6 +289,8 @@ struct Fts3Table {
   int nAutoincrmerge;             /* Value configured by 'automerge' */
   u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
   int bLock;                      /* Used to prevent recursive content= tbls */
+  Fts3HashWrapper *pWrapper;      /* Wrapper this table is linked into */
+  Fts3Table *pNextTab;            /* Next in Fts3HashWrapper.pTabList */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
@@ -670,7 +690,7 @@ int sqlite3Fts3OpenTokenizer(sqlite3_tokenizer *, int, const char *, int,
 );
 
 /* fts3_aux.c */
-int sqlite3Fts3InitAux(sqlite3 *db);
+int sqlite3Fts3InitAux(sqlite3 *db, Fts3HashWrapper*, void(*xDestroy)(void*));
 
 void sqlite3Fts3EvalPhraseCleanup(Fts3Phrase *);
 
