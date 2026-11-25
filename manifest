@@ -1,5 +1,5 @@
-C Reject\sALTER\sTABLE\sRENAME\sCOLUMN\srequests\sif\sthe\scolumn\sparticipates\sin\sa\nUSING\sclause\sor\sa\sNATURAL\sJOIN,\sbecause\sthe\srename\sprobably\scannot\sbe\nsuccessful\sin\sthat\scase.
-D 2026-11-25T10:40:41.234
+C Simplify\stest/misc02.sql\sby\somitting\sunnecessary\sheredoc\sarguments\sto\s.check
+D 2026-11-25T10:55:03.219
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1533,7 +1533,7 @@ F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e36c87
 F test/misc01.sql fd0012dfad0385437c8b979a4723a8525eb1cc82cdf3b77a0d6edcfd2b9b2513
-F test/misc02.sql 77aa1d3134ba47153e4e483fde348fa2eafcf25504930c5b87320e755e423283
+F test/misc02.sql ce91fd652d847fb792c61611ffb23f2dcea386ff550b77fe45d421f64049c547
 F test/misc03.sql 913d7ed1773d2452f2154e1633f05672d3561f5d35d42b27cd0710e934d70cd6
 F test/misc04.sql 8575992e5e570820dd9c89063fb829bb75b1ee92be1fa65bc9add3dde2cabe93
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
@@ -2322,8 +2322,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0aa473411ce6bdcafb7949e065713d6fe2e7a412fcb77fba2c550d491035ae5f
-R ad7402bdd9c5465fe4c97409971d957d
+P fe567540ebe8344ae001e9d713a6e47c7816c663ecca337dda1e891b807ec699
+R 598a48518fdbdb6814ac608e9ff92e87
 U drh
-Z 8cc97df20e6d9565adb46c4d6fd3e865
+Z 6a847fd785d574cbda3cd6aed9a1df43
 # Remove this line to create a well-formed Fossil manifest.

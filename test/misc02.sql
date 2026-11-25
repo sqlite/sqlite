@@ -1801,10 +1801,7 @@ INSERT INTO ts1 VALUES(zeroblob(3000));
 .testcase 3600
 SELECT name, pageno, pgoffset, pgsize FROM dbstat
  WHERE schema='temp' AND pageno<=2 ORDER BY pageno;
-.check <<END
-sqlite_schema|1|0|1024
-ts1|2|1024|1024
-END
+.check sqlite_schema|1|0|1024 ts1|2|1024|1024
 
 -- This includes the overflow pages.
 .testcase 3610
@@ -1819,10 +1816,7 @@ SELECT count(*) FROM dbstat
 .testcase 3630
 SELECT name, pgsize FROM dbstat WHERE schema='temp' AND aggregate=1
  ORDER BY name;
-.check <<END
-sqlite_schema|1024
-ts1|3072
-END
+.check sqlite_schema|1024 ts1|3072 
 
 -- A dbstat table made on TEMP can still read MAIN correctly.
 CREATE VIRTUAL TABLE st USING dbstat(temp);
@@ -1862,31 +1856,19 @@ CREATE VIRTUAL TABLE vocab USING fts5vocab(docs, 'col');
 SELECT o.term FROM bounds AS b CROSS JOIN ordinary AS o
  WHERE (b.bound, b.tie) <= (o.term, o.col COLLATE BINARY)
  ORDER BY o.term;
-.check <<END
-BBB
-bbb
-ccc
-END
+.check BBB bbb ccc
 
 .testcase 3710
 SELECT v.term FROM bounds AS b CROSS JOIN vocab AS v
  WHERE b.bound <= v.term
  ORDER BY v.term;
-.check <<END
-BBB
-bbb
-ccc
-END
+.check BBB bbb ccc
 
 .testcase 3720
 SELECT v.term FROM bounds AS b CROSS JOIN vocab AS v
  WHERE (b.bound, b.tie) <= (v.term, v.col COLLATE BINARY)
  ORDER BY v.term;
-.check <<END
-BBB
-bbb
-ccc
-END
+.check BBB bbb ccc
 
 # A vector IN constraint passed to a virtual table has no right-hand
 # vector. sqlite3_vtab_collation() must not try to read one.
