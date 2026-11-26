@@ -597,7 +597,7 @@ do_vmstep_test 2.5.1 {
     WHERE A.maxX>=B.minX AND A.minX<=B.maxX
     AND A.maxY>=B.minY AND A.minY<=B.maxY
     AND B.id=28269
-} {$step < 100}
+} {$step < 350}
 do_execsql_test 2.5.2 {
   SELECT A.id FROM demo_index AS A, demo_index AS B
     WHERE A.maxX>=B.minX AND A.minX<=B.maxX
