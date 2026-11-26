@@ -1294,3 +1294,21 @@ END
 .testcase 1820
 SELECT X'4142' AS raw;
 .check "INSERT INTO tab VALUES(x'4142');"
+
+# 2026-11-25 - Improved error message for --blob-quote
+# and --border
+#
+.testcase 1900
+.mode html --blob-quote xyzzy
+.check <<END
+Error: .mode html --blob-quote xyzzy
+Error:                         ^--- unknown blob format
+Error: should be auto, text, sql, hex, tcl, json, or size
+END
+.testcase 1910
+.mode box --border xyzzy
+.check <<END
+Error: .mode box --border xyzzy
+Error:                    ^--- unknown border
+Error: should be auto, off, or on
+END
