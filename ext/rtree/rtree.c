@@ -2149,9 +2149,9 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       switch( p->op ){
         case SQLITE_INDEX_CONSTRAINT_EQ:    op = RTREE_EQ;    doOmit = 0; break;
         case SQLITE_INDEX_CONSTRAINT_GT:    op = RTREE_GT;    doOmit = 0; break;
-        case SQLITE_INDEX_CONSTRAINT_LE:    op = RTREE_LE;    break;
+        case SQLITE_INDEX_CONSTRAINT_LE:    op = RTREE_LE;    doOmit = 0; break;
         case SQLITE_INDEX_CONSTRAINT_LT:    op = RTREE_LT;    doOmit = 0; break;
-        case SQLITE_INDEX_CONSTRAINT_GE:    op = RTREE_GE;    break;
+        case SQLITE_INDEX_CONSTRAINT_GE:    op = RTREE_GE;    doOmit = 0; break;
         case SQLITE_INDEX_CONSTRAINT_MATCH: op = RTREE_MATCH; break;
         default:                            op = 0;           break;
       }
