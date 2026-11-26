@@ -894,3 +894,33 @@ SELECT p4 FROM bytecode('SELECT count(*) FROM p2 CROSS JOIN w1 ON p2.c=w1.a')
  WHERE opcode='OpenAutoindex';
 .check 'k(2,B,)'
 .endif
+
+# Bug sqlite.org/bugs/forumpost/06d73d7f72
+# With secure_delete=ON, content of deleted rows must not remain on any
+# database page.  rebuildPage() (called from balance_nonroot()) was leaving
+# stale cell content in the unallocated gap of the rebuilt page.
+#
+.open :memory:
+PRAGMA page_size=4096;
+PRAGMA secure_delete=ON;
+CREATE TABLE t(id INTEGER PRIMARY KEY, s TEXT);
+WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<14)
+INSERT INTO t SELECT 1000 + x*10, printf('%0360d', 0) FROM c;
+DELETE FROM t WHERE id < 1100;
+WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<24)
+INSERT INTO t
+SELECT CASE WHEN x%2=1 THEN ((x+1)/2)*10 ELSE (13 + x/2)*10 END,
+       'TOPSECRET_REBUILD_LEAK_' || printf('%093d', 0) || '_END'
+FROM c;
+INSERT INTO t VALUES(130, 'TOPSECRET_REBUILD_LEAK_' || printf('%093d', 0) || '_END');
+INSERT INTO t VALUES(5, replace(hex(zeroblob(800)), '00', 'BB'));
+WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<16)
+INSERT INTO t SELECT 2000 + x*10, printf('%0360d', 0) FROM c;
+DELETE FROM t WHERE id BETWEEN 10 AND 999;
+.testcase 1500
+SELECT count(*) FROM t WHERE s LIKE '%TOPSECRET%';
+.check 0
+.testcase 1510
+SELECT count(*) FROM sqlite_dbpage
+ WHERE instr(data, CAST('TOPSECRET' AS BLOB))>0;
+.check 0

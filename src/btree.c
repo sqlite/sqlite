@@ -7746,6 +7746,11 @@ static int rebuildPage(
   put2byte(&aData[hdr+3], pPg->nCell);
   put2byte(&aData[hdr+5], pData - aData);
   aData[hdr+7] = 0x00;
+  if( pPg->pBt->btsFlags & BTS_FAST_SECURE ){
+    /* Overwrite stale content in the unallocated gap with zeros when
+    ** the secure_delete option is enabled */
+    memset(pCellptr, 0, pData - pCellptr);
+  }
   return SQLITE_OK;
 }
 
