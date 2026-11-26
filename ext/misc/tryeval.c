@@ -75,7 +75,7 @@ static void tryEvalFunc(
     }
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
     if( rc==SQLITE_OK ){
-      while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
         if( sqlite3_column_type(pStmt,0)==SQLITE_NULL ) continue;
         sqlite3_result_value(context, sqlite3_column_value(pStmt,0));
         bDone = 1;
