@@ -838,3 +838,59 @@ SELECT zeroblob(40) FROM t1;
 COMMIT;
 SELECT count(*) FROM t1;
 .check 2
+
+# Bug 2026-11-26  sqlite.org/bugs/info/530c18f4029ff03f
+# An automatic index on a WITHOUT ROWID table must keep rows distinct that
+# the PRIMARY KEY distinguishes.  The PRIMARY KEY here uses column "a" twice,
+# with different collations.
+#
+.open :memory:
+.mode --reset list
+CREATE TABLE p(c TEXT COLLATE NOCASE);
+INSERT INTO p VALUES('one');
+CREATE TABLE w1(
+  x INTEGER, a TEXT, v,
+  PRIMARY KEY(x, a COLLATE NOCASE, a COLLATE BINARY)
+) WITHOUT ROWID;
+INSERT INTO w1 VALUES(1,'one','lower'),(1,'ONE','upper');
+.testcase 1400
+SELECT count(*) FROM p CROSS JOIN w1 ON p.c=w1.a;
+.check 2
+.testcase 1401
+PRAGMA automatic_index=OFF;
+SELECT count(*) FROM p CROSS JOIN w1 ON p.c=w1.a;
+PRAGMA automatic_index=ON;
+.check 2
+.if capable('bytecode')
+# Column "a" is repeated in the PRIMARY KEY with a different collation, so
+# it must be added to the automatic index a second time.
+.testcase 1410
+SELECT p4 FROM bytecode('SELECT count(*) FROM p CROSS JOIN w1 ON p.c=w1.a')
+ WHERE opcode='OpenAutoindex';
+.check 'k(3,NOCASE,,)'
+# The PRIMARY KEY uses the same collation for "a" as the join.
+CREATE TABLE w2(
+  x INTEGER, a TEXT, v, PRIMARY KEY(x, a COLLATE NOCASE)
+) WITHOUT ROWID;
+.testcase 1411
+SELECT p4 FROM bytecode('SELECT count(*) FROM p CROSS JOIN w2 ON p.c=w2.a')
+ WHERE opcode='OpenAutoindex';
+.check 'k(2,NOCASE,)'
+# Every appearance of "a" in the PRIMARY KEY uses the join collation.  The
+# third key column is "v".
+CREATE TABLE w3(
+  x INTEGER, a TEXT, v,
+  PRIMARY KEY(x, a COLLATE NOCASE, v, a COLLATE NOCASE)
+) WITHOUT ROWID;
+.testcase 1412
+SELECT p4 FROM bytecode('SELECT count(*) FROM p CROSS JOIN w3 ON p.c=w3.a')
+ WHERE opcode='OpenAutoindex';
+.check 'k(3,NOCASE,,)'
+# A BINARY join never needs the extra column.
+CREATE TABLE p2(c TEXT);
+INSERT INTO p2 VALUES('one');
+.testcase 1413
+SELECT p4 FROM bytecode('SELECT count(*) FROM p2 CROSS JOIN w1 ON p2.c=w1.a')
+ WHERE opcode='OpenAutoindex';
+.check 'k(2,B,)'
+.endif

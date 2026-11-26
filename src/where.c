@@ -1143,13 +1143,21 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
         ){
           Index *pPk = sqlite3PrimaryKeyIndex(pTable);
           CollSeq *pX = sqlite3ExprCompareCollSeq(pParse, pExpr);
-          int iPk = sqlite3TableColumnToIndex(pPk, iCol);
-          assert( iPk>=0 && iPk<pPk->nKeyCol );
-          if( sqlite3IsBinary(pX)
-           || sqlite3StrICmp(pPk->azColl[iPk], pX->zName)==0
-          ){
-            pkCols |= cMask;
+          int bOk = 1;
+          if( !sqlite3IsBinary(pX) ){
+            /* A PK column might appear more than once, with different
+            ** collations.  Every appearance must use the same collation. */
+            int iPk;
+            for(iPk=0; iPk<pPk->nKeyCol; iPk++){
+              if( pPk->aiColumn[iPk]==iCol
+               && sqlite3StrICmp(pPk->azColl[iPk], pX->zName)!=0
+              ){
+                bOk = 0;
+                break;
+              }
+            }
           }
+          if( bOk ) pkCols |= cMask;
         }
       }
     }
