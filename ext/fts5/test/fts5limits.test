@@ -108,8 +108,8 @@ do_execsql_test 2.2.3 {
 
 # A %_docsize record that is too large. The %_docsize record is written as
 # part of the INSERT statement, but the slightly larger averages record is
-# not written until the transaction is committed. So raising the limit before
-# the COMMIT means that this tests the %_docsize write only.
+# not written until the transaction is committed. The SQLITE_TOOBIG error
+# rolls back the transaction, so the averages record is never written.
 #
 reset_db
 do_execsql_test 2.3.0 "
@@ -121,8 +121,10 @@ do_catchsql_test 2.3.1 "
   INSERT INTO ft(rowid, $cols) VALUES(1, $vals);
 " $toobig
 sqlite3_limit db SQLITE_LIMIT_LENGTH $nLimit
-do_execsql_test 2.3.2 {
+do_catchsql_test 2.3.2 {
   COMMIT;
+} {1 {cannot commit - no transaction is active}}
+do_execsql_test 2.3.2b {
   SELECT count(*) FROM ft_docsize WHERE sz IS NULL;
 } {0}
 do_execsql_test 2.3.3 {

@@ -743,3 +743,98 @@ PRAGMA integrity_check;
 .open :memory:
 .system rm -f misc004-pj.db misc004-pj.db-journal misc004-pj.saved
 .endif
+
+# Bug 8abc8ee9f75e296a: An SQLITE_TOOBIG error in the middle of a write
+# that has no statement transaction rolls back the entire transaction.
+# If the statement does have a statement transaction, or if it is read-only,
+# then the transaction survives.
+#
+.open :memory:
+.mode --reset list
+.testcase 1300
+CREATE TABLE t1(a);
+CREATE TABLE t2(b);
+INSERT INTO t2 VALUES('x'), ('abcdefghijklmnopqrst');
+CREATE TABLE t3(c);
+INSERT INTO t3 VALUES('x'), ('abcdefghijklmnopqrst');
+.check
+.testcase 1301
+BEGIN;
+INSERT INTO t1 VALUES('first');
+.limit length 30
+INSERT INTO t1 SELECT b||b FROM t2 ORDER BY rowid;
+.limit length 1000
+.check --glob string or blob too big
+.testcase 1310
+COMMIT;
+.check --glob cannot commit - no transaction is active
+.testcase 1320
+SELECT count(*) FROM t1;
+.check 0
+.testcase 1330
+BEGIN;
+.limit length 30
+UPDATE t3 SET c = c||c;
+.limit length 1000
+.check --glob string or blob too big
+.testcase 1340
+COMMIT;
+.check --glob cannot commit - no transaction is active
+.testcase 1350
+SELECT c FROM t3 ORDER BY rowid;
+.check x abcdefghijklmnopqrst
+
+# The following has a statement transaction (zeroblob() may abort) so only
+# the statement is rolled back.
+#
+.testcase 1360
+BEGIN;
+INSERT INTO t1 VALUES('first');
+.limit length 30
+INSERT INTO t1 SELECT CASE WHEN b='x' THEN 'x' ELSE zeroblob(40) END FROM t2
+  ORDER BY rowid;
+.limit length 1000
+.check --glob string or blob too big
+.testcase 1370
+SELECT a FROM t1;
+.check first
+.testcase 1380
+COMMIT;
+SELECT count(*) FROM t1;
+.check 1
+
+# A single-row write can fail after some of its changes are made.  Here the
+# key for the second index is too big, after the first index was changed.
+#
+.testcase 1390
+CREATE TABLE t4(a);
+CREATE INDEX t4x ON t4(a||a);
+CREATE INDEX t4a ON t4(a);
+INSERT INTO t4 VALUES('x'), ('abcdefghijklmnopqrst');
+BEGIN;
+INSERT INTO t1 VALUES('second');
+.limit length 30
+DELETE FROM t4 WHERE rowid=2;
+.limit length 1000
+.check --glob string or blob too big
+.testcase 1391
+COMMIT;
+.check --glob cannot commit - no transaction is active
+.testcase 1392
+SELECT count(*) FROM t1;
+PRAGMA integrity_check;
+.check 1 ok
+
+# A read-only statement does not roll back the transaction.
+#
+.testcase 1395
+BEGIN;
+INSERT INTO t1 VALUES('third');
+.limit length 30
+SELECT zeroblob(40) FROM t1;
+.limit length 1000
+.check --glob '*string or blob too big*'
+.testcase 1396
+COMMIT;
+SELECT count(*) FROM t1;
+.check 2

@@ -1,5 +1,5 @@
-C Add\snecessary\s".if\scapable()"\slines\sto\stest/misc004.sql.
-D 2026-11-26T13:39:23.510
+C If\san\sSQLITE_TOOBIG\serror\soccurs\son\sa\sstatement\sthat\sdoes\snot\shave\sa\nstatement\stransaction,\sthen\srollback\sto\sthe\souter\stransaction.\n[bugs:/info/2026-11-11T19:57:45Z|Bug\s2026-11-11T19:57:45Z]
+D 2026-11-26T15:26:31.234
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -212,7 +212,7 @@ F ext/fts5/test/fts5interrupt.test af7834ac6c2e71c05aea42d92f272eef3655e89b7a14a
 F ext/fts5/test/fts5join.test 3791e30d034050281191cd8141d969849f6c060135f1e3938fea3eea955f9da9
 F ext/fts5/test/fts5lastrowid.test f36298a1fb9f988bde060a274a7ce638faa9c38a31400f8d2d27ea9373e0c4a1
 F ext/fts5/test/fts5leftjoin.test 1c14b51f4d1344a89e488160882f05a2246dd7e70c5cf077c8fb473e03c66338
-F ext/fts5/test/fts5limits.test c45d4f8996f30d212879c8312ff249c761c5acf80c4c71b9aad3e5e0c9c0bcde
+F ext/fts5/test/fts5limits.test 13a9d93faf38e438bf56b82488d05c1bbd3100496f06ffb4eff57f8aec8641ce
 F ext/fts5/test/fts5locale.test fc8faa01e566bcfb3810bcd3c7b8b94c17f0d088cb34ac0f338761d8b5a573d8
 F ext/fts5/test/fts5matchinfo.test bc9e74157773db7f00aec1e85587f1145956ebdf1672c136f0f04323b2752aa0
 F ext/fts5/test/fts5merge.test 088133e135ef7dcd6701753c95b8b10be3c52fa1a99507933e00756d6437489e
@@ -881,7 +881,7 @@ F src/vdbe.c ba479f7bcd9aae2de53641aad3c771b89a1737709fcf4f6dec4a2305e4398343
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 4078674f4d6ea69a81dc9887546322e220701eee927625f89b14fd7a7c809614
 F src/vdbeapi.c 1602b12cae241e086779290985c67f0c843a534cc75bb9eceb4ffa6afd850516
-F src/vdbeaux.c 13840540dff6b13b7dbd87bed9524e3f249c9786bb46773707a620d861ea6024
+F src/vdbeaux.c 09653d34ff66ec55abc76b09dd984fb48a785bbf90e75f880a1a425267651f75
 F src/vdbeblob.c 7df6c53c2490ab255659e7a2798b714a9e00d128e7124e23135a0a398e3bdef8
 F src/vdbemem.c cae97cc16ee3db30f6a5309df9d39ca85ea2e1a5a6bd811e5c49fdb42b59e4b0
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
@@ -1535,7 +1535,7 @@ F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e3
 F test/misc001.sql fd0012dfad0385437c8b979a4723a8525eb1cc82cdf3b77a0d6edcfd2b9b2513
 F test/misc002.sql c9bfcd7282e9c2888bf498a755bf9b7c165f730c9b56bbb489dd512ab088f720
 F test/misc003.sql 913d7ed1773d2452f2154e1633f05672d3561f5d35d42b27cd0710e934d70cd6
-F test/misc004.sql a82c74bdbbc636306f5696dfd2711c488c29198795dfe29d0cf83d30a32ced44
+F test/misc004.sql 7acf1690c6b9c3e61d7a1dd3b7f57f359dbabfe9adb878cfb0f5e2dd6ed69e35
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2322,8 +2322,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bf48cfcaa4be4055cb62b7533898392b3d7171b2b89f6ca51c8e06e4fcf99511
-R 3645248700ecd72255723cf5fc346496
+P a97d48b21e48f3422aad013154a551da7f8cdc64656713faf943187238062f5c be7edbd47349f4f923e32267907f9c47322a007a2c21b529ac8ef2c35e335b2b
+R 49fb55867fa7cef56cfdb2cb59953db0
+T +closed be7edbd47349f4f923e32267907f9c47322a007a2c21b529ac8ef2c35e335b2b
 U drh
-Z 3e2cb7e7eabd5bb9c500d7e1a49eba81
+Z e3e117ae38bdbbcdbd9a3fa94f0cc4c8
 # Remove this line to create a well-formed Fossil manifest.

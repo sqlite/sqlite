@@ -3388,6 +3388,11 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** Then the internal cache might have been left in an inconsistent
   ** state.  We need to rollback the statement transaction, if there is
   ** one, or the complete transaction if there is no statement transaction.
+  **
+  ** An SQLITE_TOOBIG error is also treated as a special error.  It can
+  ** occur after some changes have already been made by the statement, for
+  ** example when the key for a second index is too big.  So roll back the
+  ** statement transaction if there is one, or else the complete transaction.
   */
 
   assert( p->eVdbeState==VDBE_RUN_STATE );
@@ -3413,15 +3418,16 @@ int sqlite3VdbeHalt(Vdbe *p){
       isSpecialError = mrc==SQLITE_NOMEM
                     || mrc==SQLITE_IOERR
                     || mrc==SQLITE_INTERRUPT
-                    || mrc==SQLITE_FULL;
+                    || mrc==SQLITE_FULL
+                    || mrc==SQLITE_TOOBIG;
     }else{
       mrc = isSpecialError = 0;
     }
     if( isSpecialError ){
-      /* If the query was read-only and the error code is SQLITE_INTERRUPT,
-      ** no rollback is necessary. Otherwise, at least a savepoint
-      ** transaction must be rolled back to restore the database to a
-      ** consistent state.
+      /* If the query was read-only and the error code is SQLITE_INTERRUPT
+      ** or SQLITE_TOOBIG, no rollback is necessary. Otherwise, at least a
+      ** savepoint transaction must be rolled back to restore the database
+      ** to a consistent state.
       **
       ** Even if the statement is read-only, it is important to perform
       ** a statement or transaction rollback operation. If the error
@@ -3430,8 +3436,10 @@ int sqlite3VdbeHalt(Vdbe *p){
       ** pagerStress() in pager.c), the rollback is required to restore
       ** the pager to a consistent state.
       */
-      if( !p->readOnly || mrc!=SQLITE_INTERRUPT ){
-        if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL) && p->usesStmtJournal ){
+      if( !p->readOnly || (mrc!=SQLITE_INTERRUPT && mrc!=SQLITE_TOOBIG) ){
+        if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL || mrc==SQLITE_TOOBIG)
+         && p->usesStmtJournal
+        ){
           eStatementOp = SAVEPOINT_ROLLBACK;
         }else{
           /* We are forced to roll back the active transaction. Before doing
