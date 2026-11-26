@@ -2732,7 +2732,8 @@ void sqlite3VdbeMakeReady(
   assert( EIGHT_BYTE_ALIGNMENT(&x.pSpace[x.nFree]) );
 
   resolveP2Values(p, &nArg);
-  p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
+  p->usesStmtJournal = (u8)(pParse->isMultiWrite && 
+            (pParse->mayAbort || OptimizationDisabled(db,SQLITE_OmitStmtJrnl)));
   if( pParse->explain ){
     if( nMem<10 ) nMem = 10;
     p->explain = pParse->explain;

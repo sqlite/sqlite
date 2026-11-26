@@ -1973,6 +1973,7 @@ struct sqlite3 {
 #define SQLITE_ExistsToJoin   31 /* The EXISTS-to-JOIN optimization */
 #define SQLITE_UnionLimit     32 /* Optimizations for UNION + LIMIT */
 #define SQLITE_HavingToWhere  33 /* HAVING-to-WHERE optimization */
+#define SQLITE_OmitStmtJrnl   34 /* Try to avoid statement journals */
 
 /*
 ** Macros for testing whether or not optimizations are enabled or disabled.
