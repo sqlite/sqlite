@@ -276,6 +276,7 @@ END
 # USING clause or in a NATURAL join of a view or trigger, since the
 # rename could change the meaning of the join.
 #
+.if capable('vtab')  /* vtab required for ALTER TABLE */
 .open :memory:
 .mode --reset list
 CREATE TABLE t(c INTEGER, v INTEGER);
@@ -489,12 +490,14 @@ INSERT INTO vb VALUES(2);
 INSERT INTO vs2 VALUES(0);
 SELECT qq FROM vt;
 .check 2
+.endif /* capable('vtab') */
 
 # Bug 321efb6baaa6d6b3: ALTER TABLE RENAME COLUMN rewrites references
 # in the arguments of a table-valued function in the FROM clause of an
 # UPDATE-FROM trigger step.  The arguments can see the target table, the
 # earlier FROM terms, and OLD and NEW.
 #
+.if capable('vtab')
 CREATE TABLE tg(id INTEGER, payload TEXT);
 CREATE TABLE tf(x INTEGER);
 CREATE TRIGGER tgr AFTER INSERT ON tf BEGIN
@@ -548,12 +551,14 @@ CREATE TRIGGER agr AFTER DELETE ON ag BEGIN
   UPDATE bg SET y=je.value FROM ag AS q, json_each(q.xx) AS je;
 END
 EOT
+.endif /* capable('vtab') - for json_each */
 
 # https://sqlite.org/bugs/forumpost/77e28e924c
 # A child key that matches its parent only under the parent key's
 # affinity and "decimal" collation is accepted on INSERT, but the
 # parent may then be deleted, leaving an orphan child row.
 #
+.if capable('vtab')
 .open :memory:
 .mode --reset list
 PRAGMA foreign_keys=ON;
@@ -599,6 +604,7 @@ DELETE FROM p940;
 SELECT (SELECT count(*) FROM p940), (SELECT count(*) FROM c940),
        (SELECT count(*) FROM pragma_foreign_key_check WHERE "table"='c940');
 .check 1|1|0
+.endif /* capable('vtab') - for pragma_* */
 
 # Bugs f0f9b448c47ae1b0 and b262313c7e78437a: A datatype error on a STRICT
 # table in the middle of a multi-row INSERT or UPDATE inside a transaction
