@@ -1272,22 +1272,29 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
           break;
         }
         default: {
-          const void *pBlob = sqlite3_column_blob(p->pStmt,iCol);
-          int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
-          int rc;
-          qrfWrite(p);
-          if( nBlob==0 ){
-            /* no-op */
-          }else if( p->spec.eEsc==QRF_ESC_Off ){
-            rc = p->spec.xWrite(p->spec.pWriteArg,pBlob,nBlob);
-            if( rc ){
-              qrfError(p, rc, "Failed to write %d bytes of BLOB output", nBlob);
-            }
+          if( p->spec.eBlob==QRF_BLOB_Auto && p->spec.eStyle==QRF_STYLE_Html ){
+            const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
+            qrfEncodeText(p, pOut, zTxt);
           }else{
-            sqlite3_str_append(pOut, pBlob, nBlob);
-            qrfEscape(p->spec.eEsc, pOut, 0);
+            const void *pBlob = sqlite3_column_blob(p->pStmt,iCol);
+            int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
+            int rc;
             qrfWrite(p);
+            if( nBlob==0 ){
+              /* no-op */
+            }else if( p->spec.eEsc==QRF_ESC_Off ){
+              rc = p->spec.xWrite(p->spec.pWriteArg,pBlob,nBlob);
+              if( rc ){
+                qrfError(p, rc, "Failed to write %d bytes of BLOB output",
+                         nBlob);
+              }
+            }else{
+              sqlite3_str_append(pOut, pBlob, nBlob);
+              qrfEscape(p->spec.eEsc, pOut, 0);
+              qrfWrite(p);
+            }
           }
+          break;
         }
       }
       break;
@@ -3084,6 +3091,7 @@ qrf_reinit:
       case QRF_TEXT_Csv:  p->spec.eBlob = QRF_BLOB_Tcl;  break;
       case QRF_TEXT_Tcl:  p->spec.eBlob = QRF_BLOB_Tcl;  break;
       case QRF_TEXT_Json: p->spec.eBlob = QRF_BLOB_Json; break;
+      case QRF_TEXT_Html: p->spec.eBlob = QRF_BLOB_Auto; break;
       default:            p->spec.eBlob = QRF_BLOB_Text; break;
     }
   }

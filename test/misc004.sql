@@ -591,3 +591,27 @@ INSERT INTO s5 SELECT b FROM s4 ORDER BY a;
 SELECT group_concat(x) FROM s5;
 .check 2,4
 COMMIT;
+
+# Bug 2026-11-25T23:49:29Z  sqlite.org/bugs/info/5d0bc13581e5cbc6
+# XSS via BLOB content (regression from 3.51.0)
+#
+.open :memory:
+.testcase 1100
+PRAGMA encoding=UTF8;
+CREATE TABLE t1(p);
+INSERT INTO t1 VALUES('xyzzy');
+.check
+.testcase 1101
+.mode html
+SELECT p, CAST('<script>document.body.dataset.xss="executed"</script>' AS BLOB) AS q
+  FROM t1;
+.check <<END
+<tr>
+<th>p
+<th>q
+</tr>
+<tr>
+<td>xyzzy
+<td>&lt;script&gt;document.body.dataset.xss=&quot;executed&quot;&lt;/script&gt;
+</tr>
+END

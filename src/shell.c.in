@@ -4192,6 +4192,7 @@ static int shell_exec(
    && eStyle!=QRF_STYLE_Json
    && eStyle!=QRF_STYLE_JObject
    && eStyle!=QRF_STYLE_Insert
+   && eStyle!=QRF_STYLE_Html
   ){
     /* The JSON and INSERT styles override eText, so for them the blob
     ** format is chosen later, within QRF. */
