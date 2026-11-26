@@ -615,3 +615,74 @@ SELECT p, CAST('<script>document.body.dataset.xss="executed"</script>' AS BLOB) 
 <td>&lt;script&gt;document.body.dataset.xss=&quot;executed&quot;&lt;/script&gt;
 </tr>
 END
+
+# Bug 2026-11-26  sqlite.org/bugs/info/4c331d636710d5c8
+# Recovery from a journal that names a missing super-journal must truncate
+# or zero the journal in TRUNCATE and PERSIST modes.  Otherwise a later
+# ROLLBACK can be silently skipped.  Simulate the crash by saving a journal
+# in mid-transaction, committing, and appending a super-journal name to the
+# saved journal.
+#
+.if capable('unix')
+.mode list
+.open --new misc004-pj.db
+PRAGMA journal_mode=PERSIST;
+CREATE TABLE t1(id INTEGER PRIMARY KEY, k TEXT, val TEXT);
+CREATE INDEX t1k ON t1(k);
+WITH c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<25)
+  INSERT INTO t1 SELECT x, printf('k%03d',x), hex(zeroblob(750)) FROM c;
+PRAGMA cache_size=5;
+BEGIN;
+UPDATE t1 SET k=printf('c%03d',id), val='COMMITTED'||hex(zeroblob(750));
+.system cp misc004-pj.db-journal misc004-pj.saved
+COMMIT;
+.open :memory:
+.testcase 1200
+SELECT writefile('misc004-pj.saved', readfile('misc004-pj.saved')
+  || unhex('00040001'
+           || hex(CAST('misc004-pj.db-mj1234569AB' AS BLOB))
+           || '0000001900000730d9d505f920a163d7'))>0;
+.check 1
+
+.open misc004-pj.db
+PRAGMA journal_mode=PERSIST;
+.system cp misc004-pj.saved misc004-pj.db-journal
+.testcase 1210
+SELECT count(*) FROM t1 WHERE val LIKE 'COMMITTED%';
+.check 25
+.testcase 1211
+SELECT length(readfile('misc004-pj.db-journal'))>0;
+.check 0
+.testcase 1212
+BEGIN IMMEDIATE;
+UPDATE t1 SET k=printf('D%03d',id), val='DIRTY'||hex(zeroblob(750))
+ WHERE id%2==0;
+ROLLBACK;
+SELECT count(*) FROM t1 WHERE val LIKE 'DIRTY%';
+.check 0
+.testcase 1213
+PRAGMA integrity_check;
+.check ok
+
+.open misc004-pj.db
+PRAGMA journal_mode=TRUNCATE;
+.system cp misc004-pj.saved misc004-pj.db-journal
+.testcase 1220
+SELECT count(*) FROM t1 WHERE val LIKE 'COMMITTED%';
+.check 25
+.testcase 1221
+SELECT count(*) FROM t1 WHERE length(readfile('misc004-pj.db-journal'))>0;
+.check 0
+.testcase 1222
+BEGIN IMMEDIATE;
+UPDATE t1 SET k=printf('D%03d',id), val='DIRTY'||hex(zeroblob(750))
+ WHERE id%2==0;
+ROLLBACK;
+SELECT count(*) FROM t1 WHERE val LIKE 'DIRTY%';
+.check 0
+.testcase 1223
+PRAGMA integrity_check;
+.check ok
+.open :memory:
+.system rm -f misc004-pj.db misc004-pj.db-journal misc004-pj.saved
+.endif

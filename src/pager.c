@@ -2908,6 +2908,10 @@ static int pager_playback(Pager *pPager, int isHot){
     rc = sqlite3OsAccess(pVfs, zSuper, SQLITE_ACCESS_EXISTS, &res);
   }
   if( rc!=SQLITE_OK || !res ){
+    /* If the super-journal is gone, the journal is stale. Make
+    ** pager_end_transaction() truncate or zero it, which it only does
+    ** when journalOff is non-zero. */
+    pPager->journalOff = szJ;
     goto end_playback;
   }
   pPager->journalOff = 0;
