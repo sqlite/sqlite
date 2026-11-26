@@ -5728,6 +5728,10 @@ int sqlite3Fts3UpdateMethod(
   int nChng = 0;                  /* Net change in number of documents */
   int bInsertDone = 0;
 
+  /* Any open cursors on this table may now refer to rows that have been
+  ** deleted. See fts3CursorSeek(). */
+  p->nWrite++;
+
   /* At this point it must be known if the %_stat table exists or not.
   ** So bHasStat may not be 2.  */
   assert( p->bHasStat==0 || p->bHasStat==1 );

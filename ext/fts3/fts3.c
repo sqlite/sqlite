@@ -1866,10 +1866,14 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
       }else{
         pTab->bLock--;
         rc = sqlite3_reset(pCsr->pStmt);
-        if( rc==SQLITE_OK && ((Fts3Table *)pCsr->base.pVtab)->zContentTbl==0 ){
-          /* If no row was found and no error has occurred, then the %_content
-          ** table is missing a row that is present in the full-text index.
-          ** The data structures are corrupt.  */
+        if( rc==SQLITE_OK 
+         && pTab->zContentTbl==0 
+         && pCsr->nWrite==pTab->nWrite 
+        ){
+          /* Unless the table has been written since the query started, if no
+          ** row was found and no error has occurred, then the %_content table
+          ** is missing a row that is present in the full-text index. 
+          ** Corruption.  */
           rc = FTS_CORRUPT_VTAB;
           pCsr->isEof = 1;
         }
@@ -3363,6 +3367,7 @@ static int fts3FilterMethod(
 
   /* In case the cursor has been used before, clear it now. */
   fts3ClearCursor(pCsr);
+  pCsr->nWrite = p->nWrite;
 
   /* Set the lower and upper bounds on docids to return */
   pCsr->iMinDocid = fts3DocidRange(pDocidGe, SMALLEST_INT64);
@@ -5839,6 +5844,7 @@ static void fts3EvalRestart(
       pPhrase->doclist.pNextDocid = 0;
       pPhrase->doclist.iDocid = 0;
       pPhrase->pOrPoslist = 0;
+      pPhrase->iOrDocid = 0;
     }
 
     pExpr->iDocid = 0;

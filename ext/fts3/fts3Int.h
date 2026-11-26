@@ -289,6 +289,7 @@ struct Fts3Table {
   int nAutoincrmerge;             /* Value configured by 'automerge' */
   u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
   int bLock;                      /* Used to prevent recursive content= tbls */
+  u64 nWrite;                     /* Incremented by each xUpdate call */
   Fts3HashWrapper *pWrapper;      /* Wrapper this table is linked into */
   Fts3Table *pNextTab;            /* Next in Fts3HashWrapper.pTabList */
 
@@ -384,6 +385,7 @@ struct Fts3Cursor {
   int nPhrase;                    /* Number of matchable phrases in query */
   Fts3DeferredToken *pDeferred;   /* Deferred search tokens, if any */
   sqlite3_int64 iPrevId;          /* Previous id read from aDoclist */
+  u64 nWrite;                     /* Value of Fts3Table.nWrite at xFilter */
   char *pNextId;                  /* Pointer into the body of aDoclist */
   char *aDoclist;                 /* List of docids for full-text queries */
   int nDoclist;                   /* Size of buffer at aDoclist */
