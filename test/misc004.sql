@@ -960,3 +960,31 @@ DELETE FROM rt WHERE minX>=9007199254740993 AND minX<=9007199254740993;
 SELECT count(*) FROM rt;
 .check 2
 .endif
+
+# Bug 2026-11-26T21:50:53Z sqlite.org/bugs/info/9119ccb20b2a6a6c
+# A window function in an omitted ORDER BY must not be rewritten, because an
+# outer aggregate might refer to expressions inside of it.
+.open :memory:
+.mode --reset quote
+.testcase 1700
+CREATE TABLE t1(a);
+INSERT INTO t1 VALUES(1),(2);
+.check
+.testcase 1701
+SELECT EXISTS(SELECT 1 ORDER BY json_group_array(avg(a)) OVER ()) FROM t1;
+.check 1
+.testcase 1702
+SELECT (SELECT count(*)
+          FROM (SELECT 1 ORDER BY json_group_array(avg(a)) OVER ()), t1 AS x)
+  FROM t1;
+.check 2
+# The window function is in the second ORDER BY term.
+.testcase 1703
+SELECT EXISTS(SELECT 1 ORDER BY 1, json_group_array(avg(a)) OVER ()) FROM t1;
+.check 1
+.testcase 1704
+SELECT (SELECT count(*)
+          FROM (SELECT 1 ORDER BY 1, json_group_array(avg(a)) OVER ()),
+               t1 AS x)
+  FROM t1;
+.check 2

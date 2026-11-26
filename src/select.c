@@ -95,7 +95,10 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     if( OK_IF_ALWAYS_TRUE(p->pWinDefn) ){
       sqlite3WindowListDelete(db, p->pWinDefn);
     }
-    while( p->pWin ){
+    /* p->pWin is always NULL here, as far as anyone knows.  But a subtle
+    ** elsewhere might change that.  It was sometimes non-NULL in
+    ** check-in 2026-11-26T23:17:14.966Z, for example. */
+    while( NEVER(p->pWin) ){
       assert( p->pWin->ppThis==&p->pWin );
       sqlite3WindowUnlinkFromSelect(p->pWin);
     }
@@ -7932,6 +7935,24 @@ void sqlite3SelectCheckOnClauses(Parse *pParse, Select *pSelect){
 }
 
 /*
+** Omit the ORDER BY clause of SELECT statement p because it cannot affect
+** the result.  The ORDER BY expressions are not freed until the Parse
+** object is cleaned up, because an outer query might have an AggInfo that
+** points into them.  Remove any window functions in the ORDER BY from
+** p->pWin, so that sqlite3WindowRewrite() does not modify them.
+*/
+static void selectOmitOrderBy(Parse *pParse, Select *p){
+  ExprList *pOrderBy = p->pOrderBy;
+  int i;
+  assert( pOrderBy!=0 );
+  for(i=0; i<pOrderBy->nExpr; i++){
+    sqlite3WindowRemoveExprFromSelect(p, pOrderBy->a[i].pExpr);
+  }
+  sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric, pOrderBy);
+  p->pOrderBy = 0;
+}
+
+/*
 ** If p2 exists and p1 and p2 have the same number of terms, then change
 ** every term of p1 to have the same sort order as p2 and return true.
 **
@@ -8060,10 +8081,8 @@ int sqlite3Select(
         sqlite3TreeViewExprList(0, p->pOrderBy, 0, "ORDERBY");
       }
 #endif   
-      sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric,
-                              p->pOrderBy);
+      selectOmitOrderBy(pParse, p);
       testcase( pParse->earlyCleanup );
-      p->pOrderBy = 0;
     }
     /* Do not ignore DISTINCT for an EXISTS subquery with an OFFSET clause.
     ** In this case the OFFSET must be applied after duplicates are discarded,
@@ -8271,9 +8290,7 @@ int sqlite3Select(
     ){
       TREETRACE(0x800,pParse,p,
                 ("omit superfluous ORDER BY on %r FROM-clause subquery\n",i+1));
-      sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric,
-                              pSub->pOrderBy);
-      pSub->pOrderBy = 0;
+      selectOmitOrderBy(pParse, pSub);
     }
 
     /* If the outer query contains a "complex" result set (that is,

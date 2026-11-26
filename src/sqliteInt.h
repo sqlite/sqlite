@@ -4677,6 +4677,7 @@ void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal);
 #ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3WindowDelete(sqlite3*, Window*);
 void sqlite3WindowUnlinkFromSelect(Window*);
+void sqlite3WindowRemoveExprFromSelect(Select*, Expr*);
 void sqlite3WindowListDelete(sqlite3 *db, Window *p);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*, u8);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
@@ -4695,6 +4696,7 @@ Window *sqlite3WindowAssemble(Parse*, Window*, ExprList*, ExprList*, Token*);
 # define sqlite3WindowDelete(a,b)
 # define sqlite3WindowFunctions()
 # define sqlite3WindowAttach(a,b,c)
+# define sqlite3WindowRemoveExprFromSelect(a,b)
 #endif
 
 /*

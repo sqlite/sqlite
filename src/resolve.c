@@ -1819,7 +1819,7 @@ int sqlite3ResolveOrderGroupBy(
 
 #ifndef SQLITE_OMIT_WINDOWFUNC
 /*
-** Walker callback for windowRemoveExprFromSelect().
+** Walker callback for sqlite3WindowRemoveExprFromSelect().
 */
 static int resolveRemoveWindowsCb(Walker *pWalker, Expr *pExpr){
   UNUSED_PARAMETER(pWalker);
@@ -1834,7 +1834,7 @@ static int resolveRemoveWindowsCb(Walker *pWalker, Expr *pExpr){
 ** Remove any Window objects owned by the expression pExpr from the
 ** Select.pWin list of Select object pSelect.
 */
-static void windowRemoveExprFromSelect(Select *pSelect, Expr *pExpr){
+void sqlite3WindowRemoveExprFromSelect(Select *pSelect, Expr *pExpr){
   if( pSelect->pWin ){
     Walker sWalker;
     memset(&sWalker, 0, sizeof(Walker));
@@ -1843,8 +1843,6 @@ static void windowRemoveExprFromSelect(Select *pSelect, Expr *pExpr){
     sqlite3WalkExpr(&sWalker, pExpr);
   }
 }
-#else
-# define windowRemoveExprFromSelect(a, b)
 #endif /* SQLITE_OMIT_WINDOWFUNC */
 
 /*
@@ -1918,7 +1916,7 @@ static int resolveOrderGroupBy(
         /* Since this expression is being changed into a reference
         ** to an identical expression in the result set, remove all Window
         ** objects belonging to the expression from the Select.pWin list. */
-        windowRemoveExprFromSelect(pSelect, pE);
+        sqlite3WindowRemoveExprFromSelect(pSelect, pE);
         pItem->u.x.iOrderByCol = j+1;
       }
     }
