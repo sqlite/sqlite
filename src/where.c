@@ -4620,8 +4620,10 @@ static int whereLoopAddVirtualOne(
       if( iTerm>mxTerm ) mxTerm = iTerm;
       testcase( iTerm==15 );
       testcase( iTerm==16 );
+      testcase( iTerm==31 );
+      testcase( iTerm==32 );
       if( pUsage[i].omit ){
-        if( i<16 && ((1<<i)&mNoOmit)==0 ){
+        if( i<16 && iTerm<16 && ((1<<i)&mNoOmit)==0 ){
           testcase( i!=iTerm );
           pNew->u.vtab.omitMask |= 1<<iTerm;
         }else{
@@ -4631,7 +4633,7 @@ static int whereLoopAddVirtualOne(
           pNew->u.vtab.bOmitOffset = 1;
         }
       }
-      if( SMASKBIT32(i) & pHidden->mHandleIn ){
+      if( iTerm<32 && (SMASKBIT32(i) & pHidden->mHandleIn)!=0 ){
         pNew->u.vtab.mHandleIn |= MASKBIT32(iTerm);
       }else if( (pTerm->eOperator & WO_IN)!=0 ){
         /* A virtual table that is constrained by an IN clause may not
