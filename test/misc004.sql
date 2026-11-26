@@ -549,6 +549,57 @@ CREATE TRIGGER agr AFTER DELETE ON ag BEGIN
 END
 EOT
 
+# https://sqlite.org/bugs/forumpost/77e28e924c
+# A child key that matches its parent only under the parent key's
+# affinity and "decimal" collation is accepted on INSERT, but the
+# parent may then be deleted, leaving an orphan child row.
+#
+.open :memory:
+.mode --reset list
+PRAGMA foreign_keys=ON;
+CREATE TABLE p900(k TEXT COLLATE decimal PRIMARY KEY);
+CREATE TABLE c900(k BLOB REFERENCES p900(k));
+INSERT INTO p900 VALUES('1x2y3');
+INSERT INTO c900 VALUES(123);
+.testcase 900
+SELECT count(*) FROM pragma_foreign_key_check;
+.check 0
+
+.testcase 910
+DELETE FROM p900;
+.check -glob "*rror near line *: FOREIGN KEY constraint failed*"
+
+.testcase 920
+SELECT (SELECT count(*) FROM p900), (SELECT count(*) FROM c900),
+       (SELECT count(*) FROM pragma_foreign_key_check);
+.check 1|1|0
+
+CREATE TABLE p930(k TEXT COLLATE decimal PRIMARY KEY);
+CREATE TABLE c930(k INTEGER REFERENCES p930(k) ON DELETE CASCADE);
+CREATE INDEX c930k ON c930(k COLLATE decimal);
+INSERT INTO p930 VALUES('x3');
+INSERT INTO c930 VALUES(3);
+.testcase 930
+DELETE FROM p930 WHERE k='x3';
+SELECT (SELECT count(*) FROM c930),
+       (SELECT count(*) FROM pragma_foreign_key_check WHERE "table"='c930');
+.check 0|0
+
+# Same problem with a composite foreign key.
+#
+CREATE TABLE p940(a TEXT COLLATE decimal, b TEXT, PRIMARY KEY(a,b));
+CREATE TABLE c940(a BLOB, b TEXT, FOREIGN KEY(a,b) REFERENCES p940(a,b));
+INSERT INTO p940 VALUES('1x2y3','z');
+INSERT INTO c940 VALUES(123,'z');
+.testcase 940
+DELETE FROM p940;
+.check -glob "*rror near line *: FOREIGN KEY constraint failed*"
+
+.testcase 950
+SELECT (SELECT count(*) FROM p940), (SELECT count(*) FROM c940),
+       (SELECT count(*) FROM pragma_foreign_key_check WHERE "table"='c940');
+.check 1|1|0
+
 # Bugs f0f9b448c47ae1b0 and b262313c7e78437a: A datatype error on a STRICT
 # table in the middle of a multi-row INSERT or UPDATE inside a transaction
 # rolls back the statement, but not the entire transaction.
