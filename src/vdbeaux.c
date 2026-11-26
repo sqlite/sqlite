@@ -3387,9 +3387,9 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** one, or the complete transaction if there is no statement transaction.
   **
   ** An SQLITE_TOOBIG error is also treated as a special error.  It can
-  ** occur after some rows of a multi-row write have already been changed.
-  ** Such a statement does not always have a statement transaction, so
-  ** the complete transaction is rolled back.
+  ** occur after some changes have already been made by the statement, for
+  ** example when the key for a second index is too big.  So roll back the
+  ** statement transaction if there is one, or else the complete transaction.
   */
 
   assert( p->eVdbeState==VDBE_RUN_STATE );
@@ -3434,7 +3434,9 @@ int sqlite3VdbeHalt(Vdbe *p){
       ** the pager to a consistent state.
       */
       if( !p->readOnly || (mrc!=SQLITE_INTERRUPT && mrc!=SQLITE_TOOBIG) ){
-        if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL) && p->usesStmtJournal ){
+        if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL || mrc==SQLITE_TOOBIG)
+         && p->usesStmtJournal
+        ){
           eStatementOp = SAVEPOINT_ROLLBACK;
         }else{
           /* We are forced to roll back the active transaction. Before doing

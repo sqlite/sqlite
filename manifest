@@ -1,5 +1,5 @@
-C Treat\sSQLITE_TOOBIG\serrors\sas\sspecial\sin\sthat\sthey\srollback\sthe\swhole\ntransaction,\snot\sjust\sthe\scurrent\sstatement.
-D 2026-11-25T14:57:48.573
+C An\sSQLITE_TOOBIG\serror\sforces\sa\srollback\sonly\sif\sthere\sis\sno\sstatement\sjournal.
+D 2026-11-26T14:57:46.891
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -881,7 +881,7 @@ F src/vdbe.c ba479f7bcd9aae2de53641aad3c771b89a1737709fcf4f6dec4a2305e4398343
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 4078674f4d6ea69a81dc9887546322e220701eee927625f89b14fd7a7c809614
 F src/vdbeapi.c 1602b12cae241e086779290985c67f0c843a534cc75bb9eceb4ffa6afd850516
-F src/vdbeaux.c 6811641b525f9a56fb23aea17eb1a796daea17ebac19425e7a72e36b55f0874b
+F src/vdbeaux.c 351e964fb2f4c242f71826a2a0950ace6c174583a381a18ca6388024a3279c67
 F src/vdbeblob.c 7df6c53c2490ab255659e7a2798b714a9e00d128e7124e23135a0a398e3bdef8
 F src/vdbemem.c cae97cc16ee3db30f6a5309df9d39ca85ea2e1a5a6bd811e5c49fdb42b59e4b0
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
@@ -1535,7 +1535,7 @@ F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e3
 F test/misc01.sql fd0012dfad0385437c8b979a4723a8525eb1cc82cdf3b77a0d6edcfd2b9b2513
 F test/misc02.sql ce91fd652d847fb792c61611ffb23f2dcea386ff550b77fe45d421f64049c547
 F test/misc03.sql 913d7ed1773d2452f2154e1633f05672d3561f5d35d42b27cd0710e934d70cd6
-F test/misc04.sql 0fcaf7ae2848093107f59762f5426e6c2e994c30890552ad87271246525b4e26
+F test/misc04.sql 2f6834321dee977a38f6cbb89c6996f72c866e6d6e810ba7492c9ce58139eaf2
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -1817,7 +1817,7 @@ F test/sync2.test 06152269ed73128782c450c355988fe8dd794d305833af75e1a5e79edd4dae
 F test/syscall.test a067468b43b8cb2305e9f9fe414e5f40c875bb5d2cba5f00b8154396e95fcf37
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
 F test/tabfunc01.test a7cf99dfcf8faa89e149802e034453b2fb9f6c087b46571d442c616035b8e657
-F test/table.test 7ff233863afa3df28e32c69496f582efa87b3adcfcb1ae45d45748822fa7abb2
+F test/table.test e87294bf1c80bfd7792142b84ab32ea5beb4f3f71e535d7fb263a6b2068377bf
 F test/tableapi.test e37c33e6be2276e3a96bb54b00eea7f321277115d10e5b30fdb52a112b432750
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test 5d6c73bfe7006c85e2f7fb7db8638b521eb2043d5451aaacdac4851eab895443
@@ -2322,11 +2322,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f68e48d4421729eb89565e97acebe91f392e9cdc179c6e05682037f80ae0e82d
-R 311ac2e0a2722dfa72326b21931ee648
-T *branch * toobig-rollback
-T *sym-toobig-rollback *
-T -sym-trunk *
+P 33a7fdc06f3388ec5a5d05294a87205c0084576db85d454259943711374b1e4b
+R e7fb3b16a1902d9682789fd3c47a36a4
 U drh
-Z 948c869f5713d4e265e18efcaeb06470
+Z 7802babf3ed5eece584b6803aae433f6
 # Remove this line to create a well-formed Fossil manifest.

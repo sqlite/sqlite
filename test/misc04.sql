@@ -549,32 +549,101 @@ CREATE TRIGGER agr AFTER DELETE ON ag BEGIN
 END
 EOT
 
-# Bug 8abc8ee9f75e296a: An SQLITE_TOOBIG error in the middle of a multi-row
-# write rolls back the entire transaction, as does SQLITE_FULL.  A read-only
-# statement that gets SQLITE_TOOBIG does not roll back the transaction.
+# Bug 8abc8ee9f75e296a: An SQLITE_TOOBIG error in the middle of a write
+# that has no statement transaction rolls back the entire transaction.
+# If the statement does have a statement transaction, or if it is read-only,
+# then the transaction survives.
 #
 .open :memory:
-.mode --reset list
-.limit length 1000
-CREATE TABLE tb(x);
-BEGIN;
-INSERT INTO tb VALUES(1);
+.mode --reset quote
+CREATE TABLE t1(a);
+CREATE TABLE t2(b);
+INSERT INTO t2 VALUES('x'), ('abcdefghijklmnopqrst');
+CREATE TABLE t3(c);
+INSERT INTO t3 VALUES('x'), ('abcdefghijklmnopqrst');
 .testcase 900
-INSERT INTO tb SELECT CASE WHEN value<5 THEN 'a' ELSE zeroblob(2000) END
-  FROM generate_series(1,10);
+BEGIN;
+INSERT INTO t1 VALUES('first');
+.limit length 30
+INSERT INTO t1 SELECT b||b FROM t2 ORDER BY rowid;
+.limit length 1000
 .check --glob '*string or blob too big*'
 .testcase 910
 COMMIT;
 .check --glob '*cannot commit - no transaction is active*'
 .testcase 920
-SELECT count(*) FROM tb;
+SELECT count(*) FROM t1;
 .check 0
-BEGIN;
-INSERT INTO tb VALUES(2);
 .testcase 930
-SELECT zeroblob(2000) FROM tb;
+BEGIN;
+.limit length 30
+UPDATE t3 SET c = c||c;
+.limit length 1000
 .check --glob '*string or blob too big*'
 .testcase 940
 COMMIT;
-SELECT count(*) FROM tb;
+.check --glob '*cannot commit - no transaction is active*'
+.testcase 950
+SELECT c FROM t3 ORDER BY rowid;
+.check <<END
+'x'
+'abcdefghijklmnopqrst'
+END
+
+# The following has a statement transaction (zeroblob() may abort) so only
+# the statement is rolled back.
+#
+.testcase 960
+BEGIN;
+INSERT INTO t1 VALUES('first');
+.limit length 30
+INSERT INTO t1 SELECT CASE WHEN b='x' THEN 'x' ELSE zeroblob(40) END FROM t2
+  ORDER BY rowid;
+.limit length 1000
+.check --glob '*string or blob too big*'
+.testcase 970
+SELECT a FROM t1;
+.check "'first'"
+.testcase 980
+COMMIT;
+SELECT count(*) FROM t1;
 .check 1
+
+# A single-row write can fail after some of its changes are made.  Here the
+# key for the second index is too big, after the first index was changed.
+#
+.testcase 990
+CREATE TABLE t4(a);
+CREATE INDEX t4x ON t4(a||a);
+CREATE INDEX t4a ON t4(a);
+INSERT INTO t4 VALUES('x'), ('abcdefghijklmnopqrst');
+BEGIN;
+INSERT INTO t1 VALUES('second');
+.limit length 30
+DELETE FROM t4 WHERE rowid=2;
+.limit length 1000
+.check --glob '*string or blob too big*'
+.testcase 991
+COMMIT;
+.check --glob '*cannot commit - no transaction is active*'
+.testcase 992
+SELECT count(*) FROM t1;
+PRAGMA integrity_check;
+.check <<END
+1
+'ok'
+END
+
+# A read-only statement does not roll back the transaction.
+#
+.testcase 995
+BEGIN;
+INSERT INTO t1 VALUES('third');
+.limit length 30
+SELECT zeroblob(40) FROM t1;
+.limit length 1000
+.check --glob '*string or blob too big*'
+.testcase 996
+COMMIT;
+SELECT count(*) FROM t1;
+.check 2

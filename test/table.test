@@ -819,13 +819,10 @@ do_catchsql_test table-18.1 {
   BEGIN;
   CREATE TABLE t1 AS SELECT zeroblob(2e20);
 } {1 {string or blob too big}}
-# An SQLITE_TOOBIG error rolls back the entire transaction.
 do_execsql_test table-18.2 {
+  COMMIT;
   PRAGMA integrity_check;
 } {ok}
-do_catchsql_test table-18.3 {
-  COMMIT;
-} {1 {cannot commit - no transaction is active}}
 
 # 2015-09-09
 # Ticket [https://sqlite.org/src/info/acd12990885d9276]
