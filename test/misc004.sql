@@ -276,6 +276,7 @@ END
 # USING clause or in a NATURAL join of a view or trigger, since the
 # rename could change the meaning of the join.
 #
+.if capable('vtab')  /* vtab required for ALTER TABLE */
 .open :memory:
 .mode --reset list
 CREATE TABLE t(c INTEGER, v INTEGER);
@@ -489,12 +490,14 @@ INSERT INTO vb VALUES(2);
 INSERT INTO vs2 VALUES(0);
 SELECT qq FROM vt;
 .check 2
+.endif /* capable('vtab') */
 
 # Bug 321efb6baaa6d6b3: ALTER TABLE RENAME COLUMN rewrites references
 # in the arguments of a table-valued function in the FROM clause of an
 # UPDATE-FROM trigger step.  The arguments can see the target table, the
 # earlier FROM terms, and OLD and NEW.
 #
+.if capable('vtab')
 CREATE TABLE tg(id INTEGER, payload TEXT);
 CREATE TABLE tf(x INTEGER);
 CREATE TRIGGER tgr AFTER INSERT ON tf BEGIN
@@ -548,6 +551,198 @@ CREATE TRIGGER agr AFTER DELETE ON ag BEGIN
   UPDATE bg SET y=je.value FROM ag AS q, json_each(q.xx) AS je;
 END
 EOT
+.endif /* capable('vtab') - for json_each */
+
+# https://sqlite.org/bugs/forumpost/77e28e924c
+# A child key that matches its parent only under the parent key's
+# affinity and "decimal" collation is accepted on INSERT, but the
+# parent may then be deleted, leaving an orphan child row.
+#
+.if capable('vtab')
+.open :memory:
+.mode --reset list
+PRAGMA foreign_keys=ON;
+CREATE TABLE p900(k TEXT COLLATE decimal PRIMARY KEY);
+CREATE TABLE c900(k BLOB REFERENCES p900(k));
+INSERT INTO p900 VALUES('1x2y3');
+INSERT INTO c900 VALUES(123);
+.testcase 900
+SELECT count(*) FROM pragma_foreign_key_check;
+.check 0
+
+.testcase 910
+DELETE FROM p900;
+.check -glob "*rror near line *: FOREIGN KEY constraint failed*"
+
+.testcase 920
+SELECT (SELECT count(*) FROM p900), (SELECT count(*) FROM c900),
+       (SELECT count(*) FROM pragma_foreign_key_check);
+.check 1|1|0
+
+CREATE TABLE p930(k TEXT COLLATE decimal PRIMARY KEY);
+CREATE TABLE c930(k INTEGER REFERENCES p930(k) ON DELETE CASCADE);
+CREATE INDEX c930k ON c930(k COLLATE decimal);
+INSERT INTO p930 VALUES('x3');
+INSERT INTO c930 VALUES(3);
+.testcase 930
+DELETE FROM p930 WHERE k='x3';
+SELECT (SELECT count(*) FROM c930),
+       (SELECT count(*) FROM pragma_foreign_key_check WHERE "table"='c930');
+.check 0|0
+
+# Same problem with a composite foreign key.
+#
+CREATE TABLE p940(a TEXT COLLATE decimal, b TEXT, PRIMARY KEY(a,b));
+CREATE TABLE c940(a BLOB, b TEXT, FOREIGN KEY(a,b) REFERENCES p940(a,b));
+INSERT INTO p940 VALUES('1x2y3','z');
+INSERT INTO c940 VALUES(123,'z');
+.testcase 940
+DELETE FROM p940;
+.check -glob "*rror near line *: FOREIGN KEY constraint failed*"
+
+.testcase 950
+SELECT (SELECT count(*) FROM p940), (SELECT count(*) FROM c940),
+       (SELECT count(*) FROM pragma_foreign_key_check WHERE "table"='c940');
+.check 1|1|0
+.endif /* capable('vtab') - for pragma_* */
+
+# Bugs f0f9b448c47ae1b0 and b262313c7e78437a: A datatype error on a STRICT
+# table in the middle of a multi-row INSERT or UPDATE inside a transaction
+# rolls back the statement, but not the entire transaction.
+#
+.open :memory:
+.mode --reset list
+CREATE TABLE s1(a INTEGER) STRICT;
+CREATE TABLE s2(b);
+INSERT INTO s2 VALUES(1), ('x');
+BEGIN;
+.testcase 1000
+INSERT INTO s1 SELECT b FROM s2 ORDER BY rowid;
+.check --glob '*cannot store TEXT value in INTEGER column s1.a*'
+.testcase 1010
+SELECT count(*) FROM s1;
+.check 0
+COMMIT;
+CREATE TABLE s3(c INTEGER) STRICT;
+INSERT INTO s3 VALUES(1), (2);
+BEGIN;
+.testcase 1020
+UPDATE s3 SET c = iif(c=1, 10, 'x');
+.check --glob '*cannot store TEXT value in INTEGER column s3.c*'
+.testcase 1030
+SELECT group_concat(c) FROM s3;
+.check 1,2
+COMMIT;
+
+# A multi-row write to one table that reads a virtual generated column of
+# a STRICT table needs a statement journal, since the type check of the
+# column can raise an error.  This case checks the debugging assert() that
+# compares Parse.mayAbort against the generated code.
+#
+CREATE TABLE s4(a INTEGER, b INTEGER AS (a+1) VIRTUAL) STRICT;
+INSERT INTO s4(a) VALUES(1),(3);
+CREATE TABLE s5(x);
+BEGIN;
+INSERT INTO s5 SELECT b FROM s4 ORDER BY a;
+.testcase 1040
+SELECT group_concat(x) FROM s5;
+.check 2,4
+COMMIT;
+
+# Bug 2026-11-25T23:49:29Z  sqlite.org/bugs/info/5d0bc13581e5cbc6
+# XSS via BLOB content (regression from 3.51.0)
+#
+.open :memory:
+.testcase 1100
+PRAGMA encoding=UTF8;
+CREATE TABLE t1(p);
+INSERT INTO t1 VALUES('xyzzy');
+.check
+.testcase 1101
+.mode html
+SELECT p, CAST('<script>document.body.dataset.xss="executed"</script>' AS BLOB) AS q
+  FROM t1;
+.check <<END
+<tr>
+<th>p
+<th>q
+</tr>
+<tr>
+<td>xyzzy
+<td>&lt;script&gt;document.body.dataset.xss=&quot;executed&quot;&lt;/script&gt;
+</tr>
+END
+
+# Bug 2026-11-26  sqlite.org/bugs/info/4c331d636710d5c8
+# Recovery from a journal that names a missing super-journal must truncate
+# or zero the journal in TRUNCATE and PERSIST modes.  Otherwise a later
+# ROLLBACK can be silently skipped.  Simulate the crash by saving a journal
+# in mid-transaction, committing, and appending a super-journal name to the
+# saved journal.
+#
+.if capable('unix')
+.mode list
+.open --new misc004-pj.db
+PRAGMA journal_mode=PERSIST;
+CREATE TABLE t1(id INTEGER PRIMARY KEY, k TEXT, val TEXT);
+CREATE INDEX t1k ON t1(k);
+WITH c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<25)
+  INSERT INTO t1 SELECT x, printf('k%03d',x), hex(zeroblob(750)) FROM c;
+PRAGMA cache_size=5;
+BEGIN;
+UPDATE t1 SET k=printf('c%03d',id), val='COMMITTED'||hex(zeroblob(750));
+.system cp misc004-pj.db-journal misc004-pj.saved
+COMMIT;
+.open :memory:
+.testcase 1200
+SELECT writefile('misc004-pj.saved', readfile('misc004-pj.saved')
+  || unhex('00040001'
+           || hex(CAST('misc004-pj.db-mj1234569AB' AS BLOB))
+           || '0000001900000730d9d505f920a163d7'))>0;
+.check 1
+
+.open misc004-pj.db
+PRAGMA journal_mode=PERSIST;
+.system cp misc004-pj.saved misc004-pj.db-journal
+.testcase 1210
+SELECT count(*) FROM t1 WHERE val LIKE 'COMMITTED%';
+.check 25
+.testcase 1211
+SELECT length(readfile('misc004-pj.db-journal'))>0;
+.check 0
+.testcase 1212
+BEGIN IMMEDIATE;
+UPDATE t1 SET k=printf('D%03d',id), val='DIRTY'||hex(zeroblob(750))
+ WHERE id%2==0;
+ROLLBACK;
+SELECT count(*) FROM t1 WHERE val LIKE 'DIRTY%';
+.check 0
+.testcase 1213
+PRAGMA integrity_check;
+.check ok
+
+.open misc004-pj.db
+PRAGMA journal_mode=TRUNCATE;
+.system cp misc004-pj.saved misc004-pj.db-journal
+.testcase 1220
+SELECT count(*) FROM t1 WHERE val LIKE 'COMMITTED%';
+.check 25
+.testcase 1221
+SELECT count(*) FROM t1 WHERE length(readfile('misc004-pj.db-journal'))>0;
+.check 0
+.testcase 1222
+BEGIN IMMEDIATE;
+UPDATE t1 SET k=printf('D%03d',id), val='DIRTY'||hex(zeroblob(750))
+ WHERE id%2==0;
+ROLLBACK;
+SELECT count(*) FROM t1 WHERE val LIKE 'DIRTY%';
+.check 0
+.testcase 1223
+PRAGMA integrity_check;
+.check ok
+.open :memory:
+.system rm -f misc004-pj.db misc004-pj.db-journal misc004-pj.saved
+.endif
 
 # Bug 8abc8ee9f75e296a: An SQLITE_TOOBIG error in the middle of a write
 # that has no statement transaction rolls back the entire transaction.
@@ -555,56 +750,55 @@ EOT
 # then the transaction survives.
 #
 .open :memory:
-.mode --reset quote
+.mode --reset list
+.testcase 1300
 CREATE TABLE t1(a);
 CREATE TABLE t2(b);
 INSERT INTO t2 VALUES('x'), ('abcdefghijklmnopqrst');
 CREATE TABLE t3(c);
 INSERT INTO t3 VALUES('x'), ('abcdefghijklmnopqrst');
-.testcase 900
+.check
+.testcase 1301
 BEGIN;
 INSERT INTO t1 VALUES('first');
 .limit length 30
 INSERT INTO t1 SELECT b||b FROM t2 ORDER BY rowid;
 .limit length 1000
-.check --glob '*string or blob too big*'
-.testcase 910
+.check --glob string or blob too big
+.testcase 1310
 COMMIT;
-.check --glob '*cannot commit - no transaction is active*'
-.testcase 920
+.check --glob cannot commit - no transaction is active
+.testcase 1320
 SELECT count(*) FROM t1;
 .check 0
-.testcase 930
+.testcase 1330
 BEGIN;
 .limit length 30
 UPDATE t3 SET c = c||c;
 .limit length 1000
-.check --glob '*string or blob too big*'
-.testcase 940
+.check --glob string or blob too big
+.testcase 1340
 COMMIT;
-.check --glob '*cannot commit - no transaction is active*'
-.testcase 950
+.check --glob cannot commit - no transaction is active
+.testcase 1350
 SELECT c FROM t3 ORDER BY rowid;
-.check <<END
-'x'
-'abcdefghijklmnopqrst'
-END
+.check x abcdefghijklmnopqrst
 
 # The following has a statement transaction (zeroblob() may abort) so only
 # the statement is rolled back.
 #
-.testcase 960
+.testcase 1360
 BEGIN;
 INSERT INTO t1 VALUES('first');
 .limit length 30
 INSERT INTO t1 SELECT CASE WHEN b='x' THEN 'x' ELSE zeroblob(40) END FROM t2
   ORDER BY rowid;
 .limit length 1000
-.check --glob '*string or blob too big*'
-.testcase 970
+.check --glob string or blob too big
+.testcase 1370
 SELECT a FROM t1;
-.check "'first'"
-.testcase 980
+.check first
+.testcase 1380
 COMMIT;
 SELECT count(*) FROM t1;
 .check 1
@@ -612,7 +806,7 @@ SELECT count(*) FROM t1;
 # A single-row write can fail after some of its changes are made.  Here the
 # key for the second index is too big, after the first index was changed.
 #
-.testcase 990
+.testcase 1390
 CREATE TABLE t4(a);
 CREATE INDEX t4x ON t4(a||a);
 CREATE INDEX t4a ON t4(a);
@@ -622,28 +816,25 @@ INSERT INTO t1 VALUES('second');
 .limit length 30
 DELETE FROM t4 WHERE rowid=2;
 .limit length 1000
-.check --glob '*string or blob too big*'
-.testcase 991
+.check --glob string or blob too big
+.testcase 1391
 COMMIT;
-.check --glob '*cannot commit - no transaction is active*'
-.testcase 992
+.check --glob cannot commit - no transaction is active
+.testcase 1392
 SELECT count(*) FROM t1;
 PRAGMA integrity_check;
-.check <<END
-1
-'ok'
-END
+.check 1 ok
 
 # A read-only statement does not roll back the transaction.
 #
-.testcase 995
+.testcase 1395
 BEGIN;
 INSERT INTO t1 VALUES('third');
 .limit length 30
 SELECT zeroblob(40) FROM t1;
 .limit length 1000
 .check --glob '*string or blob too big*'
-.testcase 996
+.testcase 1396
 COMMIT;
 SELECT count(*) FROM t1;
 .check 2

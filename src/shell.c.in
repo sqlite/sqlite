@@ -4192,6 +4192,7 @@ static int shell_exec(
    && eStyle!=QRF_STYLE_Json
    && eStyle!=QRF_STYLE_JObject
    && eStyle!=QRF_STYLE_Insert
+   && eStyle!=QRF_STYLE_Html
   ){
     /* The JSON and INSERT styles override eText, so for them the blob
     ** format is chosen later, within QRF. */
@@ -8475,6 +8476,7 @@ static int pickStr(const char *zArg, char **pzErr, ...){
   sqlite3_str *pMsg;
   va_list ap;
   va_start(ap, pzErr);
+  if( pzErr ) *pzErr = 0;
   i = 0;
   while( (z = va_arg(ap,const char*))!=0 && z[0]!=0 ){
     if( cli_strcmp(zArg, z)==0 ) break;
@@ -9125,25 +9127,31 @@ static int dotCmdMode(ShellState *p){
         return 1;
       }
     }else if( pickStr(z,0,"-blob","-blob-quote","")>=0 ){
+      char *zErr = 0;
       if( (++i)>=nArg ){
         dotCmdError(p, i-1, "missing argument", 0);
         return 1;
       }
-      k = pickStr(azArg[i], 0,
+      k = pickStr(azArg[i], &zErr,
                     "auto", "text", "sql", "hex", "tcl", "json", "size", "");
         /*           0       1       2      3      4      5       6
         ** Must match QRF_BLOB_xxxx values.  See also tag-20251124a */
-      if( k>=0 ){
+      if( k<0 ){
+        dotCmdError(p, i, "unknown blob format", "%z", zErr);
+      }else{
         p->mode.spec.eBlob = k & 0xff;
       }
       chng = 1;
     }else if( optionMatch(z,"border") ){
+      char *zErr = 0;
       if( (++i)>=nArg ){
         dotCmdError(p, i-1, "missing argument", 0);
         return 1;
       }
-      k = pickStr(azArg[i], 0, "auto", "off", "on", "");
-      if( k>=0 ){
+      k = pickStr(azArg[i], &zErr, "auto", "off", "on", "");
+      if( k<0 ){
+        dotCmdError(p, i, "unknown border", "%z", zErr);
+      }else{
         p->mode.spec.bBorder = k & 0x3;
       }
       chng = 1;

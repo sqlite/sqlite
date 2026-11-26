@@ -3046,6 +3046,17 @@ static int selectIsUnionAll(Select *p){
 }
 
 /*
+** Return TRUE if p is preceded by zero or more UNION operators, and
+** then zero or more UNION ALL operators.  If there are any EXCEPT
+** or INTERSECT operators to the left of p, or if any UNION operator
+** to the left of p comes before a UNION ALL operator, then return FALSE.
+*/
+static int selectIsUnionAndUnionAll(Select *p){
+  for(p=p->pPrior; p->pPrior && p->op==TK_UNION; p=p->pPrior){}
+  return selectIsUnionAll(p);
+}
+
+/*
 ** Return TRUE if p is a UNION with a LIMIT of exactly 1 and no OFFSET
 ** clause.  This is a precondition for a couple of related optimizations.
 **
@@ -3156,7 +3167,8 @@ static int multiSelect(
     /* If the compound has an ORDER BY clause, then always use the merge
     ** algorithm. */
     return multiSelectByMerge(pParse, p, pDest);
-  }else if( !selectIsUnionAll(p) && !unionWithLimitOne(db,p) ){
+  }else if( !selectIsUnionAll(p) 
+         && !(unionWithLimitOne(db,p) && selectIsUnionAndUnionAll(p)) ){
     /* If the compound is EXCEPT, INTERSECT, or UNION (anything other than
     ** UNION ALL) then also always use the merge algorithm.  However, the
     ** multiSelectByMerge() routine requires that the compound have an
@@ -3169,8 +3181,10 @@ static int multiSelect(
     return multiSelectByMerge(pParse, p, pDest);
   }else{
     /* For a UNION ALL compound without ORDER BY, or for a UNION with a 
-    ** LIMIT of exactly 1 and no OFFSET and no ORDER BY, simply run the left
-    ** query, then run the right query */
+    ** LIMIT of exactly 1 and no OFFSET and no ORDER BY and with no
+    ** EXCEPT or INTERSECT operators to the left and with no UNION operators
+    ** to the left that are followed by UNION ALL, simply run the compound
+    ** to the left of p, then run p */
     int addr = 0;
     int nLimit = 0;  /* Initialize to suppress harmless compiler warning */
 
@@ -3312,9 +3326,7 @@ static int generateOutputSubroutine(
     */
     case SRT_Fifo:
     case SRT_DistFifo:
-#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
     case SRT_Table:
-#endif
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
       int r2 = sqlite3GetTempReg(pParse);

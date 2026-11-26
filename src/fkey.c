@@ -548,18 +548,18 @@ static int fkUsesLhsAffinity(Table *p1, int iCol1, Table *p2, int iCol2){
 #ifndef SQLITE_OMIT_CAST
 /*
 ** Return non-zero if a lookup on column iCol of table pTab, using collation
-** sequence zColl, can be done using either the rowid or an index. That is,
+** sequence BINARY, can be done using either the rowid or an index. That is,
 ** if iCol is the INTEGER PRIMARY KEY of pTab, or if pTab has an index
 ** whose left-most column is iCol and whose collation sequence for that
-** column is zColl. Return zero otherwise.
+** column is BINARY. Return zero otherwise.
 */
-static int fkChildKeyIsIndexed(Table *pTab, int iCol, const char *zColl){
+static int fkChildKeyIsIndexed(Table *pTab, int iCol){
   Index *pIdx;
   if( iCol==pTab->iPKey ) return 1;
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( pIdx->aiColumn[0]==iCol
      && pIdx->pPartIdxWhere==0
-     && sqlite3StrICmp(pIdx->azColl[0], zColl)==0
+     && sqlite3StrICmp(pIdx->azColl[0], sqlite3StrBINARY)==0
     ){
       return 1;
     }
@@ -579,19 +579,18 @@ static int fkChildKeyIsIndexed(Table *pTab, int iCol, const char *zColl){
 ** If the simple (pLeft = pRight) does not naturally use the affinity of
 ** the parent column, the comparison is coded as (pLeft = +pRight). But
 ** the unary + prevents any index on the child column from being used.
-** So in that case, if the child column is indexed, an extra term is added:
+** So in that case, if the child column is indexed (or the FK is composite)
+** and the parent key collation sequence is BINARY, an extra term is added:
 **
 **     (pLeft = +pRight) AND
-**     (pRight COLLATE <coll> IN (+pLeft, +CAST(pLeft AS NUMERIC)))
+**     (pRight COLLATE BINARY IN (+pLeft, +CAST(pLeft AS NUMERIC)))
 **
 ** Each child value that matches pLeft under the affinity of the parent
 ** column is either equal to pLeft itself or numerically equal to
 ** CAST(pLeft AS NUMERIC). So the IN term matches a superset of the
 ** child rows that the exact (pLeft = +pRight) term does, and since it
 ** compares using the affinity of the child column, it may be used with
-** an index on the child column. The unary + operators on the RHS of the
-** IN ensure that no affinity other than that of the child column is
-** applied.
+** an index on the child column.
 */
 static Expr *fkParentChildEq(
   Parse *pParse,            /* Parsing context */
@@ -617,12 +616,13 @@ static Expr *fkParentChildEq(
 #ifndef SQLITE_OMIT_CAST
   {
     const char *zColl = sqlite3ColumnColl(&pTab->aCol[iCol]);
-    if( zColl==0 ) zColl = sqlite3StrBINARY;
 
     /* The IN term is only useful if it can drive a lookup on the child
     ** table. Omit it otherwise, so that a full scan of the child table
     ** does not have to evaluate it for every row.  */
-    if( bComposite || fkChildKeyIsIndexed(pChild, iChildCol, zColl) ){
+    if( (zColl==0 || sqlite3StrICmp(zColl, sqlite3StrBINARY)==0)
+     && (bComposite || fkChildKeyIsIndexed(pChild, iChildCol))
+    ){
       static const Token tNumeric = { "NUMERIC", 7 };
       Expr *pCast;
       ExprList *pList;
@@ -636,7 +636,7 @@ static Expr *fkParentChildEq(
           sqlite3PExpr(pParse, TK_UPLUS, pCast, 0)
       );
       pIn = sqlite3PExpr(pParse, TK_IN, sqlite3ExprAddCollateString(pParse,
-            sqlite3ExprDup(db, pRight, 0), zColl
+            sqlite3ExprDup(db, pRight, 0), sqlite3StrBINARY
       ), 0);
       if( pIn ){
         pIn->x.pList = pList;
@@ -735,7 +735,7 @@ static void fkScanChildren(
     zCol = pFKey->pFrom->aCol[iCol2].zCnName;
     pRight = sqlite3Expr(db, TK_ID, zCol);
     pEq = fkParentChildEq(pParse, pLeft, pRight, pTab, iCol,
-                          pFKey->pFrom, iCol2, pFKey->nCol>0);
+                          pFKey->pFrom, iCol2, pFKey->nCol>1);
     pWhere = sqlite3ExprAnd(pParse, pWhere, pEq);
   }
 

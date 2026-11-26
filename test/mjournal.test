@@ -293,6 +293,76 @@ foreach {tn mjname bDel} $tests {
   }
 }
 
+# A journal that names a super-journal file that no longer exists is
+# stale.  Recovering from it must truncate or zero the journal in
+# TRUNCATE, PERSIST, and exclusive-mode connections.  Otherwise a later
+# ROLLBACK might find the stale super-journal name at the end of the
+# journal and skip the rollback.  Build the stale journal by saving
+# a journal in the middle of a transaction, committing the transaction,
+# and then appending a super-journal name to the saved journal.
+#
+foreach {tn jmode excl} {
+  1 truncate 0
+  2 persist  0
+  3 delete   1
+  4 delete   0
+} {
+  reset_db
+  do_test 5.$tn.0 {
+    db eval {
+      CREATE TABLE t1(id INTEGER PRIMARY KEY, k TEXT, val TEXT);
+      CREATE INDEX t1k ON t1(k);
+      WITH c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<25)
+        INSERT INTO t1 SELECT x, printf('k%03d',x), hex(zeroblob(750)) FROM c;
+    }
+    db eval "PRAGMA journal_mode=$jmode"
+    db eval {
+      PRAGMA cache_size=5;
+      BEGIN;
+      UPDATE t1 SET k=printf('c%03d',id), val='COMMITTED'||hex(zeroblob(750));
+    }
+    forcecopy test.db-journal saved.journal
+    db eval COMMIT
+    db close
+    set fd [open saved.journal a]
+    fconfigure $fd -translation binary
+    set zSuper "test.db-mj1234569AB"
+    set cksum 0
+    foreach c [split $zSuper {}] {incr cksum [scan $c %c]}
+    puts -nonewline $fd [binary format I 1048577]
+    puts -nonewline $fd $zSuper
+    puts -nonewline $fd [binary format II [string length $zSuper] $cksum]
+    puts -nonewline $fd [binary format H* d9d505f920a163d7]
+    close $fd
+    forcedelete test.db-journal
+    expr {[file size saved.journal]>0}
+  } {1}
+
+  # Set the journal mode before the stale journal appears, since the
+  # journal mode pragma itself might otherwise cause the recovery.
+  sqlite3 db test.db
+  do_test 5.$tn.1 {
+    db eval "PRAGMA journal_mode=$jmode"
+    if {$excl} {db eval {PRAGMA locking_mode=EXCLUSIVE}}
+    forcecopy saved.journal test.db-journal
+    db eval {SELECT count(*) FROM t1 WHERE val LIKE 'COMMITTED%'}
+  } {25}
+  do_test 5.$tn.2 {
+    expr {![file exists test.db-journal] || [file size test.db-journal]==0}
+  } {1}
+  do_test 5.$tn.3 {
+    db eval {
+      BEGIN IMMEDIATE;
+      UPDATE t1 SET k=printf('D%03d',id), val='DIRTY'||hex(zeroblob(750))
+       WHERE id%2==0;
+    }
+    db eval ROLLBACK
+    db eval {SELECT count(*) FROM t1 WHERE val LIKE 'DIRTY%'}
+  } {0}
+  do_test 5.$tn.4 {
+    db eval {PRAGMA integrity_check}
+  } {ok}
+  db close
+}
+
 finish_test
-
-

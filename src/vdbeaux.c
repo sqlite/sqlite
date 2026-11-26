@@ -759,6 +759,7 @@ static Op *opIterNext(VdbeOpIter *p){
 **   *  OP_HaltIfNull with P1=SQLITE_CONSTRAINT and P2=OE_Abort.
 **   *  OP_Destroy
 **   *  OP_VUpdate
+**   *  OP_TypeCheck
 **   *  OP_VCreate
 **   *  OP_VRename
 **   *  OP_FkCounter with P2==0 (immediate foreign key constraint)
@@ -799,6 +800,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull)
       && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))
      || (opcode==OP_MustBeInt && pOp->p2==0)
+     || opcode==OP_TypeCheck
     ){
       hasAbort = 1;
       break;
@@ -2730,7 +2732,8 @@ void sqlite3VdbeMakeReady(
   assert( EIGHT_BYTE_ALIGNMENT(&x.pSpace[x.nFree]) );
 
   resolveP2Values(p, &nArg);
-  p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
+  p->usesStmtJournal = (u8)(pParse->isMultiWrite && 
+            (pParse->mayAbort || OptimizationDisabled(db,SQLITE_OmitStmtJrnl)));
   if( pParse->explain ){
     if( nMem<10 ) nMem = 10;
     p->explain = pParse->explain;
