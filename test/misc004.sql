@@ -924,3 +924,39 @@ SELECT count(*) FROM t WHERE s LIKE '%TOPSECRET%';
 SELECT count(*) FROM sqlite_dbpage
  WHERE instr(data, CAST('TOPSECRET' AS BLOB))>0;
 .check 0
+
+# Bug 2026-11-26T18:23:58Z sqlite.org/bugs/info/ec17b810d2a0bfce
+# Large integer constraints on an rtree must be rechecked by the VDBE,
+# because converting them to double can round in either direction.
+.if capable('rtree')
+.open :memory:
+.mode --reset list
+.testcase 1600
+CREATE VIRTUAL TABLE rt USING rtree(id, minX, maxX);
+INSERT INTO rt VALUES(1, 9007199254740992.0, 9007199254740992.0);
+INSERT INTO rt VALUES(2, 18014398509481984.0, 18014398509481984.0);
+.check
+.testcase 1601
+SELECT count(*) FROM rt WHERE minX>=9007199254740993;
+.check 1
+.testcase 1602
+SELECT id FROM rt WHERE minX>=9007199254740993 ORDER BY id;
+.check 2
+.testcase 1603
+SELECT count(*) FROM rt
+ WHERE minX>=9007199254740993 AND minX<=9007199254740993;
+.check 0
+.testcase 1604
+SELECT id FROM rt WHERE minX<=18014398509481983;
+.check 1
+.testcase 1605
+SELECT id FROM rt WHERE minX<=18014398509481985 ORDER BY id;
+.check 1 2
+# The same constraints must not delete a row that fails the predicate.
+.testcase 1606
+DELETE FROM rt WHERE minX>=9007199254740993 AND minX<=9007199254740993;
+.check
+.testcase 1607
+SELECT count(*) FROM rt;
+.check 2
+.endif
