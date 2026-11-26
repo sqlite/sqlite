@@ -689,6 +689,7 @@ const char *sqlite3OpcodeName(int);
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeMemClearAndResize(Mem *pMem, int n);
 int sqlite3VdbeCloseStatement(Vdbe *, int);
+int sqlite3VdbeCloseStatementIfNeeded(Vdbe*,int);
 #ifdef SQLITE_DEBUG
 int sqlite3VdbeFrameIsValid(VdbeFrame*);
 #endif

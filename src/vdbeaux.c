@@ -3274,7 +3274,7 @@ void sqlite3VdbeSchemaInUse(sqlite3 *db, Vdbe *pExcept, yDbMask *pM){
 ** If an IO error occurs, an SQLITE_IOERR_XXX error code is returned.
 ** Otherwise SQLITE_OK.
 */
-static SQLITE_NOINLINE int vdbeCloseStatement(Vdbe *p, int eOp){
+SQLITE_NOINLINE int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
   sqlite3 *const db = p->db;
   int rc = SQLITE_OK;
   int i;
@@ -3318,11 +3318,11 @@ static SQLITE_NOINLINE int vdbeCloseStatement(Vdbe *p, int eOp){
     db->nDeferredCons = p->nStmtDefCons;
     db->nDeferredImmCons = p->nStmtDefImmCons;
   }
-  return rc;
+  return sqlite3FaultSim(203) ? SQLITE_IOERR_WRITE : rc;
 }
-int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
+int sqlite3VdbeCloseStatementIfNeeded(Vdbe *p, int eOp){
   if( p->db->nStatement && p->iStatement ){
-    return vdbeCloseStatement(p, eOp);
+    return sqlite3VdbeCloseStatement(p, eOp);
   }
   return SQLITE_OK;
 }
@@ -3521,13 +3521,13 @@ int sqlite3VdbeHalt(Vdbe *p){
     }
  
     /* If eStatementOp is non-zero, then a statement transaction needs to
-    ** be committed or rolled back. Call sqlite3VdbeCloseStatement() to
-    ** do so. If this operation returns an error, and the current statement
-    ** error code is SQLITE_OK or SQLITE_CONSTRAINT, then promote the
-    ** current statement error code.
+    ** be committed or rolled back. Call sqlite3VdbeCloseStatementIfNeeded()
+    ** to do so. If this operation returns an error, and the current
+    ** statement error code is SQLITE_OK or SQLITE_CONSTRAINT, then
+    ** promote the current statement error code.
     */
     if( eStatementOp ){
-      rc = sqlite3VdbeCloseStatement(p, eStatementOp);
+      rc = sqlite3VdbeCloseStatementIfNeeded(p, eStatementOp);
       if( rc ){
         if( p->rc==SQLITE_OK || (p->rc&0xff)==SQLITE_CONSTRAINT ){
           p->rc = rc;

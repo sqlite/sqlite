@@ -1829,6 +1829,16 @@ case OP_ResultRow: {
   }
 #endif
   if( db->mallocFailed ) goto no_mem;
+
+  /* A DML statement with RETURNING makes all changes before returning.
+  ** Release the statement txn so that it cannot be closed out of order
+  ** because of another RETURNING. */
+  if( db->nStatement
+   && p->iStatement
+  ){
+    rc = sqlite3VdbeCloseStatement(p, SAVEPOINT_RELEASE);
+    if( rc ) goto abort_due_to_error;
+  }
   if( db->mTrace & SQLITE_TRACE_ROW ){
     db->trace.xV2(SQLITE_TRACE_ROW, db->pTraceArg, p, 0);
   }
