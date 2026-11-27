@@ -91,4 +91,83 @@ do_test 1.6.2 {
   set n
 } {0}
 
+#-------------------------------------------------------------------------
+# Bug 2026-11-27T19:39:50Z sqlite.org/bugs/info/ca6b6a575365363d
+# With secure_delete on, deleted content must not be left in the unused
+# part of a b-tree page.  Rebalancing used to copy bytes past the end of
+# the cell pointer array into the gap before the cell content area.
+#
+proc file_has_text {zFile zText} {
+  set fd [open $zFile rb]
+  set data [read $fd]
+  close $fd
+  expr {[string first $zText $data]>=0}
+}
+proc file_count_text {zFile zText} {
+  set fd [open $zFile rb]
+  set data [read $fd]
+  close $fd
+  regexp -all $zText $data
+}
+
+reset_db
+do_execsql_test 2.1 {
+  PRAGMA page_size = 4096;
+  PRAGMA secure_delete = ON;
+  CREATE TABLE t(id INTEGER PRIMARY KEY, v TEXT);
+  BEGIN;
+    WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<600)
+    INSERT INTO t SELECT i, printf('SECRET_ROW_%04d_CONFIDENTIAL', i) FROM s;
+  COMMIT;
+  DELETE FROM t WHERE id <= 100;
+  DELETE FROM t WHERE id IN (228, 341, 342);
+} {1}
+do_test 2.2 {
+  set n 0
+  foreach i {1 50 100 228 341 342} {
+    incr n [file_has_text test.db [format SECRET_ROW_%04d_CONFIDENTIAL $i]]
+  }
+  set n
+} {0}
+do_execsql_test 2.3 { PRAGMA integrity_check } {ok}
+
+#-------------------------------------------------------------------------
+# Bug 2026-11-27T19:42:27Z sqlite.org/bugs/info/575f60b3d69ed80b
+# An incremental-vacuum step moves the last page of the database and
+# truncates the file at commit. If the same transaction then extends the
+# database over that page again, the old content of the page must not
+# reappear in the new page.
+#
+foreach {tn ps pk sz ok sd nLeak} {
+  1  512  616  60  480   1  0
+  2  512  616  60  480   2  0
+  3  4096 4200 480 4200  1  0
+  4  512  616  60  480   0  15
+} {
+  reset_db
+  do_test 3.$tn.1 {
+    db eval "PRAGMA page_size = $ps"
+    db eval {
+      PRAGMA auto_vacuum = INCREMENTAL;
+      CREATE TABLE pub(x BLOB);
+      CREATE TABLE sec(x TEXT);
+      CREATE TABLE ovf(x BLOB);
+    }
+    db eval "PRAGMA secure_delete = $sd"
+    db eval {
+      INSERT INTO pub VALUES(zeroblob($pk));
+      INSERT INTO sec VALUES(replace(hex(zeroblob($sz)), '00', 'SENSITIVE_'));
+      BEGIN;
+        DELETE FROM pub;
+        PRAGMA incremental_vacuum(1);
+        INSERT INTO ovf VALUES(zeroblob($ok));
+        DELETE FROM sec;
+      COMMIT;
+      PRAGMA incremental_vacuum;
+    }
+    file_count_text test.db SENSITIVE_
+  } $nLeak
+  do_execsql_test 3.$tn.2 { PRAGMA integrity_check } {ok}
+}
+
 finish_test

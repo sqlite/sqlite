@@ -6848,6 +6848,10 @@ static int allocateBtreePage(
     if( rc!=SQLITE_OK ){
       releasePage(*ppPage);
       *ppPage = 0;
+    }else if( pBt->btsFlags & BTS_FAST_SECURE ){
+      /* The page may have been loaded from content that an incremental
+      ** vacuum step vacated earlier in this transaction. */
+      memset((*ppPage)->aData, 0, pBt->pageSize);
     }
     TRACE(("ALLOCATE: %u from end of file\n", *pPgno));
   }
@@ -7941,8 +7945,8 @@ static int editPage(
   if( iOld<iNew ){
     int nShift = pageFreeArray(pPg, iOld, iNew-iOld, pCArray);
     if( NEVER(nShift>nCell) ) return SQLITE_CORRUPT_BKPT;
-    memmove(pPg->aCellIdx, &pPg->aCellIdx[nShift*2], nCell*2);
     nCell -= nShift;
+    memmove(pPg->aCellIdx, &pPg->aCellIdx[nShift*2], nCell*2);
   }
   if( iNewEnd < iOldEnd ){
     int nTail = pageFreeArray(pPg, iNewEnd, iOldEnd - iNewEnd, pCArray);
