@@ -95,7 +95,10 @@ static void clearSelect(sqlite3 *db, Select *p, int bFree){
     if( OK_IF_ALWAYS_TRUE(p->pWinDefn) ){
       sqlite3WindowListDelete(db, p->pWinDefn);
     }
-    while( p->pWin ){
+    /* p->pWin is always NULL here, as far as anyone knows.  But a subtle
+    ** elsewhere might change that.  It was sometimes non-NULL in
+    ** check-in 2026-11-26T23:17:14.966Z, for example. */
+    while( NEVER(p->pWin) ){
       assert( p->pWin->ppThis==&p->pWin );
       sqlite3WindowUnlinkFromSelect(p->pWin);
     }
@@ -493,6 +496,37 @@ static void unsetJoinExpr(Expr *p, int iTable, int nullable){
 }
 
 /*
+** Tree walker expression callback for clearOuterOnExpr().
+**
+** If the Expr node is marked as coming from an outer join for
+** table pWalker->u.iCur, then clear its join markers completely.
+*/
+static int clearOuterOnExprCb(Walker *pWalker, Expr *p){
+  if( ExprHasProperty(p, EP_OuterON) && p->w.iJoin==pWalker->u.iCur ){
+    ExprClearProperty(p, EP_OuterON|EP_InnerON);
+  }
+  return WRC_Continue;
+}
+
+/*
+** Remove the EP_OuterON mark, without substituting EP_InnerON, from every
+** term of the expression tree p that is marked EP_OuterON with w.iJoin==iTable.
+** The resulting terms are ordinary WHERE-clause terms.
+**
+** This is used when table iTable was marked as an outer-join table only
+** because it was the left operand of a RIGHT JOIN (JT_LTORJ) and that
+** status has been removed by OUTER JOIN strength reduction.
+*/
+static void clearOuterOnExpr(Expr *p, int iTable){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.u.iCur = iTable;
+  w.xExprCallback = clearOuterOnExprCb;
+  w.xSelectCallback = 0;
+  sqlite3WalkExpr(&w,p);
+}
+
+/*
 ** This routine processes the join information for a SELECT statement.
 **
 **   *  A NATURAL join is converted into a USING join.  After that, we
@@ -521,6 +555,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
   int bSeenTFunc = 0;             /* True if have seen table-valued function */
 
   pSrc = p->pSrc;
+  if( pSrc->nSrc<=1 ) return 0;
   pLeft = &pSrc->a[0];
   pRight = &pLeft[1];
   for(i=0; i<pSrc->nSrc-1; i++, pRight++, pLeft++){
@@ -647,6 +682,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
           pEq->w.iJoin = pE2->iTable;
         }
         p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pEq);
+        if( pParse->nErr ) return 1;
       }
     }
 
@@ -1253,13 +1289,13 @@ static void selectInnerLoop(
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, regResult+i);
       VdbeComment((v, "%s", p->pEList->a[i].zEName));
     }
-  }else if( eDest!=SRT_Exists ){
+  }else if( eDest!=SRT_Exists || hasDistinct ){
+    /* If the destination is an EXISTS(...) expression, the actual
+    ** values returned by the SELECT are only required if the query is
+    ** DISTINCT.  */
 #ifdef SQLITE_ENABLE_SORTER_REFERENCES
     ExprList *pExtra = 0;
 #endif
-    /* If the destination is an EXISTS(...) expression, the actual
-    ** values returned by the SELECT are not required.
-    */
     u8 ecelFlags;    /* "ecel" is an abbreviation of "ExprCodeExprList" */
     ExprList *pEList;
     if( eDest==SRT_Mem || eDest==SRT_Output || eDest==SRT_Coroutine ){
@@ -2646,13 +2682,46 @@ static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
     pRet = 0;
   }
   assert( iCol>=0 );
-  /* iCol must be less than p->pEList->nExpr.  Otherwise an error would
+  /* iCol must be less than p->pEList->nExpr. Otherwise an error would
   ** have been thrown during name resolution and we would not have gotten
-  ** this far */
-  if( pRet==0 && ALWAYS(iCol<p->pEList->nExpr) ){
+  ** this far. If p is really a multi-row VALUES statement, it is guaranteed
+  ** not to have any collation sequences. So leave pRet set to 0 in this case */
+  if( pRet==0 && ALWAYS(iCol<p->pEList->nExpr)
+   && ((p->selFlags & SF_Values)==0 || p->pSrc->nSrc==0) /* multi-row VALUES */
+  ){
     pRet = sqlite3ExprCollSeq(pParse, p->pEList->a[iCol].pExpr);
   }
+
   return pRet;
+}
+
+/*
+** This routine is called by the name resolver for a SELECT statement
+** created by convertCompoundSelectToSubquery() - one with the SF_Converted
+** flag set. pSub is the compound sub-query and pOrderBy the ORDER BY clause
+** of the outer query, which has already been resolved against pSub. This
+** function adds TK_COLLATE wrappers around any ORDER BY terms that require
+** them.
+*/
+void sqlite3ConvertedOrderByColl(
+  Parse *pParse,        /* Parsing context */
+  Select *pSub,         /* The compound sub-query */
+  ExprList *pOrderBy    /* ORDER BY clause of the outer query */
+){
+  if( IN_RENAME_OBJECT==0 ){
+    int i;
+    for(i=0; i<pOrderBy->nExpr; i++){
+      struct ExprList_item *p = &pOrderBy->a[i];
+      int iCol = p->u.x.iOrderByCol - 1;
+      CollSeq *pColl;
+      assert( iCol>=0 && iCol<pSub->pEList->nExpr );
+      if( ExprHasProperty(p->pExpr, EP_Collate) ) continue;
+      pColl = multiSelectCollSeq(pParse, pSub, iCol);
+      if( pColl ){
+        p->pExpr = sqlite3ExprAddCollateString(pParse, p->pExpr, pColl->zName);
+      }
+    }
+  }
 }
 
 /*
@@ -2863,7 +2932,7 @@ static void generateWithRecursiveQuery(
   addrTop = sqlite3VdbeAddOp2(v, OP_Rewind, iQueue, addrBreak); VdbeCoverage(v);
 
   /* Transfer the next row in Queue over to Current */
-  sqlite3VdbeAddOp1(v, OP_NullRow, iCurrent); /* To reset column cache */
+  sqlite3VdbeAddOp1(v, OP_Stale, iCurrent); /* To reset column cache */
   if( pOrderBy ){
     sqlite3VdbeAddOp3(v, OP_Column, iQueue, pOrderBy->nExpr+1, regCurrent);
   }else{
@@ -2966,6 +3035,28 @@ static int multiSelectValues(
 static int hasAnchor(Select *p){
   while( p && (p->selFlags & SF_Recursive)!=0 ){ p = p->pPrior; }
   return p!=0;
+}
+
+/*
+** Return TRUE if every compound operator in the compound SELECT that
+** ends with p is UNION ALL.
+*/
+static int selectIsUnionAll(Select *p){
+  for(; p->pPrior; p=p->pPrior){
+    if( p->op!=TK_ALL ) return 0;
+  }
+  return 1;
+}
+
+/*
+** Return TRUE if p is preceded by zero or more UNION operators, and
+** then zero or more UNION ALL operators.  If there are any EXCEPT
+** or INTERSECT operators to the left of p, or if any UNION operator
+** to the left of p comes before a UNION ALL operator, then return FALSE.
+*/
+static int selectIsUnionAndUnionAll(Select *p){
+  for(p=p->pPrior; p->pPrior && p->op==TK_UNION; p=p->pPrior){}
+  return selectIsUnionAll(p);
 }
 
 /*
@@ -3079,7 +3170,8 @@ static int multiSelect(
     /* If the compound has an ORDER BY clause, then always use the merge
     ** algorithm. */
     return multiSelectByMerge(pParse, p, pDest);
-  }else if( p->op!=TK_ALL && !unionWithLimitOne(db,p) ){
+  }else if( !selectIsUnionAll(p) 
+         && !(unionWithLimitOne(db,p) && selectIsUnionAndUnionAll(p)) ){
     /* If the compound is EXCEPT, INTERSECT, or UNION (anything other than
     ** UNION ALL) then also always use the merge algorithm.  However, the
     ** multiSelectByMerge() routine requires that the compound have an
@@ -3092,8 +3184,10 @@ static int multiSelect(
     return multiSelectByMerge(pParse, p, pDest);
   }else{
     /* For a UNION ALL compound without ORDER BY, or for a UNION with a 
-    ** LIMIT of exactly 1 and no OFFSET and no ORDER BY, simply run the left
-    ** query, then run the right query */
+    ** LIMIT of exactly 1 and no OFFSET and no ORDER BY and with no
+    ** EXCEPT or INTERSECT operators to the left and with no UNION operators
+    ** to the left that are followed by UNION ALL, simply run the compound
+    ** to the left of p, then run p */
     int addr = 0;
     int nLimit = 0;  /* Initialize to suppress harmless compiler warning */
 
@@ -3240,11 +3334,12 @@ static int generateOutputSubroutine(
       int r1 = sqlite3GetTempReg(pParse);
       int r2 = sqlite3GetTempReg(pParse);
       int iParm = pDest->iSDParm;
-      testcase( pDest->eDest==SRT_Table );
       testcase( pDest->eDest==SRT_EphemTab );
       testcase( pDest->eDest==SRT_Fifo );
       testcase( pDest->eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r1);
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+      testcase( pDest->eDest==SRT_Table );
 #if !defined(SQLITE_ENABLE_NULL_TRIM) && defined(SQLITE_DEBUG)
       /* A destination of SRT_Table and a non-zero iSDParm2 parameter means
       ** that this is an "UPDATE ... FROM" on a virtual table or view. In this
@@ -3254,7 +3349,8 @@ static int generateOutputSubroutine(
       if( pDest->eDest==SRT_Table && pDest->iSDParm2 ){
         sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG_MAGIC);
       }
-#endif
+#endif /* !ENABLE_NULL_TRIM && DEBUG */
+#endif /* UPDATE_DELETE_LIMIT */
 #ifndef SQLITE_OMIT_CTE
       if( pDest->eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -3862,6 +3958,15 @@ static int multiSelectByMerge(
 ** have to add OP_IfNullRow in front of the OP_Integer that implements the
 ** "m" value of the subquery so that a NULL will be loaded instead of 59
 ** when processing a non-matched row of the left.
+**
+** ## Unwrap mode:
+**
+** If pEList is NULL, then the SubstContext is being used by
+** unwrapIfNullRow() to remove TK_IF_NULL_ROW wrappers instead of to
+** substitute column references.  In that mode, only the TK_IF_NULL_ROW
+** nodes with iTable==iTable are touched, each one being replaced by its
+** operand.  Column references are left alone and iNewTable must equal
+** iTable.
 */
 typedef struct SubstContext {
   Parse *pParse;            /* The parsing context */
@@ -3903,6 +4008,7 @@ static Expr *substExpr(
   }
   if( pExpr->op==TK_COLUMN
    && pExpr->iTable==pSubst->iTable
+   && pSubst->pEList!=0
    && !ExprHasProperty(pExpr, EP_FixedCol)
   ){
 #ifdef SQLITE_ALLOW_ROWID_IN_VIEW
@@ -3974,9 +4080,19 @@ static Expr *substExpr(
     }
   }else{
     if( pExpr->op==TK_IF_NULL_ROW && pExpr->iTable==pSubst->iTable ){
+      if( pSubst->pEList==0 ){
+        /* Unwrap mode.  See unwrapIfNullRow(). */
+        Expr *pInner = pExpr->pLeft;
+        pExpr->pLeft = 0;
+        sqlite3ExprDelete(pSubst->pParse->db, pExpr);
+        return substExpr(pSubst, pInner);
+      }
       pExpr->iTable = pSubst->iNewTable;
     }
-    if( pExpr->op==TK_AGG_FUNCTION && pExpr->op2>=pSubst->nSelDepth ){
+    if( pExpr->op==TK_AGG_FUNCTION
+     && pSubst->pEList!=0
+     && pExpr->op2>=pSubst->nSelDepth
+    ){
       pExpr->op2--;
     }
     pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
@@ -4035,6 +4151,34 @@ static void substSelect(
     }
   }while( doPrior && (p = p->pPrior)!=0 );
   pSubst->nSelDepth--;
+}
+
+/*
+** The flattener wraps each substituted expression in a TK_IF_NULL_ROW
+** operator when the subquery being flattened is on the NULL-able side of
+** an outer join.  The wrapper is keyed to the cursor iCur of the
+** (single-table) subquery.
+**
+** If OUTER JOIN strength reduction later determines that the table with
+** cursor iCur can no longer be a NULL row, then those wrappers are
+** unnecessary.  Worse, they are harmful if the FROM-clause term for iCur
+** is itself a subquery that is flattened later.  The flattener would
+** then renumber the wrappers to refer to the first table of that
+** subquery, and that table might legitimately be a NULL row (for example,
+** if it is the left operand of a FULL JOIN inside the subquery). The
+** substituted expressions would then be incorrectly forced to NULL.
+**
+** So when strength reduction removes the NULL-able status from the
+** table at iCur, remove all of the TK_IF_NULL_ROW wrappers for iCur from
+** the entire SELECT statement p.
+*/
+static void unwrapIfNullRow(Parse *pParse, Select *p, int iCur){
+  SubstContext x;
+  memset(&x, 0, sizeof(x));
+  x.pParse = pParse;
+  x.iTable = iCur;
+  x.iNewTable = iCur;
+  substSelect(&x, p, 0);
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
@@ -4212,6 +4356,30 @@ static int compoundHasDifferentAffinities(Select *p){
 }
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+/*
+** Return true if the FROM clause pSrc, other than item iExcept, contains
+** a subquery implemented using a co-routine.  Such co-routines may have
+** been coded while the SQL text was being parsed, before query planning.
+*/
+static int srcListHasCoroutine(const SrcList *pSrc, int iExcept){
+  int i;
+  for(i=0; i<pSrc->nSrc; i++){
+    const SrcItem *pItem = &pSrc->a[i];
+    if( i==iExcept ) continue;
+    if( pItem->fg.viaCoroutine ) return 1;
+    if( pItem->fg.isSubquery ){
+      Select *pSelect;
+      for(pSelect=pItem->u4.pSubq->pSelect;
+          pSelect;
+          pSelect=pSelect->pPrior
+      ){
+        if( srcListHasCoroutine(pSelect->pSrc, -1) ) return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 /*
 ** This routine attempts to flatten subqueries as a performance optimization.
 ** This routine returns 1 if it makes changes and 0 if no flattening occurs.
@@ -4540,6 +4708,7 @@ static int flattenSubquery(
     if( pSrc->nSrc>1 ){
       if( pParse->nSelect>500 ) return 0;
       if( OptimizationDisabled(db, SQLITE_FlttnUnionAll) ) return 0;
+      if( p->pOrderBy && srcListHasCoroutine(pSrc, iFrom) ) return 0;
       aCsrMap = sqlite3DbMallocZero(db, ((i64)pParse->nTab+1)*sizeof(int));
       if( aCsrMap ) aCsrMap[0] = pParse->nTab;
     }
@@ -4828,7 +4997,7 @@ struct WhereConst {
   u8 *pOomFault;   /* Pointer to pParse->db->mallocFailed */
   int nConst;      /* Number for COLUMN=CONSTANT terms */
   int nChng;       /* Number of times a constant is propagated */
-  int bHasAffBlob; /* At least one column in apExpr[] as affinity BLOB */
+  int bHasAffBlob; /* A column in apExpr[] has affinity NONE or BLOB */
   u32 mExcludeOn;  /* Which ON expressions to exclude from considertion.
                    ** Either EP_OuterON or EP_InnerON|EP_OuterON */
   Expr **apExpr;   /* [i*2] is COLUMN and [i*2+1] is VALUE */
@@ -4996,8 +5165,9 @@ static int propagateConstantExprRewrite(Walker *pWalker, Expr *pExpr){
     if( (pExpr->op>=TK_EQ && pExpr->op<=TK_GE)
      || pExpr->op==TK_IS
     ){
-      propagateConstantExprRewriteOne(pConst, pExpr->pLeft, 0);
-      if( pConst->pOomFault[0] ) return WRC_Prune;
+      if( sqlite3ExprAffinity(pExpr->pRight)!=SQLITE_AFF_TEXT ){
+        propagateConstantExprRewriteOne(pConst, pExpr->pLeft, 0);
+      }
       if( sqlite3ExprAffinity(pExpr->pLeft)!=SQLITE_AFF_TEXT ){
         propagateConstantExprRewriteOne(pConst, pExpr->pRight, 0);
       }
@@ -5129,6 +5299,49 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
+
+/*
+** pSrc is a subquery in the FROM clause that uses DISTINCT or a compound
+** operator other than UNION ALL.  Those operations discard rows that are
+** equal to another row, even though the rows may be distinguishable.
+** For example, 1 and 1.0 are equal but typeof() tells them apart.  Return
+** true if the WHERE clause term pWhere gives the same answer for every
+** member of a set of equal rows, and is therefore safe to push down into
+** the subquery.  Return false if it might not be.
+**
+** This is the same test as for moving a HAVING term to the WHERE clause,
+** with every column of the subquery playing the role of a GROUP BY term.
+** See sqlite3ExprIsConstantOrGroupBy().
+*/
+static int pushDownIsEqualityInvariant(
+  Parse *pParse,        /* Parse context */
+  Expr *pWhere,         /* Candidate term from the WHERE clause */
+  SrcItem *pSrc         /* The subquery into which pWhere may be pushed */
+){
+  sqlite3 *db = pParse->db;
+  ExprList *pList = 0;
+  Table *pTab = pSrc->pSTab;
+  int i;
+  int rc;
+  assert( pTab->nCol>0 );
+  for(i=0; i<pTab->nCol; i++){
+    Expr *pCol = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
+    if( pCol==0 ) break;
+    pCol->iTable = pSrc->iCursor;
+    pCol->iColumn = (i16)i;
+    pCol->y.pTab = pTab;
+    pList = sqlite3ExprListAppend(pParse, pList, pCol);
+  }
+  assert( pList!=0 || db->mallocFailed );
+  if( db->mallocFailed ){
+    sqlite3ExprListDelete(db, pList);
+    return 0;
+  }
+  rc = sqlite3ExprIsConstantOrGroupBy(pParse, pWhere, pList);
+  sqlite3ExprListDelete(db, pList);
+  return rc;
+}
+
 /*
 ** Make copies of relevant WHERE clause terms of the outer query into
 ** the WHERE clause of subquery.  Example:
@@ -5234,6 +5447,16 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       case only comes up if SQLite is compiled using
 **       SQLITE_ALLOW_ROWID_IN_VIEW.
 **
+**  (13) If the subquery uses DISTINCT, or is a compound that uses UNION,
+**       INTERSECT, or EXCEPT, then the WHERE clause term may refer to the
+**       result columns of the subquery only as operands of comparison and
+**       logical operators.  Those operations discard rows that are equal
+**       but not identical, such as 1 and 1.0.  A term like typeof(x)='integer'
+**       can be true for one of two equal rows and false for the other, so
+**       applying it before the rows are discarded can change the result.
+**       For EXCEPT and INTERSECT it can even add or remove rows from the
+**       answer.  See pushDownIsEqualityInvariant().
+**
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
 */
@@ -5247,6 +5470,7 @@ static int pushDownWhereTerms(
   Expr *pNew;
   SrcItem *pSrc;        /* The subquery FROM term into which WHERE is pushed */
   int nChng = 0;
+  int bCollapse = 0;    /* Subquery discards rows that are equal */
   pSrc = &pSrcList->a[iSrc];
   if( pWhere==0 ) return 0;
   if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ){
@@ -5261,10 +5485,12 @@ static int pushDownWhereTerms(
     int notUnionAll = 0;
     for(pSel=pSubq; pSel; pSel=pSel->pPrior){
       u8 op = pSel->op;
+      if( pSel->selFlags & SF_Distinct ) bCollapse = 1;
       assert( op==TK_ALL || op==TK_SELECT
            || op==TK_UNION || op==TK_INTERSECT || op==TK_EXCEPT );
       if( op!=TK_ALL && op!=TK_SELECT ){
         notUnionAll = 1;
+        bCollapse = 1;
       }
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSel->pWin ) return 0;    /* restriction (6b) */
@@ -5290,6 +5516,7 @@ static int pushDownWhereTerms(
 #ifndef SQLITE_OMIT_WINDOWFUNC
     if( pSubq->pWin && pSubq->pWin->pPartition==0 ) return 0;
 #endif
+    if( pSubq->selFlags & SF_Distinct ) bCollapse = 1;
   }
 
 #ifdef SQLITE_DEBUG
@@ -5357,6 +5584,9 @@ static int pushDownWhereTerms(
 #endif
 
   if( sqlite3ExprIsSingleTableConstraint(pWhere, pSrcList, iSrc, 1) ){
+    if( bCollapse && !pushDownIsEqualityInvariant(pParse, pWhere, pSrc) ){
+      return nChng;  /* restriction (13) */
+    }
     nChng++;
     pSubq->selFlags |= SF_PushDown;
     while( pSubq ){
@@ -5465,9 +5695,14 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
       if( pY->op==TK_NULL ) continue;
       pY->op = TK_NULL;
       ExprClearProperty(pY, EP_Skip|EP_Unlikely);
-      pX->selFlags |= SF_PushDown;
       nChng++;
     }
+  }
+  if( nChng ){
+    /* If there were any changes, mark the SELECT as modified. This is
+    ** to let isSelfJoinView() know not to allow another reference to this
+    ** view to use the existing materialization. */
+    pSub->selFlags |= SF_PushDown;
   }
   return nChng;
 }
@@ -6446,6 +6681,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             }else{
               pX->zEName = sqlite3DbStrDup(db, zName);
               pX->fg.eEName = ENAME_NAME;
+              if( IN_RENAME_OBJECT ) pX->fg.bStarName = 1;
             }
           }
         }
@@ -6815,6 +7051,9 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   if( nReg==0 ) return;
   if( pParse->nErr ) return;
+  if( pAggInfo->nFunc ){
+    sqlite3MayAbort(pParse);
+  }
   sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->iFirstReg,
                     pAggInfo->iFirstReg+nReg-1);
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
@@ -7272,6 +7511,7 @@ static void agginfoFree(sqlite3 *db, void *pArg){
 **   *  The outer query is a simple count(*) with no WHERE clause or other
 **      extraneous syntax.
 **   *  None of the subqueries are DISTINCT (forumpost/a860f5fb2e 2025-03-10)
+**   *  None of the subqueries use window functions
 **
 ** Return TRUE if the optimization is undertaken.
 */
@@ -7305,6 +7545,9 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     if( pSub->op!=TK_ALL && pSub->pPrior ) return 0;  /* Must be UNION ALL */
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
     if( pSub->pLimit ) return 0;                      /* No LIMIT clause */
+#ifndef SQLITE_OMIT_WINDOWFUNC
+    if( pSub->pWin ) return 0;                        /* No window functions */
+#endif
     if( pSub->selFlags & (SF_Aggregate|SF_Distinct) ){
        testcase( pSub->selFlags & SF_Aggregate );
        testcase( pSub->selFlags & SF_Distinct );
@@ -7692,6 +7935,24 @@ void sqlite3SelectCheckOnClauses(Parse *pParse, Select *pSelect){
 }
 
 /*
+** Omit the ORDER BY clause of SELECT statement p because it cannot affect
+** the result.  The ORDER BY expressions are not freed until the Parse
+** object is cleaned up, because an outer query might have an AggInfo that
+** points into them.  Remove any window functions in the ORDER BY from
+** p->pWin, so that sqlite3WindowRewrite() does not modify them.
+*/
+static void selectOmitOrderBy(Parse *pParse, Select *p){
+  ExprList *pOrderBy = p->pOrderBy;
+  int i;
+  assert( pOrderBy!=0 );
+  for(i=0; i<pOrderBy->nExpr; i++){
+    sqlite3WindowRemoveExprFromSelect(p, pOrderBy->a[i].pExpr);
+  }
+  sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric, pOrderBy);
+  p->pOrderBy = 0;
+}
+
+/*
 ** If p2 exists and p1 and p2 have the same number of terms, then change
 ** every term of p1 to have the same sort order as p2 and return true.
 **
@@ -7820,12 +8081,18 @@ int sqlite3Select(
         sqlite3TreeViewExprList(0, p->pOrderBy, 0, "ORDERBY");
       }
 #endif   
-      sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric,
-                              p->pOrderBy);
+      selectOmitOrderBy(pParse, p);
       testcase( pParse->earlyCleanup );
-      p->pOrderBy = 0;
     }
-    p->selFlags &= ~(u32)SF_Distinct;
+    /* Do not ignore DISTINCT for an EXISTS subquery with an OFFSET clause.
+    ** In this case the OFFSET must be applied after duplicates are discarded,
+    ** so the DISTINCT is required. */
+    if( pDest->eDest!=SRT_Exists
+     || (ALWAYS(p->pLimit!=0) && p->pLimit->pRight==0)
+      /* ^^^^^^-- because tag-202611101908 and SRT_Exists set nowhere else */
+    ){
+      p->selFlags &= ~(u32)SF_Distinct;
+    }
   }
   sqlite3SelectPrep(pParse, p, 0);
   if( pParse->nErr ){
@@ -7948,8 +8215,13 @@ int sqlite3Select(
           }
         }
         for(j=pTabList->nSrc-1; j>=0; j--){
-          pTabList->a[j].fg.jointype &= ~JT_LTORJ;
-          if( pTabList->a[j].fg.jointype & JT_RIGHT ) break;
+          SrcItem *pI2 = &pTabList->a[j];
+          pI2->fg.jointype &= ~JT_LTORJ;
+          if( (pI2->fg.jointype & (JT_LEFT|JT_RIGHT))==0 ){
+            clearOuterOnExpr(p->pWhere, pI2->iCursor);
+            unwrapIfNullRow(pParse, p, pI2->iCursor);
+          }
+          if( pI2->fg.jointype & JT_RIGHT ) break;
         }
       }
     }
@@ -8018,9 +8290,7 @@ int sqlite3Select(
     ){
       TREETRACE(0x800,pParse,p,
                 ("omit superfluous ORDER BY on %r FROM-clause subquery\n",i+1));
-      sqlite3ParserAddCleanup(pParse, sqlite3ExprListDeleteGeneric,
-                              pSub->pOrderBy);
-      pSub->pOrderBy = 0;
+      selectOmitOrderBy(pParse, pSub);
     }
 
     /* If the outer query contains a "complex" result set (that is,
@@ -8109,7 +8379,7 @@ int sqlite3Select(
   }
 
   /* tag-select-0350 */
-  if( OptimizationEnabled(db, SQLITE_QueryFlattener|SQLITE_CountOfView)
+  if( OptimizationEnabled2(db, SQLITE_QueryFlattener, SQLITE_CountOfView)
    && countOfViewOptimization(pParse, p)
   ){
     if( db->mallocFailed ) goto select_end;
@@ -8483,7 +8753,7 @@ int sqlite3Select(
         /* TUNING: For a UNION CTE, because UNION is implies DISTINCT,
         ** reduce the estimated output row count by 8 (LogEst 30). 
         ** Search for tag-20250414a to see other cases */
-        p->nSelectRow -= 30;
+        p->nSelectRow -= Tuning(30,1);
       }
     }
     if( sDistinct.isTnct && sqlite3WhereIsDistinct(pWInfo) ){
@@ -8617,7 +8887,7 @@ int sqlite3Select(
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
     sqlite3ExprAnalyzeAggList(&sNC, sSort.pOrderBy);
     if( pHaving ){
-      if( pGroupBy ){
+      if( pGroupBy && OptimizationEnabled(db, SQLITE_HavingToWhere) ){
         assert( pWhere==p->pWhere );
         assert( pHaving==p->pHaving );
         assert( pGroupBy==p->pGroupBy );

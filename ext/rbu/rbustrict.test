@@ -1,0 +1,115 @@
+# 2026 October 29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for RBU updates and RBU vacuums of STRICT tables. In particular,
+# that values stored in columns of type ANY are not subjected to
+# NUMERIC affinity by the imposter tables RBU uses to write to the
+# target database.
+#
+
+source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
+set ::testprefix rbustrict
+
+#-------------------------------------------------------------------------
+# RBU vacuum.
+#
+foreach {tn bIndex} {1 0 2 1} {
+reset_db
+do_execsql_test 1.$tn.0 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, v ANY) STRICT;
+  INSERT INTO t1 VALUES(1, '01'), (2, '1.0'), (3, '-0'), (4, ' 7');
+  INSERT INTO t1 VALUES(5, '1e5'), (6, 'abc'), (7, '9223372036854775808');
+  INSERT INTO t1 VALUES(8, 8), (9, NULL);
+
+  CREATE TABLE w1(k ANY PRIMARY KEY, n INT) STRICT, WITHOUT ROWID;
+  INSERT INTO w1 VALUES('007', 1), (8, 2), ('8', 3);
+}
+if {$bIndex} {
+  do_execsql_test 1.$tn.0.1 {
+    CREATE INDEX i1 ON t1(v);
+    CREATE INDEX w1n ON w1(n, k);
+  }
+}
+
+set t1_res {
+  1 text '01'   2 text '1.0'   3 text '-0'   4 text {' 7'}
+  5 text '1e5'  6 text 'abc'   7 text '9223372036854775808'
+  8 integer 8   9 null NULL
+}
+set w1_res {
+  integer 8 2   text '007' 1   text '8' 3
+}
+
+do_rbu_vacuum_test 1.$tn.1 1
+
+do_execsql_test 1.$tn.2 {
+  SELECT id, typeof(v), quote(v) FROM t1 ORDER BY id;
+} $t1_res
+do_execsql_test 1.$tn.3 {
+  SELECT typeof(k), quote(k), n FROM w1 ORDER BY k;
+} $w1_res
+do_execsql_test 1.$tn.4 {
+  SELECT id FROM t1 WHERE v='01';
+  SELECT n FROM w1 WHERE k='007';
+} {1 1}
+}
+
+#-------------------------------------------------------------------------
+# RBU update.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, v ANY) STRICT;
+  CREATE INDEX i1 ON t1(v);
+  INSERT INTO t1 VALUES(6, 'abc'), (7, NULL);
+
+  CREATE TABLE w1(k ANY PRIMARY KEY, n INT) STRICT, WITHOUT ROWID;
+  CREATE INDEX w1n ON w1(n, k);
+  INSERT INTO w1 VALUES('xyz', 1);
+}
+
+do_test 2.1 {
+  forcedelete rbu.db
+  sqlite3 rbu rbu.db
+  rbu eval {
+    CREATE TABLE data_t1(id, v, rbu_control);
+    INSERT INTO data_t1 VALUES(10, '0042', 0);
+    INSERT INTO data_t1 VALUES(11, '5.50', 0);
+    INSERT INTO data_t1 VALUES(12, NULL, 0);
+    INSERT INTO data_t1 VALUES(6, '007', '.x');
+
+    CREATE TABLE data_w1(k, n, rbu_control);
+    INSERT INTO data_w1 VALUES('007', 2, 0);
+    INSERT INTO data_w1 VALUES(8, 3, 0);
+    INSERT INTO data_w1 VALUES('xyz', 4, '.x');
+  }
+  rbu close
+  step_rbu test.db rbu.db
+} {SQLITE_DONE}
+
+do_execsql_test 2.2 {
+  SELECT id, typeof(v), quote(v) FROM t1 ORDER BY id;
+} {
+  6 text '007'  7 null NULL  10 text '0042'  11 text '5.50'  12 null NULL
+}
+do_execsql_test 2.3 {
+  SELECT typeof(k), quote(k), n FROM w1 ORDER BY k;
+} {
+  integer 8 3  text '007' 2  text 'xyz' 4
+}
+do_execsql_test 2.4 {
+  SELECT id FROM t1 WHERE v='0042';
+  SELECT n FROM w1 WHERE k='007';
+  PRAGMA integrity_check;
+} {10 2 ok}
+
+finish_test

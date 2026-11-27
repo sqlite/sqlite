@@ -1183,7 +1183,7 @@ do_catchsql_test 14.1 {
 ifcapable altertable {
   do_catchsql_test 14.2 {
     ALTER TABLE t1 RENAME TO alkjalkjdfiiiwuer987lkjwer82mx97sf98788s9789s; 
-  } {1 {database disk image is malformed}}
+  } {1 {attached databases must use the same text encoding as main database}}
 }
 extra_schema_checks 1
 

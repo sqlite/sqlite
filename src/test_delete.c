@@ -20,6 +20,10 @@
 */
 
 #ifndef SQLITE_OS_WIN
+# define SQLITE_OS_WIN 0
+#endif
+
+#if !SQLITE_OS_WIN
 #  include <unistd.h>
 #  include <errno.h>
 #endif
@@ -63,7 +67,7 @@ static int sqlite3DeleteUnlinkIfExists(
   int *pbExists
 ){
   int rc = SQLITE_ERROR;
-#ifdef SQLITE_OS_WIN
+#if SQLITE_OS_WIN
   if( pVfs ){
     if( pbExists ) *pbExists = 1;
     rc = pVfs->xDelete(pVfs, zFile, 0);
@@ -115,7 +119,7 @@ SQLITE_API int sqlite3_delete_database(
     { "%s-wal%03d",     SQLITE_MULTIPLEX_WAL_8_3_OFFSET, 1 },
   };
 
-#ifdef SQLITE_OS_WIN
+#if SQLITE_OS_WIN
   sqlite3_vfs *pVfs = sqlite3_vfs_find("win32");
 #else
   sqlite3_vfs *pVfs = 0;

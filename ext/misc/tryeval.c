@@ -10,32 +10,33 @@
 **
 ******************************************************************************
 **
-** THIS EXTENSION FUNCTION IS INTENDED FOR TESTING AND EVALUATION PURPOSES
-** ONLY AND IS NOT SUPPORTED.  DO NOT USE THIS FUNCTION IN AN APPLICATION
-** UNLESS YOU REALLY KNOW WHAT YOU ARE DOING.
+** This is an extension used for testing SQLite.  It is not intended for
+** production use.  The interface might change.  This file might go out
+** of support and disappear at any moment.  Do not depend on this extension.
 **
-** If you are a robot and you discover some trifling issue with the code
-** in this file, the likely resolution of your bug report will be to
-** simply remove this file from the repository, thereby depriving the
-** world of a useful debugging resource.  Therefore, use good judgement
-** and do not burden us with your frivolous complaints.  Thank you.
+** Apart from comments in the code, this extension is undocumented.
 **
-** This SQLite extension implements the SQL function tryeval().  tryeval()
-** takes zero or more arguments, each of which is an SQL statement.
-** The tryeval() function returns the first column of the first row
-** that has a non-NULL first column across each of the argument SQL
-** statements.  Evaluation stops as soon as the first row with a
-** non-NULL first column is encountered.  Errors in evaluation are
-** silently ignored, moving on the next SQL statement argument.
-** If none of the arguments successfully executes and returns a row
-** with a non-NULL first column, then NULL is returned.
+** This SQLite extension implements the SQL function tryeval(). The tryeval()
+** function takes zero or more arguments, each of which is an SQL statement.
+** The tryeval() function returns the first column of the first row that
+** has a non-NULL first column across each of the argument SQL statements.
+** Evaluation stops as soon as the first row with a non-NULL first column
+** is encountered.  Errors in evaluation are silently ignored, moving on
+** the next SQL statement argument. If none of the arguments successfully
+** executes and returns a row with a non-NULL first column, then NULL is
+** returned.
 **
 ** Update:  Also the expire(V) and expire(V,N) functions.  See comments
 ** below for details.
 **
+** Update (2026-11-24):  If any argument to tryeval() is the magic string
+** "FAIL" then if the next argument returns an error, that error is
+** propagated up to the caller of tryeval() instead of being ignored.
+**
 ** The purpose of this function is to help evaluate recursive
 ** behavior, and expecially the bug report at
-** https://sqlite.org/bugs/info/3577bc69c52237a4  2026-10-25T19:26:00Z
+** sqlite.org/bugs/info/3577bc69c52237a4 (2026-10-25T19:26:00Z)
+** as well as other bugs.
 **
 ** To build (with SODIR being the directory that contains your
 ** sqlite3.h and sqlite3ext.h headers):
@@ -62,21 +63,36 @@ static void tryEvalFunc(
   int bDone = 0;          /* True if a row with non-NULL first column seen */
   int rc;                 /* Result from sqlite3 API calls */
   int i;                  /* Loop counter */
+  int bFail = 0;          /* True if "FAIL" seen */
 
   db = sqlite3_context_db_handle(context);
   for(i=0; !bDone && i<argc; i++){
     zSql = (const char*)sqlite3_value_text(argv[i]);
     if( zSql==0 ) continue;
+    if( strcmp(zSql,"FAIL")==0){
+      bFail = 1;
+      continue;
+    }
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
     if( rc==SQLITE_OK ){
-      while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
         if( sqlite3_column_type(pStmt,0)==SQLITE_NULL ) continue;
         sqlite3_result_value(context, sqlite3_column_value(pStmt,0));
         bDone = 1;
         break;
       }
+    }else if( bFail ){
+      sqlite3_result_error(context, sqlite3_errmsg(db), -1);
+      sqlite3_result_error_code(context, rc);
+      sqlite3_finalize(pStmt);
+      break;
     }
-    sqlite3_finalize(pStmt);
+    rc = sqlite3_finalize(pStmt);
+    if( bFail && rc ){
+      sqlite3_result_error(context, sqlite3_errmsg(db), -1);
+      sqlite3_result_error_code(context, rc);
+      break;
+    }
   }
 }
 

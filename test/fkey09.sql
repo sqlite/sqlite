@@ -37,6 +37,7 @@
 #   ./sqlite3 test/fkey09.sql
 #
 #
+.open :memory:
 .mode list
 .if NOT capable('fkey')
 .exit
@@ -627,7 +628,9 @@ PRAGMA foreign_key_check;
 .check ''
 #-------------------------------------------------------------------------
 # A parent key with NOCASE collation and an index on the child key
-# with the same collation, named in a different case (line 560 true).
+# with the same collation, named in a different case. The child index
+# is not used, as the IN(...) optimization in fkey.c is only applied
+# when the parent key collation is BINARY.
 #
 .open :memory:
 PRAGMA foreign_keys=ON;
@@ -649,14 +652,14 @@ EXPLAIN QUERY PLAN DELETE FROM p WHERE id=1;
 .check <<END
 QUERY PLAN
 |--SEARCH p USING INTEGER PRIMARY KEY (rowid=?)
-|--SEARCH n USING COVERING INDEX nkn (k=?)
-`--SEARCH c USING COVERING INDEX ckn (k=?)
+|--SCAN n USING COVERING INDEX nkn
+`--SCAN c USING COVERING INDEX ckn
 END
 
 .testcase 210.2
 SELECT count(*)>0 FROM bytecode('DELETE FROM p WHERE id=1')
  WHERE opcode='Cast' AND subprog IS NOT NULL;
-.check 1
+.check 0
 
 .testcase 210.3
 DELETE FROM p WHERE code='ABC';
@@ -684,7 +687,9 @@ PRAGMA foreign_key_check;
 .check ''
 #-------------------------------------------------------------------------
 # A parent key with RTRIM collation. Both an unsuitable index (NOCASE)
-# and a suitable one (RTRIM).
+# and one with matching collation (RTRIM). Neither is used, as the
+# IN(...) optimization in fkey.c is only applied when the parent key
+# collation is BINARY.
 #
 .open :memory:
 PRAGMA foreign_keys=ON;
@@ -708,14 +713,14 @@ EXPLAIN QUERY PLAN DELETE FROM p WHERE id=1;
 .check <<END
 QUERY PLAN
 |--SEARCH p USING INTEGER PRIMARY KEY (rowid=?)
-|--SEARCH n USING COVERING INDEX nkr (k=?)
-`--SEARCH c USING COVERING INDEX ckr (k=?)
+|--SCAN n USING COVERING INDEX nkr
+`--SCAN c USING COVERING INDEX ckr
 END
 
 .testcase 220.2
 SELECT count(*)>0 FROM bytecode('DELETE FROM p WHERE id=1')
  WHERE opcode='Cast' AND subprog IS NOT NULL;
-.check 1
+.check 0
 
 .testcase 220.3
 DELETE FROM p WHERE code='abc';

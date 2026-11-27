@@ -366,6 +366,7 @@ struct Fts5Index {
   /* Error state. */
   int rc;                         /* Current error code */
   int flushRc;
+  int bInSync;                    /* True while inside sqlite3Fts5IndexSync() */
 
   /* State used by the fts5DataXXX() functions. */
   sqlite3_blob *pReader;          /* RO incr-blob open on %_data table */
@@ -378,6 +379,7 @@ struct Fts5Index {
   int nRead;                      /* Total number of blocks read */
 
   sqlite3_stmt *pDeleteFromIdx;
+  sqlite3_stmt *pIdxKeyUpdate;    /* UPDATE %_idx SET term WHERE (segid,pgno) */
 
   sqlite3_stmt *pDataVersion;
   i64 iStructVersion;             /* data_version when pStruct read */
@@ -953,7 +955,8 @@ static int fts5IndexPrepareStmt(
   if( p->rc==SQLITE_OK ){
     if( zSql ){
       int rc = sqlite3_prepare_v3(p->pConfig->db, zSql, -1,
-          SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_NO_VTAB,
+          SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_NO_VTAB
+          |SQLITE_PREPARE_FROM_DDL,
           ppStmt, 0);
       /* If this prepare() call fails with SQLITE_ERROR, then one of the
       ** %_idx or %_data tables has been removed or modified. Call this
@@ -967,6 +970,17 @@ static int fts5IndexPrepareStmt(
   return p->rc;
 }
 
+/*
+** If *pRc is other than SQLITE_OK when this function is called, it is a
+** no-op. Otherwise, call sqlite3_step() and then sqlite3_reset() on the
+** supplied statement pointer. Set (*pRc) to the result of sqlite3_reset().
+*/
+static void fts5StepAndReset(int *pRc, sqlite3_stmt *pStmt){
+  if( *pRc==SQLITE_OK ){
+    sqlite3_step(pStmt);
+    *pRc = sqlite3_reset(pStmt);
+  }
+}
 
 /*
 ** INSERT OR REPLACE a record into the %_data table.
@@ -984,9 +998,8 @@ static void fts5DataWrite(Fts5Index *p, i64 iRowid, const u8 *pData, int nData){
   }
 
   sqlite3_bind_int64(p->pWriter, 1, iRowid);
-  sqlite3_bind_blob(p->pWriter, 2, pData, nData, SQLITE_STATIC);
-  sqlite3_step(p->pWriter);
-  p->rc = sqlite3_reset(p->pWriter);
+  p->rc = sqlite3_bind_blob(p->pWriter, 2, pData, nData, SQLITE_STATIC);
+  fts5StepAndReset(&p->rc, p->pWriter);
   sqlite3_bind_null(p->pWriter, 2);
 }
 
@@ -2402,7 +2415,10 @@ static void fts5SegIterNext(
         bNewTerm = 1;
       }
       assert_nc( iOff<pLeaf->szLeaf );
-      if( iOff>pLeaf->szLeaf ){
+      if( iOff>=pLeaf->szLeaf ){
+        /* If iOff==szLeaf then the first rowid offset in the page header
+        ** (or the first term offset) points at the page footer, and
+        ** pIter->iLeafOffset still has its value from the previous page. */
         FTS5_CORRUPT_ITER(p, pIter);
         return;
       }
@@ -2742,7 +2758,8 @@ static void fts5SegIterSeekInit(
   pIdxSelect = fts5IdxSelectStmt(p);
   if( p->rc ) return;
   sqlite3_bind_int(pIdxSelect, 1, pSeg->iSegid);
-  sqlite3_bind_blob(pIdxSelect, 2, pTerm, nTerm, SQLITE_STATIC);
+  p->rc = sqlite3_bind_blob(pIdxSelect, 2, pTerm, nTerm, SQLITE_STATIC);
+  if( p->rc ) return;
   if( SQLITE_ROW==sqlite3_step(pIdxSelect) ){
     i64 val = sqlite3_column_int(pIdxSelect, 0);
     iPg = (int)(val>>1);
@@ -2834,8 +2851,8 @@ static void fts5SegIterNextInit(
   if( pSel ){
     assert( p->rc==SQLITE_OK );
     sqlite3_bind_int(pSel, 1, pSeg->iSegid);
-    sqlite3_bind_blob(pSel, 2, pTerm, nTerm, SQLITE_STATIC);
-
+    p->rc = sqlite3_bind_blob(pSel, 2, pTerm, nTerm, SQLITE_STATIC);
+    if( p->rc ) return;
     if( sqlite3_step(pSel)==SQLITE_ROW ){
       i64 val = sqlite3_column_int64(pSel, 0);
       iPg = (int)(val>>1);
@@ -3640,6 +3657,11 @@ static void fts5ChunkIterate(
   /* This function does not work with detail=none databases. */
   assert( p->pConfig->eDetail!=FTS5_DETAIL_NONE );
 
+  if( nChunk<0 ){
+    FTS5_CORRUPT_IDX(p);
+    return;
+  }
+
   if( (pSeg->flags & FTS5_SEGITER_REVERSE)==0 ){
     pgnoSave = pgno+1;
   }
@@ -4334,10 +4356,11 @@ static void fts5WriteFlushBtree(Fts5Index *p, Fts5SegWriter *pWriter){
     const char *z = (pWriter->btterm.n>0?(const char*)pWriter->btterm.p:"");
     /* The following was already done in fts5WriteInit(): */
     /* sqlite3_bind_int(p->pIdxWriter, 1, pWriter->iSegid); */
-    sqlite3_bind_blob(p->pIdxWriter, 2, z, pWriter->btterm.n, SQLITE_STATIC);
+    p->rc = sqlite3_bind_blob(
+        p->pIdxWriter, 2, z, pWriter->btterm.n, SQLITE_STATIC
+    );
     sqlite3_bind_int64(p->pIdxWriter, 3, bFlag + ((i64)pWriter->iBtPage<<1));
-    sqlite3_step(p->pIdxWriter);
-    p->rc = sqlite3_reset(p->pIdxWriter);
+    fts5StepAndReset(&p->rc, p->pIdxWriter);
     sqlite3_bind_null(p->pIdxWriter, 2);
   }
   pWriter->iBtPage = 0;
@@ -5184,6 +5207,39 @@ static void fts5SecureDeleteIdxEntry(
 }
 
 /*
+** Execute the SQL statement:
+**
+**    UPDATE %_idx SET term=$pKey WHERE (segid, (pgno/2)) = ($iSegid, $iPgno);
+**
+** This is used when a secure-delete operation removes the first term from
+** a segment leaf page that contains other terms. The %_idx key for the
+** page is a prefix of the removed term, so it is replaced with a key
+** derived from the new first term on the page.
+*/
+static void fts5SecureUpdateIdxEntry(
+  Fts5Index *p,                   /* FTS5 backend object */
+  int iSegid,                     /* Id of segment */
+  int iPgno,                      /* Page number within segment */
+  const u8 *pKey, int nKey        /* New key */
+){
+  assert( iPgno!=1 );
+  if( p->rc==SQLITE_OK && p->pIdxKeyUpdate==0 ){
+    fts5IndexPrepareStmt(p, &p->pIdxKeyUpdate, sqlite3_mprintf(
+        "UPDATE '%q'.'%q_idx' SET term=?1 WHERE (segid, (pgno/2)) = (?2, ?3)",
+        p->pConfig->zDb, p->pConfig->zName
+    ));
+  }
+  if( p->rc==SQLITE_OK ){
+    sqlite3_bind_blob(p->pIdxKeyUpdate, 1, pKey, nKey, SQLITE_STATIC);
+    sqlite3_bind_int(p->pIdxKeyUpdate, 2, iSegid);
+    sqlite3_bind_int(p->pIdxKeyUpdate, 3, iPgno);
+    sqlite3_step(p->pIdxKeyUpdate);
+    p->rc = sqlite3_reset(p->pIdxKeyUpdate);
+    sqlite3_bind_null(p->pIdxKeyUpdate, 1);
+  }
+}
+
+/*
 ** This is called when a secure-delete operation removes a position-list
 ** that overflows onto segment page iPgno of segment pSeg. This function
 ** rewrites node iPgno, and possibly one or more of its right-hand peers,
@@ -5353,7 +5409,10 @@ static void fts5DoSecureDelete(
     }else{
       iStart = fts5GetU16(&aPg[0]);
     }
-    if( iStart>nPg ){
+    if( iStart>=iPgIdx || pSeg->iLeafOffset>iPgIdx ){
+      /* The rowid of the entry being removed, and the start of its position
+      ** list, must be within the leaf content, which ends at szLeaf (iPgIdx).
+      ** The page footer follows. */
       FTS5_CORRUPT_IDX(p);
       sqlite3_free(aIdx);
       return;
@@ -5364,6 +5423,11 @@ static void fts5DoSecureDelete(
 
     if( bDetailNone ){
       int iEnd = pSeg->iLeafOffset - (pSeg->bDel ? 1 + pSeg->nPos : 0);
+      if( iEnd>iPgIdx ){
+        FTS5_CORRUPT_IDX(p);
+        sqlite3_free(aIdx);
+        return;
+      }
       while( iSOP<iEnd ){
         if( aPg[iSOP]==0x00 ) iSOP++;
         if( aPg[iSOP]==0x00 ) iSOP++;
@@ -5379,12 +5443,26 @@ static void fts5DoSecureDelete(
       int nPos = 0;
       iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
       while( iSOP<pSeg->iLeafOffset ){
+        /* nPos is the size of a position-list in bytes, times 2, plus the
+        ** delete flag.  The rowid of the next entry follows it, and must
+        ** come before the position-list of the entry being removed. */
+        if( nPos<0 || (nPos/2)>=pSeg->iLeafOffset-iSOP ){
+          FTS5_CORRUPT_IDX(p);
+          sqlite3_free(aIdx);
+          return;
+        }
         iStart = iSOP + (nPos/2);
         iSOP = iStart + fts5GetVarint(&aPg[iStart], &iDelta);
         iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
       }
-      assert_nc( iSOP==pSeg->iLeafOffset );
-      iNextOff = iSOP + pSeg->nPos;
+      if( iSOP!=pSeg->iLeafOffset || pSeg->nPos<0 ){
+        FTS5_CORRUPT_IDX(p);
+        sqlite3_free(aIdx);
+        return;
+      }
+      /* The position list may extend past the end of this page, but take
+      ** care that iSOP + nPos cannot overflow. */
+      iNextOff = (pSeg->nPos>=iPgIdx-iSOP) ? iPgIdx : iSOP + pSeg->nPos;
     }
   }
 
@@ -5434,6 +5512,11 @@ static void fts5DoSecureDelete(
     if( iNextOff!=iPgIdx ){
       u64 iNextDelta = 0;
       iNextOff += fts5GetVarint(&aPg[iNextOff], &iNextDelta);
+      if( iNextOff>iPgIdx ){
+        FTS5_CORRUPT_IDX(p);
+        sqlite3_free(aIdx);
+        return;
+      }
       iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta + iNextDelta);
     }
   }else if( 
@@ -5453,7 +5536,13 @@ static void fts5DoSecureDelete(
       if( (iKeyOff+iVal)>(u32)iStart ) break;
       iKeyOff += iVal;
     }
-    assert_nc( iKey>=1 );
+    if( iKey<1 || iKeyOff<4 || iKeyOff>=iStart ){
+      /* There must be a term before the doclist.  Terms start after the
+      ** 4-byte page header. */
+      FTS5_CORRUPT_IDX(p);
+      sqlite3_free(aIdx);
+      return;
+    }
 
     /* Set iDelKeyOff to the value of the footer entry to remove from 
     ** the page. */
@@ -5468,6 +5557,7 @@ static void fts5DoSecureDelete(
       u64 nSuffix = 0;
       u64 nPrefix2 = 0;
       u64 nSuffix2 = 0;
+      i64 nNeed;
 
       iDelKeyOff = iNextOff;
       iNextOff += fts5GetVarint(&aPg[iNextOff], &nPrefix2);
@@ -5481,16 +5571,49 @@ static void fts5DoSecureDelete(
       nPrefix = MIN(nPrefix, nPrefix2);
       nSuffix = (nPrefix2 + nSuffix2) - nPrefix;
 
-      if( (iKeyOff+nSuffix)>(u64)iPgIdx || (iNextOff+nSuffix2)>(u64)iPgIdx ){
+      /* Compare by subtraction, not addition, since the varints above can
+      ** be any 64-bit value and a sum could wrap around.  After the first
+      ** three tests nPrefix2 and nSuffix2 are small, so the sum in
+      ** nSuffix cannot have wrapped and the last test is safe. */
+      if( iNextOff>iPgIdx
+       || nSuffix2>(u64)(iPgIdx-iNextOff)
+       || nPrefix2>(u64)pSeg->term.n
+       || (iKeyOff+nSuffix)>(u64)iPgIdx
+      ){
         FTS5_CORRUPT_IDX(p);
       }else{
+        u8 aTmp[10];
+        if( iKey==1 && pSeg->iLeafPgno!=1 
+         && nSuffix2>0
+        ){
+          /* The term being removed is the first on the page, so the %_idx
+          ** key for the page is a prefix of it. Replace the key with a
+          ** prefix of the new first term that is one byte longer than
+          ** the prefix it shares with the removed term. */
+          int nNew = (int)nPrefix2 + 1;
+          u8 *aNew = (u8*)sqlite3Fts5MallocZero(&p->rc, nNew);
+          if( aNew ){
+            memcpy(aNew, pSeg->term.p, nNew-1);
+            aNew[nNew-1] = aPg[iNextOff];
+            fts5SecureUpdateIdxEntry(p, iSegid, pSeg->iLeafPgno, aNew, nNew);
+            sqlite3_free(aNew);
+          }
+        }
+        /* Make sure the replacement for the removed term fits in the space
+        ** between iOff and the start of the next term's suffix. */
+        nNeed = sqlite3Fts5PutVarint(aTmp, nSuffix)
+              + (iKey!=1 ? sqlite3Fts5PutVarint(aTmp, nPrefix) : 0)
+              + (nPrefix2>nPrefix ? (nPrefix2-nPrefix) : 0);
+        if( (i64)iOff + nNeed > iNextOff ){
+          FTS5_CORRUPT_IDX(p);
+          sqlite3_free(aIdx);
+          return;
+        }
         if( iKey!=1 ){
           iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
         }
         iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
-        if( nPrefix2>(u64)pSeg->term.n ){
-          FTS5_CORRUPT_IDX(p);
-        }else if( nPrefix2>nPrefix ){
+        if( nPrefix2>nPrefix ){
           memcpy(&aPg[iOff], &pSeg->term.p[nPrefix], nPrefix2-nPrefix);
           iOff += (nPrefix2-nPrefix);
         }
@@ -5521,6 +5644,13 @@ static void fts5DoSecureDelete(
         int iTermIdx = 0;
         i64 iTermOff = 0;
 
+        /* The page holds a term, so it has a footer. */
+        if( nTermIdx<=0 ){
+          FTS5_CORRUPT_IDX(p);
+          fts5DataRelease(pTerm);
+          sqlite3_free(aIdx);
+          return;
+        }
         while( 1 ){
           u32 iVal = 0;
           int nByte = fts5GetVarint32(&aTermIdx[iTermIdx], iVal);
@@ -5530,7 +5660,7 @@ static void fts5DoSecureDelete(
         }
         nTermIdx = iTermIdx;
 
-        if( iTermOff>pTerm->szLeaf ){
+        if( iTermOff>pTerm->szLeaf || iTermOff<4 ){
           FTS5_CORRUPT_IDX(p);
         }else{
           memmove(&pTerm->p[iTermOff], &pTerm->p[pTerm->szLeaf], nTermIdx);
@@ -5561,6 +5691,12 @@ static void fts5DoSecureDelete(
     int iPrevKeyOut = 0;
     i64 iKeyIn = 0;
 
+    if( nShift<0 ){
+      /* Removing an entry cannot make the page larger. */
+      FTS5_CORRUPT_IDX(p);
+      sqlite3_free(aIdx);
+      return;
+    }
     if( nMove>0 ){
       memmove(&aPg[iOff], &aPg[iNextOff], nMove);
     }
@@ -5577,7 +5713,12 @@ static void fts5DoSecureDelete(
         break;
       }
       if( iKeyIn!=iDelKeyOff ){
-        int iKeyOut = (iKeyIn - (iKeyIn>iOff ? nShift : 0));
+        int iKeyOut = (int)(iKeyIn - (iKeyIn>iOff ? nShift : 0));
+        if( iKeyOut<iPrevKeyOut ){
+          /* Footer entries must be in ascending order. */
+          FTS5_CORRUPT_IDX(p);
+          break;
+        }
         nNewPg += sqlite3Fts5PutVarint(&aPg[nNewPg], iKeyOut - iPrevKeyOut);
         iPrevKeyOut = iKeyOut;
       }
@@ -5740,12 +5881,19 @@ static void fts5FlushOneHash(Fts5Index *p){
                     continue;
                   }
                 }
-              }else if( (pDoclist[iOff] & 0x01) 
-                && !fts5FlushSecureDelete(p, pStruct, zTerm, nTerm, iRowid)
-              ){
-                if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
-                  iOff++;
-                  continue;
+              }else{
+                /* The delete flag is the low bit of the size varint, which
+                ** is not in the first byte if the size field is multi-byte. */
+                int nDummy = 0;
+                int bDel = 0;
+                fts5GetPoslistSize(&pDoclist[iOff], &nDummy, &bDel);
+                if( bDel
+                 && !fts5FlushSecureDelete(p, pStruct, zTerm, nTerm, iRowid)
+                ){
+                  if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
+                    iOff++;
+                    continue;
+                  }
                 }
               }
             }
@@ -6871,8 +7019,17 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
 */
 int sqlite3Fts5IndexSync(Fts5Index *p){
   assert( p->rc==SQLITE_OK );
+  /* Flushing may run internal SQL statements (e.g. secure-delete updates of
+  ** the %_idx table). If such a statement opens a statement journal it
+  ** invokes the xSavepoint() method of this same table, which lands back
+  ** here before the outer flush has cleared the hash table. Without this
+  ** guard that recurses until the stack overflows. The outer flush is still
+  ** running and will write everything out, so the nested call is a no-op. */
+  if( p->bInSync ) return SQLITE_OK;
+  p->bInSync = 1;
   fts5IndexFlush(p);
   fts5IndexCloseReader(p);
+  p->bInSync = 0;
   return fts5IndexReturn(p);
 }
 
@@ -6973,6 +7130,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p){
     sqlite3_finalize(p->pIdxNextSelect);
     sqlite3_finalize(p->pDataVersion);
     sqlite3_finalize(p->pDeleteFromIdx);
+    sqlite3_finalize(p->pIdxKeyUpdate);
     sqlite3Fts5HashFree(p->pHash);
     sqlite3_free(p->zDataTbl);
     sqlite3_free(p);
@@ -8573,6 +8731,10 @@ static void fts5IndexIntegrityCheckSegment(
     /* If the leaf in question has already been trimmed from the segment, 
     ** ignore this b-tree entry. Otherwise, load it into memory. */
     if( iIdxLeaf<pSeg->pgnoFirst ) continue;
+    if( iIdxLeaf>pSeg->pgnoLast ){
+      FTS5_CORRUPT_ROWID(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, iIdxLeaf));
+      break;
+    }
     iRow = FTS5_SEGMENT_ROWID(pSeg->iSegid, iIdxLeaf);
     pLeaf = fts5LeafRead(p, iRow);
     if( pLeaf==0 ) break;

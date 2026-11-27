@@ -862,6 +862,25 @@ static int seriesBestIndex(
       aIdx[iCol] = i;
     }
   }
+  if( pIdxInfo->nOrderBy>=1 ){
+    int iOB = pIdxInfo->aOrderBy[0].iColumn;
+    if( iOB==SERIES_COLUMN_VALUE || iOB==SERIES_COLUMN_ROWID ){
+      /* The rowid is an alias for value, and both are unique, so the
+      ** series can be generated in the requested order regardless of any
+      ** subsequent ORDER BY terms. */
+      if( pIdxInfo->aOrderBy[0].desc ){
+        idxNum |= 0x08;
+      }else{
+        idxNum |= 0x10;
+      }
+      pIdxInfo->orderByConsumed = 1;
+    }else{
+      /* The core will sort the output, so it needs to see every row.
+      ** A LIMIT or OFFSET applied here would discard rows before the sort */
+      idxNum &= ~0x60;
+      aIdx[3] = aIdx[4] = -1;
+    }
+  }
   if( aIdx[3]==0 ){
     /* Ignore OFFSET if LIMIT is omitted */
     idxNum &= ~0x60;
@@ -897,14 +916,6 @@ static int seriesBestIndex(
     ** the preferred case */
     pIdxInfo->estimatedCost = (double)(2 - ((idxNum&4)!=0));
     pIdxInfo->estimatedRows = 1000;
-    if( pIdxInfo->nOrderBy>=1 && pIdxInfo->aOrderBy[0].iColumn==0 ){
-      if( pIdxInfo->aOrderBy[0].desc ){
-        idxNum |= 0x08;
-      }else{
-        idxNum |= 0x10;
-      }
-      pIdxInfo->orderByConsumed = 1;
-    }
   }else if( (idxNum & 0x21)==0x21 ){
     /* We have start= and LIMIT */
     pIdxInfo->estimatedRows = 2500;

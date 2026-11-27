@@ -528,4 +528,46 @@ do_execsql_test 5.4 {
   PRAGMA integrity_check
 } {{v1: vector in %_base row 1 is wrong size}}
 
+#-------------------------------------------------------------------------
+# A binary quantizer model with the nCodebook field of the model header
+# set to 0. Such a model must be rejected as corrupt when it is loaded.
+# If it is not, encoding a query vector writes past the end of a buffer.
+#
+reset_db
+vec1_load db
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE v1 USING vec1(v);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<40
+  )
+  INSERT INTO v1 SELECT random_vector(16) FROM s;
+  INSERT INTO v1(cmd, arg) VALUES('rebuild', (
+    SELECT vec1_train(v, '{quantizer:"bq", nbucket:0}') FROM v1
+  ));
+}
+
+do_test 6.1 {
+  set M [db one {SELECT val FROM v1_model WHERE id=1}]
+  binary scan $M IIIII iVersion flags nElem nCodebook nBucket
+  list [expr {$flags & 0x08}] $nElem $nCodebook $nBucket
+} {8 16 2 0}
+
+do_test 6.2 {
+  set M [string replace $M 12 15 [binary format I 0]]
+  db eval { UPDATE v1_model SET val = $M WHERE id=1 }
+} {}
+
+db close
+sqlite3 db test.db
+vec1_load db
+
+do_catchsql_test 6.3 {
+  SELECT count(*) FROM v1(random_vector(16), 4);
+} {1 {vec1: unrecognized bq codesize}}
+
+do_catchsql_test 6.4 {
+  INSERT INTO v1 VALUES(random_vector(16));
+} {1 {vec1: unrecognized bq codesize}}
+
 finish_test

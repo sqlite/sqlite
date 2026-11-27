@@ -593,5 +593,45 @@ ifcapable fts5 {
   } {{hello world}}
 }
 
+#-------------------------------------------------------------------------
+# Statement transactions of pending RETURNING statements must not be
+# closed out of order.
+#
+reset_db
+do_execsql_test 25.0 {
+  CREATE TABLE t(a INTEGER PRIMARY KEY, b UNIQUE);
+  INSERT INTO t VALUES(1,1),(2,2),(3,3);
+  BEGIN;
+}
+do_test 25.1 {
+  set A [sqlite3_prepare_v2 db {UPDATE t SET b=b+10 RETURNING a} -1 dummy]
+  set B [sqlite3_prepare_v2 db {UPDATE t SET b=b+100 RETURNING a} -1 dummy]
+  list [sqlite3_step $A] [sqlite3_step $B]
+} {SQLITE_ROW SQLITE_ROW}
+do_test 25.2 {
+  while {[sqlite3_step $A]=="SQLITE_ROW"} {}
+  while {[sqlite3_step $B]=="SQLITE_ROW"} {}
+  list [sqlite3_finalize $A] [sqlite3_finalize $B]
+} {SQLITE_OK SQLITE_OK}
+do_execsql_test 25.3 {
+  COMMIT;
+  SELECT a, b FROM t;
+} {1 111 2 112 3 113}
+
+# A pending SELECT does not interfere with a RETURNING statement.
+do_execsql_test 25.4 { BEGIN }
+do_test 25.5 {
+  set A [sqlite3_prepare_v2 db {SELECT a FROM t} -1 dummy]
+  set B [sqlite3_prepare_v2 db {DELETE FROM t RETURNING a} -1 dummy]
+  list [sqlite3_step $A] [sqlite3_step $B]
+} {SQLITE_ROW SQLITE_ROW}
+do_test 25.6 {
+  list [sqlite3_finalize $A] [sqlite3_finalize $B]
+} {SQLITE_OK SQLITE_OK}
+do_execsql_test 25.7 {
+  ROLLBACK;
+  SELECT count(*) FROM t;
+} {3}
+
 
 finish_test

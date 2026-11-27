@@ -186,6 +186,7 @@ do_execsql_test 240 {
   SELECT 'a','b' UNION SELECT 'A','B'
     UNION ALL SELECT 'x' COLLATE NOCASE, 'y' COLLATE NOCASE ORDER BY 1;
 } {A B x y}
+
 optimization_control db BalancedMerge off
 do_execsql_test 250 {
   SELECT quote(c0) FROM (
@@ -194,5 +195,28 @@ do_execsql_test 250 {
   );
 } {1 2 '' {' '}}
 optimization_control db all on
+
+# The same applies when the rightmost compound operator is UNION ALL.
+#
+do_execsql_test 260 {
+  SELECT 'a' UNION SELECT 'A' UNION ALL SELECT 'x' COLLATE NOCASE;
+} {A x}
+do_execsql_test 270 {
+  SELECT c || '' FROM t2 UNION SELECT 'b'
+    UNION ALL SELECT 'x' COLLATE NOCASE;
+} {a b x}
+do_execsql_test 280 {
+  SELECT 'a' EXCEPT SELECT 'A' UNION SELECT 'x' COLLATE NOCASE;
+} {x}
+do_execsql_test 290 {
+  SELECT 'a' INTERSECT SELECT 'A' UNION ALL SELECT 'x' COLLATE NOCASE;
+} {a x}
+do_execsql_test 300 {
+  SELECT 'a' INTERSECT SELECT 'A'
+    UNION ALL SELECT 'x' COLLATE NOCASE ORDER BY 1;
+} {a x}
+do_execsql_test 310 {
+  SELECT 'a' UNION ALL SELECT 'A' UNION ALL SELECT 'x' COLLATE NOCASE;
+} {a A x}
 
 finish_test

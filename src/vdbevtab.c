@@ -210,8 +210,24 @@ static int bytecodevtabColumn(
       if( i<=2 && pCur->zType==0 ){
         Schema *pSchema;
         HashElem *k;
-        int iDb = pOp->p3;
-        Pgno iRoot = (Pgno)pOp->p2;
+        int iDb;
+        Pgno iRoot;
+        switch( pOp->opcode ){
+          case OP_Clear: {
+            iRoot = (Pgno)pOp->p1;
+            iDb = pOp->p2;
+            break;
+          }
+          case OP_Destroy: {
+            iRoot = (Pgno)pOp->p1;
+            iDb = pOp->p3;
+            break;
+          }
+          default: {
+            iRoot = (Pgno)pOp->p2;
+            iDb = pOp->p3;
+          }
+        }
         sqlite3 *db = pVTab->db;
         pSchema = db->aDb[iDb].pSchema;
         pCur->zSchema = db->aDb[iDb].zDbSName;
@@ -308,7 +324,10 @@ static int bytecodevtabColumn(
       sqlite3_result_text(ctx, pCur->zName, -1, SQLITE_STATIC);
       break;
     case 23:  /* tables_used.wr */
-      sqlite3_result_int(ctx, pOp->opcode==OP_OpenWrite);
+      sqlite3_result_int(ctx, 
+          pOp->opcode==OP_OpenWrite ||
+          pOp->opcode==OP_Clear ||
+          pOp->opcode==OP_Destroy);
       break;
   }
   return SQLITE_OK;

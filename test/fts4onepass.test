@@ -157,4 +157,120 @@ do_execsql_test 4.0 {
 } {3}
 
 
+#-------------------------------------------------------------------------
+# Forum post f4aed0a721. Deleting a row that matches an open FTS4 MATCH
+# query, but has not yet been visited, used to cause the query to fail 
+# with SQLITE_CORRUPT_VTAB. Now, if the table has been written since the
+# cursor was opened, a missing %_content row is reported with all user
+# columns set to NULL, as for a content=xxx table.
+#
+proc fts4_while_writing {sql trigger write} {
+  set res [list]
+  db eval $sql x {
+    set row [list]
+    foreach c $x(*) { lappend row $x($c) }
+    lappend res $row
+    if {[lindex $row 0]==$trigger} { db eval $write }
+  }
+  set res
+}
+
+sqlite3_fts3_may_be_corrupt 0
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE v USING fts4(p);
+  INSERT INTO v(rowid, p) VALUES(1, 'a'), (2, 'a'), (3, 'a');
+}
+do_test 5.1 {
+  fts4_while_writing {SELECT rowid, p FROM v WHERE v MATCH 'a'} 1 {
+    DELETE FROM v WHERE rowid=3
+  }
+} {{1 a} {2 a} {3 {}}}
+do_execsql_test 5.2 {
+  INSERT INTO v(v) VALUES('integrity-check');
+  SELECT rowid FROM v WHERE v MATCH 'a';
+} {1 2}
+
+# Descending order, and auxiliary functions on the missing row.
+reset_db
+do_execsql_test 5.3 {
+  CREATE VIRTUAL TABLE v USING fts4(p, q);
+  INSERT INTO v(rowid, p, q) VALUES(1, 'a b', 'c'), (2, 'a', 'b'), (3, 'a', 'd');
+}
+do_test 5.4 {
+  fts4_while_writing {
+    SELECT rowid, p, q, snippet(v), offsets(v), length(matchinfo(v))
+    FROM v WHERE v MATCH 'a' ORDER BY rowid DESC
+  } 3 { DELETE FROM v WHERE rowid=1 }
+} {{3 a d <b>a</b> {0 0 0 1} 32} {2 a b <b>a</b> {0 0 0 1} 32} {1 {} {} {} {} 32}}
+do_execsql_test 5.5 {
+  INSERT INTO v(v) VALUES('integrity-check');
+}
+
+# An UPDATE may cause a row to be returned that no longer matches.
+do_test 5.6 {
+  fts4_while_writing {
+    SELECT rowid, p, snippet(v) FROM v WHERE v MATCH 'a'
+  } 2 { UPDATE v SET p='xyz' WHERE rowid=3 }
+} {{2 a <b>a</b>} {3 xyz <b>xyz</b>}}
+do_execsql_test 5.7 {
+  INSERT INTO v(v) VALUES('integrity-check');
+  SELECT rowid FROM v WHERE v MATCH 'a';
+} {2}
+
+# An UPDATE that makes a row shorter than its old position lists
+# indicate. The auxiliary functions use the stale position lists.
+reset_db
+do_execsql_test 5.8.1 {
+  CREATE VIRTUAL TABLE v USING fts4(p);
+  INSERT INTO v(rowid, p) VALUES(1, 'a'), (2, 'x x x x x a a a'), (3, 'x a');
+}
+do_test 5.8.2 {
+  fts4_while_writing {
+    SELECT rowid, p, snippet(v), offsets(v) FROM v WHERE v MATCH 'a OR "x a"'
+  } 1 { UPDATE v SET p='b' WHERE rowid=2; UPDATE v SET p=NULL WHERE rowid=3; }
+} {{1 a <b>a</b> {0 0 0 1}} {2 b b {}} {3 {} {} {}}}
+do_execsql_test 5.8.3 {
+  DROP TABLE v;
+  CREATE VIRTUAL TABLE v USING fts4(p);
+  INSERT INTO v(rowid, p) VALUES(1, 'a'), (2, 'x x x x x a a a'), (3, 'x a');
+}
+do_test 5.8.4 {
+  fts4_while_writing {
+    SELECT rowid, p, length(matchinfo(v, 'pcnalx')) 
+    FROM v WHERE v MATCH 'a OR "x a"'
+  } 1 { UPDATE v SET p='b' WHERE rowid=2; UPDATE v SET p=NULL WHERE rowid=3; }
+} {{1 a 44} {2 b 44} {3 {} 44}}
+do_execsql_test 5.8.5 {
+  DROP TABLE v;
+  CREATE VIRTUAL TABLE v USING fts4(p);
+  INSERT INTO v(rowid, p) VALUES(1, 'a'), (2, 'x x x x x a a a'), (3, 'x a');
+}
+do_test 5.8.6 {
+  fts4_while_writing {
+    SELECT rowid, p, snippet(v), offsets(v), length(matchinfo(v, 'pcnalx'))
+    FROM v WHERE v MATCH 'a OR "x a"'
+  } 1 { UPDATE v SET p='b' WHERE rowid=2; UPDATE v SET p=NULL WHERE rowid=3; }
+} {{1 a <b>a</b> {0 0 0 1} 44} {2 b b {} 44} {3 {} {} {} 44}}
+do_execsql_test 5.8.7 {
+  INSERT INTO v(v) VALUES('integrity-check');
+  SELECT rowid FROM v WHERE v MATCH 'a OR "x a"';
+} {1}
+
+# A %_content row deleted without going through xUpdate is still 
+# reported as corruption.
+reset_db
+do_execsql_test 5.8 {
+  CREATE VIRTUAL TABLE v USING fts4(p);
+  INSERT INTO v(rowid, p) VALUES(1, 'a'), (2, 'a'), (3, 'a');
+}
+do_test 5.9 {
+  list [catch {
+    fts4_while_writing {SELECT rowid, p FROM v WHERE v MATCH 'a'} 1 {
+      DELETE FROM v_content WHERE rowid=3
+    }
+  } msg] $msg
+} {1 {database disk image is malformed}}
+sqlite3_fts3_may_be_corrupt 1
+
 finish_test

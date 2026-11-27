@@ -964,7 +964,7 @@ do_execsql_test 6.1 {
 }
 do_catchsql_test 6.2 {
   UPDATE t1 SET content=randomblob(500) WHERE t1;
-} {1 {constraint failed}}
+} {1 {fts5: corruption in table "t1"}}
 
 #-------------------------------------------------------------------------
 reset_db

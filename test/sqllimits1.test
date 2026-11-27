@@ -775,6 +775,16 @@ if 0 {
     }
   } "1 {Expression tree is too large (maximum depth $::SQLITE_MAX_EXPR_DEPTH)}"
 }
+
+  # A USING clause with a huge number of terms builds a deep AND chain.
+  # Stop building it as soon as the depth limit is exceeded, so that the
+  # later tree walk does not overflow the stack.  Bug report 680ad1fffbaaaff7.
+  #
+  do_test sqllimits1-9.5 {
+    db eval { CREATE TABLE ju1(x); CREATE TABLE ju2(x); }
+    set using [string repeat {x,} 500000]x
+    catchsql "SELECT count(*) FROM ju1 JOIN ju2 USING ($using)"
+  } "1 {Expression tree is too large (maximum depth $::SQLITE_MAX_EXPR_DEPTH)}"
 }
 
 #--------------------------------------------------------------------

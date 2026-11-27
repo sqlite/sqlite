@@ -81,6 +81,12 @@ typedef struct RecoverColumn RecoverColumn;
 **   KEY column, then the rowid value should be bound to the index associated
 **   with the column.
 **
+** zRowid:
+**   If iRowidBind>0, the name used to refer to the rowid in the INSERT
+**   statement. This is the first of "_rowid_", "rowid" and "oid" that is
+**   not also the name of a column. If all three are column names, the
+**   rowid cannot be written and iRowidBind is 0.
+**
 ** pNext:
 **   All RecoverTable objects used by the recovery operation are allocated
 **   and populated as part of creating the recovered database schema in
@@ -96,6 +102,7 @@ struct RecoverTable {
   RecoverColumn *aCol;            /* Array of columns */
   int bIntkey;                    /* True for intkey, false for without rowid */
   int iRowidBind;                 /* If >0, bind rowid to INSERT here */
+  const char *zRowid;             /* Name to use for rowid in INSERT */
   RecoverTable *pNext;
 };
 
@@ -546,11 +553,11 @@ static void recoverFinalize(sqlite3_recover *p, sqlite3_stmt *pStmt){
 ** Return the sqlite3_finalizer() or sqlite3_prepare() result code
 ** from running the zSql statement.
 */
-static int recoverOneStmt(sqlite3 *db, const char *zSql){
+static int recoverOneStmt(sqlite3 *db, const char *zSql, const char **pzTail){
   sqlite3_stmt *pStmt = 0;
   int rc;
   if( zSql==0 ) return SQLITE_OK;
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, pzTail);
   if( rc ){
     sqlite3_finalize(pStmt);
     return rc;
@@ -571,7 +578,7 @@ static int recoverOneStmt(sqlite3 *db, const char *zSql){
 */
 static int recoverExec(sqlite3_recover *p, sqlite3 *db, const char *zSql){
   if( p->errCode==SQLITE_OK ){
-    int rc = recoverOneStmt(db, zSql);
+    int rc = recoverOneStmt(db, zSql, 0);
     if( rc ){
       recoverDbError(p, db);
     }
@@ -1167,11 +1174,35 @@ static void recoverAddTable(
     }
     recoverFinalize(p, pStmt);
 
+    /* A column declared as "INTEGER PRIMARY KEY DESC" is not an alias for
+    ** the rowid. Such a table has an automatic index with origin 'pk',
+    ** whereas a table with a true rowid alias does not.  */
+    if( iPk>=0 ){
+      pStmt = recoverPreparePrintf(p, p->dbOut,
+          "SELECT 1 FROM pragma_index_list(%Q, %Q) WHERE origin='pk'",
+          zName, p->zDb
+      );
+      if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ) iPk = -1;
+      recoverFinalize(p, pStmt);
+    }
+
     if( p->errCode==SQLITE_OK ){
       if( iPk>=0 ){
         pNew->aCol[iPk].bIPK = 1;
       }else if( pNew->bIntkey ){
-        pNew->iRowidBind = iBind++;
+        /* Find a name for the rowid that is not also the name of a column */
+        static const char *azRowid[] = { "_rowid_", "rowid", "oid" };
+        int ii, jj;
+        for(ii=0; ii<(int)(sizeof(azRowid)/sizeof(azRowid[0])); ii++){
+          for(jj=0; jj<pNew->nCol; jj++){
+            if( sqlite3_stricmp(azRowid[ii], pNew->aCol[jj].zCol)==0 ) break;
+          }
+          if( jj==pNew->nCol ){
+            pNew->zRowid = azRowid[ii];
+            pNew->iRowidBind = iBind++;
+            break;
+          }
+        }
       }
     }
   }
@@ -1229,6 +1260,7 @@ static int recoverWriteSchema1(sqlite3_recover *p){
       const char *zSql = (const char*)sqlite3_column_text(pSelect, 4);
       char *zFree = 0;
       int rc = SQLITE_OK;
+      const char *zTail = 0;
 
       if( bVirtual ){
         zSql = (const char*)(zFree = recoverMPrintf(p,
@@ -1236,8 +1268,16 @@ static int recoverWriteSchema1(sqlite3_recover *p){
             zName, zName, zSql
         ));
       }
-      rc = recoverOneStmt(p->dbOut, zSql);
+      rc = recoverOneStmt(p->dbOut, zSql, &zTail);
       if( rc==SQLITE_OK ){
+        char *pToFree = 0;
+        if( zTail && zTail[0] ){
+          int n = (int)(zTail - zSql);
+          while( n>0 && (zSql[n-1]==';' || zSql[n-1]<=' ') ){ n--; }
+          pToFree = sqlite3_mprintf("%.*s", n, zSql);
+          zSql = pToFree;
+         
+        }
         recoverSqlCallback(p, zSql);
         if( bTable && !bVirtual ){
           if( SQLITE_ROW==sqlite3_step(pTblname) ){
@@ -1246,6 +1286,7 @@ static int recoverWriteSchema1(sqlite3_recover *p){
           }
           recoverReset(p, pTblname);
         }
+        sqlite3_free(pToFree);
       }else if( rc!=SQLITE_ERROR ){
         recoverDbError(p, p->dbOut);
       }
@@ -1288,9 +1329,19 @@ static int recoverWriteSchema2(sqlite3_recover *p){
   if( pSelect ){
     while( sqlite3_step(pSelect)==SQLITE_ROW ){
       const char *zSql = (const char*)sqlite3_column_text(pSelect, 1);
-      int rc = recoverOneStmt(p->dbOut, zSql);
+      const char *zTail = 0;
+      int rc = recoverOneStmt(p->dbOut, zSql, &zTail);
       if( rc==SQLITE_OK ){
+        char *pToFree = 0;
+        if( zTail && zTail[0] ){
+          /* Omit any extraneous text that follows the first SQL statement */
+          int n = (int)(zTail - zSql);
+          while( n>0 && (zSql[n-1]==';' || zSql[n-1]<=' ') ){ n--; }
+          pToFree = sqlite3_mprintf("%.*s", n, zSql);
+          zSql = pToFree;
+        }
         recoverSqlCallback(p, zSql);
+        sqlite3_free(pToFree);
       }else if( rc!=SQLITE_ERROR ){
         recoverDbError(p, p->dbOut);
       }
@@ -1358,7 +1409,8 @@ static sqlite3_stmt *recoverInsertStmt(
 
   if( pTab->iRowidBind ){
     assert( pTab->bIntkey );
-    zSql = recoverMPrintf(p, "%z_rowid_", zSql);
+    assert( pTab->zRowid );
+    zSql = recoverMPrintf(p, "%z%s", zSql, pTab->zRowid);
     if( bSql ){
       zBind = recoverMPrintf(p, "%zquote(?%d)", zBind, pTab->iRowidBind);
     }else{
@@ -2672,7 +2724,7 @@ static void recoverStep(sqlite3_recover *p){
           if( bUseWrapper ) recoverUninstallWrapper(p);
         }while( p->errCode==SQLITE_NOTADB 
              && (bUseWrapper--) 
-             && SQLITE_OK==recoverOneStmt(p->dbIn, "ROLLBACK")
+             && SQLITE_OK==recoverOneStmt(p->dbIn, "ROLLBACK", 0)
         );
       }
 
@@ -2737,7 +2789,7 @@ static void recoverStep(sqlite3_recover *p){
       ** database. Regardless of whether or not an error has occurred, make
       ** an attempt to end the read transaction on the input database.  */
       recoverExec(p, p->dbOut, "COMMIT");
-      rc = recoverOneStmt(p->dbIn, "END");
+      rc = recoverOneStmt(p->dbIn, "END", 0);
       if( p->errCode==SQLITE_OK ) p->errCode = rc;
 
       recoverSqlCallback(p, "PRAGMA writable_schema = off");
@@ -2933,7 +2985,7 @@ int sqlite3_recover_finish(sqlite3_recover *p){
   }else{
     recoverFinalCleanup(p);
     if( p->bCloseTransaction && sqlite3_get_autocommit(p->dbIn)==0 ){
-      rc = recoverOneStmt(p->dbIn, "END");
+      rc = recoverOneStmt(p->dbIn, "END", 0);
       if( p->errCode==SQLITE_OK ) p->errCode = rc;
     }
     rc = p->errCode;

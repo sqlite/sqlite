@@ -232,7 +232,10 @@ static int statBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     }
     switch( pIdxInfo->aConstraint[i].iColumn ){
       case 0: {    /* name */
-        iName = i;
+        const char *zColl = sqlite3_vtab_collation(pIdxInfo, i);
+        if( zColl && sqlite3StrICmp(zColl, sqlite3StrBINARY)==0 ){
+          iName = i;
+        }
         break;
       }
       case 10: {   /* schema */
@@ -418,7 +421,9 @@ static int statDecodePage(Btree *pBt, StatPage *p){
   p->nMxPayload = 0;
   szPage = sqlite3BtreeGetPageSize(pBt);
 
-  nUnused = get2byte(&aHdr[5]) - nHdr - 2*p->nCell;
+  nUnused = get2byte(&aHdr[5]);
+  if( nUnused==0 ) nUnused = 65536;
+  nUnused -= nHdr + 2*p->nCell;
   nUnused += (int)aHdr[7];
   iOff = get2byte(&aHdr[1]);
   while( iOff ){
@@ -510,7 +515,7 @@ statPageIsCorrupt:
 */
 static void statSizeAndOffset(StatCursor *pCsr){
   StatTable *pTab = (StatTable *)((sqlite3_vtab_cursor *)pCsr)->pVtab;
-  Btree *pBt = pTab->db->aDb[pTab->iDb].pBt;
+  Btree *pBt = pTab->db->aDb[pCsr->iDb].pBt;
   Pager *pPager = sqlite3BtreePager(pBt);
   sqlite3_file *fd;
   sqlite3_int64 x[2];

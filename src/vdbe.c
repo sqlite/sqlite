@@ -357,6 +357,7 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real|MEM_IntReal))==MEM_Str );
   rc = sqlite3MemRealValueRC(pRec, &rValue);
   if( rc<=0 ) return;
+  if( rc&0x10 ) return;
   if( (rc&2)==0 && alsoAnInt(pRec, rValue, &pRec->u.i) ){
     pRec->flags |= MEM_Int;
   }else{
@@ -1828,6 +1829,16 @@ case OP_ResultRow: {
   }
 #endif
   if( db->mallocFailed ) goto no_mem;
+
+  /* A DML statement with RETURNING makes all changes before returning.
+  ** Release the statement txn so that it cannot be closed out of order
+  ** because of another RETURNING. */
+  if( db->nStatement
+   && p->iStatement
+  ){
+    rc = sqlite3VdbeCloseStatement(p, SAVEPOINT_RELEASE);
+    if( rc ) goto abort_due_to_error;
+  }
   if( db->mTrace & SQLITE_TRACE_ROW ){
     db->trace.xV2(SQLITE_TRACE_ROW, db->pTraceArg, p, 0);
   }
@@ -2978,7 +2989,7 @@ case OP_IfNullRow: {         /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   if( pC && pC->nullRow ){
-    sqlite3VdbeMemSetNull(aMem + pOp->p3);
+    if( pOp->p3>0 ) sqlite3VdbeMemSetNull(aMem + pOp->p3);
     goto jump_to_p2;
   }
   break;
@@ -3495,11 +3506,11 @@ case OP_TypeCheck: {
             testcase( pIn1->u.i==-140737488355329LL );
             if( pIn1->u.i<=140737488355327LL && pIn1->u.i>=-140737488355328LL){
               pIn1->flags |= MEM_IntReal;
-              pIn1->flags &= ~MEM_Int;
+              pIn1->flags &= ~(MEM_Int|MEM_Str);
             }else{
               pIn1->u.r = (double)pIn1->u.i;
               pIn1->flags |= MEM_Real;
-              pIn1->flags &= ~MEM_Int;
+              pIn1->flags &= ~(MEM_Int|MEM_Str);
             }
           }else if( (pIn1->flags & (MEM_Real|MEM_IntReal))==0 ){
             goto vdbe_type_error;
@@ -3526,7 +3537,7 @@ vdbe_type_error:
   goto abort_due_to_error;
 }
 
-/* Opcode: Affinity P1 P2 * P4 *
+/* Opcode: Affinity P1 P2 * P4 P5
 ** Synopsis: affinity(r[P1@P2])
 **
 ** Apply affinities to a range of P2 registers starting with P1.
@@ -3534,6 +3545,11 @@ vdbe_type_error:
 ** P4 is a string that is P2 characters long. The N-th character of the
 ** string indicates the column affinity that should be used for the N-th
 ** memory cell in the range.
+**
+** For REAL affinity, if P5 is non-zero and the value is an integer that fits
+** in 6 bytes (and so can be converted to floating point format and back
+** losslessly), mark the value as MEM_IntReal. Otherwise, if P5 is zero or
+** the integer value is too large, convert the value to a Mem_Real value. 
 */
 case OP_Affinity: {
   const char *zAffinity;   /* The affinity to be applied */
@@ -3548,9 +3564,16 @@ case OP_Affinity: {
     assert( zAffinity[0]==SQLITE_AFF_NONE || memIsValid(pIn1) );
     applyAffinity(pIn1, zAffinity[0], encoding);
     if( zAffinity[0]==SQLITE_AFF_REAL && (pIn1->flags & MEM_Int)!=0 ){
-      pIn1->u.r = (double)pIn1->u.i;
-      pIn1->flags |= MEM_Real;
-      pIn1->flags &= ~(MEM_Int|MEM_Str);
+      if( pOp->p5
+       && pIn1->u.i<=140737488355327LL && pIn1->u.i>=-140737488355328LL
+      ){
+        pIn1->flags |= MEM_IntReal;
+        pIn1->flags &= ~MEM_Int;
+      }else{
+        pIn1->u.r = (double)pIn1->u.i;
+        pIn1->flags |= MEM_Real;
+        pIn1->flags &= ~(MEM_Int|MEM_Str);
+      }
     }
     REGISTER_TRACE((int)(pIn1-aMem), pIn1);
     zAffinity++;
@@ -3594,7 +3617,7 @@ case OP_MakeRecord: {
   i64 nByte;             /* Data space required for this record */
   i64 nZero;             /* Number of zero bytes at the end of the record */
   int nVarint;           /* Number of bytes in a varint */
-  u32 serial_type;       /* Type field */
+  u64 serial_type;       /* Type field */
   Mem *pData0;           /* First field to be combined into the record */
   Mem *pLast;            /* Last field of the record */
   int nField;            /* Number of fields in the record */
@@ -3642,7 +3665,7 @@ case OP_MakeRecord: {
       applyAffinity(pRec, zAffinity[0], encoding);
       if( zAffinity[0]==SQLITE_AFF_REAL && (pRec->flags & MEM_Int) ){
         pRec->flags |= MEM_IntReal;
-        pRec->flags &= ~(MEM_Int);
+        pRec->flags &= ~(MEM_Int|MEM_Str);
       }
       REGISTER_TRACE((int)(pRec-aMem), pRec);
       zAffinity++;
@@ -3780,7 +3803,10 @@ case OP_MakeRecord: {
       }
       nData += len;
       nHdr += sqlite3VarintLen(serial_type);
-      pRec->uTemp = serial_type;
+      pRec->uTemp = (u32)serial_type;
+      /*            ^^^^^---  If the serial_type is too large, then nData
+      ** will be too large too, and we'll get an SQLITE_TOOBIG error below,
+      ** before this truncation does any harm. */
     }
     if( pRec==pData0 ) break;
     pRec--;
@@ -4305,11 +4331,6 @@ case OP_Transaction: {
     testcase( rc==SQLITE_BUSY_SNAPSHOT );
     testcase( rc==SQLITE_BUSY_RECOVERY );
     if( rc!=SQLITE_OK ){
-      if( (rc&0xff)==SQLITE_BUSY ){
-        p->pc = (int)(pOp - aOp);
-        p->rc = rc;
-        goto vdbe_return;
-      }
       goto abort_due_to_error;
     }
 
@@ -4520,7 +4541,10 @@ case OP_SetCookie: {
 **
 ** Open a read/write cursor named P1 on the table or index whose root
 ** page is P2 (or whose root page is held in register P2 if the
-** OPFLAG_P2ISREG bit is set in P5 - see below).
+** OPFLAG_P2ISREG bit is set in P5 - see below). The database file is
+** determined by P3.  P3==0 means the main database, P3==1 means the
+** database used for temporary tables, and P3>1 means used the
+** corresponding attached database.
 **
 ** The P4 value may be either an integer (P4_INT32) or a pointer to
 ** a KeyInfo structure (P4_KEYINFO). If it is a pointer to a KeyInfo
@@ -5711,7 +5735,7 @@ case OP_SeekRowid: {        /* jump0, in3, ncycle */
     ** changing the datatype of pIn3, however, as it is used by other
     ** parts of the prepared statement. */
     Mem x = pIn3[0];
-    if( x.flags & MEM_Str ){
+    if( (x.flags & (MEM_Str|MEM_Int|MEM_Real|MEM_IntReal))==MEM_Str ){
       applyNumericAffinity(&x, 1);
     }
     if( x.flags & MEM_Int ){
@@ -5916,6 +5940,7 @@ case OP_NewRowid: {           /* out2 */
     }
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
+    pC->seekResult = 0;  /* Cursor moved.  Results are stale. */
   }
   pOut->u.i = v;
   break;
@@ -6408,6 +6433,22 @@ case OP_Rowid: {                 /* out2, ncycle */
   break;
 }
 
+/* Opcode: Stale   P1 * * * *
+**
+** Mark the row cache for cursor P1 as stale.  This opcode is used
+** on pseudo-cursors right before the content of the register that
+** holds their record is modified.
+*/
+case OP_Stale: {
+  VdbeCursor *pC;
+
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  assert( pC->eCurType==CURTYPE_PSEUDO );
+  pC->cacheStatus = CACHE_STALE;
+  break;
+}
+
 /* Opcode: NullRow P1 P2 * * *
 **
 ** Move the cursor P1 to a null row if P2 is 0.  Any OP_Column operations
@@ -6422,6 +6463,7 @@ case OP_Rowid: {                 /* out2, ncycle */
 */
 case OP_NullRow: {
   VdbeCursor *pC;
+  Mem *pMem;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -6440,6 +6482,14 @@ case OP_NullRow: {
   if( pC->eCurType==CURTYPE_BTREE ){
     assert( pC->uc.pCursor!=0 );
     sqlite3BtreeClearCursor(pC->uc.pCursor);
+  }else if( pC->eCurType==CURTYPE_PSEUDO && pC->seekResult>0 ){
+    static char nullRecord[] = { 0x02, 0x00 };
+    pMem = &aMem[pC->seekResult];
+    assert( !VdbeMemDynamic(pMem) );
+    pC->nullRow = 1;
+    pMem->z = nullRecord;
+    pMem->n = 2;
+    pMem->flags = MEM_Blob|MEM_Ephem;
   }
 #ifdef SQLITE_DEBUG
   if( pC->seekOp==0 ) pC->seekOp = OP_NullRow;
@@ -7195,6 +7245,44 @@ case OP_Destroy: {     /* out2 */
   break;
 }
 
+/*
+** Opcode: DbLock
+**
+** Raise an SQLITE_LOCKED error if there are any other reader statements
+** currently active.
+*/
+case OP_DbLock: {
+  if( db->nVdbeRead>1 ){
+    rc = SQLITE_LOCKED;
+    p->errorAction = OE_Abort;
+    goto abort_due_to_error;
+  }
+  break;
+};
+
+/* Opcode: NoWriter P1 P2 * * *
+**
+** Raise an SQLITE_LOCKED error if any other statement in the current
+** database connection is currently running and has opened or can
+** potentially open a write cursor on the table at root page P1 of
+** schema P2.
+**
+** Used by DDL statements (ALTER TABLE, CREATE INDEX) to prevent a
+** schema changes from undermining another actively running prepared
+** statement that is writing to the table being modified.
+*/
+case OP_NoWriter: {
+  assert( pOp->p2>=0 && pOp->p2<db->nDb );
+  if( sqlite3VdbeOtherWriter(db, p, (Pgno)pOp->p1, pOp->p2) ){
+    VdbeBranchTaken(1,2);
+    rc = SQLITE_LOCKED;
+    p->errorAction = OE_Abort;
+    goto abort_due_to_error;
+  }
+  VdbeBranchTaken(0,2);
+  break;
+}
+
 /* Opcode: Clear P1 P2 P3
 **
 ** Delete all contents of the database table or index whose root page
@@ -7376,6 +7464,9 @@ case OP_ParseSchema: {
   assert( DbHasProperty(db, iDb, DB_SchemaLoaded)
            || db->mallocFailed
            || (CORRUPT_DB && (db->flags & SQLITE_NoSchemaError)!=0) );
+
+  /* ParseSchema is never invoked on a read-only database */
+  assert( db->aDb[iDb].pBt==0 || sqlite3BtreeIsReadonly(db->aDb[iDb].pBt)==0 );
 
 #ifndef SQLITE_OMIT_ALTERTABLE
   if( pOp->p4.z==0 ){
@@ -9590,13 +9681,18 @@ abort_due_to_error:
   p->rc = rc;
   sqlite3SystemError(db, rc);
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  sqlite3VdbeLogAbort(p, rc, pOp, aOp);
+  if( (rc&0xff)!=SQLITE_BUSY || pOp->opcode!=OP_Transaction ){
+    /* Unless this is an SQLITE_BUSY from an OP_Transaction, log the error. */
+    sqlite3VdbeLogAbort(p, rc, pOp, aOp);
+  }
   if( p->eVdbeState==VDBE_RUN_STATE ) sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) sqlite3OomFault(db);
   if( rc==SQLITE_CORRUPT && db->autoCommit==0 ){
     db->flags |= SQLITE_CorruptRdOnly;
   }
-  rc = SQLITE_ERROR;
+  if( (rc&0xff)!=SQLITE_BUSY ){
+    rc = SQLITE_ERROR;
+  }
   if( resetSchemaOnFault>0 ){
     sqlite3ResetOneSchema(db, resetSchemaOnFault-1, p);
   }

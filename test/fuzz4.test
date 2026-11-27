@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+if {[db onecolumn {SELECT cast(current_time as int)}]<2} {
+  finish_test
+  return
+}
+
 do_execsql_test fuzz4-100 {
   CREATE TABLE Table0 (Col0  NOT NULL DEFAULT (CURRENT_TIME IS 1 > 1));
   INSERT OR REPLACE INTO Table0 DEFAULT VALUES ;

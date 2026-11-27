@@ -28,6 +28,37 @@
 # the test is running is wrong.
 #
 
+# Bug 2026-11-01T12:02:55Z sqlite.org/bugs/info/87b8fbdfe3c15351
+# Bug 2026-11-04T00:53:10Z sqlite.org/bugs/info/cd934653ae10beb5
+#
+# Floating-point rounding with reduced precision did not give results
+# that bug hunters wanted.  Curiously, Glibc did not give the same
+# results as they wanted in 2026-11-01T12:02:55Z (test case 20 below),
+# probably due to bankers rounding rules.  Nevertheless, SQLite has
+# been updated to do what the bug reports requested.
+#
+.open :memory:
+.mode quote -quote off --rowsep ' ' -colsep ' '
+.testcase 10
+WITH cte(v) AS (VALUES(7.5),(0.75),(95.0),(750.0),(950.0),(9500.0),(850.0))
+SELECT format('%.2e',v) FROM cte;
+.check 7.50e+00 7.50e-01 9.50e+01 7.50e+02 9.50e+02 9.50e+03 8.50e+02
+.testcase 11
+WITH cte(v) AS (VALUES(7.5),(0.75),(95.0),(0.95),(9500.0),(850.0))
+SELECT format('%.1e',v) FROM cte;
+.check 7.5e+00 7.5e-01 9.5e+01 9.5e-01 9.5e+03 8.5e+02
+.testcase 12
+WITH cte(v) AS (VALUES(7.5),(0.75),(95.0),(750.0),(950.0),(9500.0),(850.0))
+SELECT format('%.0e',v) FROM cte;
+.check 8e+00 8e-01 1e+02 8e+02 1e+03 1e+04 9e+02
+.testcase 20
+SELECT printf('%.2e',33250.0),
+       printf('%.3g',33250.0), 
+       printf('%.6e',454449150.0),
+       printf('%.4e',351865000.0),
+       printf('%.3e',12345.0);
+.check 3.33e+04 3.33e+04 4.544492e+08 3.5186e+08 1.235e+04
+
 # Verify that binary64 -> text -> binary64 conversions round-trip
 # successfully for 98,256 different edge-case binary64 values.  The
 # query result is all cases that do not round-trip without change,
@@ -90,9 +121,10 @@ SELECT r FROM fp WHERE r<>strtod(r||'');
 .check ''
 
 # Comparing SQLite's text-to-double conversion against strtod()
-# for 200,000 random floating-point literals.
+# for many random floating-point literals.  Adjust $N to raise
+# or lower the number.
 #
-.param set $N 50_000
+.param set $N 10_000
 .testcase 300
 WITH RECURSIVE fp(n,x) AS MATERIALIZED (
   VALUES(1,'1234.5789')

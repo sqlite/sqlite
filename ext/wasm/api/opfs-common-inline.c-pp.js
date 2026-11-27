@@ -54,7 +54,7 @@ const initS11n = function(){
   */
   if(state.s11n) return state.s11n;
   const textDecoder = new TextDecoder(),
-        textEncoder = new TextEncoder('utf-8'),
+        textEncoder = new TextEncoder(),
         viewU8 = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize),
         viewDV = new DataView(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
   state.s11n = Object.create(null);

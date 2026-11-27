@@ -4811,7 +4811,7 @@ static int SQLITE_TCLAPI test_carray_bind(
       }
       for(j=0; rc==SQLITE_OK && j<nData; j++){
         Tcl_Size n = 0;
-        unsigned char *v = Tcl_GetByteArrayFromObj(objv[i+i], &n);
+        unsigned char *v = Tcl_GetByteArrayFromObj(objv[i+j], &n);
         a[j].iov_len = (size_t)n;
         a[j].iov_base = sqlite3_malloc64( n );
         if( a[j].iov_base==0 ){
@@ -4831,6 +4831,7 @@ static int SQLITE_TCLAPI test_carray_bind(
       if( xDel!=SQLITE_TRANSIENT ) xDel = SQLITE_STATIC;
       isTransient = 0;
       isStatic = 0;
+      isMalloc = 0;
       break;
     }
   }
@@ -8248,7 +8249,8 @@ static int SQLITE_TCLAPI test_test_control(
     { "SQLITE_TESTCTRL_SORTER_MMAP",        SQLITE_TESTCTRL_SORTER_MMAP     }, 
     { "SQLITE_TESTCTRL_IMPOSTER",           SQLITE_TESTCTRL_IMPOSTER        },
     { "SQLITE_TESTCTRL_INTERNAL_FUNCTIONS", SQLITE_TESTCTRL_INTERNAL_FUNCTIONS},
-    { "SQLITE_TESTCTRL_FK_NO_ACTION",       SQLITE_TESTCTRL_FK_NO_ACTION},
+    { "SQLITE_TESTCTRL_FK_NO_ACTION",       SQLITE_TESTCTRL_FK_NO_ACTION    },
+    { "SQLITE_TESTCTRL_FP_DIGITS",          SQLITE_TESTCTRL_FP_DIGITS       },
     { 0, 0 }
   };
   int iVerb;
@@ -8277,6 +8279,22 @@ static int SQLITE_TCLAPI test_test_control(
       sqlite3_test_control(SQLITE_TESTCTRL_INTERNAL_FUNCTIONS, db);
       break;
     }
+    case SQLITE_TESTCTRL_FP_DIGITS: {
+      sqlite3 *db = 0;
+      int nIn = 0;
+      int nOut = 0;
+      if( objc<3 || objc>4 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "DB ?NDIGIT?");
+        return TCL_ERROR;
+      }
+      if( getDbPointer(interp, Tcl_GetString(objv[2]), &db) ) return TCL_ERROR;
+      if( objc==4 ){
+        if( Tcl_GetIntFromObj(interp, objv[3], &nIn) ) return TCL_ERROR;
+      }
+      sqlite3_test_control(SQLITE_TESTCTRL_FP_DIGITS, db, nIn, &nOut);
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(nOut));
+      break;
+    }
     case SQLITE_TESTCTRL_LOCALTIME_FAULT: {
       int val;
       if( objc!=3 ){
@@ -8297,7 +8315,6 @@ static int SQLITE_TCLAPI test_test_control(
       }
       if( getDbPointer(interp, Tcl_GetString(objv[2]), &db) ) return TCL_ERROR;
       if( Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
-
       sqlite3_test_control(SQLITE_TESTCTRL_FK_NO_ACTION, db, val);
       break;
     }
@@ -8677,7 +8694,6 @@ static int SQLITE_TCLAPI optimization_control(
   const char *zOpt;
   int onoff;
   u64 m = 0, mask = 0;
-  int m32;
   char zBuf[50];
   extern int sqlite3_optimization_mask(const char*,sqlite3_uint64*);
   extern const char *sqlite3_optimization_name(sqlite3_uint64);
@@ -8716,9 +8732,8 @@ static int SQLITE_TCLAPI optimization_control(
     zOpt += i;
   }
   if( onoff ) mask = ~mask;
-  m32 = (int)(mask & 0xffffffff);
-  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,db, m32);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(m32));
+  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,db, mask);
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj(mask));
   return TCL_OK;
 }
 
@@ -9011,7 +9026,6 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "ATTACH_CREATE",      SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE },
     { "ATTACH_WRITE",       SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE },
     { "COMMENTS",           SQLITE_DBCONFIG_ENABLE_COMMENTS },
-    { "FP_DIGITS",          SQLITE_DBCONFIG_FP_DIGITS },
   };
   int i;
   int v = 0;

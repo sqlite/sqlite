@@ -408,4 +408,57 @@ foreach bZeroShm {0 1} {
   } ;# for pgsz
 } ;# foreach bZeroShm
 
+#-------------------------------------------------------------------------
+# A read-only client with an unreliable *-shm must notice transactions
+# committed to a WAL file that contained only uncommitted frames when the
+# heap wal-index was built. The WAL header salt is reused after a
+# checkpoint, so the frame checksums must chain from the WAL header.
+#
+catch { db close }
+forcedelete test.db
+sqlite3_shutdown
+sqlite3_config_uri 1
+set ::chan2 [launch_testfixture]
+proc code2 {tcl} { testfixture $::chan2 $tcl }
+
+do_test 5.1 {
+  sqlite3 db test.db
+  file_control_persist_wal db 1
+  db eval {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t(id INTEGER PRIMARY KEY, val TEXT);
+    CREATE TABLE spill(id INTEGER PRIMARY KEY, pad BLOB);
+    INSERT INTO t VALUES(1, 'v0');
+    PRAGMA wal_checkpoint(TRUNCATE);
+    PRAGMA cache_size = 5;
+    BEGIN;
+      WITH c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<40)
+      INSERT INTO spill SELECT x, zeroblob(3500) FROM c;
+    ROLLBACK;
+  }
+  db close
+  expr {[file size test.db-wal]>0}
+} {1}
+
+do_test 5.2 {
+  sqlite3 db file:test.db?readonly_shm=1
+  db eval { SELECT val FROM t WHERE id=1 }
+} {v0}
+
+do_test 5.3 {
+  code2 {
+    sqlite3 db2 test.db
+    file_control_persist_wal db2 1
+    db2 eval {
+      UPDATE t SET val='tx2' WHERE id=1;
+      UPDATE t SET val='tx3' WHERE id=1;
+    }
+    db2 close
+  }
+  db eval { SELECT val FROM t WHERE id=1 }
+} {tx3}
+
+db close
+close $::chan2
+
 finish_test

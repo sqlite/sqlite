@@ -476,6 +476,7 @@ int sqlite3_exec(
 #define SQLITE_NOTADB      26   /* File opened that is not a database file */
 #define SQLITE_NOTICE      27   /* Notifications from sqlite3_log() */
 #define SQLITE_WARNING     28   /* Warnings from sqlite3_log() */
+#define SQLITE_MOVED       29   /* Internal use only:  Cursor moved */
 #define SQLITE_ROW         100  /* sqlite3_step() has another row ready */
 #define SQLITE_DONE        101  /* sqlite3_step() has finished executing */
 /* end-of-error-codes */
@@ -2658,18 +2659,22 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_DBCONFIG_FP_DIGITS]]
 ** <dt>SQLITE_DBCONFIG_FP_DIGITS</dt>
-** <dd>The SQLITE_DBCONFIG_FP_DIGITS setting is a small integer that determines
-** the number of significant digits that SQLite will attempt to preserve when
-** converting floating point numbers (IEEE 754 "doubles") into text.  The
-** default value 17, as of SQLite version 3.52.0.  The value was 15 in all
-** prior versions.<p>
-** This option takes two arguments which are an integer and a pointer
-** to an integer.  The first argument is a small integer, between 3 and 23, or
-** zero.  The FP_DIGITS setting is changed to that small integer, or left
-** unaltered if the first argument is zero or out of range. The second argument
-** is a pointer to an integer.  If the pointer is not NULL, then the value of
-** the FP_DIGITS setting, after possibly being modified by the first
-** arguments, is written into the integer to which the second argument points.
+** <dd>The configuration settings is a no-op as of 2026-11-20 (first
+** release 3.55.0). Originally, the SQLITE_DBCONFIG_FP_DIGITS
+** setting was is a small integer that determines the number of significant
+** digits that SQLite will attempt to preserve when converting floating point
+** numbers (IEEE 754 "doubles") into text.  However, later discovered
+** that changing this value from its default can cause stale indexes.  For
+** that reason, the setting was removed.  There is still a test-control that
+** can be used to change the value for testing purposes, but as with all
+** test-controls, it should not be used by ordinary application.
+**
+** [[SQLITE_DBCONFIG_VDBE_TRACE]]
+** <dt>SQLITE_DBCONFIG_VDBE_TRACE</dt>
+** <dd>The SQLITE_DBCONFIG_VDBE_TRACE setting enables or disables tracing
+** of the [bytecode engine].  This setting is only available when SQLite has
+** be compiled with -DSQLITE_DEBUG.  It is the equivalent of using
+** [PRAGMA vdbe_trace].
 ** </dd>
 **
 ** </dl>
@@ -2720,7 +2725,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE   1021 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_COMMENTS       1022 /* int int* */
 #define SQLITE_DBCONFIG_FP_DIGITS             1023 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1023 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_VDBE_TRACE            1024 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1024 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
@@ -5001,7 +5007,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** ^ (1) A destructor to dispose of the BLOB or string after SQLite has finished
 ** with it may be passed. ^It is called to dispose of the BLOB or string even
 ** if the call to the bind API fails, except the destructor is not called if
-** the third parameter is a NULL pointer or the fourth parameter is negative.
+** the third parameter is a NULL pointer or the fifth parameter is negative.
 ** ^ (2) The special constant, [SQLITE_STATIC], may be passed to indicate that
 ** the application remains responsible for disposing of the object. ^In this
 ** case, the object and the provided pointer to it must remain valid until
@@ -5558,7 +5564,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** <tr><td> INTEGER  <td>   BLOB    <td> Same as INTEGER->TEXT
 ** <tr><td>  FLOAT   <td> INTEGER   <td> [CAST] to INTEGER
 ** <tr><td>  FLOAT   <td>   TEXT    <td> ASCII rendering of the float
-** <tr><td>  FLOAT   <td>   BLOB    <td> [CAST] to BLOB
+** <tr><td>  FLOAT   <td>   BLOB    <td> Same as FLOAT->TEXT
 ** <tr><td>  TEXT    <td> INTEGER   <td> [CAST] to INTEGER
 ** <tr><td>  TEXT    <td>  FLOAT    <td> [CAST] to REAL
 ** <tr><td>  TEXT    <td>   BLOB    <td> No change
@@ -8794,7 +8800,8 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_USELONGDOUBLE           34  /* NOT USED */
 #define SQLITE_TESTCTRL_ATOF                    34
 #define SQLITE_TESTCTRL_EXPIRE_STMTS            35
-#define SQLITE_TESTCTRL_LAST                    35  /* Largest TESTCTRL */
+#define SQLITE_TESTCTRL_FP_DIGITS               36
+#define SQLITE_TESTCTRL_LAST                    36  /* Largest TESTCTRL */
 
 /*
 ** CAPI3REF: SQL Keyword Checking

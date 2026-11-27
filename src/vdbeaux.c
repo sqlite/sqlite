@@ -146,8 +146,6 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   pA->zNormSql = pB->zNormSql;
   pB->zNormSql = zTmp;
 #endif
-  pB->expmask |= pA->expmask;
-  pB->smimask |= pA->smimask;
   pB->prepFlags = pA->prepFlags;
   memcpy(pB->aCounter, pA->aCounter, sizeof(pB->aCounter));
   pB->aCounter[SQLITE_STMTSTATUS_REPREPARE]++;
@@ -761,6 +759,7 @@ static Op *opIterNext(VdbeOpIter *p){
 **   *  OP_HaltIfNull with P1=SQLITE_CONSTRAINT and P2=OE_Abort.
 **   *  OP_Destroy
 **   *  OP_VUpdate
+**   *  OP_TypeCheck
 **   *  OP_VCreate
 **   *  OP_VRename
 **   *  OP_FkCounter with P2==0 (immediate foreign key constraint)
@@ -780,6 +779,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   int hasCreateTable = 0;
   int hasCreateIndex = 0;
   int hasInitCoroutine = 0;
+  int hasProgram = 0;
   Op *pOp;
   VdbeOpIter sIter;
 
@@ -794,9 +794,13 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
      || opcode==OP_VCreate
      || opcode==OP_ParseSchema
      || opcode==OP_Function || opcode==OP_PureFunc
+     || opcode==OP_AggStep || opcode==OP_AggInverse
+     || opcode==OP_AggFinal || opcode==OP_AggValue
+     || opcode==OP_VFilter || opcode==OP_VColumn
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull)
       && ((pOp->p1)!=SQLITE_OK && pOp->p2==OE_Abort))
      || (opcode==OP_MustBeInt && pOp->p2==0)
+     || opcode==OP_TypeCheck
     ){
       hasAbort = 1;
       break;
@@ -816,17 +820,37 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
       hasFkCounter = 1;
     }
 #endif
+    if( opcode==OP_Program ){
+      hasProgram = 1;
+    }
   }
   sqlite3DbFree(v->db, sIter.apSub);
 
-  /* Return true if hasAbort==mayAbort. Or if a malloc failure occurred.
-  ** If malloc failed, then the while() loop above may not have iterated
-  ** through all opcodes and hasAbort may be set incorrectly. Return
-  ** true for this case to prevent the assert() in the callers frame
-  ** from failing.  */
-  return ( v->db->mallocFailed || hasAbort==mayAbort || hasFkCounter
-        || (hasCreateTable && hasInitCoroutine) || hasCreateIndex
-  );
+  /* Return true if there is no problem, or false if there is. Determined
+  ** as follows:
+  ** 
+  **    1. If a malloc() failed, always return 1.
+  **
+  **    2. If hasAbort is set, then the statement contains an opcode that
+  **       can cause an abort. So this is an error if mayAbort==0, or a
+  **       pass if mayAbort is set. Just return mayAbort.
+  **
+  **    3. If the statement is a CREATE TABLE AS or a CREATE INDEX, then
+  **       also return mayAbort - same logic as in (2).
+  **
+  **    4. If hasFkCounter or hasProgram is set, it is not possible to tell
+  **       whether the statement may abort or not. So either value of mayAbort
+  **       is a pass. Just return 1.
+  **
+  **    5. Otherwise, mayAbort should be clear. Return true if it is, or 
+  **       false otherwise.
+  */
+  if( v->db->mallocFailed ) return 1;                           /* 1. */
+  if( hasAbort ) return mayAbort;                               /* 2. */
+  if( hasCreateIndex ) return mayAbort;                         /* 3. */
+  if( (hasCreateTable && hasInitCoroutine) ) return mayAbort;   /* 3. */
+  if( hasFkCounter || hasProgram ) return 1;                    /* 4. */
+  return !mayAbort;                                             /* 5. */
 }
 #endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
@@ -1682,7 +1706,7 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 ** Set the value if the iSrcLine field for the previously coded instruction.
 */
 void sqlite3VdbeSetLineNumber(Vdbe *v, int iLine){
-  sqlite3VdbeGetLastOp(v)->iSrcLine = iLine;
+  if( v ) sqlite3VdbeGetLastOp(v)->iSrcLine = iLine;
 }
 #endif /* SQLITE_VDBE_COVERAGE */
 
@@ -2366,6 +2390,8 @@ int sqlite3VdbeNextOpcode(
       if( pOp->opcode==OP_OpenRead ) break;
       if( pOp->opcode==OP_OpenWrite && (pOp->p5 & OPFLAG_P2ISREG)==0 ) break;
       if( pOp->opcode==OP_ReopenIdx ) break;     
+      if( pOp->opcode==OP_Clear ) break;
+      if( pOp->opcode==OP_Destroy ) break;
     }else
 #endif
     {
@@ -2706,7 +2732,8 @@ void sqlite3VdbeMakeReady(
   assert( EIGHT_BYTE_ALIGNMENT(&x.pSpace[x.nFree]) );
 
   resolveP2Values(p, &nArg);
-  p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
+  p->usesStmtJournal = (u8)(pParse->isMultiWrite && 
+            (pParse->mayAbort || OptimizationDisabled(db,SQLITE_OmitStmtJrnl)));
   if( pParse->explain ){
     if( nMem<10 ) nMem = 10;
     p->explain = pParse->explain;
@@ -3265,7 +3292,7 @@ void sqlite3VdbeSchemaInUse(sqlite3 *db, Vdbe *pExcept, yDbMask *pM){
 ** If an IO error occurs, an SQLITE_IOERR_XXX error code is returned.
 ** Otherwise SQLITE_OK.
 */
-static SQLITE_NOINLINE int vdbeCloseStatement(Vdbe *p, int eOp){
+SQLITE_NOINLINE int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
   sqlite3 *const db = p->db;
   int rc = SQLITE_OK;
   int i;
@@ -3309,11 +3336,11 @@ static SQLITE_NOINLINE int vdbeCloseStatement(Vdbe *p, int eOp){
     db->nDeferredCons = p->nStmtDefCons;
     db->nDeferredImmCons = p->nStmtDefImmCons;
   }
-  return rc;
+  return sqlite3FaultSim(203) ? SQLITE_IOERR_WRITE : rc;
 }
-int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
+int sqlite3VdbeCloseStatementIfNeeded(Vdbe *p, int eOp){
   if( p->db->nStatement && p->iStatement ){
-    return vdbeCloseStatement(p, eOp);
+    return sqlite3VdbeCloseStatement(p, eOp);
   }
   return SQLITE_OK;
 }
@@ -3379,6 +3406,11 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** Then the internal cache might have been left in an inconsistent
   ** state.  We need to rollback the statement transaction, if there is
   ** one, or the complete transaction if there is no statement transaction.
+  **
+  ** An SQLITE_TOOBIG error is also treated as a special error.  It can
+  ** occur after some changes have already been made by the statement, for
+  ** example when the key for a second index is too big.  So roll back the
+  ** statement transaction if there is one, or else the complete transaction.
   */
 
   assert( p->eVdbeState==VDBE_RUN_STATE );
@@ -3404,15 +3436,16 @@ int sqlite3VdbeHalt(Vdbe *p){
       isSpecialError = mrc==SQLITE_NOMEM
                     || mrc==SQLITE_IOERR
                     || mrc==SQLITE_INTERRUPT
-                    || mrc==SQLITE_FULL;
+                    || mrc==SQLITE_FULL
+                    || mrc==SQLITE_TOOBIG;
     }else{
       mrc = isSpecialError = 0;
     }
     if( isSpecialError ){
-      /* If the query was read-only and the error code is SQLITE_INTERRUPT,
-      ** no rollback is necessary. Otherwise, at least a savepoint
-      ** transaction must be rolled back to restore the database to a
-      ** consistent state.
+      /* If the query was read-only and the error code is SQLITE_INTERRUPT
+      ** or SQLITE_TOOBIG, no rollback is necessary. Otherwise, at least a
+      ** savepoint transaction must be rolled back to restore the database
+      ** to a consistent state.
       **
       ** Even if the statement is read-only, it is important to perform
       ** a statement or transaction rollback operation. If the error
@@ -3421,8 +3454,10 @@ int sqlite3VdbeHalt(Vdbe *p){
       ** pagerStress() in pager.c), the rollback is required to restore
       ** the pager to a consistent state.
       */
-      if( !p->readOnly || mrc!=SQLITE_INTERRUPT ){
-        if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL) && p->usesStmtJournal ){
+      if( !p->readOnly || (mrc!=SQLITE_INTERRUPT && mrc!=SQLITE_TOOBIG) ){
+        if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL || mrc==SQLITE_TOOBIG)
+         && p->usesStmtJournal
+        ){
           eStatementOp = SAVEPOINT_ROLLBACK;
         }else{
           /* We are forced to roll back the active transaction. Before doing
@@ -3506,13 +3541,13 @@ int sqlite3VdbeHalt(Vdbe *p){
     }
  
     /* If eStatementOp is non-zero, then a statement transaction needs to
-    ** be committed or rolled back. Call sqlite3VdbeCloseStatement() to
-    ** do so. If this operation returns an error, and the current statement
-    ** error code is SQLITE_OK or SQLITE_CONSTRAINT, then promote the
-    ** current statement error code.
+    ** be committed or rolled back. Call sqlite3VdbeCloseStatementIfNeeded()
+    ** to do so. If this operation returns an error, and the current
+    ** statement error code is SQLITE_OK or SQLITE_CONSTRAINT, then
+    ** promote the current statement error code.
     */
     if( eStatementOp ){
-      rc = sqlite3VdbeCloseStatement(p, eStatementOp);
+      rc = sqlite3VdbeCloseStatementIfNeeded(p, eStatementOp);
       if( rc ){
         if( p->rc==SQLITE_OK || (p->rc&0xff)==SQLITE_CONSTRAINT ){
           p->rc = rc;
@@ -5311,6 +5346,49 @@ void sqlite3VdbeSetChanges(sqlite3 *db, i64 nChange){
 */
 void sqlite3VdbeCountChanges(Vdbe *v){
   v->changeCntOn = 1;
+}
+
+/*
+** Return true if the aOp[0..nOp-1] program contains an OP_OpenWrite that
+** opens a write cursor on the table with root page iRoot in database iDb.
+*/
+static int vdbeProgramOpensWriter(Op *aOp, int nOp, Pgno iRoot, int iDb){
+  int i;
+  for(i=0; i<nOp; i++){
+    Op *pOp = &aOp[i];
+    if( pOp->opcode==OP_OpenWrite
+     && (pOp->p5 & OPFLAG_P2ISREG)==0
+     && pOp->p3==iDb
+     && pOp->p2==(int)iRoot
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+** Return true if some statement of database connection db other than
+** pExcept is currently running and might write the table with root page
+** iRoot in database iDb.  The test looks at the bytecode of each running
+** statement and of all of its trigger sub-programs.
+*/
+SQLITE_NOINLINE int sqlite3VdbeOtherWriter(
+  sqlite3 *db,       /* Database connection to scan */
+  Vdbe *pExcept,     /* Disregard this particular prepared statement */
+  Pgno iRoot,        /* Look for cursors on this root page... */
+  int iDb            /* ... of this schema */
+){
+  Vdbe *p;
+  for(p=db->pVdbe; p; p=p->pVNext){
+    SubProgram *pSub;
+    if( p==pExcept || p->eVdbeState!=VDBE_RUN_STATE || p->readOnly ) continue;
+    if( vdbeProgramOpensWriter(p->aOp, p->nOp, iRoot, iDb) ) return 1;
+    for(pSub=p->pProgram; pSub; pSub=pSub->pNext){
+      if( vdbeProgramOpensWriter(pSub->aOp, pSub->nOp, iRoot, iDb) ) return 1;
+    }
+  }
+  return 0;
 }
 
 /*

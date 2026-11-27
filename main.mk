@@ -290,6 +290,14 @@ SHELL_OPT ?=
 #
 TCL_CONFIG_SH ?=
 #
+# The command used to run test/testrunner.tcl.  TCL_CONFIG_SH is passed
+# on so that the builds which testrunner.tcl configures link against the
+# same Tcl library as this build, rather than the one which belongs to
+# $(TCLSH_CMD).
+#
+T.testrunner = TCL_CONFIG_SH="$(TCL_CONFIG_SH)" \
+  $(TCLSH_CMD) $(TOP)/test/testrunner.tcl
+#
 # $(HAVE_WASI_SDK) =
 #
 # Set to 1 when building with the WASI SDK. This disables certain
@@ -1903,41 +1911,49 @@ testrunner:	testfixture$(T.exe)
 # one.
 #
 devtest:	srctree-check sourcetest
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
+	$(T.testrunner) mdevtest $(TSTRNNR_OPTS)
 
 mdevtest: srctree-check has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl mdevtest $(TSTRNNR_OPTS)
+	$(T.testrunner) mdevtest $(TSTRNNR_OPTS)
 
 sdevtest: has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
+	$(T.testrunner) sdevtest $(TSTRNNR_OPTS)
 
 retest: has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl retest
+	$(T.testrunner) retest
 
 errors:
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl errors
+	$(T.testrunner) errors
 
 status:
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl status -d 2
+	$(T.testrunner) status -d 2
 
 # Like releasetest, except it omits srctree-check and verify-source so
 # that it can be used on a modified source tree.
 #
 xdevtest: has_tclsh85
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
+	$(T.testrunner) release $(TSTRNNR_OPTS)
 
 #
 # Validate that various generated files in the source tree
 # are up-to-date.
 #
-srctree-check:	$(TOP)/tool/srctree-check.tcl
+srctree-check:	$(TOP)/tool/srctree-check.tcl tuning-verify
 	$(TCLSH_CMD) $(TOP)/tool/srctree-check.tcl
+
+#
+# Verify that the Tuning(D,ID) macros in the source code agree with the
+# defaults in the sqlite3Tuning[] array of src/global.c.  This is part of
+# srctree-check, and thus of devtest, mdevtest and releasetest.
+#
+tuning-verify:	$(TOP)/tool/tuningverify.tcl
+	$(TCLSH_CMD) $(TOP)/tool/tuningverify.tcl $(TOP)
 
 #
 # Testing for a release
 #
 releasetest: srctree-check has_tclsh85 verify-source
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
+	$(T.testrunner) release $(TSTRNNR_OPTS)
 
 #
 # Legacy testing targets, no longer used by the developers and
@@ -1966,7 +1982,7 @@ smoketest:	$(TESTPROGS) fuzzcheck$(T.exe)
 	./testfixture$(T.exe) $(TOP)/test/main.test $(TESTOPTS)
 
 shelltest:
-	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
+	$(T.testrunner) release shell
 
 # Test performance of floating-point conversions.
 #
@@ -2020,11 +2036,6 @@ sqlite3_expert$(T.exe): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqli
 	$(T.link) $(TOP)/ext/expert/sqlite3expert.c \
 		$(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS.libsqlite3)
 xbin: sqlite3_expert$(T.exe)
-
-dbdump$(T.exe): $(TOP)/ext/misc/dbdump.c sqlite3.o
-	$(T.link) -DDBDUMP_STANDALONE -o $@ \
-		$(TOP)/ext/misc/dbdump.c sqlite3.o $(LDFLAGS.libsqlite3)
-xbin: dbdump$(T.exe)
 
 dbtotxt$(T.exe): $(TOP)/tool/dbtotxt.c
 	$(T.link)-o $@ $(TOP)/tool/dbtotxt.c $(LDFLAGS.configure)
@@ -2415,6 +2426,7 @@ SHELL_DEP = \
     $(TOP)/ext/misc/shathree.c \
     $(TOP)/ext/misc/sqlar.c \
     $(TOP)/ext/misc/strdup.c \
+    $(TOP)/ext/misc/tryeval.c \
     $(TOP)/ext/misc/uint.c \
     $(TOP)/ext/misc/vfstrace.c \
     $(TOP)/ext/misc/windirent.h \
@@ -2559,7 +2571,7 @@ tidy:
 	rm -f scrub$(T.exe) showshm$(T.exe) sqlite3_checker$(T.exe) loadfts$(T.exe)
 	rm -f index_usage$(T.exe) kvtest$(T.exe) startup$(T.exe) threadtest3$(T.exe)
 	rm -f sessionfuzz$(T.exe) changesetfuzz$(T.exe)
-	rm -f dbdump$(T.exe) dbtotxt$(T.exe) atrc$(T.exe)
+	rm -f dbtotxt$(T.exe) atrc$(T.exe)
 	rm -f threadtest5$(T.exe)
 	rm -f src-verify$(B.exe)
 	rm -f tclsqlite3.c has_tclsh* $(T.tcl.env.sh)

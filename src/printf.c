@@ -63,7 +63,9 @@ typedef struct et_info {   /* Information about each format field */
 ** Allowed values for et_info.flags
 */
 #define FLAG_SIGNED    1     /* True if the value to convert is signed */
-#define FLAG_STRING    4     /* Allow infinite precision */
+#define FLAG_STRING    2     /* Allow infinite precision */
+#define FLAG_PREFIXSZ 12     /* The 0xc0 bits.  Size of # prefix */
+#define PREFIXOFST     2     /* Shift right to get the prefix size */
 
 /*
 ** The table is searched by hash.  In the case of %C where C is the character
@@ -101,21 +103,21 @@ static const et_info fmtinfo[25] = {
   /*  3 */  {  'g',  0, 1, etGENERIC,    30, 0,  0 },
   /*  4 */  {  'j',  0, 0, etESCAPE_j,   0,  0,  0 },  /* Hash: 6 */
   /*  5 */  {  'i', 10, 1, etDECIMAL,    0,  0,  0 },
-  /*  6 */  {  'Q',  0, 4, etESCAPE_Q,   0,  0,  4 },
-  /*  7 */  {  'p', 16, 0, etPOINTER,    0,  1,  0 },  /* Hash: 12 */
+  /*  6 */  {  'Q',  0, 2, etESCAPE_Q,   0,  0,  4 },
+  /*  7 */  {  'p', 16, 8, etPOINTER,    0,  1,  0 },  /* Hash: 12 */
   /*  8 */  {  'S',  0, 0, etSRCITEM,    0,  0,  0 },
   /*  9 */  {  'T',  0, 0, etTOKEN,      0,  0,  0 },
   /* 10 */  {  'n',  0, 0, etSIZE,       0,  0,  0 },
-  /* 11 */  {  'o',  8, 0, etRADIX,      0,  2,  0 },
+  /* 11 */  {  'o',  8, 4, etRADIX,      0,  2,  0 },
   /* 12 */  {  '%',  0, 0, etPERCENT,    0,  0,  7 },
-  /* 13 */  {  'q',  0, 4, etESCAPE_q,   0,  0, 16 },
+  /* 13 */  {  'q',  0, 2, etESCAPE_q,   0,  0, 16 },
   /* 14 */  {  'r', 10, 1, etORDINAL,    0,  0,  0 },
-  /* 15 */  {  's',  0, 4, etSTRING,     0,  0,  0 },
-  /* 16 */  {  'X', 16, 0, etRADIX,      0,  4,  0 },  /* Hash: 13 */
+  /* 15 */  {  's',  0, 2, etSTRING,     0,  0,  0 },
+  /* 16 */  {  'X', 16, 8, etRADIX,      0,  4,  0 },  /* Hash: 13 */
   /* 17 */  {  'u', 10, 0, etDECIMAL,    0,  0,  0 },
-  /* 18 */  {  'w',  0, 4, etESCAPE_w,   0,  0,  0 },  /* Hash: 19 */
+  /* 18 */  {  'w',  0, 2, etESCAPE_w,   0,  0,  0 },  /* Hash: 19 */
   /* 19 */  {  'E',  0, 1, etEXP,        14, 0, 18 },
-  /* 20 */  {  'x', 16, 0, etRADIX,      16, 1,  0 },
+  /* 20 */  {  'x', 16, 8, etRADIX,      16, 1,  0 },
   /* 21 */  {  'G',  0, 1, etGENERIC,    14, 0,  0 },
   /* 22 */  {  'z',  0, 4, etDYNSTRING,  0,  0,  0 },
   /* 23 */  {  'J',  0, 0, etESCAPE_J,   0,  0,  0 },  /* Hash: 24 */
@@ -479,8 +481,18 @@ void sqlite3_str_vappendf(
 #endif
 
         if( longvalue==0 ) flag_alternateform = 0;
-        if( flag_zeropad && precision<width-(prefix!=0) ){
-          precision = width-(prefix!=0);
+        if( flag_zeropad ){
+          if( flag_alternateform ){
+            int szPrefix = (infop->flags>>PREFIXOFST)&3;
+            assert( szPrefix>=0 && szPrefix<=2 );
+            testcase( szPrefix==0 );
+            testcase( szPrefix==1 );
+            testcase( szPrefix==2 );
+            width -= szPrefix;
+          }
+          if( precision<width-(prefix!=0) ){
+            precision = width-(prefix!=0);
+          }
         }
         if( precision<etBUFSIZE-10-etBUFSIZE/3 ){
           nOut = etBUFSIZE;
@@ -950,7 +962,7 @@ void sqlite3_str_vappendf(
           }
           if( width>len ){
             sqlite3_int64 sp = width-len;
-            assert( sp>0 && sp<0x7fffffff );
+            assert( sp>0 && sp<=0x7fffffff );
             sqlite3StrAppendchar64(pAccum, (int)sp, ' ');
             if( !flag_leftjustify
              && n>0

@@ -96,4 +96,28 @@ do_execsql_test 4.0 {
   SELECT count(*) FROM t1;
 } 1
 
+# Forum post bc159f8204. ROLLBACK while a MATCH query is active.
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(c);
+  INSERT INTO ft VALUES('a');
+  INSERT INTO ft VALUES('a');
+  BEGIN;
+    INSERT INTO ft VALUES('b');
+}
+do_test 5.1 {
+  set ::stmt [sqlite3_prepare_v2 db {SELECT rowid FROM ft('a')} -1 dummy]
+  list [sqlite3_step $::stmt] [sqlite3_column_int $::stmt 0]
+} {SQLITE_ROW 1}
+do_test 5.2 {
+  db eval ROLLBACK
+  list [sqlite3_step $::stmt] [sqlite3_column_int $::stmt 0]
+} {SQLITE_ROW 2}
+do_test 5.3 {
+  sqlite3_step $::stmt
+} {SQLITE_DONE}
+do_test 5.4 {
+  sqlite3_finalize $::stmt
+} {SQLITE_OK}
+
 finish_test

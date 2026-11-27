@@ -296,9 +296,6 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0x7ffffffe,                /* iOnceResetThreshold */
    SQLITE_DEFAULT_SORTERREF_SIZE,   /* szSorterRef */
    0,                         /* iPrngSeed */
-#ifdef SQLITE_DEBUG
-   {0,0,0,0,0,0},             /* aTune */
-#endif
 };
 
 /*
@@ -337,6 +334,49 @@ unsigned int sqlite3CoverageCounter;
 */
 sqlite3_uint64 sqlite3NProfileCnt = 0;
 #endif
+
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_TUNING)
+/* Query planner tuning parameters.  Development and testing use
+** only.
+**
+** This array must be kept in synchronization with the various
+** "Tuning(D,ID)" macros in the code (mostly in where.c and select.c).
+** Updates in the code must be replicated in this array.  The
+** tool/tuningverify.tcl script runs at build time to verify that
+** this array is in alignment with all Tuning() macros.
+*/
+int sqlite3Tuning[28] = {
+  27,  /* Number of tuning parameters */
+  30,  /*  1 */
+  20,  /*  2 */
+  20,  /*  3 */
+  46,  /*  4 */
+  10,  /*  5 */
+  10,  /*  6 */
+  10,  /*  7 */
+  42,  /*  8 */
+   5,  /*  9 */
+  16,  /* 10 */
+   3,  /* 11 */
+  28,  /* 12 */
+  25,  /* 13 */
+  43,  /* 14 */
+   1,  /* 15 */
+  10,  /* 16 */
+   6,  /* 17 */
+  10,  /* 18 */
+   5,  /* 19 */
+   3,  /* 20 */
+   2,  /* 21 */
+  33,  /* 22 */
+  39,  /* 23 */
+  30,  /* 24 */
+  18,  /* 25 */
+  12,  /* 26 */
+  48,  /* 27 */
+};
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_TUNING */
+
 
 /*
 ** The value of the "pending" byte must be 0x40000000 (1 byte past the

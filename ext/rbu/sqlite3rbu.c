@@ -271,6 +271,7 @@ struct RbuObjIter {
   int nTblCol;                    /* Size of azTblCol[] array */
   char **azTblCol;                /* Array of unquoted target column names */
   char **azTblType;               /* Array of target column types */
+  char **azTblDflt;               /* Array of target column DEFAULT exprs */
   int *aiSrcOrder;                /* src table col -> target table col */
   u8 *abTblPk;                    /* Array of flags, set on target PK columns */
   u8 *abNotNull;                  /* Array of flags, set on NOT NULL columns */
@@ -836,10 +837,12 @@ static void rbuObjIterFreeCols(RbuObjIter *pIter){
   for(i=0; i<pIter->nTblCol; i++){
     sqlite3_free(pIter->azTblCol[i]);
     sqlite3_free(pIter->azTblType[i]);
+    sqlite3_free(pIter->azTblDflt[i]);
   }
   sqlite3_free(pIter->azTblCol);
   pIter->azTblCol = 0;
   pIter->azTblType = 0;
+  pIter->azTblDflt = 0;
   pIter->aiSrcOrder = 0;
   pIter->abTblPk = 0;
   pIter->abNotNull = 0;
@@ -1094,6 +1097,43 @@ static int rbuMPrintfExec(sqlite3rbu *p, sqlite3 *db, const char *zFmt, ...){
 }
 
 /*
+** Like rbuMPrintfExec() except that it is guaranteed to only run a
+** single statement.  If the generated SQL text includes two or more
+** statements, all but the first is ignored.
+**
+** If an error occurs, an error code and error message is stored in the
+** RBU handle. If an error has already occurred when this function is
+** called, it is a no-op.
+*/
+static int rbuMPrintfOneStmt(sqlite3rbu *p, sqlite3 *db, const char *zFmt, ...){
+  va_list ap;
+  char *zSql;
+  va_start(ap, zFmt);
+  zSql = sqlite3_vmprintf(zFmt, ap);
+  if( p->rc==SQLITE_OK ){
+    if( zSql==0 ){
+      p->rc = SQLITE_NOMEM;
+    }else{
+      sqlite3_stmt *pStmt;
+      p->rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+      if( pStmt ){
+        if( p->rc==SQLITE_OK ){
+          while( sqlite3_step(pStmt)==SQLITE_ROW ){}
+        }
+        p->rc = sqlite3_finalize(pStmt);
+      }
+      if( p->rc!=SQLITE_OK ){
+        sqlite3_free(p->zErrmsg);
+        p->zErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+      }
+    }
+  }
+  sqlite3_free(zSql);
+  va_end(ap);
+  return p->rc;
+}
+
+/*
 ** Attempt to allocate and return a pointer to a zeroed block of nByte 
 ** bytes. 
 **
@@ -1124,14 +1164,15 @@ static void *rbuMalloc(sqlite3rbu *p, sqlite3_int64 nByte){
 ** error code in the RBU handle passed as the first argument.
 */
 static void rbuAllocateIterArrays(sqlite3rbu *p, RbuObjIter *pIter, int nCol){
-  sqlite3_int64 nByte = (2*sizeof(char*) + sizeof(int) + 3*sizeof(u8)) * nCol;
+  sqlite3_int64 nByte = (3*sizeof(char*) + sizeof(int) + 3*sizeof(u8)) * nCol;
   char **azNew;
 
   azNew = (char**)rbuMalloc(p, nByte);
   if( azNew ){
     pIter->azTblCol = azNew;
     pIter->azTblType = &azNew[nCol];
-    pIter->aiSrcOrder = (int*)&pIter->azTblType[nCol];
+    pIter->azTblDflt = &azNew[nCol*2];
+    pIter->aiSrcOrder = (int*)&pIter->azTblDflt[nCol];
     pIter->abTblPk = (u8*)&pIter->aiSrcOrder[nCol];
     pIter->abNotNull = (u8*)&pIter->abTblPk[nCol];
     pIter->abIndexed = (u8*)&pIter->abNotNull[nCol];
@@ -1163,6 +1204,31 @@ static char *rbuStrndup(const char *zStr, int *pRc){
     }
   }
 
+  return zRet;
+}
+
+/*
+** Return a copy of the declared column type zType that is safe to paste
+** into a CREATE TABLE statement.
+**
+** zType comes from the schema of a database that RBU does not control.
+** A type name may legally be a quoted string, so after the quotes are
+** removed (as PRAGMA table_xinfo does) it can contain any text at all,
+** including ")", ";" and CHECK or other column constraints. So it is
+** returned as a single double-quoted token, which the parser turns back
+** into the identical type name. An empty type is returned as an empty
+** string. The result must be freed using sqlite3_free().
+*/
+static char *rbuQuoteType(const char *zType, int *pRc){
+  char *zRet = 0;
+  if( *pRc==SQLITE_OK ){
+    if( zType==0 || zType[0]==0 ){
+      zRet = rbuStrndup("", pRc);
+    }else{
+      zRet = sqlite3_mprintf("\"%w\"", zType);
+      if( zRet==0 ) *pRc = SQLITE_NOMEM;
+    }
+  }
   return zRet;
 }
 
@@ -1351,6 +1417,25 @@ static void rbuObjIterCacheIndexedCols(sqlite3rbu *p, RbuObjIter *pIter){
   if( bIndex==0 ) pIter->abIndexed = 0;
 }
 
+/*
+** Return true if table zTbl in the main database of the target is a
+** STRICT table, or false otherwise. If an error occurs, an error code
+** and message are left in the RBU handle and zero is returned.
+*/
+static int rbuTableIsStrict(sqlite3rbu *p, const char *zTbl){
+  int bStrict = 0;
+  sqlite3_stmt *pStmt = 0;
+  if( p->rc==SQLITE_OK ){
+    p->rc = prepareFreeAndCollectError(p->dbMain, &pStmt, &p->zErrmsg,
+        sqlite3_mprintf("PRAGMA main.table_list(%Q)", zTbl)
+    );
+    if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pStmt) ){
+      bStrict = sqlite3_column_int(pStmt, 5);
+    }
+    rbuFinalize(p, pStmt);
+  }
+  return bStrict;
+}
 
 /*
 ** If they are not already populated, populate the pIter->azTblCol[],
@@ -1369,6 +1454,7 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
     int bRbuRowid = 0;            /* If input table has column "rbu_rowid" */
     int iOrder = 0;
     int iTnum = 0;
+    int bStrict = 0;              /* True if target is a STRICT table */
 
     /* Figure out the type of table this step will deal with. */
     assert( pIter->eType==0 );
@@ -1420,9 +1506,11 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
       );
     }
 
+    bStrict = rbuTableIsStrict(p, pIter->zTbl);
+
     /* Check that all non-HIDDEN columns in the destination table are also
-    ** present in the input table. Populate the abTblPk[], azTblType[] and
-    ** aiTblOrder[] arrays at the same time.
+    ** present in the input table. Populate the abTblPk[], azTblType[],
+    ** azTblDflt[] and aiTblOrder[] arrays at the same time.
     **
     ** RBU does not support tables with GENERATED columns. If the target
     ** table has any, return an error.  */
@@ -1455,13 +1543,18 @@ static int rbuObjIterCacheTableInfo(sqlite3rbu *p, RbuObjIter *pIter){
         int iPk = sqlite3_column_int(pStmt, 5);
         int bNotNull = sqlite3_column_int(pStmt, 3);
         const char *zType = (const char*)sqlite3_column_text(pStmt, 2);
+        const char *zDflt = (const char*)sqlite3_column_text(pStmt, 4);
 
         if( i!=iOrder ){
           SWAP(int, pIter->aiSrcOrder[i], pIter->aiSrcOrder[iOrder]);
           SWAP(char*, pIter->azTblCol[i], pIter->azTblCol[iOrder]);
         }
 
-        pIter->azTblType[iOrder] = rbuStrndup(zType, &p->rc);
+        /* In a STRICT table, ANY means no affinity. In the non-STRICT
+        ** imposter it would mean NUMERIC, so declare it without a type. */
+        if( bStrict && sqlite3_stricmp(zType, "ANY")==0 ) zType = "";
+        pIter->azTblType[iOrder] = rbuQuoteType(zType, &p->rc);
+        pIter->azTblDflt[iOrder] = rbuStrndup(zDflt, &p->rc);
         assert( iPk>=0 );
         pIter->abTblPk[iOrder] = (u8)iPk;
         pIter->abNotNull[iOrder] = (u8)bNotNull || (iPk!=0);
@@ -2134,7 +2227,7 @@ static void rbuCreateImposterTable2(sqlite3rbu *p, RbuObjIter *pIter){
     rbuFinalize(p, pXInfo);
 
     sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 1, tnum);
-    rbuMPrintfExec(p, p->dbMain,
+    rbuMPrintfOneStmt(p, p->dbMain,
         "CREATE TABLE rbu_imposter2(%z, PRIMARY KEY(%z)) WITHOUT ROWID", 
         zCols, zPk
     );
@@ -2184,9 +2277,11 @@ static void rbuCreateImposterTable(sqlite3rbu *p, RbuObjIter *pIter){
         ** "PRIMARY KEY" to the imposter table column declaration. */
         zPk = "PRIMARY KEY ";
       }
-      zSql = rbuMPrintf(p, "%z%s\"%w\" %s %sCOLLATE %Q%s", 
+      zSql = rbuMPrintf(p, "%z%s\"%w\" %s %sCOLLATE %Q%s%s%s", 
           zSql, zComma, zCol, pIter->azTblType[iCol], zPk, zColl,
-          (pIter->abNotNull[iCol] ? " NOT NULL" : "")
+          (pIter->abNotNull[iCol] ? " NOT NULL" : ""),
+          (pIter->azTblDflt[iCol] ? " DEFAULT " : ""),
+          (pIter->azTblDflt[iCol] ? pIter->azTblDflt[iCol] : "")
       );
       zComma = ", ";
     }
@@ -2199,7 +2294,7 @@ static void rbuCreateImposterTable(sqlite3rbu *p, RbuObjIter *pIter){
     }
 
     sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 1, tnum);
-    rbuMPrintfExec(p, p->dbMain, "CREATE TABLE \"rbu_imp_%w\"(%z)%s", 
+    rbuMPrintfOneStmt(p, p->dbMain, "CREATE TABLE \"rbu_imp_%w\"(%z)%s", 
         pIter->zTbl, zSql, 
         (pIter->eType==RBU_PK_WITHOUT_ROWID ? " WITHOUT ROWID" : "")
     );
@@ -2403,7 +2498,7 @@ static int rbuObjIterPrepareAll(
       /* Create the imposter table used to write to this index. */
       sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 0, 1);
       sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, p->dbMain, "main", 1,tnum);
-      rbuMPrintfExec(p, p->dbMain,
+      rbuMPrintfOneStmt(p, p->dbMain,
           "CREATE TABLE \"rbu_imp_%w\"( %s, PRIMARY KEY( %s ) ) WITHOUT ROWID",
           zTbl, zImposterCols, zImposterPK
       );
@@ -2530,7 +2625,7 @@ static int rbuObjIterPrepareAll(
         }
 
         /* Create the rbu_tmp_xxx table and the triggers to populate it. */
-        rbuMPrintfExec(p, p->dbRbu,
+        rbuMPrintfOneStmt(p, p->dbRbu,
             "CREATE TABLE IF NOT EXISTS %s.'rbu_tmp_%q' AS "
             "SELECT *%s FROM '%q' WHERE 0;"
             , p->zStateDb, pIter->zDataTbl
@@ -2559,7 +2654,7 @@ static int rbuObjIterPrepareAll(
         );
 
         if( pIter->eType==RBU_PK_EXTERNAL || pIter->eType==RBU_PK_NONE ){
-          rbuMPrintfExec(p, p->dbMain,
+          rbuMPrintfOneStmt(p, p->dbMain,
               "CREATE TEMP TRIGGER rbu_insert_tr AFTER INSERT ON \"%s%w\" "
               "BEGIN "
               "  SELECT rbu_tmp_insert(0, %s);"
@@ -2844,7 +2939,7 @@ static void rbuOpenDatabase(sqlite3rbu *p, sqlite3 *dbMain, int *pbRetry){
   /* If using separate RBU and state databases, attach the state database to
   ** the RBU db handle now.  */
   if( p->zState ){
-    rbuMPrintfExec(p, p->dbRbu, "ATTACH %Q AS stat", p->zState);
+    rbuMPrintfOneStmt(p, p->dbRbu, "ATTACH %Q AS stat", p->zState);
     memcpy(p->zStateDb, "stat", 4);
   }else{
     memcpy(p->zStateDb, "main", 4);
@@ -2970,7 +3065,7 @@ static void rbuOpenDatabase(sqlite3rbu *p, sqlite3 *dbMain, int *pbRetry){
   if( p->rc==SQLITE_OK ){
     p->rc = sqlite3_file_control(p->dbMain, "main", SQLITE_FCNTL_RBU, (void*)p);
   }
-  rbuMPrintfExec(p, p->dbMain, "SELECT * FROM sqlite_schema");
+  rbuMPrintfOneStmt(p, p->dbMain, "SELECT * FROM sqlite_schema");
 
   /* Mark the database file just opened as an RBU target database. If 
   ** this call returns SQLITE_NOTFOUND, then the RBU vfs is not in use.
@@ -3578,7 +3673,7 @@ static void rbuIncrSchemaCookie(sqlite3rbu *p){
       rbuFinalize(p, pStmt);
     }
     if( p->rc==SQLITE_OK ){
-      rbuMPrintfExec(p, p->dbMain, "PRAGMA schema_version = %d", iCookie+1);
+      rbuMPrintfOneStmt(p, p->dbMain, "PRAGMA schema_version = %d", iCookie+1);
     }
   }
 }
@@ -3656,7 +3751,7 @@ static void rbuCopyPragma(sqlite3rbu *p, const char *zPragma){
         sqlite3_mprintf("PRAGMA main.%s", zPragma)
     );
     if( p->rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pPragma) ){
-      p->rc = rbuMPrintfExec(p, p->dbMain, "PRAGMA main.%s = %d",
+      p->rc = rbuMPrintfOneStmt(p, p->dbMain, "PRAGMA main.%s = %d",
           zPragma, sqlite3_column_int(pPragma, 0)
       );
     }
@@ -3747,7 +3842,7 @@ int sqlite3rbu_step(sqlite3rbu *p){
             ** cannot be dropped as there are currently active SQL statements.
             ** But the contents can be deleted.  */
             if( rbuIsVacuum(p)==0 && pIter->abIndexed ){
-              rbuMPrintfExec(p, p->dbRbu, 
+              rbuMPrintfOneStmt(p, p->dbRbu, 
                   "DELETE FROM %s.'rbu_tmp_%q'", p->zStateDb, pIter->zDataTbl
               );
             }

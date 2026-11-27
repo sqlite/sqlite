@@ -17,6 +17,7 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
+#include <math.h>
 
 /* True if X is a power of two.  0 is considered a power of two here.
 ** In other words, return true if X has at most one bit set.
@@ -710,7 +711,11 @@ static SQLITE_NOINLINE int sqlite3MemRealValueRCSlowPath(
       assert( j<=n/2 );
       zCopy[j] = 0;
       rc = sqlite3AtoF(zCopy, pValue);
-      if( i<n ) rc = -100;
+      if( i<n && rc>0 ){
+        /* Only a prefix was converted. Adjust rc to match would
+        ** sqlite3AtoF() would have done. */
+        rc |= -16;
+      }
       sqlite3DbFree(pMem->db, zCopy);
     }
     return rc;
@@ -843,6 +848,7 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem, int bFromText){
     */
     if( pMem->u.r==ix && ix<LARGEST_INT64
      && (!bFromText || ix>SMALLEST_INT64)
+     && (ix || !signbit(pMem->u.r))
     ){
       pMem->u.i = ix;
       MemSetTypeFlag(pMem, MEM_Int);
@@ -1364,6 +1370,10 @@ int sqlite3VdbeMemSetStr(
     testcase( nAlloc==0 );
     testcase( nAlloc==31 );
     testcase( nAlloc==32 );
+#if SQLITE_MAX_LENGTH>=2147483646
+    /* Do not let the allocation size overflow an int. */
+    if( nAlloc>SQLITE_MAX_ALLOCATION_SIZE ) return SQLITE_NOMEM_BKPT;
+#endif
     if( sqlite3VdbeMemClearAndResize(pMem, (int)MAX(nAlloc,32)) ){
       return SQLITE_NOMEM_BKPT;
     }
@@ -1449,6 +1459,10 @@ int sqlite3VdbeMemSetText(
     i64 nAlloc = nByte + 1;
     testcase( nAlloc==31 );
     testcase( nAlloc==32 );
+#if SQLITE_MAX_LENGTH>=2147483647
+    /* Do not let the allocation size overflow an int. */
+    if( nAlloc>SQLITE_MAX_ALLOCATION_SIZE ) return SQLITE_NOMEM_BKPT;
+#endif
     if( sqlite3VdbeMemClearAndResize(pMem, (int)MAX(nAlloc,32)) ){
       return SQLITE_NOMEM_BKPT;
     }
@@ -1853,7 +1867,7 @@ static int valueFromExpr(
     u8 aff;
     assert( !ExprHasProperty(pExpr, EP_IntValue) );
     aff = sqlite3AffinityType(pExpr->u.zToken,0);
-    rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
+    rc = valueFromExpr(db, pExpr->pLeft, enc, SQLITE_AFF_BLOB, ppVal, pCtx);
     testcase( rc!=SQLITE_OK );
     if( *ppVal ){
 #ifdef SQLITE_ENABLE_STAT4

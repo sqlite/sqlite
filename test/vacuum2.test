@@ -248,4 +248,35 @@ proc cmp {lhs rhs} { string compare $rhs $lhs }
 do_execsql_test 6.2 VACUUM
 integrity_check 6.3
 
+#-------------------------------------------------------------------------
+# Test that VACUUM and VACUUM INTO work properly when there is an index
+# on table T in the vacuumed db, and also a table named T in the temp db.
+#
+reset_db
+forcedelete test.db2
+do_execsql_test 7.0 {
+  CREATE TABLE main.t(a, b, c);
+  INSERT INTO main.t VALUES(1, 2, 3);
+  CREATE INDEX main.ti ON t(c);
+  CREATE TEMP TABLE t(x, y);
+}
+do_execsql_test 7.1 {
+  VACUUM;
+  SELECT sql FROM main.sqlite_schema ORDER BY name;
+  PRAGMA integrity_check;
+} {{CREATE TABLE t(a, b, c)} {CREATE INDEX ti ON t(c)} ok}
+do_execsql_test 7.2 {
+  VACUUM INTO 'test.db2';
+}
+do_test 7.3 {
+  sqlite3 db2 test.db2
+  set res [db2 eval {
+    SELECT sql FROM sqlite_schema ORDER BY name;
+    SELECT * FROM t WHERE c=3;
+    PRAGMA integrity_check;
+  }]
+  db2 close
+  set res
+} {{CREATE TABLE t(a, b, c)} {CREATE INDEX ti ON t(c)} 1 2 3 ok}
+
 finish_test

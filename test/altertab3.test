@@ -860,5 +860,150 @@ foreach {tn sql} {
   do_execsql_test 34.2.$tn $sql 
 }
 
+#-------------------------------------------------------------------------
+# Rowid alias columns that are part of UNIQUE clauses.
+#
+# Report: https://sqlite.org/bugs/forumpost/b088eb5b02
+#
+reset_db
+do_execsql_test 35.0 {
+  CREATE TABLE t1(c INTEGER PRIMARY KEY, UNIQUE(c)) WITHOUT ROWID;
+  CREATE TABLE t2(c INTEGER, UNIQUE(c), PRIMARY KEY(c));
+}
+
+do_execsql_test 35.1 {
+  ALTER TABLE t1 RENAME COLUMN c TO z;
+}
+
+do_execsql_test 35.2 {
+  ALTER TABLE t2 RENAME COLUMN c TO z;
+}
+
+do_execsql_test 35.3 {
+  SELECT sql FROM sqlite_schema WHERE name='t1';
+} {
+  {CREATE TABLE t1(z INTEGER PRIMARY KEY, UNIQUE(z)) WITHOUT ROWID}
+}
+
+do_execsql_test 35.4 {
+  SELECT sql FROM sqlite_schema WHERE name='t2';
+} {
+  {CREATE TABLE t2(z INTEGER, UNIQUE(z), PRIMARY KEY(z))}
+}
+
+#-------------------------------------------------------------------------
+# Renaming a rowid alias column does not rename references to "rowid",
+# "oid" or "_rowid_".
+#
+reset_db
+do_execsql_test 36.0 {
+  CREATE TABLE t1(c INTEGER PRIMARY KEY, d, CHECK(rowid>0));
+  CREATE VIEW v1 AS SELECT rowid, oid, c FROM t1;
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    SELECT new.rowid, new.c;
+    UPDATE t1 SET d=rowid WHERE _rowid_=new.c;
+  END;
+}
+
+do_execsql_test 36.1 {
+  ALTER TABLE t1 RENAME COLUMN c TO z;
+}
+
+do_execsql_test 36.2 {
+  SELECT sql FROM sqlite_schema;
+} {
+  {CREATE TABLE t1(z INTEGER PRIMARY KEY, d, CHECK(rowid>0))}
+  {CREATE VIEW v1 AS SELECT rowid, oid, z FROM t1}
+  {CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    SELECT new.rowid, new.z;
+    UPDATE t1 SET d=rowid WHERE _rowid_=new.z;
+  END}
+}
+
+do_execsql_test 36.3 {
+  INSERT INTO t1(z) VALUES(5);
+  SELECT * FROM t1;
+  SELECT * FROM v1;
+} {5 5 5 5 5}
+
+#-------------------------------------------------------------------------
+# ALTER TABLE RENAME TO when a view or trigger uses the "expr IN table"
+# form of the IN operator. The table name token must be rewritten in
+# the same way as for "expr IN (SELECT ... FROM table)".
+#
+reset_db
+do_execsql_test 37.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t3(x);
+  INSERT INTO t1 VALUES(1), (3);
+  INSERT INTO t3 VALUES(1), (2), (3);
+  CREATE VIEW v1 AS SELECT x FROM t3 WHERE x IN t1;
+}
+do_execsql_test 37.1 {
+  ALTER TABLE t1 RENAME TO t9;
+  SELECT name FROM sqlite_schema WHERE type='table' ORDER BY 1;
+} {t3 t9}
+do_execsql_test 37.2 {
+  SELECT sql FROM sqlite_schema WHERE name='v1';
+} {{CREATE VIEW v1 AS SELECT x FROM t3 WHERE x IN "t9"}}
+do_execsql_test 37.3 {
+  SELECT * FROM v1;
+} {1 3}
+
+# NOT IN and a schema-qualified table name.
+reset_db
+do_execsql_test 37.10 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t3(x);
+  INSERT INTO t1 VALUES(1), (3);
+  INSERT INTO t3 VALUES(1), (2), (3);
+  CREATE VIEW v1 AS SELECT x FROM t3 WHERE x NOT IN main.t1;
+  ALTER TABLE t1 RENAME TO t9;
+  SELECT sql FROM sqlite_schema WHERE name='v1';
+} {{CREATE VIEW v1 AS SELECT x FROM t3 WHERE x NOT IN main."t9"}}
+do_execsql_test 37.11 {
+  SELECT * FROM v1;
+} {2}
+
+# Trigger body.
+reset_db
+do_execsql_test 37.20 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(x);
+  CREATE TABLE log(y);
+  INSERT INTO t1 VALUES(5);
+  CREATE TRIGGER tr AFTER INSERT ON t2 BEGIN
+    INSERT INTO log SELECT new.x WHERE new.x IN t1;
+  END;
+  ALTER TABLE t1 RENAME TO t9;
+  SELECT sql FROM sqlite_schema WHERE name='tr';
+} {{CREATE TRIGGER tr AFTER INSERT ON t2 BEGIN
+    INSERT INTO log SELECT new.x WHERE new.x IN "t9";
+  END}}
+do_execsql_test 37.21 {
+  INSERT INTO t2 VALUES(4), (5);
+  SELECT * FROM log;
+} {5}
+
+# Renaming a different table must leave "IN t1" alone, and renaming
+# the table used on the left of the IN must still work.
+reset_db
+do_execsql_test 37.30 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t3(x);
+  CREATE VIEW v1 AS SELECT x FROM t3 WHERE x IN t1;
+  ALTER TABLE t3 RENAME TO t4;
+  SELECT sql FROM sqlite_schema WHERE name='v1';
+} {{CREATE VIEW v1 AS SELECT x FROM "t4" WHERE x IN t1}}
+
+# A table renamed that is used both in IN-table form and in FROM.
+do_execsql_test 37.31 {
+  CREATE VIEW v2 AS SELECT a FROM t1 WHERE a IN t1;
+  ALTER TABLE t1 RENAME TO t5;
+  SELECT sql FROM sqlite_schema WHERE type='view' ORDER BY name;
+} {
+  {CREATE VIEW v1 AS SELECT x FROM "t4" WHERE x IN "t5"}
+  {CREATE VIEW v2 AS SELECT a FROM "t5" WHERE a IN "t5"}
+}
 
 finish_test

@@ -928,7 +928,8 @@ int main(int argc, char **argv){
   }
 
   /* Do global SQLite initialization */
-  sqlite3_config(SQLITE_CONFIG_LOG, verboseFlag ? shellLog : shellLogNoop, 0);
+  sqlite3_config(SQLITE_CONFIG_LOG, verboseFlag ? shellLog : shellLogNoop,
+                 (void*)0);
   if( nHeap>0 ){
     pHeap = malloc( nHeap );
     if( pHeap==0 ) fatalError("cannot allocate %d-byte heap\n", nHeap);

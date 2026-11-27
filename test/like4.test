@@ -225,4 +225,27 @@ do_execsql_test 6.0 {
   SELECT 1 FROM t2 LEFT JOIN t1 ON t1.b GLOB 'a*' AND t1.a = NULL;
 } 1
 
+# Bug 2026-10-28T05:04:51Z
+# https://sqlite.org/bugs/info/e85ab73aa1483325
+#
+# LIKE/GLOB optimization on an indexed non-TEXT column misses REAL
+# values whose text starts with an incomplete exponent
+#
+do_execsql_test 7.0 {
+  CREATE TABLE t7(x REAL);  CREATE INDEX t7x ON t7(x);
+  INSERT INTO t7 VALUES(1e20),(1.5e-7),(9e999),(-9e999),('text');
+  SELECT count(x) FROM t7 WHERE x GLOB '1.0e*';
+} {1}
+do_execsql_test 7.1 { SELECT count(x) FROM t7 WHERE x GLOB '1.5e-*' } {1}
+do_execsql_test 7.2 { SELECT x FROM t7 WHERE x GLOB 'In*' } {Inf}
+do_execsql_test 7.3 { SELECT x FROM t7 WHERE x GLOB '-I*' } {-Inf}
+do_execsql_test 7.4 { SELECT x FROM t7 WHERE x GLOB 'INF*' } {}
+do_execsql_test 7.5 { SELECT x FROM t7 WHERE x GLOB '+Inf*' } {}
+do_execsql_test 7.6 { SELECT x FROM t7 WHERE x GLOB '-iNf*' } {}
+do_execsql_test 7.7 {
+  CREATE TABLE t7c(x REAL COLLATE NOCASE);  CREATE INDEX t7cx ON t7c(x);
+  INSERT INTO t7c SELECT x FROM t7;
+  SELECT x FROM t7c WHERE x LIKE 'in%';
+} {Inf}
+
 finish_test

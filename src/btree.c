@@ -5883,28 +5883,34 @@ int sqlite3BtreePayload(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 ** This variant of sqlite3BtreePayload() works even if the cursor has not
 ** in the CURSOR_VALID state.  It is only used by the sqlite3_blob_read()
 ** interface.
+**
+** If the cursor has to be restored to its saved position, then SQLITE_MOVED
+** is returned and no data is read.  The content of the row might have changed
+** while the cursor position was saved, so the caller needs to recompute the
+** size and offset of the data it is reading before it tries again.  If the
+** row no longer exists, SQLITE_ABORT is returned.
 */
 #ifndef SQLITE_OMIT_INCRBLOB
-static SQLITE_NOINLINE int accessPayloadChecked(
-  BtCursor *pCur,
-  u32 offset,
-  u32 amt,
-  void *pBuf
-){
+static SQLITE_NOINLINE int accessPayloadChecked(BtCursor *pCur){
   int rc;
   if ( pCur->eState==CURSOR_INVALID ){
     return SQLITE_ABORT;
   }
   assert( cursorOwnsBtShared(pCur) );
   rc = btreeRestoreCursorPosition(pCur);
-  return rc ? rc : accessPayload(pCur, offset, amt, pBuf, 0);
+  if( rc ) return rc;
+  if( pCur->eState!=CURSOR_VALID ){
+    /* The row is gone, and the cursor was restored onto a neighbor. */
+    return SQLITE_ABORT;
+  }
+  return SQLITE_MOVED;
 }
 int sqlite3BtreePayloadChecked(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   if( pCur->eState==CURSOR_VALID ){
     assert( cursorOwnsBtShared(pCur) );
     return accessPayload(pCur, offset, amt, pBuf, 0);
   }else{
-    return accessPayloadChecked(pCur, offset, amt, pBuf);
+    return accessPayloadChecked(pCur);
   }
 }
 #endif /* SQLITE_OMIT_INCRBLOB */
@@ -8248,6 +8254,11 @@ static int rebuildPage(
   put2byte(&aData[hdr+3], pPg->nCell);
   put2byte(&aData[hdr+5], pData - aData);
   aData[hdr+7] = 0x00;
+  if( pPg->pBt->btsFlags & BTS_FAST_SECURE ){
+    /* Overwrite stale content in the unallocated gap with zeros when
+    ** the secure_delete option is enabled */
+    memset(pCellptr, 0, pData - pCellptr);
+  }
   return SQLITE_OK;
 }
 
@@ -11157,12 +11168,15 @@ Pager *sqlite3BtreePager(Btree *p){
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /*
-** Record an OOM error during integrity_check
+** Record an OOM error during integrity_check if rc is SQLITE_NOMEM
+** or SQLITE_IOERR_NOMEM.
 */
-static void checkOom(IntegrityCk *pCheck){
-  pCheck->rc = SQLITE_NOMEM;
-  pCheck->mxErr = 0;  /* Causes integrity_check processing to stop */
-  if( pCheck->nErr==0 ) pCheck->nErr++;
+static void checkOom(IntegrityCk *pCheck, int rc){
+  if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
+    pCheck->rc = SQLITE_NOMEM;
+    pCheck->mxErr = 0;  /* Causes integrity_check processing to stop */
+    if( pCheck->nErr==0 ) pCheck->nErr++;
+  }
 }
 
 /*
@@ -11215,7 +11229,7 @@ static void checkAppendMsg(
   sqlite3_str_vappendf(&pCheck->errMsg, zFormat, ap);
   va_end(ap);
   if( pCheck->errMsg.accError==SQLITE_NOMEM ){
-    checkOom(pCheck);
+    checkOom(pCheck, SQLITE_NOMEM);
   }
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
@@ -11281,7 +11295,7 @@ static void checkPtrmap(
 
   rc = ptrmapGet(pCheck->pBt, iChild, &ePtrmapType, &iPtrmapParent);
   if( rc!=SQLITE_OK ){
-    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ) checkOom(pCheck);
+    checkOom(pCheck, rc);
     checkAppendMsg(pCheck, "Failed to read ptrmap key=%u", iChild);
     return;
   }
@@ -11308,11 +11322,13 @@ static void checkList(
   u32 expected = N;
   int nErrAtStart = pCheck->nErr;
   while( iPage!=0 && pCheck->mxErr ){
+    int rc;
     DbPage *pOvflPage;
     unsigned char *pOvflData;
     if( checkRef(pCheck, iPage) ) break;
     N--;
-    if( sqlite3PagerGet(pCheck->pPager, (Pgno)iPage, &pOvflPage, 0) ){
+    if( (rc = sqlite3PagerGet(pCheck->pPager, (Pgno)iPage, &pOvflPage, 0)) ){
+      checkOom(pCheck, rc);
       checkAppendMsg(pCheck, "failed to get page %u", iPage);
       break;
     }
@@ -11477,9 +11493,9 @@ static int checkTreePage(
   pCheck->v1 = iPage;
   pCheck->nAbove++;
   if( (rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0 ){
+    checkOom(pCheck, rc);
     checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
-    if( rc==SQLITE_IOERR_NOMEM ) pCheck->rc = SQLITE_NOMEM;
     goto end_of_check;
   }
   if( pCheck->nAbove > BTCURSOR_MAX_DEPTH ){
@@ -11780,7 +11796,7 @@ int sqlite3BtreeIntegrityCheck(
 
   sCheck.aPgRef = sqlite3MallocZero((sCheck.nCkPage / 8)+ 1);
   if( !sCheck.aPgRef ){
-    checkOom(&sCheck);
+    checkOom(&sCheck, SQLITE_NOMEM);
     goto integrity_ck_cleanup;
   }
   sCheck.heap = (u32*)sqlite3Malloc( pBt->pageSize*2 );
@@ -11788,7 +11804,7 @@ int sqlite3BtreeIntegrityCheck(
   sCheck.mxHeap = pBt->pageSize/2 - 1;
 #endif
   if( sCheck.heap==0 ){
-    checkOom(&sCheck);
+    checkOom(&sCheck, SQLITE_NOMEM);
     goto integrity_ck_cleanup;
   }
 

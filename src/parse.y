@@ -860,9 +860,8 @@ xfullname(A) ::= nm(X) AS nm(Z).  {
   if( A ){
     if( IN_RENAME_OBJECT ){
       sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
-    }else{
-      A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
     }
+    A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
   }
 }
 xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z). {
@@ -870,9 +869,8 @@ xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z). {
   if( A ){
     if( IN_RENAME_OBJECT ){
       sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
-    }else{
-      A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
     }
+    A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
   }
 }
 
@@ -1518,9 +1516,9 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       ** it is or not) and if it is an aggregate, that could change the meaning
       ** of the whole query.
       */
-      Expr *pB = sqlite3Expr(pParse->db, TK_STRING, N ? "true" : "false");
-      if( pB ) sqlite3ExprIdToTrueFalse(pB);
+      Expr *pB = sqlite3ExprInt32(pParse->db, N!=0);
       if( !ExprHasProperty(A, EP_HasFunc) ){
+        if( pB ) pB->op2 = 1;
         sqlite3ExprUnmapAndDelete(pParse, A);
         A = pB;
       }else{
@@ -1573,6 +1571,9 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   expr(A) ::= expr(A) in_op(N) nm(Y) dbnm(Z) paren_exprlist(E). [IN] {
     SrcList *pSrc = sqlite3SrcListAppend(pParse, 0,&Y,&Z);
     Select *pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0);
+    if( pSelect && IN_RENAME_OBJECT ){
+      sqlite3RenameTokenMap(pParse, pSrc->a[0].zName, Z.z ? &Z : &Y);
+    }
     if( E )  sqlite3SrcListFuncArgs(pParse, pSelect ? pSrc : 0, E);
     A = sqlite3PExpr(pParse, TK_IN, A, 0);
     sqlite3PExprAddSelect(pParse, A, pSelect);

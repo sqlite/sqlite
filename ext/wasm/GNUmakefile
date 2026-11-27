@@ -211,12 +211,7 @@ b.cp = $(call b.mkdir@); \
 # D.common = flags to use for all $(bin.c-pp) invocations. These must
 # be passed before any input file names because c-pp's args are
 # processed in their given order.
-#
-# Maintenance reminder: we cannot include -@policy=error here because
-# of the @sqlite3.wasm@ placeholders in JS files, which trigger an
-# error before we get to handle that filename juggling. Most JS files
-# defensively set a file-local @policy.
-D.common =
+D.common = -@policy=error
 
 #
 # $(call b.c-pp.shcmd,LOGTAG,src,dest,-Dx=y...)
@@ -541,8 +536,13 @@ endif
 # WASM file is in use.
 #
 # If $(WASM_CUSTOM_INSTANTIATE) is 1 then mkwasmbuilds will add
-# -Dcustom-Module.instantiateWasm to some of the builds. This is
-# experimental but works on all browsers tested by its developer.
+# -Dcustom-Module.instantiateWasm to some of the builds. This problem
+# this solves is that various JS builds usually result in different JS
+# but identical binary WASM files. A custom loader allows us to define
+# the WASM filename used by the JS, enabling us to consolidate
+# identical binaries by redirecting the JS to use a single
+# copy. Without this we would need to distribute all JS/WASM files in
+# pairs, and most of the WASM files in that set would be identical.
 #
 # Changing this may require a clean rebuild. It also might not work.
 #
@@ -887,11 +887,11 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 #
 
 #
-# b.call.patch-export-default is used by mkwasmbuilds.c and the
-# wasmfs build. $1 is 1 if the build mode needs this workaround
-# (modes: esm, bundler-friendly, node) and 0 if not (vanilla). $2 must
-# be 0 for all builds except sqlite3-wasmfs.mjs, in which case it must
-# be 1. $(3) is an optional log prefix, defaulting to $(logtag.@)
+# b.call.patch-export-default is used by mkwasmbuilds.c. $1 is 1 if
+# the build mode needs this workaround (modes: esm, bundler-friendly,
+# node) and 0 if not (vanilla). $2 must be 0 for all builds except
+# sqlite3-wasmfs.mjs, in which case it must be 1. $(3) is an optional
+# log prefix, defaulting to $(logtag.@)
 #
 # Reminder for ESM builds: even if we use -sEXPORT_ES6=0, emcc _still_
 # adds:
@@ -956,7 +956,7 @@ sqlite3-api-build-version.js = $(dir.tmp)/sqlite3-api-build-version.js
 $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 	@echo '$(logtag.@) $(emo.disk)'; { \
 		$(call b.mkdir@); \
-		echo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
+		echo 'sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
 		echo -n '  sqlite3.version = '; \
 		$(bin.version-info) --json; \
 		echo ';'; \
@@ -964,15 +964,13 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 	} > $@
 
 #
-# Inputs/outputs for the sqlite3-api.js family.
-#
-# sqlite3-api.jses = the list of JS files which make up
+# $(sqlite3-api.jses) = the list of JS files which make up
 # sqlite3-api.js, in the order they need to be assembled.
 sqlite3-api.jses = $(sqlite3-license-version.js)
-sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
+sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.c-pp.js
 sqlite3-api.jses += $(sqlite3-api-build-version.js)
-sqlite3-api.jses += $(dir.common)/whwasmutil.js
-sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js
+sqlite3-api.jses += $(dir.common)/whwasmutil.c-pp.js
+sqlite3-api.jses += $(dir.jacc)/jaccwabyt.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.c-pp.js
@@ -1611,8 +1609,9 @@ endif
 ########################################################################
 
 # Run local web server for the test/demo pages.
+httpd.port ?= 8321
 httpd:
-	althttpd -max-age 1 -enable-sab 1 -page index.html
+	althttpd -port $(httpd.port) -max-age 1 -enable-sab 1 -page index.html
 
 ########################################################################
 # fiddle_remote is the remote destination for the fiddle app. It must
