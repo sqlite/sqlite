@@ -990,3 +990,32 @@ SELECT (SELECT count(*)
                t1 AS x)
   FROM t1;
 .check 2
+
+#-----------------------------------------------------------------------------
+# Bug 2026-11-27T11:17:09Z  sqlite.org/bugs/info/90010c3c79eea57b
+# Unreasonable reserve= query parameters in VACUUM
+#
+.if capable('unix')
+.system rm -f test0.db test1.db test2.db
+.open test0.db
+.testcase 1800
+.filectrl reserve_bytes 17
+.check 17
+.testcase 1810
+PRAGMA page_size=1024;
+CREATE TABLE t(x TEXT);
+INSERT INTO t VALUES(printf('%.*c', 3000, 'x'));
+VACUUM;
+VACUUM INTO 'file:test1.db?reserve=4294967296';
+VACUUM INTO 'file:test2.db?reserve=23';
+ATTACH 'file:test1.db' AS wrapped;
+ATTACH 'file:test2.db' AS valid;
+.filectrl --schema main reserve_bytes
+.check 17
+.testcase 1820
+.filectrl --schema wrapped reserve_bytes
+.check 17
+.testcase 1830
+.filectrl --schema valid reserve_bytes
+.check 23
+.endif

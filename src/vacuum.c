@@ -252,7 +252,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
     ** amount specified, if the amount is within range */
     zFilename = sqlite3BtreeGetFilename(pTemp);
     if( ALWAYS(zFilename) ){
-      int nNew = (int)sqlite3_uri_int64(zFilename, "reserve", nRes);
+      i64 nNew = sqlite3_uri_int64(zFilename, "reserve", nRes);
       if( nNew>=0 && nNew<=255 ) nRes = nNew;
     }
   }
