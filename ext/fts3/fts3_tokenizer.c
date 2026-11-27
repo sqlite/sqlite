@@ -476,7 +476,6 @@ int sqlite3Fts3InitHashTable(
   const char *zName
 ){
   int rc = SQLITE_OK;
-  void *p = (void *)pHash;
   const int any = SQLITE_UTF8|SQLITE_DIRECTONLY;
 
 #ifdef SQLITE_TEST
@@ -491,14 +490,18 @@ int sqlite3Fts3InitHashTable(
 #endif
 
   if( SQLITE_OK==rc ){
-    rc = sqlite3_create_function(db, zName, 1, any, p, fts3TokenizerFunc, 0, 0);
+    rc = sqlite3Fts3CreateHashFunction(
+        db, zName, 1, any, pHash, fts3TokenizerFunc
+    );
   }
   if( SQLITE_OK==rc ){
-    rc = sqlite3_create_function(db, zName, 2, any, p, fts3TokenizerFunc, 0, 0);
+    rc = sqlite3Fts3CreateHashFunction(
+        db, zName, 2, any, pHash, fts3TokenizerFunc
+    );
   }
 #ifdef SQLITE_TEST
   if( SQLITE_OK==rc ){
-    rc = sqlite3_create_function(db, zTest, -1, any, p, testFunc, 0, 0);
+    rc = sqlite3Fts3CreateHashFunction(db, zTest, -1, any, pHash, testFunc);
   }
   if( SQLITE_OK==rc ){
     rc = sqlite3_create_function(db, zTest2, 0, any, pdb, intTestFunc, 0, 0);

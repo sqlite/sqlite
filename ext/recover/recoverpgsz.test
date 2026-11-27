@@ -17,6 +17,9 @@ sqlite3_test_control_pending_byte 0x1000000
 
 set testprefix recoverpgsz
 
+# Start with no output databases left behind by an earlier script.
+forcedelete test.db2 test.db3
+
 foreach {pgsz bOverflow} {
   512 0 1024 0 2048 0 4096 0 8192 0 16384 0 32768 0 65536 0
   512 1 1024 1 2048 1 4096 1 8192 1 16384 1 32768 1 65536 1
@@ -93,5 +96,6 @@ foreach {pgsz bOverflow} {
   db3 close
 }
 
+forcedelete test.db2 test.db3
 
 finish_test

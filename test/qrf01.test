@@ -337,6 +337,20 @@ do_test 1.71 {
 <td>Ἀμήν
 </tr>
 }
+do_test 1.71.1 {
+  set result "\n[db format -style html -null XX {SELECT * FROM t1}]"
+} {
+<tr>
+<td>1
+<td>2.5
+<td>three
+</tr>
+<tr>
+<td>BLOB
+<td>XX
+<td>Ἀμήν
+</tr>
+}
 do_test 1.72 {
   set result "\n[db format -style html {
      SELECT 'ab<cd' AS a, 'ab&cd' as b,
@@ -1488,6 +1502,25 @@ do_test 16.3 {
 a: 中
    文
 }]
+
+# Bug e00387d23fe408eb: Column names that contain control characters
+# were truncated by one character for each control character.  Make
+# whitespace and control characters visible so that the comparison
+# is exact.
+#
+proc visible_line {sql} {
+  string map {" " . "\t" <TAB> "\n" <NL> "\x01" <01> "\x02" <02>} \
+      [db format -style line $sql]
+}
+do_test 17.1 {
+  visible_line "SELECT 1 AS \"a\tbcd\", 2 AS b"
+} {a<TAB>bcd:.1<NL>...b:.2<NL>}
+do_test 17.2 {
+  visible_line "SELECT 1 AS \"line1\nline2\""
+} {line1<NL>line2:.1<NL>}
+do_test 17.3 {
+  visible_line "SELECT 1 AS \"a\x01\x02xyz\", 2 AS b"
+} {a<01><02>xyz:.1<NL>...b:.2<NL>}
 
 db close
 

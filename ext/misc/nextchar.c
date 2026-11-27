@@ -160,38 +160,72 @@ static int readUtf8(const unsigned char *z, unsigned *pOut){
 /*
 ** The nextCharContext structure has been set up.  Add all "next" characters
 ** to the result set.
+**
+** Each step of the loop finds the smallest entry, in collation order, that
+** is greater than both:
+**
+**    ?1 || ?2     where ?2 is c||char(0x10ffff) and c is the most recent
+**                 next character found.  This skips over all other entries
+**                 that continue with c.
+**
+**    ?3           the entry found by the previous step.
+**
+** The ?3 constraint guarantees forward progress, even for collating
+** sequences, such as NOCASE, in which ?1||?2 might sort before entries
+** that have already been visited.
 */
 static void findNextChars(nextCharContext *p){
-  unsigned cPrev = 0;
   unsigned char zPrev[8];
-  int n, rc;
-  
+  int nPrev = 0;
+  unsigned char *zLast = 0;
+  int nLast = 0;
+  int rc;
+
   for(;;){
     sqlite3_bind_text(p->pStmt, 1, (char*)p->zPrefix, p->nPrefix,
                       SQLITE_STATIC);
-    n = writeUtf8(zPrev, cPrev+1);
-    sqlite3_bind_text(p->pStmt, 2, (char*)zPrev, n, SQLITE_STATIC);
+    sqlite3_bind_text(p->pStmt, 2, (char*)zPrev, nPrev, SQLITE_STATIC);
+    if( zLast ){
+      sqlite3_bind_text(p->pStmt, 3, (char*)zLast, nLast, SQLITE_STATIC);
+    }else{
+      sqlite3_bind_text(p->pStmt, 3, (char*)p->zPrefix, p->nPrefix,
+                        SQLITE_STATIC);
+    }
     rc = sqlite3_step(p->pStmt);
     if( rc==SQLITE_DONE ){
-      sqlite3_reset(p->pStmt);
-      return;
+      break;
     }else if( rc!=SQLITE_ROW ){
       p->otherError = rc;
-      return;
+      break;
     }else{
       const unsigned char *zOut = sqlite3_column_text(p->pStmt, 0);
-      unsigned cNext;
-      if( sqlite3_column_bytes(p->pStmt,0)<=p->nPrefix ){
-        sqlite3_reset(p->pStmt);
-        continue;
+      int nOut = sqlite3_column_bytes(p->pStmt, 0);
+      unsigned char *zNew;
+      if( zOut==0 ){
+        p->mallocFailed = 1;
+        break;
       }
-      n = readUtf8(zOut+p->nPrefix, &cNext);
+      zNew = sqlite3_realloc64(zLast, nOut+1);
+      if( zNew==0 ){
+        p->mallocFailed = 1;
+        break;
+      }
+      zLast = zNew;
+      nLast = nOut;
+      memcpy(zLast, zOut, nOut+1);
       sqlite3_reset(p->pStmt);
-      nextCharAppend(p, cNext);
-      cPrev = cNext;
-      if( p->mallocFailed ) return;
+      if( nLast>p->nPrefix ){
+        unsigned cNext;
+        readUtf8(zLast+p->nPrefix, &cNext);
+        nextCharAppend(p, cNext);
+        if( p->mallocFailed ) break;
+        nPrev = writeUtf8(zPrev, cNext);
+        nPrev += writeUtf8(zPrev+nPrev, 0x10ffff);
+      }
     }
   }
+  sqlite3_reset(p->pStmt);
+  sqlite3_free(zLast);
 }
 
 
@@ -250,11 +284,13 @@ static void nextCharFunc(
   }
   zSql = sqlite3_mprintf(
     "SELECT %s FROM %s"
-    " WHERE %s>=(?1 || ?2) %s"
+    " WHERE %s>(?1 || ?2) %s"
+    "   AND +%s>?3 %s"
     "   AND %s<=(?1 || char(1114111)) %s" /* 1114111 == 0x10ffff */
     "   %s"
     " ORDER BY 1 %s ASC LIMIT 1",
-    zField, zTable, zField, zColl, zField, zColl, zWhereClause, zColl
+    zField, zTable, zField, zColl, zField, zColl, zField, zColl,
+    zWhereClause, zColl
   );
   if( zWhereClause[0] ) sqlite3_free(zWhereClause);
   if( zColl[0] ) sqlite3_free(zColl);

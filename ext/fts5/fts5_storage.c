@@ -198,7 +198,7 @@ static int fts5StorageGetStmt(
     if( zSql==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      int f = SQLITE_PREPARE_PERSISTENT;
+      int f = SQLITE_PREPARE_PERSISTENT|SQLITE_PREPARE_FROM_DDL;
       if( eStmt>FTS5_STMT_LOOKUP2 ) f |= SQLITE_PREPARE_NO_VTAB;
       p->pConfig->bLock++;
       rc = sqlite3_prepare_v3(pC->db, zSql, -1, f, &p->aStmt[eStmt], 0);
@@ -638,7 +638,9 @@ static int fts5StorageLoadTotals(Fts5Storage *p, int bCache){
   int rc = SQLITE_OK;
   if( p->bTotalsValid==0 ){
     rc = sqlite3Fts5IndexGetAverages(p->pIndex, &p->nTotalRow, p->aTotalSize);
-    p->bTotalsValid = bCache;
+    if( rc==SQLITE_OK ){
+      p->bTotalsValid = bCache;
+    }
   }
   return rc;
 }
@@ -764,10 +766,12 @@ static int fts5StorageInsertDocsize(
       }
     }
     if( rc==SQLITE_OK ){
-      sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
-      sqlite3_step(pReplace);
-      rc = sqlite3_reset(pReplace);
-      sqlite3_bind_null(pReplace, 2);
+      rc = sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
+      if( rc==SQLITE_OK ){
+        sqlite3_step(pReplace);
+        rc = sqlite3_reset(pReplace);
+        sqlite3_bind_null(pReplace, 2);
+      }
     }
   }
   return rc;
@@ -1153,7 +1157,9 @@ static int fts5StorageCount(Fts5Storage *p, const char *zSuffix, i64 *pnRow){
     rc = SQLITE_NOMEM;
   }else{
     sqlite3_stmt *pCnt = 0;
-    rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pCnt, 0);
+    rc = sqlite3_prepare_v3(
+        pConfig->db, zSql, -1, SQLITE_PREPARE_FROM_DDL, &pCnt, 0
+    );
     if( rc==SQLITE_OK ){
       if( SQLITE_ROW==sqlite3_step(pCnt) ){
         *pnRow = sqlite3_column_int64(pCnt, 0);

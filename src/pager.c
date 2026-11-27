@@ -2026,11 +2026,18 @@ static int pager_truncate(Pager *pPager, Pgno nPage);
 **      file has been created already (via a spill on pagerStress()) and
 **      when the number of dirty pages in memory exceeds 25% of the total
 **      cache size.
+**
+**   *  Never sync a TEMP database if the current transaction has not
+**      modified the database (eState<PAGER_WRITER_CACHEMOD). In this case
+**      sqlite3PagerCommitPhaseOne() returns early without flushing any
+**      dirty pages left over from earlier transactions, so they must not
+**      be marked as clean by pager_end_transaction().
 */
 static int pagerFlushOnCommit(Pager *pPager, int bCommit){
   if( pPager->tempFile==0 ) return 1;
   if( !bCommit ) return 0;
   if( !isOpen(pPager->fd) ) return 0;
+  if( pPager->eState<PAGER_WRITER_CACHEMOD ) return 0;
   return (sqlite3PCachePercentDirty(pPager->pPCache)>=25);
 }
 
@@ -2901,6 +2908,10 @@ static int pager_playback(Pager *pPager, int isHot){
     rc = sqlite3OsAccess(pVfs, zSuper, SQLITE_ACCESS_EXISTS, &res);
   }
   if( rc!=SQLITE_OK || !res ){
+    /* If the super-journal is gone, the journal is stale. Make
+    ** pager_end_transaction() truncate or zero it, which it only does
+    ** when journalOff is non-zero. */
+    pPager->journalOff = szJ;
     goto end_playback;
   }
   pPager->journalOff = 0;
@@ -6809,6 +6820,11 @@ int sqlite3PagerCommitPhaseOne(
             goto commit_phase_one_exit;
           }
           bBatch = 0;
+
+          /* The journal file was just created on disk. Sync it now before
+          ** any pages are written to the database file.  */
+          rc = syncJournal(pPager, 0);
+          if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
         }else{
           sqlite3OsClose(pPager->jfd);
         }

@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+typedef sqlite3_uint64 u64;
 
 /* Forward references */
 static char *fuzz_invariant_sql(sqlite3_stmt*, int);
@@ -34,7 +35,7 @@ static void reportInvariantFailed(
   sqlite3_stmt *pOrig,   /* The original query */
   sqlite3_stmt *pTest,   /* The alternative test query with a missing row */
   int iRow,              /* Row number in pOrig */
-  unsigned int dbOpt,    /* Optimization flags on pOrig */
+  u64 dbOpt,             /* Optimization flags on pOrig */
   int noOpt              /* True if opt flags inverted for pTest */
 );
 
@@ -121,7 +122,7 @@ int fuzz_invariant(
   int nRow,               /* Number of output rows from pStmt */
   int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
   int eVerbosity,         /* How much debugging output */
-  unsigned int dbOpt      /* Default optimization flags */
+  u64 dbOpt               /* Default optimization flags */
 ){
   char *zTest;
   sqlite3_stmt *pTestStmt = 0;
@@ -559,15 +560,15 @@ static void reportInvariantFailed(
   sqlite3_stmt *pOrig,   /* The original query */
   sqlite3_stmt *pTest,   /* The alternative test query with a missing row */
   int iRow,              /* Row number in pOrig */
-  unsigned int dbOpt,    /* Optimization flags on pOrig */
+  u64 dbOpt,             /* Optimization flags on pOrig */
   int noOpt              /* True if opt flags inverted for pTest */
 ){
   int iTestRow = 0;
   printf("Invariant check failed on row %d.\n", iRow);
-  printf("Original query (opt-flags: 0x%08x) --------------------------\n",
+  printf("Original query (opt-flags: 0x%010llx) ------------------------\n",
          dbOpt);
   printf("%s\n", sqlite3_expanded_sql(pOrig));
-  printf("Alternative query (opt-flags: 0x%08x) -----------------------\n",
+  printf("Alternative query (opt-flags: 0x%010llx) ---------------------\n",
          noOpt ? ~dbOpt : dbOpt);
   printf("%s\n", sqlite3_expanded_sql(pTest));
   printf("Result row that is missing from the alternative -----------------\n");

@@ -2362,6 +2362,7 @@ SHELL_DEP = \
     $(TOP)\ext\misc\sqlar.c \
     $(TOP)\ext\misc\sqlite3_stdio.c \
     $(TOP)\ext\misc\sqlite3_stdio.h \
+    $(TOP)\ext\misc\tryeval.c \
     $(TOP)\ext\misc\uint.c \
     $(TOP)\ext\misc\vfstrace.c \
     $(TOP)\ext\misc\windirent.h \
@@ -2641,12 +2642,19 @@ status:
 # Validate that various generated files in the source tree
 # are up-to-date.
 #
-srctree-check:	$(TOP)\tool\srctree-check.tcl
+srctree-check:	$(TOP)\tool\srctree-check.tcl tuning-verify
 	$(TCLSH_CMD) $(TOP)\tool\srctree-check.tcl
+
+# Verify that the Tuning(D,ID) macros in the source code agree with the
+# defaults in the sqlite3Tuning[] array of src/global.c.  This is part of
+# srctree-check, and thus of devtest.
+#
+tuning-verify:	$(TOP)\tool\tuningverify.tcl
+	$(TCLSH_CMD) $(TOP)\tool\tuningverify.tcl "$(TOP:\=/)"
 
 # Testing for a release
 #
-releasetest: verify-source
+releasetest: tuning-verify verify-source
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
 
 # xdevtest is like releasetest, except that it skips the
@@ -2686,10 +2694,6 @@ sqltclsh.exe: sqltclsh.c  $(SHELL_CORE_DEP) $(LIBRESOBJS)
 
 sqlite3_expert.exe: $(SQLITE3C) $(TOP)\ext\expert\sqlite3expert.h $(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c
 	$(LTLINK) $(NO_WARN)	$(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c $(SQLITE3C) $(TLIBS)
-
-dbdump.exe:	$(TOP)\ext\misc\dbdump.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -DDBDUMP_STANDALONE $(TOP)\ext\misc\dbdump.c $(SQLITE3C) \
-		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS)
 
 testloadext.lo:	$(TOP)\src\test_loadext.c $(SQLITE3H)
 	$(LTCOMPILE) $(NO_WARN) -c $(TOP)\src\test_loadext.c

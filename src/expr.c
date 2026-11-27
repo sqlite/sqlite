@@ -73,11 +73,16 @@ char sqlite3ExprAffinity(const Expr *pExpr){
           pExpr->pLeft->x.pSelect->pEList->a[pExpr->iColumn].pExpr
       );
     }
-    if( op==TK_VECTOR
-     || (op==TK_FUNCTION && pExpr->affExpr==SQLITE_AFF_DEFER)
-    ){
+    if( op==TK_VECTOR ){
       assert( ExprUseXList(pExpr) );
       return sqlite3ExprAffinity(pExpr->x.pList->a[0].pExpr);
+    }
+    if( op==TK_FUNCTION && pExpr->affExpr==SQLITE_AFF_DEFER ){
+      /* The USING column of a FULL JOIN: coalesce(L.x, R.x). Use the
+      ** affinity of L.x, except that REAL becomes NUMERIC, since the
+      ** value may come from R.x and so need not be REAL.  */
+      char aff = sqlite3ExprAffinity(pExpr->x.pList->a[0].pExpr);
+      return aff==SQLITE_AFF_REAL ? SQLITE_AFF_NUMERIC : aff;
     }
     if( ExprHasProperty(pExpr, EP_Skip|EP_IfNullRow) ){
       assert( pExpr->op==TK_COLLATE
@@ -2325,19 +2330,6 @@ u32 sqlite3ExprListFlags(const ExprList *pList){
 }
 
 /*
-** This is a SELECT-node callback for the expression walker that
-** always "fails".  By "fail" in this case, we mean set
-** pWalker->eCode to zero and abort.
-**
-** This callback is used by multiple expression walkers.
-*/
-int sqlite3SelectWalkFail(Walker *pWalker, Select *NotUsed){
-  UNUSED_PARAMETER(NotUsed);
-  pWalker->eCode = 0;
-  return WRC_Abort;
-}
-
-/*
 ** Check the input string to see if it is "true" or "false" (in any case).
 **
 **       If the string is....           Return
@@ -2635,6 +2627,18 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
         pWalker->eCode = 0;
         return WRC_Abort;
       }
+      if( pWalker->eCode==4 || pWalker->eCode==5 ){
+        /* This is a DEFAULT expression. As it will never be name resolved,
+        ** attempt the the TK_IS -> TK_TRUTH transform here. */
+        Expr *pRight = sqlite3ExprSkipCollateAndLikely(pExpr->pRight);
+        if( ALWAYS(pRight) ){
+          if( pRight->op==TK_ID ) sqlite3ExprIdToTrueFalse(pRight);
+          if( pRight->op==TK_TRUEFALSE ){
+            pExpr->op2 = pExpr->op;
+            pExpr->op = TK_TRUTH;
+          }
+        }
+      }
       return WRC_Continue;
     case TK_VARIABLE:
       if( pWalker->eCode==5 ){
@@ -2841,26 +2845,148 @@ int sqlite3ExprIsSingleTableConstraint(
 
 
 /*
+** Return true if pExpr is a copy of a term of pGroupBy that sorts using
+** the BINARY collating sequence.
+*/
+static int exprIsBinaryGroupByTerm(
+  Parse *pParse,
+  Expr *pExpr,
+  ExprList *pGroupBy
+){
+  int i;
+  for(i=0; i<pGroupBy->nExpr; i++){
+    Expr *p = pGroupBy->a[i].pExpr;
+    if( sqlite3ExprCompare(0, pExpr, p, -1)<2 ){
+      CollSeq *pColl = sqlite3ExprNNCollSeq(pParse, p);
+      if( sqlite3IsBinary(pColl) ) return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+** Bits returned by exprScanOperand().
+*/
+#define GBOP_GROUPBY  0x01   /* The operand is a GROUP BY term */
+#define GBOP_INEXACT  0x02   /* That GROUP BY term might be a number */
+#define GBOP_NOAFF    0x04   /* That GROUP BY term has no affinity */
+#define GBOP_TEXT     0x08   /* The operand has TEXT affinity */
+
+/*
+** Inspect operand pOp of an operator and return a mask of GBOP_* bits that
+** describe it.  GBOP_GROUPBY is set if pOp is a GROUP BY term.  Then
+** GBOP_INEXACT is also set if that term might be a number, and GBOP_NOAFF
+** if it has no affinity.  GBOP_TEXT is set if pOp has TEXT affinity.
+*/
+static int exprScanOperand(Walker *pWalker, Expr *pOp){
+  int m = 0;
+  if( pOp ){
+    char aff = sqlite3ExprAffinity(pOp);
+    if( exprIsBinaryGroupByTerm(pWalker->pParse, pOp, pWalker->u.pGroupBy) ){
+      m |= GBOP_GROUPBY;
+      if( aff<=SQLITE_AFF_NONE ) m |= GBOP_NOAFF;
+      if( aff!=SQLITE_AFF_TEXT && pOp->op!=TK_CONCAT ) m |= GBOP_INEXACT;
+    }
+    if( aff==SQLITE_AFF_TEXT ) m |= GBOP_TEXT;
+  }
+  return m;
+}
+
+/*
+** pExpr is not itself a GROUP BY term.  Return true if it has an operand
+** that is a GROUP BY term, and the value of pExpr might depend on which
+** member of a group that operand was taken from.
+**
+** The rows of a group are equal in the GROUP BY sense but are not always
+** identical.  With the BINARY collating sequence, two values in the same
+** group can still differ in type: 1 and 1.0 (also -0.0 and 0.0) are in the
+** same group.  So typeof(x), length(x), x||'', x/2, x+1 and so forth can
+** have a different value for different rows of one group.  A GROUP BY
+** term that might be a number may therefore only be an operand of a
+** comparison, because comparisons treat values that are equal as
+** interchangeable, or of a logical operator.  A GROUP BY term that is
+** always TEXT or BLOB (the result of the || operator, or a column or CAST
+** with TEXT affinity) can be an operand of anything, since equal text
+** values are identical.
+**
+** The exception for comparisons is a comparison of a GROUP BY term that
+** has no affinity (an expression, not a column) against a TEXT operand.
+** TEXT affinity is applied to the term and converts 1 to '1' but 1.0 to
+** '1.0'.
+*/
+static int exprGroupByOperandUnsafe(Walker *pWalker, Expr *pExpr){
+  int bCmp = 0;       /* True for a comparison operator */
+  int bOther = 0;     /* True for any operator or function that is not a
+                      ** comparison or a logical operator */
+  int m = 0;          /* Union of the GBOP_* bits for all operands */
+  int i;
+
+  switch( pExpr->op ){
+    case TK_EQ:   case TK_NE:    case TK_LT:     case TK_LE:
+    case TK_GT:   case TK_GE:    case TK_IS:     case TK_ISNOT:
+    case TK_IN:   case TK_BETWEEN: {
+      testcase( pExpr->op==TK_EQ ); testcase( pExpr->op==TK_NE );
+      testcase( pExpr->op==TK_LT ); testcase( pExpr->op==TK_LE );
+      testcase( pExpr->op==TK_GT ); testcase( pExpr->op==TK_GE );
+      testcase( pExpr->op==TK_IS ); testcase( pExpr->op==TK_ISNOT );
+      testcase( pExpr->op==TK_IN ); testcase( pExpr->op==TK_BETWEEN );
+      bCmp = 1;
+      break;
+    }
+    case TK_ISNULL: case TK_NOTNULL: case TK_AND: case TK_OR: case TK_NOT: {
+      testcase( pExpr->op==TK_ISNULL );  testcase( pExpr->op==TK_NOTNULL );
+      testcase( pExpr->op==TK_AND );     testcase( pExpr->op==TK_OR );
+      testcase( pExpr->op==TK_NOT );
+      break;
+    }
+    default: {
+      bOther = 1;
+      break;
+    }
+  }
+  m |= exprScanOperand(pWalker, pExpr->pLeft);
+  m |= exprScanOperand(pWalker, pExpr->pRight);
+  assert( ExprUseXList(pExpr) );  /* Sub-selects were handled by the caller */
+  if( pExpr->x.pList ){
+    for(i=0; i<pExpr->x.pList->nExpr; i++){
+      m |= exprScanOperand(pWalker, pExpr->x.pList->a[i].pExpr);
+    }
+  }
+  if( (m & GBOP_GROUPBY)==0 ) return 0;
+
+  /* Any other operator or function is unsafe if it has an operand that
+  ** is a GROUP BY term that might be a number. */
+  if( bOther ) return (m & GBOP_INEXACT)!=0;
+
+  /* A comparison is unsafe if a GROUP BY operand without affinity is
+  ** compared against an operand with TEXT affinity. */
+  testcase( (m & (GBOP_NOAFF|GBOP_TEXT))==0 );
+  testcase( (m & (GBOP_NOAFF|GBOP_TEXT))==GBOP_NOAFF );
+  testcase( (m & (GBOP_NOAFF|GBOP_TEXT))==GBOP_TEXT );
+  return bCmp && (m & (GBOP_NOAFF|GBOP_TEXT))==(GBOP_NOAFF|GBOP_TEXT);
+}
+
+/*
 ** sqlite3WalkExpr() callback used by sqlite3ExprIsConstantOrGroupBy().
 */
 static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
   ExprList *pGroupBy = pWalker->u.pGroupBy;
-  int i;
 
   /* Check if pExpr is identical to any GROUP BY term. If so, consider
   ** it constant.  */
-  for(i=0; i<pGroupBy->nExpr; i++){
-    Expr *p = pGroupBy->a[i].pExpr;
-    if( sqlite3ExprCompare(0, pExpr, p, -1)<2 ){
-      CollSeq *pColl = sqlite3ExprNNCollSeq(pWalker->pParse, p);
-      if( sqlite3IsBinary(pColl) ){
-        return WRC_Prune;
-      }
-    }
+  if( exprIsBinaryGroupByTerm(pWalker->pParse, pExpr, pGroupBy) ){
+    return WRC_Prune;
   }
 
   /* Check if pExpr is a sub-select. If so, consider it variable. */
   if( ExprUseXSelect(pExpr) ){
+    pWalker->eCode = 0;
+    return WRC_Abort;
+  }
+
+  /* An operator applied to a GROUP BY term is constant only if its value
+  ** is the same for every member of a group. */
+  if( exprGroupByOperandUnsafe(pWalker, pExpr) ){
     pWalker->eCode = 0;
     return WRC_Abort;
   }
@@ -2876,19 +3002,29 @@ static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
 ** This routine is used to determine if a term of the HAVING clause can
 ** be promoted into the WHERE clause.  In order for such a promotion to work,
 ** the value of the HAVING clause term must be the same for all members of
-** a "group".  The requirement that the GROUP BY term must be BINARY
-** assumes that no other collating sequence will have a finer-grained
-** grouping than binary.  In other words (A=B COLLATE binary) implies
-** A=B in every other collating sequence.  The requirement that the
-** GROUP BY be BINARY is stricter than necessary.  It would also work
-** to promote HAVING clauses that use the same alternative collating
-** sequence as the GROUP BY term, but that is much harder to check,
-** alternative collating sequences are uncommon, and this is only an
-** optimization, so we take the easy way out and simply require the
-** GROUP BY to use the BINARY collating sequence.
+** a "group".  There are two requirements for this.
+**
+** (1) Members of a group are equal in the sense of the GROUP BY collating
+**     sequence, but need not be identical.  The requirement that the
+**     GROUP BY term be BINARY assumes that no other collating sequence
+**     will have a finer-grained grouping than binary.  In other words
+**     (A=B COLLATE binary) implies A=B in every other collating sequence.
+**     The requirement that the GROUP BY be BINARY is stricter than
+**     necessary.  It would also work to promote HAVING clauses that use the
+**     same alternative collating sequence as the GROUP BY term, but that
+**     is much harder to check, alternative collating sequences are
+**     uncommon, and this is only an optimization, so we take the easy way
+**     out and simply require the GROUP BY to use the BINARY collating
+**     sequence.
+**
+** (2) Even with BINARY, equal values can be distinguishable, as in the
+**     case of 1 and 1.0.  A GROUP BY term may therefore only be used as
+**     an operand of a comparison or logical operator.  See
+**     exprGroupByOperandUnsafe() for details.
 */
 int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
   Walker w;
+  if( pParse->nErr ) return 0;  /* The sequel depends on a valid AST */
   w.eCode = 1;
   w.xExprCallback = exprNodeIsConstantOrGroupBy;
   w.xSelectCallback = 0;
@@ -3550,6 +3686,11 @@ int sqlite3FindInIndex(
 ** function allocates and returns a nul-terminated string containing
 ** the affinities to be used for each column of the comparison.
 **
+** NUMERIC affinity is used in place of REAL.  Within a comparison the
+** two are the same, except that REAL affinity (as applied by OP_Affinity
+** and OP_MakeRecord) converts integers into floating point, and that
+** might change the value of a large integer.
+**
 ** It is the responsibility of the caller to ensure that the returned
 ** string is eventually freed using sqlite3DbFree().
 */
@@ -3571,6 +3712,7 @@ static char *exprINAffinity(Parse *pParse, const Expr *pExpr){
       }else{
         zRet[i] = a;
       }
+      if( zRet[i]==SQLITE_AFF_REAL ) zRet[i] = SQLITE_AFF_NUMERIC;
     }
     zRet[nVal] = '\0';
   }
@@ -4047,7 +4189,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       pSel->pLimit->pLeft = pLimit;
     }
   }else{
-    /* If there is no pre-existing limit add a limit of 1 */
+    /* If there is no limit add a limit of 1. (tag-202611101908) */
     pLimit = sqlite3ExprInt32(pParse->db, 1);
     pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
   }
@@ -4367,9 +4509,10 @@ static void sqlite3ExprCodeIN(
   ** of the RHS.
   */
   if( destStep6 ) sqlite3VdbeResolveLabel(v, destStep6);
-  if( eType==IN_INDEX_INDEX_DESC ){
+  if( eType==IN_INDEX_INDEX_DESC && nVector==1 ){
     addrTop = sqlite3VdbeAddOp2(v, OP_Last, iTab, destIfFalse);
   }else{
+    testcase( eType==IN_INDEX_INDEX_DESC );
     testcase( eType==IN_INDEX_EPH );
     testcase( eType==IN_INDEX_ROWID );
     addrTop = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, destIfFalse);
@@ -4537,6 +4680,7 @@ void sqlite3ExprCodeGeneratedColumn(
    && (pTab->tabFlags & TF_Strict)!=0
   ){
     int p3 = 2+(int)(pCol - pTab->aCol);
+    sqlite3MayAbort(pParse);
     sqlite3VdbeAddOp4(v, OP_TypeCheck, regOut, 1, p3, (char*)pTab, P4_TABLE);
   }else if( pCol->affinity>=SQLITE_AFF_TEXT ){
     sqlite3VdbeAddOp4(v, OP_Affinity, regOut, 1, 0, &pCol->affinity, 1);
@@ -4885,6 +5029,30 @@ int sqlite3ExprCanReturnSubtype(Parse *pParse, Expr *pExpr){
   return w.eCode;
 }
 
+/*
+** Return 0 iff the expression in IndexedExpr object p is identical to
+** expression pExpr, and the affinity is such that an entry read from
+** the index may be substituted for pExpr in any context. Otherwise
+** return non-zero.
+*/
+static int indexedExprCompare(
+  IndexedExpr *p,                 /* Indexed expression */
+  Expr *pExpr,                    /* Expression to compare to p */
+  int iDataCur                    /* iTab argument for ExprCompare() */
+){
+  u8 exprAff;
+  if( sqlite3ExprCompare(0, pExpr, p->pExpr, iDataCur)!=0 ) return 1;
+  assert( p->aff>=SQLITE_AFF_BLOB && p->aff<=SQLITE_AFF_NUMERIC );
+  exprAff = sqlite3ExprAffinity(pExpr);
+  if( (exprAff<=SQLITE_AFF_BLOB && p->aff!=SQLITE_AFF_BLOB)
+   || (exprAff==SQLITE_AFF_TEXT && p->aff!=SQLITE_AFF_TEXT)
+   || (exprAff>=SQLITE_AFF_NUMERIC && p->aff!=SQLITE_AFF_NUMERIC)
+  ){
+    /* Affinity mismatch on a generated column */
+    return 1;
+  }
+  return 0;
+}
 
 /*
 ** Check to see if pExpr is one of the indexed expressions on pParse->pIdxEpr.
@@ -4899,25 +5067,15 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
 ){
   IndexedExpr *p;
   Vdbe *v;
+
   for(p=pParse->pIdxEpr; p; p=p->pIENext){
-    u8 exprAff;
     int iDataCur = p->iDataCur;
     if( iDataCur<0 ) continue;
     if( pParse->iSelfTab ){
       if( p->iDataCur!=pParse->iSelfTab-1 ) continue;
       iDataCur = -1;
     }
-    if( sqlite3ExprCompare(0, pExpr, p->pExpr, iDataCur)!=0 ) continue;
-    assert( p->aff>=SQLITE_AFF_BLOB && p->aff<=SQLITE_AFF_NUMERIC );
-    exprAff = sqlite3ExprAffinity(pExpr);
-    if( (exprAff<=SQLITE_AFF_BLOB && p->aff!=SQLITE_AFF_BLOB)
-     || (exprAff==SQLITE_AFF_TEXT && p->aff!=SQLITE_AFF_TEXT)
-     || (exprAff>=SQLITE_AFF_NUMERIC && p->aff!=SQLITE_AFF_NUMERIC)
-    ){
-      /* Affinity mismatch on a generated column */
-      continue;
-    }
-
+    if( indexedExprCompare(p, pExpr, iDataCur)!=0 ) continue;
 
     /* Functions that might set a subtype should not be replaced by the
     ** value taken from an expression index if they are themselves an
@@ -4929,18 +5087,19 @@ static SQLITE_NOINLINE int sqlite3IndexedExprLookup(
       continue;
     }
 
+    /* Do not read the value from an index if the expression is a constant.
+    ** This prevents an attempt to use an index value outside of the loop that
+    ** uses the index. (Bugs 2026-10-11T19:26:40Z and 2026-11-03T02:12:43Z). */
+    if( sqlite3ExprIsConstant(pParse, pExpr) ){
+      return -1;
+    }
+
     v = pParse->pVdbe;
     assert( v!=0 );
-    if( p->bMaybeNullRow || sqlite3ExprIsConstant(pParse, pExpr) ){
+    if( p->bMaybeNullRow ){
       /* The value of pExpr should be computed from the original expression,
-      ** not from the index, if either:
-      **
-      **    1.   The index might be on a NULL row due to an outer join.
-      **
-      **    2.   The expression is a constant.  This prevents an attempt to
-      **         use an index value outside of the loop that positions the
-      **         index.  (Bug 2026-10-11T19:26:40Z).
-      */
+      ** not from the index, if the index might be on a NULL row due to an
+      ** outer join.  */
       int addr = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp3(v, OP_IfNullRow, p->iIdxCur, addr+3, target);
       VdbeCoverage(v);
@@ -4979,9 +5138,13 @@ static int exprPartidxExprLookup(Parse *pParse, Expr *pExpr, int iTarget){
       Vdbe *v = pParse->pVdbe;
       int addr = 0;
       int ret;
+      u8 okConstFactor = pParse->okConstFactor;
 
       if( p->bMaybeNullRow ){
+        /* OP_IfNullRow can overwrite the result register with NULL, so the
+        ** value must be recomputed each time, not factored out. */
         addr = sqlite3VdbeAddOp1(v, OP_IfNullRow, p->iIdxCur);
+        pParse->okConstFactor = 0;
       }
       ret = sqlite3ExprCodeTarget(pParse, p->pExpr, iTarget);
       sqlite3VdbeAddOp4(pParse->pVdbe, OP_Affinity, ret, 1, 0,
@@ -4992,6 +5155,7 @@ static int exprPartidxExprLookup(Parse *pParse, Expr *pExpr, int iTarget){
         sqlite3VdbeAddOp1(pParse->pVdbe, OP_ClrSubtype, ret);
       }
       if( addr ){
+        pParse->okConstFactor = okConstFactor;
         sqlite3VdbeJumpHere(v, addr);
         sqlite3VdbeChangeP3(v, addr, ret);
       }
@@ -5119,7 +5283,7 @@ expr_code_doover:
       struct AggInfo_col *pCol;
       assert( pAggInfo!=0 );
       assert( pExpr->iAgg>=0 );
-      if( pExpr->iAgg>=pAggInfo->nColumn ){
+      if( NEVER(pExpr->iAgg>=pAggInfo->nColumn) ){
         /* Happens when the left table of a RIGHT JOIN is null and
         ** is using an expression index */
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
@@ -5895,7 +6059,7 @@ expr_code_doover:
            || pExpr->affExpr==OE_Fail
            || pExpr->affExpr==OE_Ignore
       );
-      if( !pParse->pTriggerTab && !pParse->nested ){
+      if( !pParse->pTriggerTab ){
         sqlite3ErrorMsg(pParse,
                        "RAISE() may only be used within a trigger-program");
         return 0;
@@ -5909,8 +6073,7 @@ expr_code_doover:
         VdbeCoverage(v);
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-        sqlite3VdbeAddOp3(v, OP_Halt, 
-             pParse->pTriggerTab ? SQLITE_CONSTRAINT_TRIGGER : SQLITE_ERROR,
+        sqlite3VdbeAddOp3(v, OP_Halt, SQLITE_CONSTRAINT_TRIGGER, 
              pExpr->affExpr, r1);
       }
       break;
@@ -6668,10 +6831,18 @@ static SQLITE_NOINLINE int exprCompareVariable(
     sqlite3VdbeReprepareOnBind(pParse->pVdbe, iVar, 0);
     pL = sqlite3VdbeGetBoundValue(pParse->pReprepare, iVar, SQLITE_AFF_BLOB);
     if( pL ){
+      int eType;
       if( sqlite3_value_type(pL)==SQLITE_TEXT ){
         sqlite3_value_text(pL); /* Make sure the encoding is UTF-8 */
       }
-      res = sqlite3MemCompare(pL, pR, 0) ? 2 : 0;
+      /* The bound value and the literal must be interchangeable, not
+      ** just compare equal. For example, integer 1 and real 1.0 are equal
+      ** according to MemCompare(), but are different if TEXT affinity
+      ** is applied to them.  */
+      eType = sqlite3_value_type(pL);
+      if( eType==sqlite3_value_type(pR) && sqlite3MemCompare(pL, pR, 0)==0 ){
+        res = 0;
+      }
     }
     sqlite3ValueFree(pR);
     sqlite3ValueFree(pL);
@@ -7561,10 +7732,20 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       assert( pParse->iSelfTab==0 );
       if( (pNC->ncFlags & NC_InAggFunc)==0 ) break;
       if( pParse->pIdxEpr==0 ) break;
+      if( pWalker->walkerDepth>0 ){
+        break; /* See bug report 2026-11-07T18:33:11Z */
+      }
       for(pIEpr=pParse->pIdxEpr; pIEpr; pIEpr=pIEpr->pIENext){
         int iDataCur = pIEpr->iDataCur;
         if( iDataCur<0 ) continue;
-        if( sqlite3ExprCompare(0, pExpr, pIEpr->pExpr, iDataCur)==0 ) break;
+        /* If the index might be on the NULL row of an outer join, then the
+        ** expression must not be replaced by a plain read of the index
+        ** column, as the value of the expression on the NULL row is not
+        ** necessarily NULL. In many cases (when the GROUP BY is not
+        ** using temp b-tree to sort), sqlite3IndexedExprLookup() will make 
+        ** the same substitution later on anyway. */
+        if( pIEpr->bMaybeNullRow ) continue;
+        if( indexedExprCompare(pIEpr, pExpr, iDataCur)==0 ) break;
       }
       if( pIEpr==0 ) break;
       if( NEVER(!ExprUseYTab(pExpr)) ) break;
@@ -7576,6 +7757,11 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       }
       if( i>=pSrcList->nSrc ) break;
       if( NEVER(pExpr->pAggInfo!=0) ) break; /* Resolved by outer context */
+      if( ExprHasProperty(pExpr, EP_SubtArg)
+       && sqlite3ExprCanReturnSubtype(pParse, pExpr)
+      ){
+        break;
+      }
       if( pParse->nErr ){ return WRC_Abort; }
 
       /* If we reach this point, it means that expression pExpr can be

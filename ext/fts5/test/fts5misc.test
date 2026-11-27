@@ -743,4 +743,21 @@ do_execsql_test 30.1 {
   COMMIT;
 } {1 2}
 
+#-------------------------------------------------------------------------
+reset_db
+fts5_aux_test_functions db
+do_execsql_test 31.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1 VALUES('x y z'), ('x y z');
+}
+
+do_execsql_test 31.1 {
+  SELECT rowid FROM t1('x') WHERE bm25(t1)!='fred';
+} {1 2}
+
+do_execsql_test 31.2 {
+  SELECT rowid FROM t1 WHERE t1='x' AND bm25(t1)!='fred';
+} {1 2}
+
+
 finish_test

@@ -151,6 +151,9 @@ int sqlite3UpsertAnalyzeTarget(
     /* Check for matches against other indexes */
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       int ii, jj, nn;
+      int bHit;              /* Index column matches some target term */
+      Bitmask mTarget = 0;   /* Target terms matched by some index column */
+      Bitmask mCol;          /* Target terms matched by index column ii */
       if( !IsUniqueIndex(pIdx) ) continue;
       if( pTarget->nExpr!=pIdx->nKeyCol ) continue;
       if( pIdx->pPartIdxWhere ){
@@ -178,19 +181,32 @@ int sqlite3UpsertAnalyzeTarget(
           sCol[1].iColumn = pIdx->aiColumn[ii];
           pExpr = &sCol[0];
         }
+        mCol = 0;
+        bHit = 0;
         for(jj=0; jj<nn; jj++){
           if( sqlite3ExprCompare(0,pTarget->a[jj].pExpr,pExpr,iCursor)<2 ){
-            break;  /* Column ii of the index matches column jj of target */
+            /* Column ii of the index matches column jj of target */
+            bHit = 1;
+            if( jj<BMS ) mCol |= MASKBIT(jj);
           }
         }
-        if( jj>=nn ){
-          /* The target contains no match for column jj of the index */
+        if( !bHit ){
+          /* The target contains no match for column ii of the index */
           break;
         }
+        mTarget |= mCol;
       }
       if( ii<nn ){
         /* Column ii of the index did not match any term of the conflict target.
         ** Continue the search with the next index. */
+        continue;
+      }
+      if( nn<BMS && mTarget!=(MASKBIT(nn)-1) ){
+        /* Every column of the index matches a term of the conflict target,
+        ** but some term of the target matches no column of the index.  This
+        ** can happen if the index contains the same column twice, as in
+        ** UNIQUE(b,b) versus a conflict target of (b,c).  Not a match.
+        ** Targets with BMS or more terms are not checked this way. */
         continue;
       }
       pUpsert->pUpsertIdx = pIdx;

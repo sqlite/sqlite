@@ -71,8 +71,11 @@ proc test_set {args} {
     } elseif {$isExclude == 0} {
       foreach f $a { set t($f) 1 }
     } else {
-      foreach f $a { array unset t $f }
-      foreach f $a { array unset t */$f }
+      foreach f $a {
+        foreach n [array names t] {
+          if {[string match $f [file tail $n]]} { unset t($n) }
+        }
+      }
     }
   }
 

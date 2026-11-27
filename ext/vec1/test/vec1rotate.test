@@ -52,5 +52,59 @@ do_execsql_test 2.0 {
   FROM v1;
 }
 
-finish_test
+# OPQ may not be combined with WHT. Check that:
+#
+#   3.1: vec1_train() refuses to create such a model,
+#   3.2: the 'rebuild' command refuses to accept one,
+#   3.3: a vec1 table refuses to use one found in its %_model table.
+#
+do_execsql_test 3.0 {
+  DROP TABLE IF EXISTS v1;
+  CREATE VIRTUAL TABLE v1 USING vec1(x);
+  WITH RECURSIVE s(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<512)
+  INSERT INTO v1(rowid,x)
+  SELECT i, vec1_from_json(printf('[%g,%g,%g,%g,%g,%g,%g,%g]',
+    sin(i), cos(i), sin(i*2), cos(i*2),
+    sin(i*3), cos(i*3), sin(i*5), cos(i*5)))
+  FROM s;
+}
+do_catchsql_test 3.1.1 {
+  INSERT INTO v1(cmd,arg) SELECT 'rebuild', vec1_train(x,
+    '{quantizer:"opq",codesize:1,wht:true,nopq_round:1,nthread:1}'
+  ) FROM v1;
+} {1 {vec1: wht may not be used with opq quantizer}}
+do_catchsql_test 3.1.2 {
+  SELECT vec1_train(x, '{opq:true,codesize:1,wht:true}') FROM v1;
+} {1 {vec1: wht may not be used with opq quantizer}}
 
+# Create a model with OPQ but no WHT. Its flags field (bytes 4-7, big-endian)
+# is INDEX|ROTATE (0x03). Then make a copy with the WHT flag (0x10) set too.
+do_execsql_test 3.2.0 {
+  CREATE TABLE m(id INTEGER PRIMARY KEY, val BLOB);
+  INSERT INTO m(id, val) SELECT 1, vec1_train(x,
+    '{quantizer:"opq",codesize:1,nopq_round:1,nthread:1}'
+  ) FROM v1;
+  INSERT INTO m(id, val) SELECT 2, 
+    unhex(substr(hex(val), 1, 14) || '13' || substr(hex(val), 17))
+  FROM m WHERE id=1;
+  SELECT hex(substr(val, 5, 4)) FROM m ORDER BY id;
+} {00000003 00000013}
+do_catchsql_test 3.2.1 {
+  INSERT INTO v1(cmd,arg) SELECT 'rebuild', val FROM m WHERE id=2;
+} {1 {vec1: model is corrupt}}
+do_execsql_test 3.2.2 {
+  INSERT INTO v1(cmd,arg) SELECT 'rebuild', val FROM m WHERE id=1;
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 3.3.0 {
+  UPDATE v1_model SET val = (SELECT val FROM m WHERE id=2);
+}
+db close
+sqlite3 db test.db
+vec1_load db
+do_catchsql_test 3.3.1 {
+  SELECT rowid FROM v1(vec1_from_json('[1,1,1,1,1,1,1,1]'), 1);
+} {1 {vec1: model is corrupt}}
+
+finish_test

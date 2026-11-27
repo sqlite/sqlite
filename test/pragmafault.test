@@ -36,4 +36,28 @@ do_faultsim_test 1 -prep {
 }
 
 
+
+#-------------------------------------------------------------------------
+# An OOM while integrity_check is fetching an overflow page should
+# cause the pragma to fail with SQLITE_NOMEM, not report corruption.
+#
+#   https://sqlite.org/bugs/forumpost/f14e95edc2
+#
+reset_db
+do_execsql_test 2.0 {
+  PRAGMA page_size = 65536;
+  CREATE TABLE t(x BLOB);
+  INSERT INTO t VALUES(zeroblob(200000));
+}
+faultsim_save_and_close
+
+do_faultsim_test 2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql { PRAGMA cache_size = 2 }
+} -body {
+  execsql { PRAGMA integrity_check }
+} -test {
+  faultsim_test_result {0 ok}
+}
+
 finish_test

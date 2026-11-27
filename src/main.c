@@ -966,7 +966,7 @@ int sqlite3_db_cacheflush(sqlite3 *db){
 */
 int sqlite3_db_config(sqlite3 *db, int op, ...){
   va_list ap;
-  int rc;
+  int rc = SQLITE_ERROR;
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
@@ -989,11 +989,10 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
       break;
     }
     case SQLITE_DBCONFIG_FP_DIGITS: {
-      int nIn = va_arg(ap, int);
-      int *pOut = va_arg(ap, int*);
-      if( nIn>3 && nIn<24 ) db->nFpDigit = (u8)nIn;
-      if( pOut ) *pOut = db->nFpDigit;
-      rc = SQLITE_OK;
+      /* Deliberate no-op as of 2026-11-20, as changing the float->text
+      ** algorithm can cause stale indexes in schemas that misuse
+      ** floating point values.  SQLITE_TESTCTRL_FP_DIGITS is provided
+      ** as an alternative, for testing purposes only. */
       break;
     }
     default: {
@@ -1023,9 +1022,11 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
         { SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE,  SQLITE_AttachCreate   },
         { SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE,   SQLITE_AttachWrite    },
         { SQLITE_DBCONFIG_ENABLE_COMMENTS,       SQLITE_Comments       },
+#ifdef SQLITE_DEBUG
+        { SQLITE_DBCONFIG_VDBE_TRACE,            SQLITE_VdbeTrace      },
+#endif
       };
       unsigned int i;
-      rc = SQLITE_ERROR; /* IMP: R-42790-23372 */
       for(i=0; i<ArraySize(aFlagOp); i++){
         if( aFlagOp[i].op==op ){
           int onoff = va_arg(ap, int);
@@ -1304,6 +1305,9 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
   if( !sqlite3SafetyCheckSickOrOk(db) ){
     return SQLITE_MISUSE_BKPT;
   }
+#if defined(SQLITE_DISPOSAL_NOTIFIER)
+  SQLITE_DISPOSAL_NOTIFIER(1,db);
+#endif
   sqlite3_mutex_enter(db->mutex);
   if( db->mTrace & SQLITE_TRACE_CLOSE ){
     db->trace.xV2(SQLITE_TRACE_CLOSE, db->pTraceArg, db, 0);
@@ -4507,6 +4511,7 @@ int sqlite3_test_control(int op, ...){
         sqlite3ShowWinFunc(0);
 #endif
         sqlite3ShowSelect(0);
+        sqlite3ShowSelectAsSql(0);
       }
 #endif
       break;
@@ -4562,7 +4567,7 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-    /*  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, sqlite3 *db, int N)
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, sqlite3 *db, u64 N)
     **
     ** Enable or disable various optimizations for testing purposes.  The
     ** argument N is a bitmask of optimizations to be disabled.  For normal
@@ -4573,18 +4578,18 @@ int sqlite3_test_control(int op, ...){
     */
     case SQLITE_TESTCTRL_OPTIMIZATIONS: {
       sqlite3 *db = va_arg(ap, sqlite3*);
-      db->dbOptFlags = va_arg(ap, u32);
+      db->dbOptFlags = va_arg(ap, u64);
       break;
     }
 
-    /*  sqlite3_test_control(SQLITE_TESTCTRL_GETOPT, sqlite3 *db, int *N)
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_GETOPT, sqlite3 *db, u64 *N)
     **
     ** Write the current optimization settings into *N.  A zero bit means that
     ** the optimization is on, and a 1 bit means that the optimization is off.
     */
     case SQLITE_TESTCTRL_GETOPT: {
       sqlite3 *db = va_arg(ap, sqlite3*);
-      int *pN = va_arg(ap, int*);
+      u64 *pN = va_arg(ap, u64*);
       *pN = db->dbOptFlags;
       break;
     }
@@ -4855,31 +4860,40 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-#if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_TUNING)
     /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, *piValue)
     **
-    ** If "id" is an integer between 1 and SQLITE_NTUNE then set the value
-    ** of the id-th tuning parameter to *piValue.  If "id" is between -1
-    ** and -SQLITE_NTUNE, then write the current value of the (-id)-th
-    ** tuning parameter into *piValue.
+    ** If "id" is an integer between 1 and N (where N is the number of
+    ** tuning parameters) then set the value of the id-th tuning parameter
+    ** to *piValue.  If "id" is between -1 and -N, then write the current
+    ** value of the (-id)-th tuning parameter into *piValue.  If "id" is
+    ** zero, return the number of tuning parameters (N).
     **
-    ** Tuning parameters are for use during transient development builds,
+    ** Tuning parameters are for use during development builds,
     ** to help find the best values for constants in the query planner.
-    ** Access tuning parameters using the Tuning(ID) macro.  Set the
+    ** Access tuning parameters using the Tuning(D,ID) macro.  Set the
     ** parameters in the CLI using ".testctrl tune ID VALUE".
     **
-    ** Transient use only.  Tuning parameters should not be used in
-    ** checked-in code.
+    ** See source code comments
+    **
+    ** Tuning parameters apply across all database connections for a process.
+    **
+    ** This interface is not threadsafe.  Do not change tuning parameters
+    ** while database connections are running on other threads.
     */
     case SQLITE_TESTCTRL_TUNE: {
       int id = va_arg(ap, int);
       int *piValue = va_arg(ap, int*);
-      if( id>0 && id<=SQLITE_NTUNE ){
-        Tuning(id) = *piValue;
-      }else if( id<0 && id>=-SQLITE_NTUNE ){
-        *piValue = Tuning(-id);
-      }else{
+      int N = sqlite3Tuning[0];
+      if( id>N || id<(-N) ){
         rc = SQLITE_NOTFOUND;
+        break;
+      }
+      rc = SQLITE_OK;
+      if( id>0 ){
+        sqlite3Tuning[id] = *piValue;
+      }else if( id<=0 ){
+        *piValue = sqlite3Tuning[-id];
       }
       break;
     }
@@ -4904,6 +4918,24 @@ int sqlite3_test_control(int op, ...){
         sqlite3Config.bJsonSelfcheck = (u8)((*pOnOff)&0xff);
       }
 #endif
+      break;
+    }
+
+    /* sqlite3_test_control(SQLITE_TESTCTRL_FP_DIGITS,db,nIn,pnOut)
+    **
+    ** Change the number of digits of precision used for float->text
+    ** conversions for database connection db to nIn (range 4..23).
+    ** If nIn is out of range, make no changes.
+    ** If pnOut is not NULL, write value after changes into *pnOut.
+    **
+    ** This replaces SQLITE_DBCONFIG_FP_DIGITS as of 2026-11-20.
+    */
+    case SQLITE_TESTCTRL_FP_DIGITS: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      int nIn = va_arg(ap, int);
+      int *pOut = va_arg(ap, int*);
+      if( db && nIn>3 && nIn<24 ) db->nFpDigit = (u8)nIn;
+      if( pOut ) *pOut = db ? db->nFpDigit : 0;
       break;
     }
   }

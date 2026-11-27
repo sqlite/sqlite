@@ -136,4 +136,77 @@ do_test 3.8 {
 
 }
 
+
+#-------------------------------------------------------------------------
+# A statement that gets SQLITE_BUSY from OP_Transaction on an attached
+# database, after having started a transaction on main, must not leave
+# its statement transaction open. Otherwise a later statement's
+# statement-savepoint nests inside it, and a constraint failure in
+# that later statement is only partially rolled back.
+#
+#   https://sqlite.org/bugs/forumpost/53f21c7fcfb416c3
+#
+# Also check that no "statement aborts" message is sent to the error
+# log for an SQLITE_BUSY error.
+#
+catch { db2 close }
+db close
+sqlite3_shutdown
+test_sqlite3_log [list lappend ::log]
+set ::log [list]
+reset_db
+forcedelete test.db2
+do_execsql_test 4.0 {
+  ATTACH 'test.db2' AS x;
+  CREATE TABLE t(a INTEGER PRIMARY KEY, b UNIQUE);
+  INSERT INTO t VALUES(1,1),(2,2),(3,3);
+  CREATE TABLE x.u(v);
+  CREATE TEMP TRIGGER tr AFTER UPDATE ON t BEGIN
+    INSERT INTO u VALUES(new.b);
+  END;
+}
+
+sqlite3 db2 test.db2
+do_execsql_test -db db2 4.1 { BEGIN IMMEDIATE }
+
+do_test 4.2 {
+  set P [sqlite3_prepare_v2 db "UPDATE t SET b=b WHERE a=99" -1 dummy]
+  set A [sqlite3_prepare_v2 db "UPDATE t SET b=b+10" -1 dummy]
+  set B [sqlite3_prepare_v2 db \
+      "UPDATE t SET b=CASE a WHEN 2 THEN 13 ELSE b+100 END" -1 dummy
+  ]
+  list [sqlite3_step $P] [sqlite3_step $A] [sqlite3_step $B]
+} {SQLITE_BUSY SQLITE_BUSY SQLITE_BUSY}
+
+do_execsql_test -db db2 4.3 { COMMIT }
+
+do_test 4.4 {
+  set res [list]
+  foreach s [list $A $B $P] {
+    sqlite3_step $s
+    lappend res [sqlite3_finalize $s]
+  }
+  set res
+} {SQLITE_OK SQLITE_CONSTRAINT SQLITE_OK}
+
+do_execsql_test 4.5 {
+  SELECT * FROM t;
+  SELECT * FROM x.u;
+} {1 11 2 12 3 13   11 12 13}
+
+do_test 4.6 {
+  set res [list]
+  foreach {code msg} $::log {
+    if {[string match SQLITE_BUSY* $code]} { lappend res $code $msg }
+  }
+  set res
+} {}
+
+db2 close
+db close
+sqlite3_shutdown
+test_sqlite3_log
+sqlite3_initialize
+sqlite3 db test.db
+
 finish_test

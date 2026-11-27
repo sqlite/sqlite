@@ -170,4 +170,58 @@ do_execsql_test 6.3 {
   SELECT 'a\' REGEXP 'a\\', 'a' REGEXP 'a\\';
 } {1 0}
 
+# Open-ended repetition X{m,}, formerly rejected with "n less than m".
+# https://sqlite.org/bugs/info/381937eb159a616b
+#
+do_execsql_test 7.1 {SELECT 'aaaa' REGEXP 'a{2,}'} {1}
+do_execsql_test 7.2 {SELECT 'a' REGEXP 'a{2,}'} {0}
+do_execsql_test 7.3 {SELECT 'aa' REGEXP '^a{2,}$'} {1}
+do_execsql_test 7.4 {SELECT 'a' REGEXP '^a{2,}$'} {0}
+do_execsql_test 7.5 {SELECT 'aaaaaaaaaa' REGEXP '^a{2,}$'} {1}
+do_execsql_test 7.6 {SELECT 'a' REGEXP '^a{1,}$'} {1}
+do_execsql_test 7.7 {SELECT '' REGEXP '^a{1,}$'} {0}
+do_execsql_test 7.8 {SELECT '' REGEXP '^a{0,}$'} {1}
+do_execsql_test 7.9 {SELECT 'aaa' REGEXP '^a{0,}$'} {1}
+do_execsql_test 7.10 {SELECT 'aab' REGEXP '^a{0,}$'} {0}
+do_execsql_test 7.11 {SELECT 'abab' REGEXP '^(ab){2,}$'} {1}
+do_execsql_test 7.12 {SELECT 'ab' REGEXP '^(ab){2,}$'} {0}
+do_execsql_test 7.13 {SELECT 'ababab' REGEXP '^(ab){2,}$'} {1}
+do_execsql_test 7.14 {SELECT 'ab' REGEXP '^a{0,}b'} {1}
+do_execsql_test 7.15 {SELECT 'xay' REGEXP 'a{,}y'} {1}
+do_catchsql_test 7.16 {SELECT 'a' REGEXP 'a{2,1}'} {1 {n less than m in '{m,n}'}}
+do_catchsql_test 7.17 {SELECT 'a' REGEXP 'a{2,0}'} {1 {n less than m in '{m,n}'}}
+do_execsql_test 7.18 {SELECT 'x' REGEXP 'a{,}b'} {0}
+
+# "$" is a zero-width assertion like "^".  It may be followed by another
+# assertion or by an optional or repeated term, and a group that ends
+# with it may be repeated.
+# https://sqlite.org/bugs/info/b74f0d777960717f
+#
+do_execsql_test 8.1 {SELECT 'x' REGEXP '^x$$'} {1}
+do_execsql_test 8.2 {SELECT 'x' REGEXP 'x$$$'} {1}
+do_execsql_test 8.3 {SELECT 'xy' REGEXP 'x$$'} {0}
+do_execsql_test 8.4 {SELECT 'x' REGEXP 'x$y*'} {1}
+do_execsql_test 8.5 {SELECT 'x' REGEXP 'x$y?'} {1}
+do_execsql_test 8.6 {SELECT 'xy' REGEXP 'x$y?'} {0}
+do_execsql_test 8.7 {SELECT 'x' REGEXP 'x$|y'} {1}
+do_execsql_test 8.8 {SELECT 'x' REGEXP 'x($)+'} {1}
+do_execsql_test 8.9 {SELECT 'x' REGEXP '(x$)+'} {1}
+do_execsql_test 8.10 {SELECT 'x' REGEXP '(x$)*'} {1}
+do_execsql_test 8.11 {SELECT 'x' REGEXP '(x$){2}'} {0}
+do_execsql_test 8.12 {SELECT 'xx' REGEXP '(x$){2}'} {0}
+do_execsql_test 8.13 {SELECT 'xx' REGEXP '(x$)+'} {1}
+do_execsql_test 8.14 {SELECT 'xx' REGEXP '^(x$)+'} {0}
+do_execsql_test 8.15 {SELECT '' REGEXP '$'} {1}
+do_execsql_test 8.16 {SELECT 'abc' REGEXP '$'} {1}
+do_execsql_test 8.17 {SELECT 'abc' REGEXP 'c$'} {1}
+do_execsql_test 8.18 {SELECT 'abc' REGEXP 'b$'} {0}
+do_execsql_test 8.19 {SELECT 'abc' REGEXP '^$'} {0}
+do_execsql_test 8.20 {SELECT '' REGEXP '^$'} {1}
+do_execsql_test 8.21 {SELECT '' REGEXP '$^'} {1}
+do_execsql_test 8.22 {SELECT 'abc' REGEXP 'abc$()'} {1}
+do_execsql_test 8.23 {SELECT 'ab' REGEXP '(a|$)b'} {1}
+do_execsql_test 8.24 {SELECT 'abc' REGEXP '(^|$)c'} {0}
+do_execsql_test 8.25 {SELECT 'x' REGEXP 'x$.'} {0}
+do_execsql_test 8.26 {SELECT 'x' REGEXP 'x$.?'} {1}
+
 finish_test

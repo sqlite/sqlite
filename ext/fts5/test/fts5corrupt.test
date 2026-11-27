@@ -184,4 +184,30 @@ do_catchsql_test 6.3 {
   INSERT INTO t(t) VALUES('integrity-check');
 } {1 {fts5: corruption found reading blob 137438953472 from table "t"}}
 
+#-------------------------------------------------------------------------
+# If loading the averages record fails, the totals must not be cached as
+# valid. Otherwise a later statement in the same transaction uses zeroed
+# totals and writes a bogus averages record on COMMIT.
+#
+#   https://sqlite.org/bugs/forumpost/7b0c7c2d1e
+#
+reset_db
+sqlite3_db_config db DEFENSIVE 0
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(c);
+  INSERT INTO t1(c) VALUES('hello world');
+  UPDATE t1_data SET id=0 WHERE id=1;
+  BEGIN;
+}
+do_catchsql_test 7.1 {
+  INSERT INTO t1(c) VALUES('two');
+} {1 {fts5: corruption found reading blob 1 from table "t1"}}
+do_catchsql_test 7.2 {
+  INSERT INTO t1(c) VALUES('three');
+} {1 {fts5: corruption found reading blob 1 from table "t1"}}
+do_execsql_test 7.3 {
+  COMMIT;
+  SELECT id, hex(block) FROM t1_data WHERE id<=1 ORDER BY id;
+} {0 0102}
+
 finish_test

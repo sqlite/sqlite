@@ -56,7 +56,7 @@
   major browsers released since March 2023). If that API is not
   detected, the VFS is not registered.
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   if( sqlite3.config.disable?.vfs?.['opfs-sahpool'] ){
     return;

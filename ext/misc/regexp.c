@@ -27,6 +27,7 @@
 **     X+      one or more occurrences of X
 **     X?      zero or one occurrences of X
 **     X{p,q}  between p and q occurrences of X
+**     X{p,}   p or more occurrences of X
 **     (X)     match X
 **     X|Y     X or Y
 **     ^X      X occurring at the beginning of the string
@@ -97,6 +98,7 @@ SQLITE_EXTENSION_INIT1
 #define RE_OP_NOTSPACE   16    /* Not a digit */
 #define RE_OP_BOUNDARY   17    /* Boundary between word and non-word */
 #define RE_OP_ATSTART    18    /* Currently at the start of the string */
+#define RE_OP_ATEND      19    /* Currently at the end of the string */
 
 /* Each opcode is a "state" in the NFA */
 typedef unsigned short ReStateNumber;
@@ -255,6 +257,10 @@ static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
         }
         case RE_OP_ATSTART: {
           if( cPrev==RE_START ) re_add_state(pThis, x+1);
+          break;
+        }
+        case RE_OP_ATEND: {
+          if( c==RE_EOF ) re_add_state(pThis, x+1);
           break;
         }
         case RE_OP_ANY: {
@@ -536,7 +542,7 @@ static const char *re_subcompile_string(ReCompiled *p){
         break;
       }
       case '$': {
-        re_append(p, RE_OP_MATCH, RE_EOF);
+        re_append(p, RE_OP_ATEND, 0);
         break;
       }
       case '^': {
@@ -546,6 +552,7 @@ static const char *re_subcompile_string(ReCompiled *p){
       case '{': {
         unsigned int m = 0, n = 0;
         unsigned int sz, j;
+        int bOpen = 0;          /* True for the open-ended form X{m,} */
         if( iPrev<0 ) return "'{m,n}' without operand";
         while( (c=rePeek(p))>='0' && c<='9' ){
           m = m*10 + c - '0';
@@ -556,6 +563,7 @@ static const char *re_subcompile_string(ReCompiled *p){
         if( c==',' ){
           p->sIn.i++;
           n = 0;
+          if( rePeek(p)=='}' ) bOpen = 1;
           while( (c=rePeek(p))>='0' && c<='9' ){
             n = n*10 + c-'0';
             if( n*2>p->mxAlloc ) return "REGEXP pattern too big";
@@ -563,9 +571,15 @@ static const char *re_subcompile_string(ReCompiled *p){
           }
         }
         if( c!='}' ) return "unmatched '{'";
-        if( n<m ) return "n less than m in '{m,n}'";
+        if( !bOpen && n<m ) return "n less than m in '{m,n}'";
         p->sIn.i++;
         sz = p->nState - iPrev;
+        if( m==0 && bOpen ){
+          /* X{0,} is the same as X* */
+          re_insert(p, iPrev, RE_OP_GOTO, sz+1);
+          re_append(p, RE_OP_FORK, -(int)sz);
+          break;
+        }
         if( m==0 ){
           if( n==0 ) return "both m and n are zero in '{m,n}'";
           re_insert(p, iPrev, RE_OP_FORK, sz+1);
@@ -578,7 +592,7 @@ static const char *re_subcompile_string(ReCompiled *p){
           re_append(p, RE_OP_FORK, sz+1);
           re_copy(p, iPrev, sz);
         }
-        if( n==0 && m>0 ){
+        if( bOpen ){
           re_append(p, RE_OP_FORK, -(int)sz);
         }
         break;
@@ -691,11 +705,7 @@ static const char *re_compile(
     re_free(pRe);
     return zErr;
   }
-  if( zIn[0]=='^' ){
-    zIn++;
-  }else{
-    re_append(pRe, RE_OP_ANYSTAR, 0);
-  }
+  re_append(pRe, RE_OP_ANYSTAR, 0);
   pRe->sIn.z = (unsigned char*)zIn;
   pRe->sIn.i = 0;
   pRe->sIn.mx = (int)strlen(zIn);
@@ -710,6 +720,19 @@ static const char *re_compile(
   }else{
     re_free(pRe);
     return "unrecognized character";
+  }
+
+  /* If the regex begins with "^" and has no "|" at the top level, then
+  ** the whole regex is anchored at the start of the input and the
+  ** initial ".*" is not needed.  Convert it into a no-op so that
+  ** re_match() can stop as soon as the start of the input fails to
+  ** match.  A "|" at the top level would have caused a FORK to be
+  ** inserted at aOp[1], so aOp[1]==RE_OP_ATSTART is sufficient.  Do
+  ** not remove the initial "^" itself, as there might be jumps back
+  ** to it, as in "^+". */
+  if( pRe->aOp[1]==RE_OP_ATSTART ){
+    pRe->aOp[0] = RE_OP_GOTO;
+    pRe->aArg[0] = 1;
   }
 
   /* The following is a performance optimization.  If the regex begins with
@@ -851,6 +874,7 @@ static void re_bytecode_func(
     "NOTSPACE",
     "BOUNDARY",
     "ATSTART",
+    "ATEND",
   };
 
   (void)argc;

@@ -167,7 +167,7 @@ void sqlite3AlterRenameTable(
   if( SQLITE_OK!=isAlterableTable(pParse, pTab) ){
     goto exit_rename_table;
   }
-  if( SQLITE_OK!=sqlite3CheckObjectName(pParse,zName,"table",zName) ){
+  if( SQLITE_OK!=sqlite3CheckObjectName(pParse,zName,"table",zName,zDb) ){
     goto exit_rename_table;
   }
 
@@ -212,31 +212,31 @@ void sqlite3AlterRenameTable(
   nTabName = sqlite3Utf8CharLen(zTabName, -1);
 
   /* Rewrite all CREATE TABLE, INDEX, TRIGGER or VIEW statements in
-  ** the schema to use the new table name.  */
+  ** the schema to use the new table name, and update the tbl_name and
+  ** name columns as required. */
   sqlite3NestedParse(pParse,
       "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
-      "sql = sqlite_rename_table(%Q, type, name, sql, %Q, %Q, %d) "
-      "WHERE (type!='index' OR tbl_name=%Q COLLATE nocase)"
-      "AND   name NOT LIKE 'sqliteX_%%' ESCAPE 'X'"
-      , zDb, zDb, zTabName, zName, (iDb==1), zTabName
-  );
-
-  /* Update the tbl_name and name columns of the sqlite_schema table
-  ** as required.  */
-  sqlite3NestedParse(pParse,
-      "UPDATE %Q." LEGACY_SCHEMA_TABLE " SET "
-          "tbl_name = %Q, "
-          "name = CASE "
-            "WHEN type='table' THEN %Q "
-            "WHEN name LIKE 'sqliteX_autoindex%%' ESCAPE 'X' "
-            "     AND type='index' THEN "
-             "'sqlite_autoindex_' || %Q || substr(name,%d+18) "
-            "ELSE name END "
-      "WHERE tbl_name=%Q COLLATE nocase AND "
-          "(type='table' OR type='index' OR type='trigger');",
-      zDb,
-      zName, zName, zName,
-      nTabName, zTabName
+      "sql = CASE WHEN type='index' AND "
+          "name LIKE 'sqliteX_autoindex%%' ESCAPE 'X' THEN sql "
+        "ELSE sqlite_rename_table(%Q, type, name, sql, %Q, %Q, %d) END, "
+      "tbl_name = CASE "
+        "WHEN tbl_name=%Q COLLATE nocase AND (type!='trigger' OR %d=0 OR "
+        "  sqlite_rename_test(%Q, sql, type, name, 1, 'after rename', 0)) "
+        "THEN %Q ELSE tbl_name END, "
+      "name = CASE "
+        "WHEN type='table' AND tbl_name=%Q COLLATE nocase THEN %Q "
+        "WHEN type='index' AND name LIKE 'sqliteX_autoindex%%' ESCAPE 'X' "
+        "THEN 'sqlite_autoindex_' || %Q || substr(name,%d+18) "
+        "ELSE name END "
+      "WHERE (type!='index' OR tbl_name=%Q COLLATE nocase) "
+      "AND (name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
+        "OR (type='index' AND name LIKE 'sqliteX_autoindex%%' ESCAPE 'X'))"
+      , zDb,
+      zDb, zTabName, zName, (iDb==1),
+      zTabName, (iDb==1), zDb, zName,
+      zTabName, zName,
+      zName, nTabName,
+      zTabName
   );
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
@@ -297,7 +297,7 @@ static void sqlite3ErrorIfNotEmpty(
   const char *zErr      /* Error message text */
 ){
   sqlite3NestedParse(pParse,
-     "SELECT raise(ABORT,%Q) FROM \"%w\".\"%w\"",
+     "SELECT sqlite_fail(%Q, 1) FROM \"%w\".\"%w\"",
      zErr, zDb, zTab
   );
 }
@@ -327,6 +327,51 @@ static int isRowidAlias(
 
 
 /*
+** Buffer pFrag, which is nFrag bytes in size, contains a fragment of
+** SQL that will be inserted into a CREATE TABLE statement. If successful, this
+** function returns the size of the buffer in bytes not including any trailing
+** whitespace, semicolons, "--" style comments or unterminated C-style
+** comments. Or, if an OOM occurs, it returns 0 and sets db->mallocFailed to
+** true.
+**
+** Terminated C-style comments at the end are preserved.  "--" style
+** comments and unterminated C-style comments are removed because otherwise
+** inserting pFrag[] into the middle of a larger SQL statement without a 
+** comment terminator will mess up its syntax.
+*/
+static int alterRtrimFragment(
+  sqlite3 *db,                    /* used to record OOM error */
+  const char *pFrag,              /* Buffer containing SQL fragment */
+  int nFrag                       /* Size of pFrag in bytes */
+){
+  u8 *zTmp = (u8*)sqlite3MPrintf(db, "%.*s", nFrag, pFrag);
+  int iOff = 0;
+  int iEnd = 0;
+
+  if( zTmp==0 ) return 0;
+
+  while( 1 ){
+    int t = 0;
+    int nToken = sqlite3GetToken(&zTmp[iOff], &t);
+    if( t==TK_ILLEGAL ) break;
+    if( t==TK_COMMENT ){
+      /* Ignore all but properly terminated C-style comments */
+      if( zTmp[iOff]=='/' && nToken>=4
+       && zTmp[iOff+nToken-2]=='*' && zTmp[iOff+nToken-1]=='/'
+      ){
+        iEnd = iOff+nToken;
+      }
+    }else if( t!=TK_SPACE && t!=TK_SEMI ){
+      iEnd = iOff+nToken;
+    }
+    iOff += nToken;
+  }
+
+  sqlite3DbFree(db, zTmp);
+  return iEnd;
+}
+
+/*
 ** This function is called after an "ALTER TABLE ... ADD" statement
 ** has been parsed. Argument pColDef contains the text of the new
 ** column definition.
@@ -341,6 +386,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   const char *zDb;          /* Database name */
   const char *zTab;         /* Table name */
   char *zCol;               /* Null-terminated column definition */
+  int nCol;                 /* Size of zCol in bytes */
   Column *pCol;             /* The new column */
   Expr *pDflt;              /* Default value for the new column */
   sqlite3 *db;              /* The database connection; */
@@ -386,28 +432,12 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   }
   if( isRowidAlias(pParse, pTab, pCol->zCnName, "add") ) return;
   if( (pCol->colFlags & COLFLAG_GENERATED)==0 ){
-    /* If the default value for the new column was specified with a
-    ** literal NULL, then set pDflt to 0. This simplifies checking
-    ** for an SQL NULL default below.
-    */
     assert( pDflt==0 || pDflt->op==TK_SPAN );
-    if( pDflt && pDflt->pLeft->op==TK_NULL ){
-      pDflt = 0;
-    }
-    assert( IsOrdinaryTable(pNew) );
-    if( (db->flags&SQLITE_ForeignKeys) && pNew->u.tab.pFKey && pDflt ){
-      sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
-          "Cannot add a REFERENCES column with non-NULL default value");
-    }
-    if( pCol->notNull && !pDflt ){
-      sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
-          "Cannot add a NOT NULL column with default value NULL");
-    }
 
-
-    /* Ensure the default expression is something that sqlite3ValueFromExpr()
-    ** can handle (i.e. not CURRENT_TIME etc.)
-    */
+    /* Ensure the default expression, if any, is something that
+    ** sqlite3ValueFromExpr() can handle (i.e. not CURRENT_TIME etc.).
+    ** If the default expression evaluates to NULL, then set pDflt to 
+    ** 0. This simplifies the checks below.  */
     if( pDflt ){
       sqlite3_value *pVal = 0;
       int rc;
@@ -420,21 +450,31 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       if( !pVal ){
         sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
            "Cannot add a column with non-constant default");
+      }else if( sqlite3_value_type(pVal)==SQLITE_NULL ){
+        pDflt = 0;
       }
       sqlite3ValueFree(pVal);
     }
+
+    assert( IsOrdinaryTable(pNew) );
+    if( (db->flags&SQLITE_ForeignKeys) && pNew->u.tab.pFKey && pDflt ){
+      sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
+          "Cannot add a REFERENCES column with non-NULL default value");
+    }
+    if( pCol->notNull && !pDflt ){
+      sqlite3ErrorIfNotEmpty(pParse, zDb, zTab,
+          "Cannot add a NOT NULL column with default value NULL");
+    }
+
   }else if( pCol->colFlags & COLFLAG_STORED ){
     sqlite3ErrorIfNotEmpty(pParse, zDb, zTab, "cannot add a STORED column");
   }
 
 
   /* Modify the CREATE TABLE statement. */
-  zCol = sqlite3DbStrNDup(db, (char*)pColDef->z, pColDef->n);
+  nCol = alterRtrimFragment(db, (char*)pColDef->z, pColDef->n);
+  zCol = sqlite3DbStrNDup(db, (char*)pColDef->z, nCol);
   if( zCol ){
-    char *zEnd = &zCol[pColDef->n-1];
-    while( zEnd>zCol && (*zEnd==';' || sqlite3Isspace(*zEnd)) ){
-      *zEnd-- = '\0';
-    }
     /* substr() operations on characters, but addColOffset is in bytes. So we
     ** have to use printf() to translate between these units: */
     assert( IsOrdinaryTable(pTab) );
@@ -452,6 +492,12 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
 
   v = sqlite3GetVdbe(pParse);
   if( v ){
+    int isStrict = pTab->tabFlags & TF_Strict;
+    int isGen = (pCol->colFlags & COLFLAG_GENERATED)!=0;
+
+    /* No concurrent writers of the table being changed */
+    sqlite3FailIfConcurrentWriter(pParse, pTab); VdbeCoverage(v);
+
     /* Make sure the schema version is at least 3.  But do not upgrade
     ** from less than 3 to 4, as that will corrupt any preexisting DESC
     ** index.
@@ -468,24 +514,42 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     /* Reload the table definition */
     renameReloadSchema(pParse, iDb, INITFLAG_AlterAdd);
 
-    /* Verify that constraints are still satisfied */
+    /* Verify that constraints are still satisfied. This requires a scan
+    ** of the entire table if:
+    **
+    **   1) the new column has a CHECK constraint, or
+    **   2) the new column is a NOT NULL generated column, or
+    **   3) the table is STRICT and the new column is a generated column
+    **      with a type other than ANY.
+    */
     if( pNew->pCheck!=0
-     || (pCol->notNull && (pCol->colFlags & COLFLAG_GENERATED)!=0)
-     || (pTab->tabFlags & TF_Strict)!=0
+     || (pCol->notNull && isGen)
+     || (isStrict && isGen && pCol->eCType!=COLTYPE_ANY)
     ){
       pParse->colNamesSet = 1;
       sqlite3NestedParse(pParse,
         "SELECT CASE WHEN quick_check GLOB 'CHECK*'"
-        " THEN raise(ABORT,'CHECK constraint failed')"
+        " THEN sqlite_fail('CHECK constraint failed', 1)"
         " WHEN quick_check GLOB 'non-* value in*'"
-        " THEN raise(ABORT,'type mismatch on DEFAULT')"
-        " ELSE raise(ABORT,'NOT NULL constraint failed')"
+        " THEN sqlite_fail('type mismatch on DEFAULT', 1)"
+        " ELSE sqlite_fail('NOT NULL constraint failed', 1)"
         " END"
         "  FROM pragma_quick_check(%Q,%Q)"
         " WHERE quick_check GLOB 'CHECK*'"
         " OR quick_check GLOB 'NULL*'"
         " OR quick_check GLOB 'non-* value in*'",
         zTab, zDb
+      );
+    }else if( pDflt && isStrict && pCol->eCType>COLTYPE_ANY ){
+      static const char *azTypeof[] = {
+        "any", "blob", "integer", "integer", "real", "text"
+      };
+      assert( pCol->eCType<=ArraySize(azTypeof) );
+      pParse->colNamesSet = 1;
+      sqlite3NestedParse(pParse,
+        "SELECT sqlite_fail('type mismatch on DEFAULT', 1)"
+        " WHERE sqlite_check_type(%Q, %Q, %Q, %Q)",
+        zDb, zTab, pCol->zCnName, azTypeof[pCol->eCType-1]
       );
     }
   }
@@ -745,6 +809,7 @@ struct RenameCtx {
   int iCol;                       /* Index of column being renamed */
   Table *pTab;                    /* Table being ALTERed */
   const char *zOld;               /* Old column name */
+  char *zErr;                     /* Error message, or NULL */
 };
 
 #ifdef SQLITE_DEBUG
@@ -1018,6 +1083,60 @@ static RenameToken *renameTokenFind(
 }
 
 /*
+** Check the joins in pSrc for a USING clause or a NATURAL join that
+** involves the column being renamed.  Renaming such a column could change
+** the meaning of the join, so record an error message in pCtx->zErr.
+** A USING(x) term, and a NATURAL join, names a column in the table on its
+** right and in the first table on its left that has such a column.  The
+** column is involved if either of those tables is the one being altered.
+*/
+static void renameColumnJoinCheck(
+  Parse *pParse,
+  RenameCtx *pCtx,
+  const SrcList *pSrc
+){
+  int i;
+  const char *zOld;
+  if( NEVER(pSrc==0) || pCtx->pTab==0 ) return;
+  zOld = pCtx->pTab->aCol[pCtx->iCol].zCnName;
+  for(i=1; i<pSrc->nSrc; i++){
+    const SrcItem *pItem = &pSrc->a[i];
+    const IdList *pUsing;
+    Table *pLeft = 0;
+    int j, k;
+    if( pItem->fg.isUsing==0 ) continue;
+    pUsing = pItem->u3.pUsing;
+    for(k=0; k<pUsing->nId; k++){
+      if( 0==sqlite3_stricmp(pUsing->a[k].zName, zOld) ) break;
+    }
+    if( k>=pUsing->nId ) continue;
+    for(j=0; ALWAYS(j<i); j++){
+      pLeft = pSrc->a[j].pSTab;
+      if( ALWAYS(pLeft) && sqlite3ColumnIndex(pLeft, zOld)>=0 ) break;
+    }
+    if( pItem->pSTab==pCtx->pTab || pLeft==pCtx->pTab ){
+      int isNat = pItem->fg.isSynthUsing;
+      const char *zPrep;
+      const char *zName;
+      if( pParse->pNewTable ){
+        zPrep = isNat ? "in VIEW" : "of VIEW";
+        zName = pParse->pNewTable->zName;
+      }else{
+        zPrep = "within TRIGGER";
+        zName = pParse->pNewTrigger->zName;
+      }
+      sqlite3DbFree(pParse->db, pCtx->zErr);
+      pCtx->zErr = sqlite3MPrintf(pParse->db,
+          "cannot rename %s because it %s %s %s", zOld,
+          isNat ? "participates in a NATURAL JOIN"
+                : "appears in a USING clause",
+          zPrep, zName);
+      return;
+    }
+  }
+}
+
+/*
 ** This is a Walker select callback. It does nothing. It is only required
 ** because without a dummy callback, sqlite3WalkExpr() and similar do not
 ** descend into sub-select statements.
@@ -1028,6 +1147,7 @@ static int renameColumnSelectCb(Walker *pWalker, Select *p){
     testcase( p->selFlags & SF_CopyCte );
     return WRC_Prune;
   }
+  renameColumnJoinCheck(pWalker->pParse, pWalker->u.pRename, p->pSrc);
   renameWalkWith(pWalker, p);
   return WRC_Continue;
 }
@@ -1362,6 +1482,29 @@ static void renameSetENames(ExprList *pEList, int val){
 }
 
 /*
+** pSrc is a copy of the FROM clause of a trigger step.  The first entry is
+** the target table of the step.  For an UPDATE-FROM step the remaining
+** entries are a nested subquery at runtime, so their ON and USING clauses
+** and NATURAL joins do not see the target.  Mimic that by moving the target
+** to the end of pSrc and by deleting the ON clauses.  The caller resolves
+** the ON clauses of the original separately, against pSrc less its last
+** entry.
+*/
+static void renameHideTarget(sqlite3 *db, SrcList *pSrc){
+  SrcItem tmp = pSrc->a[0];
+  int i;
+  memmove(&pSrc->a[0], &pSrc->a[1], (pSrc->nSrc-1)*sizeof(SrcItem));
+  pSrc->a[pSrc->nSrc-1] = tmp;
+  for(i=0; i<pSrc->nSrc; i++){
+    SrcItem *pItem = &pSrc->a[i];
+    if( pItem->fg.isUsing==0 ){
+      sqlite3ExprDelete(db, pItem->u3.pOn);
+      pItem->u3.pOn = 0;
+    }
+  }
+}
+
+/*
 ** Resolve all symbols in the trigger at pParse->pNewTrigger, assuming
 ** it was read from the schema of database zDb. Return SQLITE_OK if
 ** successful. Otherwise, return an SQLite error code and leave an error
@@ -1400,7 +1543,10 @@ static int renameResolveTrigger(Parse *pParse){
     if( rc==SQLITE_OK && pStep->pSrc ){
       SrcList *pSrc = sqlite3SrcListDup(db, pStep->pSrc, 0);
       if( pSrc ){
-        Select *pSel = sqlite3SelectNew(
+        Select *pSel;
+        Upsert *pUpsert = 0;
+        renameHideTarget(db, pSrc);
+        pSel = sqlite3SelectNew(
             pParse, pStep->pExprList, pSrc, 0, 0, 0, 0, 0, 0
         );
         if( pSel==0 ){
@@ -1426,6 +1572,8 @@ static int renameResolveTrigger(Parse *pParse){
           pSel->pSrc = 0;
           sqlite3SelectDelete(db, pSel);
         }
+
+        sNC.pSrcList = pSrc;
         if( ALWAYS(pStep->pSrc) ){
           int i;
           for(i=0; i<pStep->pSrc->nSrc && rc==SQLITE_OK; i++){
@@ -1434,13 +1582,20 @@ static int renameResolveTrigger(Parse *pParse){
               assert( p->u4.pSubq!=0 );
               sqlite3SelectPrep(pParse, p->u4.pSubq->pSelect, 0);
             }
+            if( p->fg.isUsing==0 ){
+              /* The ON clause does not see the target, which is last. */
+              pSrc->nSrc--;
+              rc = sqlite3ResolveExprNames(&sNC, p->u3.pOn);
+              pSrc->nSrc++;
+            }
+            if( p->fg.isTabFunc ){
+              rc = sqlite3ResolveExprListNames(&sNC, p->u1.pFuncArg);
+            }
           }
         }
-
-        if(  db->mallocFailed ){
+        if( db->mallocFailed ){
           rc = SQLITE_NOMEM;
         }
-        sNC.pSrcList = pSrc;
         if( rc==SQLITE_OK && pStep->pWhere ){
           rc = sqlite3ResolveExprNames(&sNC, pStep->pWhere);
         }
@@ -1448,8 +1603,10 @@ static int renameResolveTrigger(Parse *pParse){
           rc = sqlite3ResolveExprListNames(&sNC, pStep->pExprList);
         }
         assert( !pStep->pUpsert || (!pStep->pWhere && !pStep->pExprList) );
-        if( pStep->pUpsert && rc==SQLITE_OK ){
-          Upsert *pUpsert = pStep->pUpsert;
+        for(pUpsert=pStep->pUpsert;
+            pUpsert && rc==SQLITE_OK;
+            pUpsert=pUpsert->pNextUpsert
+        ){
           pUpsert->pUpsertSrc = pSrc;
           sNC.uNC.pUpsert = pUpsert;
           sNC.ncFlags = NC_UUpsert;
@@ -1488,11 +1645,11 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
 
   /* Find tokens to edit in trigger steps */
   for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
+    Upsert *pUpsert = 0;
     sqlite3WalkSelect(pWalker, pStep->pSelect);
     sqlite3WalkExpr(pWalker, pStep->pWhere);
     sqlite3WalkExprList(pWalker, pStep->pExprList);
-    if( pStep->pUpsert ){
-      Upsert *pUpsert = pStep->pUpsert;
+    for(pUpsert=pStep->pUpsert; pUpsert; pUpsert=pUpsert->pNextUpsert){
       sqlite3WalkExprList(pWalker, pUpsert->pUpsertTarget);
       sqlite3WalkExprList(pWalker, pUpsert->pUpsertSet);
       sqlite3WalkExpr(pWalker, pUpsert->pUpsertWhere);
@@ -1502,9 +1659,16 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
       int i;
       SrcList *pSrc = pStep->pSrc;
       for(i=0; i<pSrc->nSrc; i++){
-        if( pSrc->a[i].fg.isSubquery ){
-          assert( pSrc->a[i].u4.pSubq!=0 );
-          sqlite3WalkSelect(pWalker, pSrc->a[i].u4.pSubq->pSelect);
+        SrcItem *p = &pSrc->a[i];
+        if( p->fg.isSubquery ){
+          assert( p->u4.pSubq!=0 );
+          sqlite3WalkSelect(pWalker, p->u4.pSubq->pSelect);
+        }
+        if( p->fg.isTabFunc ){
+          sqlite3WalkExprList(pWalker, p->u1.pFuncArg);
+        }
+        if( p->fg.isUsing==0 ){
+          sqlite3WalkExpr(pWalker, p->u3.pOn);
         }
       }
     }
@@ -1594,7 +1758,7 @@ static void renameColumnFunc(
   }
   zOld = pTab->aCol[iCol].zCnName;
   memset(&sCtx, 0, sizeof(sCtx));
-  sCtx.iCol = ((iCol==pTab->iPKey) ? -1 : iCol);
+  sCtx.iCol = iCol;
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   db->xAuth = 0;
@@ -1632,7 +1796,7 @@ static void renameColumnFunc(
               &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zCnName
           );
         }
-        if( sCtx.iCol<0 ){
+        if( iCol==sParse.pNewTable->iPKey ){
           renameTokenFind(&sParse, &sCtx, (void*)&sParse.pNewTable->iPKey);
         }
         sqlite3WalkExprList(&sWalker, sParse.pNewTable->pCheck);
@@ -1678,9 +1842,9 @@ static void renameColumnFunc(
       if( pStep->pSrc ){
         Table *pTarget = sqlite3LocateTableItem(&sParse, 0, &pStep->pSrc->a[0]);
         if( pTarget==pTab ){
-          if( pStep->pUpsert ){
-            ExprList *pUpsertSet = pStep->pUpsert->pUpsertSet;
-            renameColumnElistNames(&sParse, &sCtx, pUpsertSet, zOld);
+          Upsert *pUpsert = 0;
+          for(pUpsert=pStep->pUpsert; pUpsert; pUpsert=pUpsert->pNextUpsert){
+            renameColumnElistNames(&sParse,&sCtx,pUpsert->pUpsertSet,zOld);
           }
           renameColumnIdlistNames(&sParse, &sCtx, pStep->pIdList, zOld);
           renameColumnElistNames(&sParse, &sCtx, pStep->pExprList, zOld);
@@ -1698,6 +1862,10 @@ static void renameColumnFunc(
   }
 
   assert( rc==SQLITE_OK );
+  if( sCtx.zErr ){
+    sqlite3_result_error(context, sCtx.zErr, -1);
+    goto renameColumnFunc_cleanup;
+  }
   rc = renameEditSql(context, &sCtx, zSql, zNew, bQuote);
 
 renameColumnFunc_done:
@@ -1711,8 +1879,10 @@ renameColumnFunc_done:
     }
   }
 
+renameColumnFunc_cleanup:
   renameParseCleanup(&sParse);
   renameTokenFree(db, sCtx.pList);
+  sqlite3DbFree(db, sCtx.zErr);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   db->xAuth = xAuth;
 #endif
@@ -1760,6 +1930,26 @@ static int renameTableSelectCb(Walker *pWalker, Select *pSelect){
   return WRC_Continue;
 }
 
+
+#ifndef SQLITE_OMIT_TRIGGER
+/*
+** Return the table that SrcItem pItem, which is part of the pSrc list of
+** an INSERT, UPDATE or DELETE trigger step (the target table, or a table
+** from the FROM clause of an UPDATE ... FROM), refers to. Or NULL if it
+** does not refer to any existing table.
+*/
+static Table *renameTriggerSrcTab(sqlite3 *db, SrcItem *pItem){
+  const char *zDb;
+  assert( pItem->fg.isSubquery==0 );
+  if( pItem->fg.fixedSchema ){
+    int iDb = sqlite3SchemaToIndex(db, pItem->u4.pSchema);
+    zDb = db->aDb[iDb].zDbSName;
+  }else{
+    zDb = pItem->u4.zDatabase;
+  }
+  return sqlite3FindTable(db, pItem->zName, zDb);
+}
+#endif
 
 /*
 ** This C function implements an SQL user function that is used by SQL code
@@ -1879,8 +2069,8 @@ static void renameTableFunc(
         Trigger *pTrigger = sParse.pNewTrigger;
         TriggerStep *pStep;
         if( 0==sqlite3_stricmp(sParse.pNewTrigger->table, zOld)
-            && sCtx.pTab->pSchema==pTrigger->pTabSchema
-          ){
+         && sCtx.pTab->pSchema==pTrigger->pTabSchema
+        ){
           renameTokenFind(&sParse, &sCtx, sParse.pNewTrigger->table);
         }
 
@@ -1892,9 +2082,9 @@ static void renameTableFunc(
               if( pStep->pSrc ){
                 int i;
                 for(i=0; i<pStep->pSrc->nSrc; i++){
-                  SrcItem *pItem = &pStep->pSrc->a[i];
-                  if( 0==sqlite3_stricmp(pItem->zName, zOld) ){
-                    renameTokenFind(&sParse, &sCtx, pItem->zName);
+                  SrcItem *p = &pStep->pSrc->a[i];
+                  if( p->zName && renameTriggerSrcTab(db, p)==sCtx.pTab ){
+                    renameTokenFind(&sParse, &sCtx, p->zName);
                   }
                 }
               }
@@ -2349,71 +2539,74 @@ void sqlite3AlterDropColumn(Parse *pParse, SrcList *pSrc, const Token *pName){
   renameTestSchema(pParse, zDb, iDb==1, "after drop column", 1);
 
   /* Edit rows of table on disk */
-  if( pParse->nErr==0 && (pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL)==0 ){
-    int i;
-    int addr;
-    int reg;
-    int regRec;
-    Index *pPk = 0;
-    int nField = 0;               /* Number of non-virtual columns after drop */
-    int iCur;
+  if( pParse->nErr==0 ){
     Vdbe *v = sqlite3GetVdbe(pParse);
-    iCur = pParse->nTab++;
-    sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenWrite);
-    addr = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
-    reg = ++pParse->nMem;
-    if( HasRowid(pTab) ){
-      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, reg);
-      pParse->nMem += pTab->nCol;
-    }else{
-      pPk = sqlite3PrimaryKeyIndex(pTab);
-      pParse->nMem += pPk->nColumn;
-      for(i=0; i<pPk->nKeyCol; i++){
-        sqlite3VdbeAddOp3(v, OP_Column, iCur, i, reg+i+1);
-      }
-      nField = pPk->nKeyCol;
-    }
-    regRec = ++pParse->nMem;
-    for(i=0; i<pTab->nCol; i++){
-      if( i!=iCol && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
-        int regOut;
-        if( pPk ){
-          int iPos = sqlite3TableColumnToIndex(pPk, i);
-          int iColPos = sqlite3TableColumnToIndex(pPk, iCol);
-          if( iPos<pPk->nKeyCol ) continue;
-          regOut = reg+1+iPos-(iPos>iColPos);
-        }else{
-          regOut = reg+1+nField;
+    sqlite3VdbeAddOp0(v, OP_DbLock);
+    if( (pTab->aCol[iCol].colFlags & COLFLAG_VIRTUAL)==0 ){
+      int i;
+      int addr;
+      int reg;
+      int regRec;
+      Index *pPk = 0;
+      int nField = 0;             /* Number of non-virtual columns after drop */
+      int iCur;
+      iCur = pParse->nTab++;
+      sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenWrite);
+      addr = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
+      reg = ++pParse->nMem;
+      if( HasRowid(pTab) ){
+        sqlite3VdbeAddOp2(v, OP_Rowid, iCur, reg);
+        pParse->nMem += pTab->nCol;
+      }else{
+        pPk = sqlite3PrimaryKeyIndex(pTab);
+        pParse->nMem += pPk->nColumn;
+        for(i=0; i<pPk->nKeyCol; i++){
+          sqlite3VdbeAddOp3(v, OP_Column, iCur, i, reg+i+1);
         }
-        if( i==pTab->iPKey ){
-          sqlite3VdbeAddOp2(v, OP_Null, 0, regOut);
-        }else{
-          sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOut);
-          assert( pParse->nErr
-               || sqlite3VdbeGetOp(v,sqlite3VdbeCurrentAddr(v)-1)->opcode
-                    != OP_RealAffinity
-               || pTab->aCol[i].affinity==SQLITE_AFF_REAL );
-          sqlite3VdbeDeletePriorOpcode(v, OP_RealAffinity);
-        }
-        nField++;
+        nField = pPk->nKeyCol;
       }
+      regRec = ++pParse->nMem;
+      for(i=0; i<pTab->nCol; i++){
+        if( i!=iCol && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0 ){
+          int regOut;
+          if( pPk ){
+            int iPos = sqlite3TableColumnToIndex(pPk, i);
+            int iColPos = sqlite3TableColumnToIndex(pPk, iCol);
+            if( iPos<pPk->nKeyCol ) continue;
+            regOut = reg+1+iPos-(iPos>iColPos);
+          }else{
+            regOut = reg+1+nField;
+          }
+          if( i==pTab->iPKey ){
+            sqlite3VdbeAddOp2(v, OP_Null, 0, regOut);
+          }else{
+            sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, i, regOut);
+            assert( pParse->nErr
+                 || sqlite3VdbeGetOp(v,sqlite3VdbeCurrentAddr(v)-1)->opcode
+                      != OP_RealAffinity
+                 || pTab->aCol[i].affinity==SQLITE_AFF_REAL );
+            sqlite3VdbeDeletePriorOpcode(v, OP_RealAffinity);
+          }
+          nField++;
+        }
+      }
+      if( nField==0 ){
+        /* dbsqlfuzz 5f09e7bcc78b4954d06bf9f2400d7715f48d1fef */
+        pParse->nMem++;
+        sqlite3VdbeAddOp2(v, OP_Null, 0, reg+1);
+        nField = 1;
+      }
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, reg+1, nField, regRec);
+      if( pPk ){
+        sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iCur, regRec, reg+1,pPk->nKeyCol);
+      }else{
+        sqlite3VdbeAddOp3(v, OP_Insert, iCur, regRec, reg);
+      }
+      sqlite3VdbeChangeP5(v, OPFLAG_SAVEPOSITION);
+  
+      sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+1); VdbeCoverage(v);
+      sqlite3VdbeJumpHere(v, addr);
     }
-    if( nField==0 ){
-      /* dbsqlfuzz 5f09e7bcc78b4954d06bf9f2400d7715f48d1fef */
-      pParse->nMem++;
-      sqlite3VdbeAddOp2(v, OP_Null, 0, reg+1);
-      nField = 1;
-    }
-    sqlite3VdbeAddOp3(v, OP_MakeRecord, reg+1, nField, regRec);
-    if( pPk ){
-      sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iCur, regRec, reg+1, pPk->nKeyCol);
-    }else{
-      sqlite3VdbeAddOp3(v, OP_Insert, iCur, regRec, reg);
-    }
-    sqlite3VdbeChangeP5(v, OPFLAG_SAVEPOSITION);
-
-    sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+1); VdbeCoverage(v);
-    sqlite3VdbeJumpHere(v, addr);
   }
 
 exit_drop_column:
@@ -2920,44 +3113,6 @@ static void failConstraintFunc(
 }
 
 /*
-** Buffer pCons, which is nCons bytes in size, contains the text of a 
-** NOT NULL or CHECK constraint that will be inserted into a CREATE TABLE
-** statement. If successful, this function returns the size of the buffer in
-** bytes not including any trailing whitespace or "--" style comments. Or,
-** if an OOM occurs, it returns 0 and sets db->mallocFailed to true.
-**
-** C-style comments at the end are preserved.  "--" style comments are
-** removed because the comment terminator might be \000, and we are about
-** to insert the pCons[] text into the middle of a larger string, and that
-** will have the effect of removing the comment terminator and messing up
-** the syntax.
-*/
-static int alterRtrimConstraint(
-  sqlite3 *db,                    /* used to record OOM error */
-  const char *pCons,              /* Buffer containing constraint */
-  int nCons                       /* Size of pCons in bytes */
-){
-  u8 *zTmp = (u8*)sqlite3MPrintf(db, "%.*s", nCons, pCons);
-  int iOff = 0;
-  int iEnd = 0;
-
-  if( zTmp==0 ) return 0;
-
-  while( 1 ){
-    int t = 0;
-    int nToken = sqlite3GetToken(&zTmp[iOff], &t);
-    if( t==TK_ILLEGAL ) break;
-    if( t!=TK_SPACE && (t!=TK_COMMENT || zTmp[iOff]!='-') ){
-      iEnd = iOff+nToken;
-    }
-    iOff += nToken;
-  }
-
-  sqlite3DbFree(db, zTmp);
-  return iEnd;
-}
-
-/*
 ** Prepare a statement of the form:
 **
 **   ALTER TABLE pSrc ALTER pCol SET NOT NULL
@@ -2987,7 +3142,10 @@ void sqlite3AlterSetNotNull(
 
   /* Find the length in bytes of the constraint definition */
   pCons = pFirst->z;
-  nCons = alterRtrimConstraint(pParse->db, pCons, pParse->sLastToken.z - pCons);
+  nCons = alterRtrimFragment(pParse->db, pCons, pParse->sLastToken.z - pCons);
+
+  /* No concurrent writers of table being changed */
+  sqlite3FailIfConcurrentWriter(pParse, pTab); VdbeCoverage(pParse->pVdbe);
 
   /* Search for a constraint violation. Throw an exception if one is found. */
   sqlite3NestedParse(pParse,
@@ -3110,6 +3268,9 @@ void sqlite3AlterAddConstraint(
     sqlite3DbFree(pParse->db, zName);
   }
 
+  /* No concurrent writers of the table being changed */
+  sqlite3FailIfConcurrentWriter(pParse, pTab); VdbeCoverage(pParse->pVdbe);
+
   /* Search for a constraint violation. Throw an exception if one is found. */
   sqlite3NestedParse(pParse,
       "SELECT sqlite_fail('constraint failed', %d) "
@@ -3119,7 +3280,7 @@ void sqlite3AlterAddConstraint(
 
   /* Edit the SQL for the named table. */
   pCons = pFirst->z;
-  nCons = alterRtrimConstraint(pParse->db, pCons, pParse->sLastToken.z - pCons);
+  nCons = alterRtrimFragment(pParse->db, pCons, pParse->sLastToken.z - pCons);
 
   sqlite3NestedParse(pParse,
       "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
@@ -3133,10 +3294,68 @@ void sqlite3AlterAddConstraint(
 }
 
 /*
+** The implementation of internal SQL function:
+**
+**   sqlite_check_type(DB, TAB, COL, TYPE)
+**
+** Read the value of column COL from the first row of table DB.TAB. Return
+** 1 if the table contains at least one row and typeof() of the value read
+** is not TYPE. Otherwise, return NULL.
+*/
+static void checkTypeFunc(
+  sqlite3_context *ctx,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(ctx);
+  const char *zDb = (const char*)sqlite3_value_text(argv[0]);
+  const char *zTab = (const char*)sqlite3_value_text(argv[1]);
+  const char *zCol = (const char*)sqlite3_value_text(argv[2]);
+  const char *zType = (const char*)sqlite3_value_text(argv[3]);
+  sqlite3_stmt *pStmt = 0;
+  char *zSql;
+  int rc;
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+  db->xAuth = 0;
+#endif
+
+  (void)NotUsed;
+  if( zDb==0 || zTab==0 || zCol==0 || zType==0 ) return;
+  zSql = sqlite3MPrintf(db,
+      "SELECT typeof(\"%w\") FROM \"%w\".\"%w\" LIMIT 1", zCol, zDb, zTab
+  );
+  if( zSql==0 ){
+    sqlite3_result_error_nomem(ctx);
+    return;
+  }
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  sqlite3DbFree(db, zSql);
+  if( rc==SQLITE_OK ){
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      const char *zVal = (const char*)sqlite3_column_text(pStmt, 0);
+      if( sqlite3_stricmp(zVal, zType)!=0 ){
+        sqlite3_result_int(ctx, 1);
+      }
+    }
+    rc = sqlite3_finalize(pStmt);
+  }
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error(ctx, sqlite3_errmsg(db), -1);
+    sqlite3_result_error_code(ctx, rc);
+  }
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
+}
+
+/*
 ** Register built-in functions used to help implement ALTER TABLE
 */
 void sqlite3AlterFunctions(void){
   static FuncDef aAlterTableFuncs[] = {
+    INTERNAL_FUNCTION(sqlite_check_type,     4, checkTypeFunc),
     INTERNAL_FUNCTION(sqlite_rename_column,  9, renameColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_table,   7, renameTableFunc),
     INTERNAL_FUNCTION(sqlite_rename_test,    7, renameTableTest),
@@ -3145,7 +3364,7 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_drop_constraint,2, dropConstraintFunc),
     INTERNAL_FUNCTION(sqlite_fail,           2, failConstraintFunc),
     INTERNAL_FUNCTION(sqlite_add_constraint, 3, addConstraintFunc),
-    INTERNAL_FUNCTION(sqlite_find_constraint,2, findConstraintFunc),
+    INTERNAL_FUNCTION(sqlite_find_constraint,2, findConstraintFunc)
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }

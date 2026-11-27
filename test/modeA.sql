@@ -94,6 +94,41 @@ SELECT 'xyz123' AS a, 2 AS b;
 │ 3 │   │
 ╰───┴───╯
 END
+
+# A double-wide character with --wrap 1 must widen the column to 2.
+# This used to loop forever with --limits off.
+.testcase 122
+.mode box --wrap 1 --limits off
+SELECT 'a中b' AS a, 'xyz' AS b;
+.check <<END
+╭────┬───╮
+│ a  │ b │
+╞════╪═══╡
+│ a  │ x │
+│ 中 │ y │
+│ b  │ z │
+╰────┴───╯
+END
+.testcase 123
+.mode box --wrap 1 --linelimit 5
+SELECT '中' AS x;
+.check <<END
+╭────╮
+│ x  │
+╞════╡
+│ 中 │
+╰────╯
+END
+.testcase 124
+.mode box --wrap 1 --limits off
+SELECT 'ab' AS '中';
+.check <<END
+╭────╮
+│ 中 │
+╞════╡
+│ ab │
+╰────╯
+END
 .testcase 130
 .mode tty -wrap 10
 .mode
@@ -115,28 +150,29 @@ END
 
 .testcase 160
 .mode --null xyzzy -v
-.output -glob ' --null "xyzzy"'
+.check -any ' --null "xyzzy"'
 .testcase 170
 .mode -null abcde -v
-.output -glob ' --null "abcde"'
+.check -any ' --null "abcde"'
 
 # Test cases for the ".explain off" command
 .mode box -reset
 .testcase 180
 EXPLAIN SELECT * FROM t1;
-.output --notglob *────* --keep
-.output --notglob "* id │ parent │ notused │ detail *" --keep
-.output --glob "*   Init  *"
+.check --nowhere ──── --keep
+.check --nowhere " id │ parent │ notused │ detail " --keep
+.check --regexp '\bInit\b' --keep
+.check --any ' Init '
 .testcase 190
 EXPLAIN QUERY PLAN SELECT * FROM t1;
-.output --glob "*`--SCAN *"
+.check --glob "*`--SCAN *"
 .explain off
 .testcase 200
 EXPLAIN SELECT * FROM t1;
-.output --glob *────*
+.check --regexp ────
 .testcase 210
 EXPLAIN QUERY PLAN SELECT * FROM t1;
-.output --glob "* id │ parent │ notused │ detail *"
+.check --glob "* id │ parent │ notused │ detail *"
 .explain auto
 
 # Test cases for limit settings in the .mode command.
@@ -216,6 +252,14 @@ SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;
 abcdefghijklmnopq...: The quick fox jumps over the lazy brown dog
                    b: 2
 END
+.testcase 501
+SELECT a AS 'a		bc', b AS 'b
+c
+d' FROM t2 WHERE c=3;
+.check <<END
+a  bc: The quick fox jumps over the lazy brown dog
+b c d: 2
+END
 .testcase 510
 .mode line --titlelimit 10
 SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;
@@ -244,6 +288,345 @@ SELECT a AS 'abcd', b FROM t2 WHERE c=3;
 ...: The quick fox jumps over the lazy brown dog
   b: 2
 END
+
+# --titlelimit counts display width, not bytes
+#
+# ten two-byte characters fit within --titlelimit 10
+.testcase 541
+.mode box --titlelimit 10
+SELECT 1 AS 'abcdefghij', 2 AS 'éééééééééé';
+.check <<END
+╭────────────┬────────────╮
+│ abcdefghij │ éééééééééé │
+╞════════════╪════════════╡
+│          1 │          2 │
+╰────────────┴────────────╯
+END
+# nine characters fit
+.testcase 542
+.mode box --titlelimit 10
+SELECT 1 AS 'abcdefghi', 2 AS 'ééééééééé';
+.check <<END
+╭───────────┬───────────╮
+│ abcdefghi │ ééééééééé │
+╞═══════════╪═══════════╡
+│         1 │         2 │
+╰───────────┴───────────╯
+END
+# eleven characters are truncated to seven plus an ellipsis
+.testcase 543
+.mode box --titlelimit 10
+SELECT 1 AS 'abcdefghijk', 2 AS 'ééééééééééé';
+.check <<END
+╭────────────┬────────────╮
+│ abcdefg... │ ééééééé... │
+╞════════════╪════════════╡
+│          1 │          2 │
+╰────────────┴────────────╯
+END
+# multi-byte characters at the end of the title
+.testcase 544
+.mode box --titlelimit 10
+SELECT 1 AS 'éééééééééz', 2 AS 'zééééééééé';
+.check <<END
+╭────────────┬────────────╮
+│ éééééééééz │ zééééééééé │
+╞════════════╪════════════╡
+│          1 │          2 │
+╰────────────┴────────────╯
+END
+# three-byte characters
+.testcase 545
+.mode box --titlelimit 10
+SELECT 1 AS '€€€€€€€€€', 2 AS '€€€€€€€€€€';
+.check <<END
+╭───────────┬────────────╮
+│ €€€€€€€€€ │ €€€€€€€€€€ │
+╞═══════════╪════════════╡
+│         1 │          2 │
+╰───────────┴────────────╯
+END
+# double-width characters; truncation must account for their width
+.testcase 546
+.mode box --titlelimit 10
+SELECT 1 AS '安安安安安安', 2 AS 'a安安安安安安';
+.check <<END
+╭───────────┬────────────╮
+│ 安安安... │ a安安安... │
+╞═══════════╪════════════╡
+│         1 │          2 │
+╰───────────┴────────────╯
+END
+.mode line --titlelimit 3
+
+# The --null option and the .nullvalue command must be honored by
+# ".mode html".  Bug 2026-11-05T22:27:46Z.
+#
+.testcase 550
+.mode html
+SELECT NULL AS n;
+.check <<END
+<tr>
+<th>n
+</tr>
+<tr>
+<td>null
+</tr>
+END
+
+.testcase 551
+.mode html --null XX
+SELECT NULL AS n;
+.check <<END
+<tr>
+<th>n
+</tr>
+<tr>
+<td>XX
+</tr>
+END
+
+.testcase 552
+.nullvalue YY
+SELECT NULL AS n;
+.check <<END
+<tr>
+<th>n
+</tr>
+<tr>
+<td>YY
+</tr>
+END
+
+.testcase 553
+.nullvalue
+SELECT NULL AS n;
+.check -glob "*sage: .nullvalue STRING*"
+
+# NULL text is HTML-escaped, and does not change how a string that
+# happens to look like the NULL text is rendered.
+.testcase 554
+.mode html --null <nil>
+SELECT NULL AS n, 'null' AS m;
+.check <<END
+<tr>
+<th>n
+<th>m
+</tr>
+<tr>
+<td>&lt;nil&gt;
+<td>null
+</tr>
+END
+
+# Switching to another mode and back restores the default for html.
+.testcase 555
+.mode list --null XX
+.mode html
+SELECT NULL AS n;
+.check <<END
+<tr>
+<th>n
+</tr>
+<tr>
+<td>null
+</tr>
+END
+.mode line --titlelimit 3
+.nullvalue ""
+
+# With "--escape off" a control character in a value is shown by the
+# columnar modes as a one-column Control Picture symbol.  Column widths
+# must count it as one column, so that the value is not wrapped.
+# Bug 2026-11-05T22:27:00Z.
+#
+.testcase 560
+.mode box --escape off
+SELECT 'a'||char(7)||'b' AS x;
+.check <<END
+╭─────╮
+│  x  │
+╞═════╡
+│ a␇b │
+╰─────╯
+END
+
+.testcase 561
+.mode box --escape symbol
+SELECT 'a'||char(7)||'b' AS x;
+.check <<END
+╭─────╮
+│  x  │
+╞═════╡
+│ a␇b │
+╰─────╯
+END
+
+.testcase 562
+.mode box --escape ascii
+SELECT 'a'||char(7)||'b' AS x;
+.check <<END
+╭──────╮
+│  x   │
+╞══════╡
+│ a^Gb │
+╰──────╯
+END
+
+.testcase 563
+.mode table --escape off
+SELECT 'a'||char(7)||'b' AS x, char(1)||'q'||char(2)||char(31) AS y;
+.check <<END
++-----+------+
+|  x  |  y   |
++-----+------+
+| a␇b | ␁q␂␟ |
++-----+------+
+END
+
+.testcase 564
+.mode column --escape off
+SELECT 'a'||char(7)||'b' AS x, 'xyz'||char(8) AS y;
+.check <<END
+ x    y
+---  ----
+a␇b  xyz␈
+END
+
+# A title wider than the value never wrapped, and still does not.
+.testcase 565
+.mode box --escape off --titlelimit 20
+SELECT 'a'||char(7)||'b' AS 'a long title';
+.check <<END
+╭──────────────╮
+│ a long title │
+╞══════════════╡
+│ a␇b          │
+╰──────────────╯
+END
+
+# Control characters combined with a width limit.
+.testcase 566
+.mode box --escape off --wrap 4
+SELECT 'ab'||char(7)||'cd'||char(8)||'ef' AS x;
+.check <<END
+╭──────╮
+│  x   │
+╞══════╡
+│ ab␇  │
+│ cd␈  │
+│ ef   │
+╰──────╯
+END
+.mode line --titlelimit 3 --wrap 0 --escape auto
+
+# The nLineLimit and nTitleLimit fields of sqlite3_qrf_spec are 16-bit.
+# A large value for --linelimit or --titlelimit must not wrap around into
+# a small one.  Bug 2026-11-05T22:26:14Z.
+#
+.testcase 570
+.mode box --titlelimit 20
+SELECT 1 AS abcdefghij;
+.check <<END
+╭────────────╮
+│ abcdefghij │
+╞════════════╡
+│          1 │
+╰────────────╯
+END
+
+.testcase 571
+.mode box --titlelimit 65540
+SELECT 1 AS abcdefghij;
+.check <<END
+╭────────────╮
+│ abcdefghij │
+╞════════════╡
+│          1 │
+╰────────────╯
+END
+
+.testcase 572
+.mode box --linelimit 20
+SELECT 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭─────╮
+│  x  │
+╞═════╡
+│ abc │
+│ def │
+│ ghi │
+╰─────╯
+END
+
+.testcase 573
+.mode box --linelimit 65537
+SELECT 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭─────╮
+│  x  │
+╞═════╡
+│ abc │
+│ def │
+│ ghi │
+╰─────╯
+END
+
+# Values that do not fit in 32 bits, and values that wrap to a negative
+# 16-bit number.
+.testcase 574
+.mode box --titlelimit 4294967297 --linelimit 4294967297
+SELECT 1 AS abcdefghij, 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭────────────┬─────╮
+│ abcdefghij │  x  │
+╞════════════╪═════╡
+│          1 │ abc │
+│            │ def │
+│            │ ghi │
+╰────────────┴─────╯
+END
+
+.testcase 575
+.mode box --titlelimit 32769 --linelimit 32769
+SELECT 1 AS abcdefghij, 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭────────────┬─────╮
+│ abcdefghij │  x  │
+╞════════════╪═════╡
+│          1 │ abc │
+│            │ def │
+│            │ ghi │
+╰────────────┴─────╯
+END
+
+# The --limits option has the same problem.
+.testcase 576
+.mode box --limits 65537,0,65540
+SELECT 1 AS abcdefghij, 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭────────────┬─────╮
+│ abcdefghij │  x  │
+╞════════════╪═════╡
+│          1 │ abc │
+│            │ def │
+│            │ ghi │
+╰────────────┴─────╯
+END
+
+# Small values are unaffected.
+.testcase 577
+.mode box --titlelimit 4 --linelimit 1
+SELECT 1 AS abcdefghij, 'abc'||char(10)||'def'||char(10)||'ghi' AS x;
+.check <<END
+╭──────┬─────╮
+│ a... │  x  │
+╞══════╪═════╡
+│    1 │ abc │
+│      │ ... │
+╰──────┴─────╯
+END
+.mode line --titlelimit 3 --linelimit 5
 
 # line --screenwidth and --colsep
 #
@@ -304,11 +687,11 @@ INSERT INTO t1 VALUES(1,2,3);
 .header on
 .mode csv
 SELECT * FROM t1;
-.check --glob a,b,c*
+.check --glob *a,b,c*
 
 .testcase 601
 SELECT 'abc',char(0x05,0x18,0x33),'xyz';
-.check --glob abc,"??3",xyz
+.check --glob *abc,"??3",xyz*
 
 .testcase 610
 .mode csv -reset
@@ -826,4 +1209,106 @@ SELECT if(a,'yes','') AS 'quoted?', b AS string FROM t2 ORDER BY rowid;
 │         │ x10         │
 │         │ 1x10        │
 ╰─────────┴─────────────╯
+END
+
+# Bug 2026-11-21T02:47:14Z
+#
+# The words "csv", "html", "tcl", and "json" are both mode names and
+# arguments to --quote.  Following --quote, they change only the quoting
+# of the current mode.  A mode name that is not a quoting keyword still
+# selects a new mode.
+#
+.open :memory:
+CREATE TABLE t1(a,b);
+INSERT INTO t1 VALUES('<"x">',5);
+.mode box
+.testcase 1700
+.mode --quote json
+SELECT a, b FROM t1;
+.check <<END
+╭───────────┬───╮
+│     a     │ b │
+╞═══════════╪═══╡
+│ "<\"x\">" │ 5 │
+╰───────────┴───╯
+END
+.mode box
+.testcase 1710
+.mode --quote html
+SELECT a, b FROM t1;
+.check <<END
+╭───────────────────────┬───╮
+│           a           │ b │
+╞═══════════════════════╪═══╡
+│ &lt;&quot;x&quot;&gt; │ 5 │
+╰───────────────────────┴───╯
+END
+.mode box
+.testcase 1720
+.mode --quote csv
+SELECT a, b FROM t1;
+.check <<END
+╭───────────┬───╮
+│     a     │ b │
+╞═══════════╪═══╡
+│ "<""x"">" │ 5 │
+╰───────────┴───╯
+END
+.mode box
+.testcase 1730
+.mode --quote tcl
+SELECT a, b FROM t1;
+.check <<END
+╭───────────┬───╮
+│     a     │ b │
+╞═══════════╪═══╡
+│ "<\"x\">" │ 5 │
+╰───────────┴───╯
+END
+.mode box
+.testcase 1740
+.mode --quote list
+SELECT a, b FROM t1;
+.check '<"x">|5'
+
+# Bug https://sqlite.org/bugs/forumpost/3ade505a97
+# BLOB values must be rendered validly in JSON and INSERT output even if
+# the text-quoting mode is changed.
+#
+.mode --reset json
+.mode --quote relaxed
+.testcase 1800
+SELECT -42 AS id, X'4142' AS raw;
+.check <<END
+[{"id":-42,"raw":"\u0041\u0042"}]
+END
+.mode --reset jobject
+.mode --quote sql
+.testcase 1810
+SELECT X'4142' AS raw;
+.check <<END
+{"raw":"\u0041\u0042"}
+END
+.mode --reset insert
+.mode --quote off
+.testcase 1820
+SELECT X'4142' AS raw;
+.check "INSERT INTO tab VALUES(x'4142');"
+
+# 2026-11-25 - Improved error message for --blob-quote
+# and --border
+#
+.testcase 1900
+.mode html --blob-quote xyzzy
+.check <<END
+Error: .mode html --blob-quote xyzzy
+Error:                         ^--- unknown blob format
+Error: should be auto, text, sql, hex, tcl, json, or size
+END
+.testcase 1910
+.mode box --border xyzzy
+.check <<END
+Error: .mode box --border xyzzy
+Error:                    ^--- unknown border
+Error: should be auto, off, or on
 END

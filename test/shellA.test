@@ -98,10 +98,10 @@ do_test shellA-1.8 {
 } "carriage\rreturn"
 do_test shellA-1.9 {
   set rc [catch {
-     exec {*}$CLI -noinit test.db {.mode test --escape xyz}
+     exec {*}$CLI -noinit test.db {.mode nosuchmode --escape xyz}
   } msg]
   lappend rc $msg
-} {1 {argv[3]: .mode test --escape xyz
+} {1 {argv[3]: .mode nosuchmode --escape xyz
 argv[3]:       ^--- unknown mode
 argv[3]: Use ".help .mode" for more info}}
 do_test shellA-1.10 {

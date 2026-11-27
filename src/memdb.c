@@ -863,6 +863,7 @@ int sqlite3_deserialize(
   }
   if( szDb<0 ) return SQLITE_MISUSE_BKPT;
   if( szBuf<0 ) return SQLITE_MISUSE_BKPT;
+  if( szBuf<szDb ) return SQLITE_MISUSE_BKPT;
 #endif
 
   sqlite3_mutex_enter(db->mutex);

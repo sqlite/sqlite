@@ -113,7 +113,6 @@ foreach {tn2 setup sql expect} {
       {1 {SQLITE_NOMEM - out of memory}} 
       {1 SQLITE_NOMEM} 
       {1 SQLITE_IOERR_NOMEM} 
-      {1 {SQLITE_NOMEM - unable to open a temporary database file for storing temporary tables}}
     }
   
     2 ioerr-*  {

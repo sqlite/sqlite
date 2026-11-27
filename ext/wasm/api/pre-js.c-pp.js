@@ -14,6 +14,8 @@
    itself. i.e. try to keep file-local symbol names obnoxiously
    collision-resistant.
 */
+//#@ policy error
+//#define canonical-sqlite3
 /**
    This file was preprocessed using:
 
@@ -78,7 +80,10 @@
          this but offer it as a back-door which will go away the
          moment either Emscripten changes that interface or we manage
          to get non-Emscripten builds working.
-         https://sqlite.org/forum/forumpost/1eec339854c935bd */
+         https://sqlite.org/forum/forumpost/1eec339854c935bd
+
+         See extern-post-js.c-pp.js [tag:locateFile].
+      */
       return this.emscriptenLocateFile(path, prefix);
     }
 //#if target:es6-module
@@ -129,11 +134,20 @@
       sims.instantiateWasm = arg; /* used by sqlite3-api-prologue.c-pp.js */
       onSuccess(arg.instance, arg.module);
     };
-//#// \
-{/*
-  The following block uses //% as a directive delimiter and is
-  replaced in a second pass after compilation of sqlite3.js.
- */}
+//#if 0
+/*
+  The following block uses //% as a preprocessor directive delimiter
+  and is replaced in a second preprocessor pass after compilation of
+  sqlite3.js.  It implements two ways to reach the WASM file:
+  embedding it inline as a base64 blob or via a URL. The base64
+  approach results in massive memory spikes when the module loads, as
+  it needs to have the base64, the decoded base64, and the whole
+  resulting compiled WASM binary in memory at once.  Loading from a
+  URL allows streaming, such that the compiler can discard the pieces
+  of the input it has already processed. i.e. don't embed as
+  base64. It's interesting but severely memory-costly.
+*/
+//#/if
 //%define ? base64.wasm 0
 //%if base64.wasm and defined sqlite3.wasm.base64
 //%@ push policy error delimiter '<<<' '>>>'
@@ -174,5 +188,5 @@
   }.bind(sIMS);
 //#/if Module.instantiateWasm and not wasmfs
 })(Module);
-//#/if not target:es6-bundler-friendly
+//#/if not target:es6-bundler-friendly and not target:node
 /* END FILE: api/pre-js.js. */

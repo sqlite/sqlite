@@ -108,6 +108,7 @@
 #if defined(_MSC_VER)
 typedef unsigned char uint8_t;
 #endif
+typedef sqlite3_uint64 u64;
 
 /*
 ** Files in the virtual file system.
@@ -1021,7 +1022,7 @@ extern int fuzz_invariant(
   int nRow,               /* Total number of output rows */
   int *pbCorrupt,         /* IN/OUT: Flag indicating a corrupt database file */
   int eVerbosity,         /* How much debugging output */
-  unsigned int dbOpt      /* Default optimization flags */
+  u64 dbOpt               /* Default optimization flags */
 );
 
 /* Implementation of sqlite_dbdata and sqlite_dbptr */
@@ -1123,7 +1124,7 @@ static int runDbSql(
   sqlite3 *db,                /* Run SQL on this database connection */
   const char *zSql,           /* The SQL to be run */
   unsigned int *pBtsFlags,
-  unsigned int dbOpt          /* Default optimization flags */
+  u64 dbOpt                   /* Default optimization flags */
 ){
   int rc;
   sqlite3_stmt *pStmt;
@@ -1282,7 +1283,7 @@ int runCombinedDbSqlInput(
   FuzzCtx cx;                /* Fuzzing context */
   unsigned int btsFlags = 0; /* Parsing flags */
   unsigned int dbFlags = 0;  /* Flag values from db offset 72..75 */
-  unsigned int dbOpt = 0;    /* Flag values from db offset 76..79 */
+  u64 dbOpt = 0;             /* Flag values from db offset 76..83 */
 
 
   if( nByte<10 ) return 0;
@@ -1304,8 +1305,12 @@ int runCombinedDbSqlInput(
               ((unsigned int)aDb[74]<<8) + (unsigned int)aDb[75];
   }
   if( nDb>=79 ){
-    dbOpt = ((unsigned int)aDb[76]<<24) + ((unsigned int)aDb[77]<<16) +
-            ((unsigned int)aDb[78]<<8) + (unsigned int)aDb[79];
+    dbOpt = ((u64)aDb[76]<<24) + ((u64)aDb[77]<<16) +
+            ((u64)aDb[78]<<8) + (u64)aDb[79];
+  }
+  if( nDb>=83 ){
+    dbOpt |= ((u64)aDb[80]<<56) + ((u64)aDb[77]<<48) +
+             ((u64)aDb[78]<<40) + ((u64)aDb[79]<<32);
   }
   nSql = (int)(nByte - iSql);
   if( bScript ){

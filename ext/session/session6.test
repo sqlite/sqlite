@@ -88,4 +88,5 @@ do_test 2.1 {
 db3 close
 db2 close
 
+test_sqlite3_log
 finish_test
