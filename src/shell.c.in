@@ -12282,7 +12282,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
         p->azPrompt[cnt] = strdup(z);
         cnt++;
       }
-    } 
+    }
   }else
 
 #ifndef SQLITE_SHELL_FIDDLE
@@ -12507,7 +12507,6 @@ static int do_meta_command(const char *zLine, ShellState *p){
     if( rc ){
       shellDatabaseError(p->db);
       sqlite3_finalize(pStmt);
-      
       rc = 1;
       goto meta_command_exit;
     }
@@ -12889,27 +12888,27 @@ static int do_meta_command(const char *zLine, ShellState *p){
           cli_printf(p->out, "%s\n", zSql);
         }else
         if( cli_strcmp(zOp,"run")==0 ){
+          int rc2;
           char *zErrMsg = 0;
           str.n = 0;
           str.zTxt[0] = 0;
-          rc = sqlite3_exec(p->db, zSql, captureOutputCallback, &str, &zErrMsg);
+          rc2 = sqlite3_exec(p->db, zSql, captureOutputCallback,
+                             &str, &zErrMsg);
           nTest++;
           if( bVerbose ){
             cli_printf(p->out, "Result: %s\n", str.zTxt);
           }
-          if( rc || zErrMsg ){
+          if( rc2 || zErrMsg ){
             nErr++;
-            rc = 1;
-            cli_printf(p->out, "%d: error-code-%d: %s\n", tno, rc,zErrMsg);
+            cli_printf(p->out, "%d: error-code-%d: %s\n",
+                       tno, rc2, zErrMsg);
             sqlite3_free(zErrMsg);
           }else if( cli_strcmp(zAns,str.zTxt)!=0 ){
             nErr++;
-            rc = 1;
             cli_printf(p->out, "%d: Expected: [%s]\n", tno, zAns);
             cli_printf(p->out, "%d:      Got: [%s]\n", tno, str.zTxt);
           }
-        }
-        else{
+        }else{
           cli_printf(stderr,
                 "Unknown operation \"%s\" on selftest line %d\n", zOp, tno);
           rc = 1;
@@ -12919,6 +12918,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       sqlite3_finalize(pStmt);
     } /* End loop over k */
     freeText(&str);
+    if( rc==0 && nErr>0 ) rc = 1;
     cli_printf(p->out, "%d errors out of %d tests\n", nErr, nTest);
   }else
 
