@@ -3024,6 +3024,7 @@ static int exprNodeIsConstantOrGroupBy(Walker *pWalker, Expr *pExpr){
 */
 int sqlite3ExprIsConstantOrGroupBy(Parse *pParse, Expr *p, ExprList *pGroupBy){
   Walker w;
+  if( pParse->nErr ) return 0;  /* The sequel depends on a valid AST */
   w.eCode = 1;
   w.xExprCallback = exprNodeIsConstantOrGroupBy;
   w.xSelectCallback = 0;
