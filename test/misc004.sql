@@ -1075,3 +1075,35 @@ SELECT percentile(x,50) FROM t1;
 .testcase 2004
 SELECT percentile(x,49) FROM t1;
 .check -allglob -2.0*e+306
+
+#------------------------------------------------------------------------------
+# Bug sqlite.org/bugs/forumpost/6b41f8e351
+# A single-row write to a virtual table that fails partway through inside
+# an explicit transaction leaves the module's partial shadow-table writes
+# in place (there is no statement journal), and COMMIT keeps them.
+#
+.if capable('rtree')
+.open file:misc004rt?mode=memory&cache=shared
+.mode --reset list
+CREATE VIRTUAL TABLE rt USING rtree(id, x0, x1);
+INSERT INTO rt VALUES(1, 0, 1);
+.connection 1
+.open file:misc004rt?mode=memory&cache=shared
+BEGIN;
+SELECT count(*) FROM rt_rowid;
+.connection 0
+BEGIN;
+.testcase 2100
+INSERT INTO rt VALUES(2, 5, 6);
+.check --glob '*database table is locked*'
+COMMIT;
+.connection 1
+COMMIT;
+.connection 0
+.testcase 2110
+SELECT * FROM rt;
+.check '1|0.0|1.0'
+.testcase 2120
+SELECT rtreecheck('rt');
+.check 'ok'
+.endif

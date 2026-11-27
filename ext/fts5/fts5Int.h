@@ -773,6 +773,7 @@ int sqlite3Fts5StorageMerge(Fts5Storage *p, int nMerge);
 int sqlite3Fts5StorageReset(Fts5Storage *p);
 
 void sqlite3Fts5StorageReleaseDeleteRow(Fts5Storage*);
+int sqlite3Fts5StorageTokenizeError(Fts5Storage*);
 int sqlite3Fts5StorageFindDeleteRow(Fts5Storage *p, i64 iDel);
 
 /*
