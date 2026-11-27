@@ -320,4 +320,43 @@ do_test 6.7 {
 } {1}
 db2 close
 
+#-------------------------------------------------------------------------
+# Bug 2026-11-27T17:53:16Z sqlite.org/bugs/info/12a77c8f91a59437
+# PRAGMA mmap_size=0 is a no-op while a memory-mapped page is in use. The
+# pager must still unmap the file when it is next unlocked, as another
+# connection may truncate the file. Otherwise reading the stale mapping
+# raises SIGBUS.
+#
+reset_db
+do_test 7.0 {
+  db eval {
+    PRAGMA page_size = 8192;
+    PRAGMA mmap_size = 268435456;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+    WITH c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<=50)
+      INSERT INTO t1 SELECT x, printf('%01000d', x) FROM c;
+  }
+  sqlite3 db2 test.db
+  set ::stmt [sqlite3_prepare db {SELECT a FROM t1} -1 dummy]
+  sqlite3_step $::stmt
+} {SQLITE_ROW}
+do_test 7.1 {
+  db eval { PRAGMA mmap_size = 0 }
+} {268435456}
+do_test 7.2 {
+  sqlite3_finalize $::stmt
+} {SQLITE_OK}
+do_test 7.3 {
+  db2 eval {
+    DELETE FROM t1;
+    PRAGMA page_size = 512;
+    VACUUM;
+  }
+  expr {[file size test.db] < 8192}
+} {1}
+do_execsql_test 7.4 {
+  SELECT count(*) FROM t1;
+} {0}
+db2 close
+
 finish_test

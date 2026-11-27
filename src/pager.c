@@ -3601,8 +3601,10 @@ static void pagerFixMaplimit(Pager *pPager){
   if( isOpen(fd) && fd->pMethods->iVersion>=3 ){
     sqlite3_int64 sz;
     sz = pPager->szMmap;
-    pPager->bUseFetch = (sz>0);
-    setGetterMethod(pPager);
+    if( sz>0 || pPager->nMmapOut==0 ){
+      pPager->bUseFetch = (sz>0);
+      setGetterMethod(pPager);
+    }
     sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_SIZE, &sz);
   }
 #endif

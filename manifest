@@ -1,5 +1,5 @@
-C New\sconditional\sin\sthe\spage\scache\swith\sSQLITE_ENABLE_MEMORY_MANAGEMENT\nas\sdiscussed\sat\s[bugs:/info/2026-11-18T20:57:17Z|bug\s2026-11-18T20:57:17Z].\nNo\sregression\stests\sas\sI\sdon't\ssee\sa\sway\sto\sdo\sthat\sreliably.
-D 2026-11-27T17:56:48.978
+C Do\snot\sallow\s"PRAGMA\smmap_size=0"\swhile\sstill\sin\suse.\n[bugs:/info/2026-11-27T17:53:16Z|Bug\s2026-11-27T17:53:16Z].
+D 2026-11-27T20:57:43.462
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -798,7 +798,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c f5fdb37dc15eec1f1c1dcaf8957def078fb0512535f01b145f34ee0468a6dd45
 F src/os_win.c 74473c76517956865581f12e4afc06c09a499ea70002cf9cedb3316301138be8
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
-F src/pager.c a6d0321471af23b8071b7c6dc20e5b66a918eb927f07e49083cef8852cf8a17c
+F src/pager.c 07cd205ae12d5c3e6ccd02a526bb8f40c7542fcad979bf8fa7a958fed5524e16
 F src/pager.h 53cabc1fd881a9c078eab7db6c233bc0ed29d8938fc05585f0e75e80d905d308
 F src/parse.y aa4c941122ad16aa648434db4ea917188ad5d9f9ac0cb63c4ac56b7f044630ba
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -1546,7 +1546,7 @@ F test/misc7.test 4be3797297148024ff0fec6d84ac9981975ac1f956ff007c15a41eb0f635ba
 F test/misc8.test 1c5e3fad1224f7bd67dbeb7dbf69cded89f6f846075805a72c7bfc6a1b1ed786
 F test/misuse.test 859f37014d9824ca66bd90c36372c08c80c51c9593a7cfa8a31d4f92cd4d5b7f
 F test/mjournal.test c4fb43abcfd1c32229b2481c25138da1ab87e2101cffb961d333512dc75fe484
-F test/mmap1.test 18de3fd7b70a777af6004ca2feecfcdd3d0be17fa04058e808baf530c94b1a1d
+F test/mmap1.test 4a6701314228cc3a03861fa64f430a671df54c0746ff15117d2ee168f86d6843
 F test/mmap2.test dba452dc7db91e9df10f70bdd73dc4190c7b8ee7b5133b4684f04277ada0b9ac
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
 F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
@@ -2322,8 +2322,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c9c13cb01323a00f74f221698d07b9ffa62168fd61afada11cad54e6f9b607e3
-R 93ad871365719709dca720c110e2debc
+P f3d94ddc6c5c93b0ec222819a317e2bb6c01ce916d434e0759740cfc0b01ba9c
+R e33ac2f0c6a6059da63b1d00684abae7
 U drh
-Z 963c1c6d720989a91ae4b1a974cb2b7e
+Z 65b3e7422e3623d02f3b1cf70824a0cb
 # Remove this line to create a well-formed Fossil manifest.
