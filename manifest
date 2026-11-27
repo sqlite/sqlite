@@ -1,5 +1,5 @@
-C When\swriting\sto\sa\svirtual\stable\sin\sa\sshared-cache\sdatabase,\slock\sall\sshadow\stables\sbefore\sproceeding\swith\sthe\swrite.\sPartial\sfix\sfor\s[bugs:/info/2026-11-03T23:58:55Z\s|\s2026-11-03T23:58:55Z].
-D 2026-11-27T17:06:05.825
+C Have\sfts5\srefuse\sto\scommit\sa\stransaction\sif\sa\stokenizer\serror\soccurred\swhile\swriting\sto\sthe\stable\swithin\sthe\stransaction.\sSuch\san\serror\smay\sleave\sthe\sin-memory\stoken\shash\stable\sin\san\sinconsistent\sstate.\sReport\s[bugs:/info/2026-11-03T23:58:55Z\s|\s2026-11-03T23:58:55Z].
+D 2026-11-27T20:59:26.571
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -109,15 +109,15 @@ F ext/fts3/unicode/mkunicode.tcl cbf5f7b5c8ce8014bad731f246f2e520eece908465de477
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
 F ext/fts5/fts5.h ff5d3cc88b29e41612bfb29eb723e29e38973de62ca75ba3e8f94ccb67f5b5f2
-F ext/fts5/fts5Int.h 8d98f8e180fe28d6067e240ed45b9011735d29d5cfb5bac194e1e376baa7c708
+F ext/fts5/fts5Int.h 21c4c8ffc7443660084e172a40445971a53e6005804c2eb4ed36b5164165e26e
 F ext/fts5/fts5_aux.c 022066fe72bc15357cd3c3e620b6c566d7e030df859bae65bfc4649591b69d35
 F ext/fts5/fts5_buffer.c dcc3f0352339fe79c9d8abbc1c2009bc3469206467880bf43558447ef4f846fb
 F ext/fts5/fts5_config.c 50e98223cd5afd3f4bd4f86ef5ef33d7eaa4ce890c02ee8f22f5a317ecfa32d1
 F ext/fts5/fts5_expr.c 77e1a5e4aa11209d38f488afeb7ee8a96b92c782154d67dedd5ec3c8a36f45aa
 F ext/fts5/fts5_hash.c 587541a3c13c126cfcc52f9b591fc89212f335a6979e4c70ade8613f28a48ed0
 F ext/fts5/fts5_index.c d2ac94a4a7963e8a534f47298ce639bf9812e485fee8087ac9622aac349dc17d
-F ext/fts5/fts5_main.c d16e7b639370f4d0a8056c9b2485786321d3e6548cb80254b7c9f23c323748d2
-F ext/fts5/fts5_storage.c b1975c781c2d2e07ed01330545c6c66ed71b860b1abdef6237553489d9cfbee4
+F ext/fts5/fts5_main.c cdfad861bd0df18197bf491920e915edef63c4f53bd77050d83ebf06cccafa85
+F ext/fts5/fts5_storage.c 07bc0308bfc633e24d3d65051d65c113f03837160e137c285248ffe506d45493
 F ext/fts5/fts5_tcl.c aed8905b1a3c6ecc94da15e9cc54d889045b9eacecc7a17b6fcc1294225f7716
 F ext/fts5/fts5_test_mi.c 3074a25cb661b2301143022ef96a950618452a5b082abd9ba7b9daaf29d01537
 F ext/fts5/fts5_test_tok.c 6021033bd4f4feffe8579efb6e1f58156ed462256bf99a2acdbd629246529204
@@ -263,6 +263,7 @@ F ext/fts5/test/fts5tokendata.test ffcb1c45a89e556abcac7044fff5e0815e7a59596c741
 F ext/fts5/test/fts5tokenizer.test 738e9c3e1b338028e202d0fcd33aa39f1bd3f8444d14f9a408e8a617b1361d3f
 F ext/fts5/test/fts5tokenizer2.test ddb8b10fbe4b84b2a75812671f127774c1d2e3e2bf82d2e0e4f0bb1cd8a2b2d6
 F ext/fts5/test/fts5tokenizer3.test eea778f7bb7024c3e904e28915f9d53286141671b138722148be22a9c758bdc3
+F ext/fts5/test/fts5tokfail.test 195952142f8ff063b793823cac6428cd25f68582e6f22db35d846684a3398bad
 F ext/fts5/test/fts5trigram.test 3838e722e32f5d4594a1b8951714ce24264810124168e55607fca5d53f56b931
 F ext/fts5/test/fts5trigram2.test 6fde9de7f63a6b4aa18dc731be56dbd6be4e755c9b13dcd55479e200d1df0e61
 F ext/fts5/test/fts5ubsan.test 9a2dcf399dc8d0e0de661f0d93884d1d27e5b7f0693cfceb97dd24d818df5dd2
@@ -2322,11 +2323,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c9c13cb01323a00f74f221698d07b9ffa62168fd61afada11cad54e6f9b607e3
-R d1bdefd1294e412a28bcc8405bd2b865
-T *branch * report-6b41f8e351
-T *sym-report-6b41f8e351 *
-T -sym-trunk *
+P 6687170b829932c60f8aef9f7a2178cddee2f31b7616a4a563a0c5b8226bb53d
+R 560ddf6cc76e2d9c39845947f4e4865e
 U dan
-Z 4a58291d8df129b9bc0cb5142054900b
+Z 0588e89ae335fb480d276b3d04ca2782
 # Remove this line to create a well-formed Fossil manifest.

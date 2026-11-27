@@ -146,6 +146,12 @@ struct Fts5FullTable {
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
   int iSavepoint;                 /* Successful xSavepoint()+1 */
 
+  /* If the tokenizer fails while a row is being added to or removed from
+  ** the FTS index, the table may be left partially modified. In this case
+  ** bTokenizeError is set, and all subsequent calls to xUpdate, xFilter
+  ** and xSync fail until the transaction is rolled back.  */
+  int bTokenizeError;             /* True after a tokenizer error */
+
 #ifdef SQLITE_DEBUG
   struct Fts5TransactionState ts;
 #endif
@@ -1311,6 +1317,19 @@ static void fts5SetVtabError(Fts5FullTable *p, const char *zFormat, ...){
 }
 
 /*
+** If a tokenizer error has left table pTab partially modified (see the
+** comments above Fts5FullTable.bTokenizeError), leave an error message
+** in the vtab object and return SQLITE_ERROR. Otherwise, return SQLITE_OK.
+*/
+static int fts5CheckTokenizeError(Fts5FullTable *pTab){
+  if( pTab->bTokenizeError ){
+    fts5SetVtabError(pTab, "fts5 tokenizer error");
+    return SQLITE_ERROR;
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Arrange for subsequent calls to sqlite3Fts5Tokenize() to use the locale
 ** specified by pLocale/nLocale. The buffer indicated by pLocale must remain
 ** valid until after the final call to sqlite3Fts5Tokenize() that will use
@@ -1474,6 +1493,8 @@ static int fts5FilterMethod(
   Fts5Expr *pExpr = 0;
 
   assert( pConfig->bLock==0 );
+  rc = fts5CheckTokenizeError(pTab);
+  if( rc!=SQLITE_OK ) return rc;
   if( pCsr->ePlan ){
     fts5FreeCursorComponents(pCsr);
     memset(&pCsr->ePlan, 0, sizeof(Fts5Cursor) - ((u8*)&pCsr->ePlan-(u8*)pCsr));
@@ -1960,6 +1981,8 @@ static int fts5UpdateMethod(
        || sqlite3_value_type(apVal[0])==SQLITE_NULL 
   );
   assert( pTab->p.pConfig->pzErrmsg==0 );
+  rc = fts5CheckTokenizeError(pTab);
+  if( rc!=SQLITE_OK ) return rc;
   if( pConfig->pgsz==0 ){
     rc = sqlite3Fts5ConfigLoad(pTab->p.pConfig, pTab->p.pConfig->iCookie);
     if( rc!=SQLITE_OK ) return rc;
@@ -2108,6 +2131,14 @@ static int fts5UpdateMethod(
   }
 
  update_out:
+  /* If the tokenizer failed, the table may have been left partially
+  ** modified. Single-row writes to virtual tables are not protected by
+  ** statement journals, so this cannot be undone here. Instead, set a flag
+  ** that causes all subsequent calls to xUpdate, xFilter and xSync to fail
+  ** until the transaction is rolled back.  */
+  if( sqlite3Fts5StorageTokenizeError(pTab->pStorage) && rc!=SQLITE_OK ){
+    pTab->bTokenizeError = 1;
+  }
   sqlite3Fts5IndexCloseReader(pTab->p.pIndex);
   pTab->p.pConfig->pzErrmsg = 0;
   return rc;
@@ -2120,6 +2151,8 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
   int rc;
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_SYNC, 0);
+  rc = fts5CheckTokenizeError(pTab);
+  if( rc!=SQLITE_OK ) return rc;
   pTab->p.pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
   rc = sqlite3Fts5FlushToDisk(&pTab->p);
   pTab->p.pConfig->pzErrmsg = 0;
@@ -2145,6 +2178,7 @@ static int fts5BeginMethod(sqlite3_vtab *pVtab){
 static int fts5CommitMethod(sqlite3_vtab *pVtab){
   UNUSED_PARAM(pVtab);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState((Fts5FullTable*)pVtab, FTS5_COMMIT, 0);
+  assert( ((Fts5FullTable*)pVtab)->bTokenizeError==0 );
   return SQLITE_OK;
 }
 
@@ -2159,6 +2193,7 @@ static int fts5RollbackMethod(sqlite3_vtab *pVtab){
   fts5TripCursors(pTab);
   rc = sqlite3Fts5StorageRollback(pTab->pStorage);
   pTab->p.pConfig->pgsz = 0;
+  pTab->bTokenizeError = 0;
   return rc;
 }
 
@@ -3189,6 +3224,7 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   int rc = SQLITE_OK;
   fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
+
   if( (iSavepoint+1)<pTab->iSavepoint ){
     rc = sqlite3Fts5FlushToDisk(&pTab->p);
     if( rc==SQLITE_OK ){
@@ -3208,6 +3244,7 @@ static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   int rc = SQLITE_OK;
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
   fts5TripCursors(pTab);
+
   if( (iSavepoint+1)<=pTab->iSavepoint ){
     pTab->p.pConfig->pgsz = 0;
     rc = sqlite3Fts5StorageRollback(pTab->pStorage);

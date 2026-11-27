@@ -50,6 +50,7 @@ struct Fts5Storage {
   i64 *aTotalSize;                /* Total sizes of each column */ 
   sqlite3_stmt *pSavedRow;
   sqlite3_stmt *aStmt[12];
+  int bTokenizeError;             /* True if a tokenizer error has occurred */
 };
 
 
@@ -586,6 +587,7 @@ static int fts5StorageDeleteFromIndex(
         rc = sqlite3Fts5Tokenize(pConfig, FTS5_TOKENIZE_DOCUMENT, 
             pText, nText, (void*)&ctx, fts5StorageInsertCallback
         );
+        if( rc!=SQLITE_OK ) p->bTokenizeError = 1;
         p->aTotalSize[iCol-1] -= (i64)ctx.szCol;
         if( rc==SQLITE_OK && p->aTotalSize[iCol-1]<0 ){
           rc = FTS5_CORRUPT;
@@ -622,6 +624,17 @@ void sqlite3Fts5StorageReleaseDeleteRow(Fts5Storage *pStorage){
   );
   sqlite3_reset(pStorage->pSavedRow);
   pStorage->pSavedRow = 0;
+}
+
+/*
+** Return true if a tokenizer error has occurred while tokenizing a 
+** document to add it to or remove it from the FTS index since the most
+** recent call to this function. Clear the flag before returning.
+*/
+int sqlite3Fts5StorageTokenizeError(Fts5Storage *p){
+  int bRet = p->bTokenizeError;
+  p->bTokenizeError = 0;
+  return bRet;
 }
 
 /*
@@ -932,6 +945,7 @@ int sqlite3Fts5StorageRebuild(Fts5Storage *p){
               (void*)&ctx,
               fts5StorageInsertCallback
           );
+          if( rc!=SQLITE_OK ) p->bTokenizeError = 1;
           sqlite3Fts5ClearLocale(pConfig);
         }
       }
@@ -1128,6 +1142,7 @@ int sqlite3Fts5StorageIndexInsert(
             FTS5_TOKENIZE_DOCUMENT, pText, nText, (void*)&ctx,
             fts5StorageInsertCallback
         );
+        if( rc!=SQLITE_OK ) p->bTokenizeError = 1;
         sqlite3Fts5ClearLocale(pConfig);
       }
     }
