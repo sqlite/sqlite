@@ -15624,7 +15624,7 @@ int SQLITE_CDECL main(int argc, char **argv){
         }
       }else{
         rc = runOneSqlLine(&data, z, "cmdline", i);
-        if( bail_on_error ) goto shell_main_exit;
+        if( rc!=0 && bail_on_error ) goto shell_main_exit;
       }
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
     }else if( cli_strncmp(z, "-A", 2)==0 ){
