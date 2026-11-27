@@ -3849,7 +3849,6 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   Rtree tree;
   int ii;
   int nData;
-  int errCode;
   sqlite3_str *pOut;
   i64 nDim64;
 
@@ -3884,9 +3883,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
     }
     sqlite3_str_append(pOut, "}", 1);
   }
-  errCode = sqlite3_str_errcode(pOut);
-  sqlite3_result_error_code(ctx, errCode);
-  sqlite3_result_text(ctx, sqlite3_str_finish(pOut), -1, sqlite3_free);
+  sqlite3_result_str(ctx, pOut, SQLITE_FINISH);
 }
 
 /* This routine implements an SQL function that returns the "depth" parameter
