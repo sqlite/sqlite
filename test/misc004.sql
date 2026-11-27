@@ -1019,3 +1019,34 @@ ATTACH 'file:test2.db' AS valid;
 .filectrl --schema valid reserve_bytes
 .check 23
 .endif
+
+#-----------------------------------------------------------------------------
+# Bug 2026-11-27T13:26:18Z sqlite.org/bugs/forumpost/2cd58f54e9
+# Chained finite `geopoly_xform()` overflows `float` vertices to `Inf`/`NaN`,
+# yielding invalid JSON and silent indexed row loss
+#
+.if capable('geopoly')
+.open :memory:
+.mode -reset list -colsep ' '
+.testcase 1900
+CREATE VIRTUAL TABLE g USING geopoly();
+INSERT INTO g(_shape)
+  SELECT geopoly_xform(
+     geopoly_xform(
+       geopoly_xform(geopoly_regular(0,0,1,4), 1e25,0,0,1e25, 0,0),
+       1e20,0,0,1e20, 0,0
+     ),
+     0,0,0,0, 0,0
+  );
+SELECT rowid, geopoly_json(_shape), json_valid(geopoly_json(_shape)) FROM g;
+.check 1 [[null,null],[null,null],[null,null],[null,null],[null,null]] 1
+.testcase 1910
+DELETE FROM g;
+INSERT INTO g(_shape)
+  SELECT geopoly_xform(
+     geopoly_xform(geopoly_regular(0,0,1,4), 1e25,0,0,1e25, 0,0),
+     1e20,0,0,1e20, 0,0
+  );
+SELECT geopoly_json(_shape) FROM g;
+.check [[9.0e+999,0.0],[0.0,9.0e+999],[-9.0e+999,0.0],[0.0,-9.0e+999],[9.0e+999,0.0]]
+.endif

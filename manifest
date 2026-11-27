@@ -1,5 +1,5 @@
-C Do\snot\slet\sthe\snumeric\sargument\sto\sthe\sreserve=\squery\sparameter\son\sa\nVACUUM\suri\swrap.\s[bugs:/info/2026-11-27T11:17:09Z|Bug\s2026-11-27T11:17:09Z].
-D 2026-11-27T13:19:38.671
+C Geopoly_json()\senhanced\sto\salways\semit\svalid\sJSON\seven\sif\sthe\sshape\scontains\ninfinities\sor\sNaNs.\n[bugs:/info/2026-11-27T13:26:18Z|Bug\s2026-11-27T13:26:18Z].\nSeparately,\sthe\sdocumentation\sis\supdated\sto\sstate\sclearly\sthat\sno\serrors\nare\sraised\sby\sgeopoly_xform()\sin\sthe\sevent\sof\san\soverflow.
+D 2026-11-27T14:15:20.131
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -501,7 +501,7 @@ F ext/recover/sqlite3recover.c c5d85dc35bc74eb973a6ad75a4109d878180284dd7a69c03f
 F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0e24ff9c74820959
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
-F ext/rtree/geopoly.c b7a8b0c09c4413b3ed2817e129e4df34575acb6bb24351d5513016b75eed8da5
+F ext/rtree/geopoly.c c18147c715b9267fec612929abb64ddc3a06eeff445e37b67af519bbbd1c6449
 F ext/rtree/rtree.c e93fc4c185fcf365686d2d5c7049bf9982e1aba795ac544e9e4d14bb039118ad
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test b127b954b8eb68ad40df3264bb69a4543af621bd55ff08075db0005aaca82af3
@@ -1535,7 +1535,7 @@ F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e3
 F test/misc001.sql fd0012dfad0385437c8b979a4723a8525eb1cc82cdf3b77a0d6edcfd2b9b2513
 F test/misc002.sql c9bfcd7282e9c2888bf498a755bf9b7c165f730c9b56bbb489dd512ab088f720
 F test/misc003.sql 913d7ed1773d2452f2154e1633f05672d3561f5d35d42b27cd0710e934d70cd6
-F test/misc004.sql 60f772c33fac22e3fdf606d164f2460bdd63f5476c7e0c99e0a7699ee917b0d4
+F test/misc004.sql 344913b474e23556c489fd07d5ff83e60f7015337a07884235e84b641e65b4d0
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2322,8 +2322,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 41f8c004393c38379ca4f62bc74a9243fcf92f23ea0e73111604f663d343347a
-R 9a69c92c7797642ada77df3bce938f60
+P 3203b0e5681122a0ef74ff374b7a95ab031e11c32580beff487675ab3cc76167
+R 7a03c05971cd735e298bf57b48441fe1
 U drh
-Z 4a7ff8347543448cbca1084636bea34c
+Z a0af24b6f7229b7cf20d8bb349109042
 # Remove this line to create a well-formed Fossil manifest.

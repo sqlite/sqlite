@@ -393,9 +393,9 @@ static void geopolyJsonFunc(
     int i;
     sqlite3_str_append(x, "[", 1);
     for(i=0; i<p->nVertex; i++){
-      sqlite3_str_appendf(x, "[%!g,%!g],", GeoX(p,i), GeoY(p,i));
+      sqlite3_str_appendf(x, "[%!0.17g,%!0.17g],", GeoX(p,i), GeoY(p,i));
     }
-    sqlite3_str_appendf(x, "[%!g,%!g]]", GeoX(p,0), GeoY(p,0));
+    sqlite3_str_appendf(x, "[%!0.17g,%!0.17g]]", GeoX(p,0), GeoY(p,0));
     sqlite3_result_str(context, x, SQLITE_FINISH);
     sqlite3_free(p);
   }
