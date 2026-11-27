@@ -1413,7 +1413,7 @@ static void summarize_one_table(const char *zTab, FILE *out){
   }
 
   /* Build the comparison query */
-  for(n2=n; az[n2]; n2++){}
+  for(n2=n; az2[n2]; n2++){}
   sqlite3_str_appendf(pSql, "SELECT 1, count(*)");
   if( n2==nPk2 ){
     sqlite3_str_appendf(pSql, ", 0\n");
@@ -1421,6 +1421,11 @@ static void summarize_one_table(const char *zTab, FILE *out){
     zSep = ", sum(";
     for(i=nPk; az[i]; i++){
       sqlite3_str_appendf(pSql, "%sA.%s IS NOT B.%s", zSep, az[i], az[i]);
+      zSep = " OR ";
+    }
+    /* A column that only the second database has is changed if not NULL. */
+    for(; az2[i]; i++){
+      sqlite3_str_appendf(pSql, "%sB.%s IS NOT NULL", zSep, az2[i]);
       zSep = " OR ";
     }
     sqlite3_str_appendf(pSql, ")\n");

@@ -164,6 +164,26 @@ do_test sqldiff-4.7 {
 } {foo: 0 changes, 1 inserts, 0 deletes, 0 unchanged}
 sqldiff_apply_test sqldiff-4.8
 
+# Bug 85ed8086f4: The --summary option must count a non-NULL value in a
+# column that only the second database has as a change.
+#
+forcedelete test.db test2.db
+sqlite3 db test.db
+do_execsql_test sqldiff-4.10 {
+  CREATE TABLE t(id INTEGER PRIMARY KEY);
+  INSERT INTO t VALUES(1), (2);
+}
+db close
+sqlite3 db test2.db
+do_execsql_test sqldiff-4.11 {
+  CREATE TABLE t(id INTEGER PRIMARY KEY, v TEXT);
+  INSERT INTO t VALUES(1, 'new'), (2, NULL);
+}
+db close
+do_test sqldiff-4.12 {
+  exec $PROG --summary test.db test2.db
+} {t: 1 changes, 0 inserts, 0 deletes, 1 unchanged}
+
 # The following test cases demonstrate that if the source table contains
 # an AUTOINCREMENT table but there is no corresponding entry in the
 # sqlite_sequence table, then the sqlite_sequence table is not updated
