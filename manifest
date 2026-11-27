@@ -1,5 +1,5 @@
-C When\swriting\sto\sa\svirtual\stable\sin\sa\sshared-cache\sdatabase,\slock\sall\sshadow\stables\sbefore\sproceeding\swith\sthe\swrite.\sAlso,\shave\sfts5\srefuse\sto\scommit\sa\stransaction\sif\sa\stokenizer\serror\soccurred\swhile\swriting\sto\sthe\stable\swithin\sthe\stransaction.\sSuch\san\serror\smay\sleave\sthe\sin-memory\stoken\shash\stable\sin\san\sinconsistent\sstate.\sReport\s[bugs:/info/2026-11-03T23:58:55Z\s|\s2026-11-03T23:58:55Z].
-D 2026-11-27T21:16:19.426
+C Avoid\sinfinite\srecursion\sin\sthe\svfslog\sextension\swhen\sit's\sregistered\smultiple\stimes.\s[bugs:469c5c8052|Bug\sreport\s2026-11-27T11:34:52Z].
+D 2026-11-27T21:45:34.549
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -420,7 +420,7 @@ F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b360
 F ext/misc/unionvtab.c fe1011f185408b0afd1631fdce8090c4e69ff4eae10a760101e08b624f53bcb1
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
 F ext/misc/uuid.c 37297e61935c2d0c425b742100f904d02c866fdeabe0427fe59aed1543e7c0ec
-F ext/misc/vfslog.c a87d431b26e159239916b87be1317152fdf1b0e21d46834e710f6d56ac8430e5
+F ext/misc/vfslog.c ff30e90c76abe7ae2c6908e3b676abb4e48602288366f8f4321db03ee95b67aa
 F ext/misc/vfsstat.c 815f8b759fe290e569f36b9b4167628ee4f599e72b407ba9c78e64c70c15e9a4
 F ext/misc/vfstrace.c fc8c393a8316a8c20867b7e6e92908c4f81060c9e1f24d6ad9aefdc91c01dd13
 F ext/misc/vtablog.c c98de6599739c287917d1f46ad52c26f9c17b58c2313ab278c50e31333fd8269
@@ -2323,9 +2323,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 07a486b9d2eb87fb348401528e25d8b9bb8cf158534c7bc52cd3bee3bae6552b c3b9997eee6113a04942cbcc1c4dd3a6e9d6c8d8ef4689a14a16ab383b013afd
-R 54eea09455cc9ec20e7e09c70841e0b2
-T +closed c3b9997eee6113a04942cbcc1c4dd3a6e9d6c8d8ef4689a14a16ab383b013afd
-U dan
-Z 64af835ee5c76ced2c5b0d5fc04e7f77
+P 3f501854c63fb2865728fac92bc26bc48c290e21276e2b9fe884229ac38d37cb
+R 41dcd19d1459684dc3f12d54be9688c1
+U stephan
+Z ead980a054e4a4e644aad5403110d37c
 # Remove this line to create a well-formed Fossil manifest.
