@@ -1,5 +1,5 @@
-C Fix\stest\sscripts\sso\sthat\sthey\swork\sin\sall\sconfigurations
-D 2026-11-27T09:38:23.537
+C Remove\sa\sNEVER()\sin\strigger\sprocessing\sthat\scan\sbe\strue.\n[bugs:/info/2026-11-27T09:45:55Z|Bug\s2026-11-27T09:45:55Z].\nTest\scase\sadded\sto\sTH3.
+D 2026-11-27T10:10:17.994
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -871,7 +871,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 85d8b9f05f78211c61e3739ab5db761d7118766d1916ae7f2764735106bc4e13
 F src/tokenize.c e9d52d9f7374d82dadcd11726bea8a597d43709d6672704f3f0375bf1d726912
 F src/treeview.c ccc1d23e1929f809849c0581e009f75df9002898688534e4c3b8d7f231d7211d
-F src/trigger.c 472db33cbf7ad8057129dff968bca819c19c9298280884669d16ce9ae95925d2
+F src/trigger.c db83845145395310ce6864e4744ae851442bd1774f9e0ed4d7117f82bddbcf6f
 F src/update.c f20d775c7203625fbbeaf61de5e3e90b5ba6a4e08aa9dab6ebecbc4e130d233b
 F src/upsert.c be14e2fe4a4f4322e170450d06c22d9d0a78f4c8b880a688f71fdd0e443a6f43
 F src/utf.c c5bec56770b71fe75e12f1f7b0a512032e1fd3d1f83c50c4ab4474ced20347a4
@@ -2322,8 +2322,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4b5760dad6aab2909c061431c8a8b30e2b079842fc653b18fde0df827e97d9ad
-R 024c742bf54a4bd6df8bef0de060059e
+P 158fa5ec9ac93a32b440e048c94e3ca8c8c14f9f0eaa789d7534db5699880d3a
+R d92f5ddaee2669e07f701f8dd76cafcf
 U drh
-Z a808b56ae9e55456cdeae97585225582
+Z 95b9e62722fd6bfbe680f9e6358c4d02
 # Remove this line to create a well-formed Fossil manifest.

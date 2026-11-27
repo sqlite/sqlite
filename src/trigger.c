@@ -795,7 +795,7 @@ void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
 */
 static int checkColumnOverlap(IdList *pIdList, ExprList *pEList){
   int e;
-  if( pIdList==0 || NEVER(pEList==0) ) return 1;
+  if( pIdList==0 || pEList==0 ) return 1;
   for(e=0; e<pEList->nExpr; e++){
     if( sqlite3IdListIndex(pIdList, pEList->a[e].zEName)>=0 ) return 1;
   }
