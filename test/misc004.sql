@@ -920,10 +920,12 @@ DELETE FROM t WHERE id BETWEEN 10 AND 999;
 .testcase 1500
 SELECT count(*) FROM t WHERE s LIKE '%TOPSECRET%';
 .check 0
+.if capable('sqlite_dbpage')
 .testcase 1510
 SELECT count(*) FROM sqlite_dbpage
  WHERE instr(data, CAST('TOPSECRET' AS BLOB))>0;
 .check 0
+.endif
 
 # Bug 2026-11-26T18:23:58Z sqlite.org/bugs/info/ec17b810d2a0bfce
 # Large integer constraints on an rtree must be rechecked by the VDBE,

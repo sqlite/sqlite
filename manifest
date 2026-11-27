@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\san\somitted-ORDER-BY\soptimization\sthat\sdeletes\sa\sWindow\nfunction\sout\sfrom\sunder\san\saggregate.\s\sPresent\ssince\s3.53.0.\n[bugs:/info/2026-11-26T21:50:53Z|Bug\s2026-11-26T21:50:53Z].
-D 2026-11-26T23:55:01.120
+C Fix\stest\sscripts\sso\sthat\sthey\swork\sin\sall\sconfigurations
+D 2026-11-27T09:38:23.537
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1535,7 +1535,7 @@ F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e3
 F test/misc001.sql fd0012dfad0385437c8b979a4723a8525eb1cc82cdf3b77a0d6edcfd2b9b2513
 F test/misc002.sql c9bfcd7282e9c2888bf498a755bf9b7c165f730c9b56bbb489dd512ab088f720
 F test/misc003.sql 913d7ed1773d2452f2154e1633f05672d3561f5d35d42b27cd0710e934d70cd6
-F test/misc004.sql 9df53c5802adc94344b5120a9f57d77ec65da8dbfd49f68a98323716a909326f
+F test/misc004.sql d8c01718489a21d493a4e4e2a6e5a35154d611c7e7d8a934504c392c2b69804c
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2132,7 +2132,7 @@ F test/walprotocol.test 1b3f922125e341703f6e946d77fdc564d38fb3e07a9385cfdc6c99ca
 F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db868eebc131
 F test/walrestart.test 5168c0c2414d1971d8dec949c1070a0144cf15402361ba0d0e6a8054f5598a64
 F test/walro.test 78a84bc0fdae1385c06b017215c426b6845734d6a5a3ac75c918dd9b801b1b9d
-F test/walro2.test 70e4210aa9566ea20438d9d042818ed941eddb5a55ca18524021c2bdca5ecc33
+F test/walro2.test 1699b1e1db3d8318c6f20b12d48b9bc5710570edb8c1a476f64140ecf74769af
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walroshm.test 60a742d8224f47f0a82f7a076e0ddaf1066c8b1db525c2de8885a2ad393786df
 F test/walseh1.test bae700eb99519b6d5cd3f893c04759accc5a59c391d4189fe4dd6995a533442b
@@ -2322,8 +2322,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 57976197f6c394914b3dc77ecaf98c4d4ac461ed96b58d7383a3d0e49e13dd4e
-R cad5748c847824b84649a65c4751bce4
+P 4b5760dad6aab2909c061431c8a8b30e2b079842fc653b18fde0df827e97d9ad
+R 024c742bf54a4bd6df8bef0de060059e
 U drh
-Z 4e21d3b9ae1b30c85dc1825a9a2adbaa
+Z a808b56ae9e55456cdeae97585225582
 # Remove this line to create a well-formed Fossil manifest.

@@ -416,6 +416,8 @@ foreach bZeroShm {0 1} {
 #
 catch { db close }
 forcedelete test.db
+sqlite3_shutdown
+sqlite3_config_uri 1
 set ::chan2 [launch_testfixture]
 proc code2 {tcl} { testfixture $::chan2 $tcl }
 
