@@ -930,7 +930,13 @@ static SQLITE_NOINLINE sqlite3_pcache_page *pcache1FetchStage2(
   /* Step 4. Try to recycle a page. */
   if( pCache->bPurgeable
    && !pGroup->lru.pLruPrev->isAnchor
-   && ((pCache->nPage+1>=pCache->nMax) || pcache1UnderMemoryPressure(pCache))
+   && (  pCache->nPage+1>=pCache->nMax
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+      /* See discussion at bug thread 2026-11-18T20:57:17Z */
+      || pGroup->nPurgeable+1>=pGroup->nMaxPage
+#endif
+      || pcache1UnderMemoryPressure(pCache)
+      )
   ){
     PCache1 *pOther;
     pPage = pGroup->lru.pLruPrev;
