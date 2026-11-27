@@ -1909,6 +1909,10 @@ static void shell_complete_sql(
 /*
 ** Return the text of an SQL statement that itself returns the list of
 ** tables to process within the database.
+**
+** Table names are case-insensitive, so the UNION uses NOCASE to avoid
+** processing a table twice when its name differs only in case between
+** the two databases.
 */
 const char *all_tables_sql(){
   if( g.bHandleVtab ){
@@ -1936,7 +1940,7 @@ const char *all_tables_sql(){
     assert( rc==SQLITE_OK );
   
     return 
-      "SELECT name FROM main.sqlite_schema\n"
+      "SELECT name COLLATE nocase AS name FROM main.sqlite_schema\n"
       " WHERE type='table' AND (\n"
       "    module_name(sql) IS NULL OR \n"
       "    module_name(sql) IN (SELECT module FROM temp.tblmap)\n"
@@ -1955,15 +1959,15 @@ const char *all_tables_sql(){
         "FROM aux.sqlite_schema AS a, temp.tblmap AS b \n"
         "WHERE module_name(a.sql) = b.module\n" 
       " )\n"
-      " ORDER BY name";
+      " ORDER BY name COLLATE binary";
   }else{
     return
-      "SELECT name FROM main.sqlite_schema\n"
+      "SELECT name COLLATE nocase AS name FROM main.sqlite_schema\n"
       " WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%%'\n"
       " UNION\n"
       "SELECT name FROM aux.sqlite_schema\n"
       " WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%%'\n"
-      " ORDER BY name";
+      " ORDER BY name COLLATE binary";
   }
 }
 

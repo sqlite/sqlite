@@ -144,6 +144,26 @@ do_execsql_test sqldiff-4.3 {
 } {1 1 0 2 0 1}
 db close
 
+# Bug 5ba959fc23: A table whose name differs only in case between the
+# two databases must be processed only once.
+#
+forcedelete test.db test2.db
+sqlite3 db test.db
+do_execsql_test sqldiff-4.5 {
+  CREATE TABLE Foo(id INTEGER PRIMARY KEY, v TEXT);
+}
+db close
+sqlite3 db test2.db
+do_execsql_test sqldiff-4.6 {
+  CREATE TABLE foo(id INTEGER PRIMARY KEY, v TEXT);
+  INSERT INTO foo VALUES(1, 'new');
+}
+db close
+do_test sqldiff-4.7 {
+  exec $PROG --summary test.db test2.db
+} {foo: 0 changes, 1 inserts, 0 deletes, 0 unchanged}
+sqldiff_apply_test sqldiff-4.8
+
 # The following test cases demonstrate that if the source table contains
 # an AUTOINCREMENT table but there is no corresponding entry in the
 # sqlite_sequence table, then the sqlite_sequence table is not updated
