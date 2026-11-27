@@ -765,7 +765,7 @@ static int csvtabNext(sqlite3_vtab_cursor *cur){
     pCur->iRowid++;
     while( i<pTab->nCol ){
       sqlite3_free(pCur->azVal[i]);
-      pCur->azVal[i] = 0;
+      pCur->azVal[i] = sqlite3_mprintf("");
       pCur->aLen[i] = 0;
       i++;
     }

@@ -991,6 +991,10 @@ do_catchsql_test 24.2 {
 } {1 {zip archive is corrupt}}
 
 # Bug 2026-06-03T10:58:51Z
+#
+# The test requires that there is no file named "x".
+#
+forcedelete x
 do_catchsql_test 25.0 {
   WITH t(v) AS (
     SELECT unhex(
@@ -1021,5 +1025,54 @@ do_execsql_test 26.3 {
   SELECT name, quote(data) FROM z ORDER BY 1;
 } {b.txt X'42424242'}
 
+#-------------------------------------------------------------------------
+# A cursor that scans a zip archive passed as a BLOB is re-run against an
+# archive named by a TEXT value (a correlated subquery reuses its cursor).
+# The scalar subquery stops after the first row, so the cursor is still
+# positioned on an entry when it is re-run.
+#
+reset_db
+forcedelete cursor.zip
+load_static_extension db fileio
+load_static_extension db zipfile
+do_execsql_test 27.1 {
+  CREATE VIRTUAL TABLE zt USING zipfile('cursor.zip');
+  INSERT INTO zt(name, data) VALUES('one.txt', 'x'), ('two.txt', 'y');
+  CREATE TABLE src(v);
+  INSERT INTO src VALUES(readfile('cursor.zip')), ('cursor.zip');
+}
+do_execsql_test 27.2 {
+  SELECT (SELECT name FROM zipfile(src.v)) FROM src;
+} {one.txt one.txt}
+do_execsql_test 27.3 {
+  SELECT (SELECT name FROM zipfile(src.v)) FROM src ORDER BY rowid DESC;
+} {one.txt one.txt}
+
+#-------------------------------------------------------------------------
+# A write transaction ends while a SELECT is still stepping through the
+# uncommitted entries of the same table.
+#
+foreach {tn sql} {
+  1 COMMIT
+  2 ROLLBACK
+} {
+  reset_db
+  forcedelete txn.zip
+  load_static_extension db zipfile
+  do_execsql_test 28.$tn.1 { CREATE VIRTUAL TABLE zt USING zipfile('txn.zip') }
+
+  do_test 28.$tn.2 {
+    execsql { 
+      BEGIN;
+      INSERT INTO zt(name, data) VALUES('a','aaa'), ('b','bbb'), ('c','ccc');
+    }
+    set res [list]
+    db eval { SELECT name FROM zt } {
+      lappend res $name
+      if {[llength $res]==1} { execsql $sql }
+    }
+    set res
+  } {a}
+}
 
 finish_test

@@ -23,12 +23,13 @@
 
   Documentation home page: https://sqlite.org/wasm
 */
-
+//#// -Dcanonical-sqlite3 configures WhWasmUtil and Jaccwabyt for us.
+//#define canonical-sqlite3
 /**
-   sqlite3ApiBootstrap() is the only global symbol persistently
-   exposed by this API. It is intended to be called one time at the
-   end of the API amalgamation process and passed configuration details
-   for the current environment.
+   sqlite3ApiBootstrap() is intended to be called one time at the end
+   of the API amalgamation process, after the WASM file is loaded, and
+   passed configuration details for the current WASM environment. It
+   sets up and returns the sqlite3 namespace object.
 
    This function is not intended for client-level use. It is intended
    for use in creating bundles configured for specific WASM
@@ -40,8 +41,8 @@
    away details specific to any given WASM environment, primarily so
    that it can be used without any direct dependency on
    Emscripten. (Note the default values for the config object!) The
-   config object is only honored the first time this is
-   called. Subsequent calls ignore the argument and return the same
+   config object is only honored the first time this is called.
+   Subsequent calls ignore the argument and return the same
    (configured) object which gets initialized by the first call.  This
    function will throw if any of the required config options are
    missing.
@@ -64,11 +65,12 @@
      to be in `exports.__indirect_function_table`.
 
    - `bigIntEnabled`: true if BigInt support is enabled. Defaults to
-     true if `globalThis.BigInt64Array` is available, else false. Some APIs
-     will throw exceptions if called without BigInt support, as BigInt
-     is required for marshalling C-side int64 into and out of JS.
-     (Sidebar: it is technically possible to add int64 support via
-     marshalling of int32 pairs, but doing so is unduly invasive.)
+     true if `globalThis.BigInt64Array` is available, else false. Some
+     APIs are unavailable or may throw exceptions if called without
+     BigInt support, as BigInt is required for marshalling C-side
+     int64 into and out of JS.  (Sidebar: it is technically possible
+     to add int64 support via marshalling of int32 pairs, but doing so
+     is unduly invasive.)
 
    - `allocExportName`: the name of the function, in `exports`, of the
      `malloc(3)`-compatible routine for the WASM environment. Defaults
@@ -132,17 +134,16 @@
    module, though.
 
    Both sqlite3ApiBootstrap.defaultConfig and
-   globalThis.sqlite3ApiConfig get deleted by sqlite3ApiBootstrap()
-   because any changes to them made after that point would have no
-   useful effect. This function also deletes itself from globalThis
-   when it's called.
+   globalThis.sqlite3ApiConfig get deleted during a successful call to
+   to this function because any changes to them made after that point
+   would have no useful effect.
 
    This function returns a Promise to the sqlite3 namespace object,
    which resolves after the async pieces of the library init are
    complete.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
+const sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   apiConfig = (globalThis.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
 ){
   if(sqlite3ApiBootstrap.sqlite3){ /* already initialized */
@@ -2172,7 +2173,6 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
      objects...
   */
   delete globalThis.sqlite3ApiConfig;
-  delete globalThis.sqlite3ApiBootstrap;
   delete sqlite3ApiBootstrap.defaultConfig;
   return sqlite3.asyncPostInit().then((s)=>{
     if( 'undefined'!==typeof sqlite3InitScriptInfo/* from post-js-header.js */ ){
@@ -2188,7 +2188,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
 }/*sqlite3ApiBootstrap()*/;
 
 /**
-  globalThis.sqlite3ApiBootstrap.initializers is an internal detail
+  sqlite3ApiBootstrap.initializers is an internal detail
   used by the various pieces of the sqlite3 API's amalgamation
   process. It must not be modified by client code except when plugging
   such code into the amalgamation process.
@@ -2204,15 +2204,15 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   utilized until the whwasmutil.js part is plugged in via
   sqlite3-api-glue.js.
 */
-globalThis.sqlite3ApiBootstrap.initializers = [];
+sqlite3ApiBootstrap.initializers = [];
 
 /**
-  globalThis.sqlite3ApiBootstrap.initializersAsync is an internal detail
+  sqlite3ApiBootstrap.initializersAsync is an internal detail
   used by the sqlite3 API's amalgamation process. It must not be
   modified by client code except when plugging such code into the
   amalgamation process.
 
-  The counterpart of globalThis.sqlite3ApiBootstrap.initializers,
+  The counterpart of sqlite3ApiBootstrap.initializers,
   specifically for initializers which are asynchronous. All entries in
   this list must be either async functions, non-async functions which
   return a Promise, or a Promise. Each function in the list is called
@@ -2224,10 +2224,10 @@ globalThis.sqlite3ApiBootstrap.initializers = [];
 
   This list is not processed until the client calls
   sqlite3.asyncPostInit(). This means, for example, that intializers
-  added to globalThis.sqlite3ApiBootstrap.initializers may push entries to
+  added to sqlite3ApiBootstrap.initializers may push entries to
   this list.
 */
-globalThis.sqlite3ApiBootstrap.initializersAsync = [];
+sqlite3ApiBootstrap.initializersAsync = [];
 
 /**
    Client code may assign sqlite3ApiBootstrap.defaultConfig an
@@ -2238,13 +2238,13 @@ globalThis.sqlite3ApiBootstrap.initializersAsync = [];
    an environment-suitable configuration without having to define a new
    global-scope symbol.
 */
-globalThis.sqlite3ApiBootstrap.defaultConfig = Object.create(null);
+sqlite3ApiBootstrap.defaultConfig = Object.create(null);
 
 /**
    Placeholder: gets installed by the first call to
-   globalThis.sqlite3ApiBootstrap(). However, it is recommended that the
+   sqlite3ApiBootstrap(). However, it is recommended that the
    caller of sqlite3ApiBootstrap() capture its return value and delete
-   globalThis.sqlite3ApiBootstrap after calling it. It returns the same
+   sqlite3ApiBootstrap after calling it. It returns the same
    value which will be stored here.
 */
-globalThis.sqlite3ApiBootstrap.sqlite3 = undefined;
+sqlite3ApiBootstrap.sqlite3 = undefined;

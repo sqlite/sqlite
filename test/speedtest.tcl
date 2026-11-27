@@ -23,6 +23,7 @@ Other options include:
    -D...                 -D and -O options are passed through to the C compiler.
    --dryrun              Show what would happen but don't do anything.
    --help                Show this help screen.
+   --journal MODE        Use the specified journal mode instead of WAL
    --lean                "Lean" mode.
    --lookaside N SZ      Lookahead uses N slots of SZ bytes each.
    --osmalloc            Use the OS native malloc() instead of MEMSYS5
@@ -90,6 +91,13 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
         if {$newsize<1} {set newsize 1}
         set speedtestflags \
           [regsub {.-size \d+} $speedtestflags "-size $newsize"]
+      }
+      -journal -
+      --journal {
+        incr i
+        set newmode [lindex $argv $i]
+        set speedtestflags \
+          [regsub {.-journal \w+} $speedtestflags "-journal $newmode"]
       }
       -n -
       -dryrun -

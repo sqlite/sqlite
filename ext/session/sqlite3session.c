@@ -2624,7 +2624,7 @@ static void sessionAppendIdent(
   const char *zStr,               /* String to quote, escape and append */
   int *pRc                        /* IN/OUT: Error code */
 ){
-  int nStr = sqlite3Strlen30(zStr)*2 + 2 + 2;
+  i64 nStr = (i64)sqlite3Strlen30(zStr)*2 + 2 + 2;
   if( 0==sessionBufferGrow(p, nStr, pRc) ){
     char *zOut = (char *)&p->aBuf[p->nBuf];
     const char *zIn = zStr;
@@ -3886,6 +3886,11 @@ static int sessionChangesetNextOne(
 
   op = p->in.aData[p->in.iNext++];
   while( op=='T' || op=='P' ){
+    /* A single changeset may not contain both changeset ('T') and
+    ** patchset ('P') table headers. If it does, it is corrupt. */
+    if( p->zTab && p->bPatchset!=(op=='P') ){
+      return (p->rc = SQLITE_CORRUPT_BKPT);
+    }
     if( pbNew ) *pbNew = 1;
     p->bPatchset = (op=='P');
     if( sessionChangesetReadTblhdr(p) ) return p->rc;
@@ -7393,9 +7398,6 @@ int sqlite3changegroup_change_begin(
   }
   if( rc==SQLITE_OK ){
     int nReq = pTab->nCol * (eOp==SQLITE_UPDATE ? 2 : 1);
-    pGrp->cd.pTab = pTab;
-    pGrp->cd.eOp = eOp;
-    pGrp->cd.bIndirect = bIndirect;
 
     if( pGrp->cd.nBufAlloc<nReq ){
       SessionBuffer *aBuf = (SessionBuffer*)sqlite3_realloc(
@@ -7410,6 +7412,14 @@ int sqlite3changegroup_change_begin(
         pGrp->cd.aBuf = aBuf;
         pGrp->cd.nBufAlloc = nReq;
       }
+    }
+
+    /* Only mark a change as under construction once the column buffers
+    ** have been allocated. */
+    if( rc==SQLITE_OK ){
+      pGrp->cd.pTab = pTab;
+      pGrp->cd.eOp = eOp;
+      pGrp->cd.bIndirect = bIndirect;
     }
 
 #ifdef SQLITE_DEBUG
@@ -7453,8 +7463,9 @@ static int checkChangeParams(
       pBuf += pGrp->cd.pTab->nCol;
     }
     pBuf->nBuf = 0;
-    sessionBufferGrow(pBuf, nReq, &rc);
-    pBuf->nBuf = nReq;
+    if( sessionBufferGrow(pBuf, nReq, &rc)==0 ){
+      pBuf->nBuf = (int)nReq;
+    }
     *ppBuf = pBuf;
   }
   return rc;
@@ -7558,9 +7569,13 @@ int sqlite3changegroup_change_blob(
   const void *pVal, 
   int nVal
 ){
-  sqlite3_int64 nByte = 1 + sessionVarintLen(nVal) + (i64)nVal;
+  sqlite3_int64 nByte;
   int rc = SQLITE_OK;
   SessionBuffer *pBuf = 0;
+
+  /* Unlike text, a blob has no terminator from which to infer a length. */
+  if( nVal<0 ) return SQLITE_RANGE;
+  nByte = 1 + sessionVarintLen(nVal) + (i64)nVal;
 
   if( SQLITE_OK!=(rc = checkChangeParams(pGrp, bNew, iCol, nByte, &pBuf)) ){
     return rc;

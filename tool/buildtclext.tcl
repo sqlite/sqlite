@@ -333,9 +333,9 @@ package ifneeded sqlite3 $VERSION \\
   set cmd "$CMD -DUSE_TCL_STUBS tclsqlite3.c -o $OUT [join $LIBS { }]"
   puts $cmd
   file delete -force $OUT
-  catch {exec {*}$cmd} errmsg
-  if {$errmsg!="" && ![file exists $OUT]} {
-    puts $errmsg
+  if {[catch {exec -ignorestderr {*}$cmd} errmsg]} {
+    puts stderr $errmsg
+    file delete -force $OUT
     exit 1
   }
 }

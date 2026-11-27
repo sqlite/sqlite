@@ -74,7 +74,7 @@ do_execsql_test date2-330 {
   SELECT a FROM t3
    WHERE typeof(b)='real'
      AND datetime(b) BETWEEN '2017-07-04' AND '2017-07-08';
-} {/USING INDEX t3b/}
+} {/USING COVERING INDEX t3b1/}
 do_execsql_test date2-331 {
   SELECT a FROM t3
    WHERE typeof(b)='real'

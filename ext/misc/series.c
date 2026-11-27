@@ -411,6 +411,13 @@ static sqlite3_int64 seriesRealToI64(double r){
   return (sqlite3_int64)r;
 }
 
+/* Return true if the type of the value is TEXT or BLOB.
+*/
+static int seriesIsTextOrBlob(sqlite3_value *pVal){
+  int eType = sqlite3_value_type(pVal);
+  return eType==SQLITE_TEXT || eType==SQLITE_BLOB;
+}
+
 /*
 ** This method is called to "rewind" the series_cursor object back
 ** to the first row of output.  This method is always called at least
@@ -525,10 +532,19 @@ static int seriesFilter(
 
   /* Narrow the range of iMin and iMax (the minimum and maximum outputs)
   ** based on equality and inequality constraints on the "value" column.
+  **
+  ** The "value" column has no affinity, so a TEXT or BLOB operand X is
+  ** not converted into a number.  Every INTEGER is less than any TEXT
+  ** or BLOB, so "value=X", "value>X" and "value>=X" are never true and
+  ** "value<X" and "value<=X" are always true.  The type must be checked
+  ** before sqlite3_value_numeric_type(), which would convert a TEXT
+  ** value such as '3' into a number.
   */
   if( idxNum & 0x3380 ){
     if( idxNum & 0x0080 ){    /* value=X */
-      if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+      if( seriesIsTextOrBlob(argv[iArg]) ){
+        goto series_no_rows;
+      }else if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
         double r = sqlite3_value_double(argv[iArg++]);
         if( r==seriesCeil(r)
          && r>=(double)SMALLEST_INT64
@@ -543,7 +559,9 @@ static int seriesFilter(
       }
     }else{
       if( idxNum & 0x0300 ){  /* value>X (0x200) or value>=X (0x100) */
-        if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+        if( seriesIsTextOrBlob(argv[iArg]) ){
+          goto series_no_rows;
+        }else if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
           if( r<=(double)SMALLEST_INT64 ){
             iMin = SMALLEST_INT64;
@@ -568,7 +586,9 @@ static int seriesFilter(
         }
       }
       if( idxNum & 0x3000 ){   /* value<X (0x2000) or value<=X (0x1000) */
-        if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+        if( seriesIsTextOrBlob(argv[iArg]) ){
+          iArg++;   /* No upper bound */
+        }else if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
           if( r>=(double)LARGEST_INT64 ){
             iMax = LARGEST_INT64;
@@ -842,6 +862,25 @@ static int seriesBestIndex(
       aIdx[iCol] = i;
     }
   }
+  if( pIdxInfo->nOrderBy>=1 ){
+    int iOB = pIdxInfo->aOrderBy[0].iColumn;
+    if( iOB==SERIES_COLUMN_VALUE || iOB==SERIES_COLUMN_ROWID ){
+      /* The rowid is an alias for value, and both are unique, so the
+      ** series can be generated in the requested order regardless of any
+      ** subsequent ORDER BY terms. */
+      if( pIdxInfo->aOrderBy[0].desc ){
+        idxNum |= 0x08;
+      }else{
+        idxNum |= 0x10;
+      }
+      pIdxInfo->orderByConsumed = 1;
+    }else{
+      /* The core will sort the output, so it needs to see every row.
+      ** A LIMIT or OFFSET applied here would discard rows before the sort */
+      idxNum &= ~0x60;
+      aIdx[3] = aIdx[4] = -1;
+    }
+  }
   if( aIdx[3]==0 ){
     /* Ignore OFFSET if LIMIT is omitted */
     idxNum &= ~0x60;
@@ -877,14 +916,6 @@ static int seriesBestIndex(
     ** the preferred case */
     pIdxInfo->estimatedCost = (double)(2 - ((idxNum&4)!=0));
     pIdxInfo->estimatedRows = 1000;
-    if( pIdxInfo->nOrderBy>=1 && pIdxInfo->aOrderBy[0].iColumn==0 ){
-      if( pIdxInfo->aOrderBy[0].desc ){
-        idxNum |= 0x08;
-      }else{
-        idxNum |= 0x10;
-      }
-      pIdxInfo->orderByConsumed = 1;
-    }
   }else if( (idxNum & 0x21)==0x21 ){
     /* We have start= and LIMIT */
     pIdxInfo->estimatedRows = 2500;

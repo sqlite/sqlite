@@ -163,11 +163,15 @@ void sqlite3BeginTrigger(
   ** then set iDb to 1 to create the trigger in the temporary database.
   ** If sqlite3SrcListLookup() returns 0, indicating the table does not
   ** exist, the error is caught by the block below.
-  */
-  pTab = sqlite3SrcListLookup(pParse, pTableName);
-  if( db->init.busy==0 && pName2->n==0 && pTab
-        && pTab->pSchema==db->aDb[1].pSchema ){
-    iDb = 1;
+  **
+  ** Do not do this if ALTER TABLE is reparsing an existing trigger. In
+  ** that case iDb is already set correctly. */
+  if( !IN_RENAME_OBJECT ){
+    pTab = sqlite3SrcListLookup(pParse, pTableName);
+    if( db->init.busy==0 && pName2->n==0 && pTab
+          && pTab->pSchema==db->aDb[1].pSchema ){
+      iDb = 1;
+    }
   }
 
   /* Ensure the table name matches database name and that the table exists */
@@ -198,7 +202,8 @@ void sqlite3BeginTrigger(
     assert( db->mallocFailed );
     goto trigger_cleanup;
   }
-  if( sqlite3CheckObjectName(pParse, zName, "trigger", pTab->zName) ){
+  if( sqlite3CheckObjectName(pParse, zName, "trigger", pTab->zName,
+                             db->aDb[iDb].zDbSName) ){
     goto trigger_cleanup;
   }
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
@@ -340,6 +345,7 @@ void sqlite3FinishTrigger(
   iDb = sqlite3SchemaToIndex(pParse->db, pTrig->pSchema);
   assert( iDb>=00 && iDb<db->nDb );
   pTrig->step_list = pStepList;
+  pTrig->nSelect = pParse->nSelect;
   for(n=0; pStepList; n++){
     pStepList->pTrig = pTrig;
     pStepList = pStepList->pNext;
@@ -373,12 +379,15 @@ void sqlite3FinishTrigger(
 
     /* If this is a new CREATE TABLE statement, and if shadow tables
     ** are read-only, and the trigger makes a change to a shadow table,
-    ** then raise an error - do not allow the trigger to be created. */
+    ** then raise an error - do not allow the trigger to be created.
+    ** The targets of a TEMP trigger may be in any schema, so check all
+    ** of them in that case. */
     if( sqlite3ReadOnlyShadowTables(db) ){
       TriggerStep *pStep;
+      const char *zDb = iDb==1 ? 0 : db->aDb[iDb].zDbSName;
       for(pStep=pTrig->step_list; pStep; pStep=pStep->pNext){
         if( pStep->pSrc!=0
-         && sqlite3ShadowTableName(db, pStep->pSrc->a[0].zName)
+         && sqlite3ShadowTableName(db, pStep->pSrc->a[0].zName, zDb)
         ){
           sqlite3ErrorMsg(pParse, 
             "trigger \"%s\" may not write to shadow table \"%s\"",
@@ -786,7 +795,7 @@ void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
 */
 static int checkColumnOverlap(IdList *pIdList, ExprList *pEList){
   int e;
-  if( pIdList==0 || NEVER(pEList==0) ) return 1;
+  if( pIdList==0 || pEList==0 ) return 1;
   for(e=0; e<pEList->nExpr; e++){
     if( sqlite3IdListIndex(pIdList, pEList->a[e].zEName)>=0 ) return 1;
   }
@@ -1290,6 +1299,7 @@ static TriggerPrg *codeRowTrigger(
   sSubParse.pTriggerTab = pTab;
   sSubParse.pToplevel = pTop;
   sSubParse.pTrigCoded = pTrigger;
+  sSubParse.nSelect = pTrigger->nSelect;
   sSubParse.zAuthContext = pTrigger->zName;
   sSubParse.eTriggerOp = pTrigger->op;
   sSubParse.nQueryLoop = pParse->nQueryLoop;
@@ -1389,6 +1399,13 @@ static TriggerPrg *getRowTrigger(
   if( !pPrg ){
     pPrg = codeRowTrigger(pParse, pTrigger, pTab, orconf);
     pParse->db->errByteOffset = -1;
+  }else{
+    /* Check if this trigger is being called recursively. If it is, then
+    ** the VM might hit the trigger nesting limit. */
+    Parse *p;
+    for(p=pParse; p; p=p->pOuterParse){
+      if( pTrigger==p->pTrigCoded ) sqlite3MayAbort(pParse);
+    }
   }
 
   return pPrg;

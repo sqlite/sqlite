@@ -161,6 +161,43 @@ static u16 operatorMask(int op){
   return c;
 }
 
+#ifndef SQLITE_OMIT_LIKE_OPTIMIZATION
+/*
+** The input is an N-byte GLOB or LIKE pattern prefix
+** with the following guarantees:
+**
+**   (1)  It contains no wildcards.
+**   (2)  z[N]==0
+**   (3)  N>0
+**   (4)  bHasSpace is true if and only if the original complete LIKE/GLOB
+**        pattern contained wildcards and/or escapes.  (It is usually true,
+**        therefore).  bHasSpace also means that there is at least one byte
+**        of overrun space at z[N+1] that this routine may use.
+**
+** This routine checks to see if the input will be a prefix to
+** any number (integer or floating-point) that SQLite might generate
+** from a MEM_Int or MEM_Real, including "Inf" and "-Inf".
+**
+** Return true if the input is a possible numeric prefix and
+** false if the input cannot possibly be a numeric prefix.
+*/
+static SQLITE_NOINLINE int isNumericPrefix(char *z, int N, int bHasSpace){
+  int x;
+  double rDummy;
+  assert( N>0 );
+  if( sqlite3AtoF(z, &rDummy)>0 ) return 1; /* Boundary is itself a number */
+  if( bHasSpace ){
+    z[N] = '0';
+    z[N+1] = 0;
+    x = sqlite3AtoF(z, &rDummy);            /* Prefix like "1.0e" or "-" */
+    z[N] = 0;
+    if( x>0 ) return 1;
+  }
+  if( z[0]=='-' ){ z++; N--; }
+  if( N>0 && N<=3 && sqlite3StrNICmp(z,"inf",N)==0 ) return 1;
+  return 0;
+}
+#endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
 #ifndef SQLITE_OMIT_LIKE_OPTIMIZATION
 /*
@@ -216,7 +253,7 @@ static int isLikeOrGlob(
     assert( pRight->op==TK_VARIABLE || pRight->op==TK_REGISTER );
   }else if( op==TK_STRING ){
     assert( !ExprHasProperty(pRight, EP_IntValue) );
-     z = (u8*)pRight->u.zToken;
+    z = (u8*)pRight->u.zToken;
   }
   if( z ){
     /* Count the number of prefix bytes prior to the first wildcard,
@@ -232,9 +269,25 @@ static int isLikeOrGlob(
         cnt++;
       }else if( c>=0x80 ){
         const u8 *z2 = z+cnt-1;
-        if( c==0xff || sqlite3Utf8Read(&z2)==0xfffd  /* bad utf-8 */
-         || ENC(db)==SQLITE_UTF16LE 
+        u32 u;
+        if( c==0xff                             /* (1) */
+         || (u = sqlite3Utf8Read(&z2))>=0xfffd  /* (2) */
+         || u==0x7ff                            /* (3) */
+         || u==0xd7ff                           /* (4) */
+         || ENC(db)==SQLITE_UTF16LE             /* (5) */
         ){
+          /* Do not accept this character as part of the prefix because
+          **   (1)  0xff is not part of any valid UTF-8 character and the
+          **        0xff causes difficult when incrementing to the upper bound
+          **   (2)  0xfffd is not a valid UTF-8 character and values greater
+          **        start getting into the surrogate pairs in UTF16BE.
+          **   (3)  When incrementing this code point to the upper bound,
+          **        that would require adding an extra byte to the UTF-8
+          **   (4)  Incrementing U+d7ff yields U+d800, a surrogate, which
+          **        is not valid in UTF16BE.
+          **   (5)  UTF16LE does not compare in sorted order.  Only
+          **        UTF16BE and UTF8 have that property.
+          */
           cnt--;
           break;
         }else{
@@ -243,12 +296,12 @@ static int isLikeOrGlob(
       }
     }
 
-    /* The optimization is possible only if (1) the pattern does not begin
-    ** with a wildcard and if (2) the non-wildcard prefix does not end with
-    ** an (illegal 0xff) character, or (3) the pattern does not consist of
-    ** a single escape character. The second condition is necessary so
+    /* The optimization is possible only if either (1a) the pattern does not
+    ** begin with a wildcard and if (1b) the non-wildcard prefix does not end
+    ** with an (illegal) 0xff character, or (2) the pattern does not consist of
+    ** a single escape character. The (1b) condition is necessary so
     ** that we can increment the prefix key to find an upper bound for the
-    ** range search. The third is because the caller assumes that the pattern
+    ** range search. The (2) is because the caller assumes that the pattern
     ** consists of at least one character after all escapes have been
     ** removed.  */
     if( (cnt>1 || (cnt>0 && z[0]!=wc[3])) && ALWAYS(255!=(u8)z[cnt-1]) ){
@@ -274,8 +327,11 @@ static int isLikeOrGlob(
 
         /* If the LHS is not an ordinary column with TEXT affinity, then the
         ** pattern prefix boundaries (both the start and end boundaries) must
-        ** not look like a number.  Otherwise the pattern might be treated as
-        ** a number, which will invalidate the LIKE optimization.
+        ** not look like a number or the prefix of a number.  Otherwise the
+        ** pattern might might match against a number, which means this
+        ** optimization will not work.  If either the start or end boundary
+        ** strings has any possibility of matching against a text rendering
+        ** of a MEM_Int or MEM_Real, then we must return 0.
         **
         ** Getting this right has been a persistent source of bugs in the
         ** LIKE optimization.  See, for example:
@@ -284,6 +340,7 @@ static int isLikeOrGlob(
         **    2019-06-10 https://sqlite.org/src/info/fd76310a5e843e07
         **    2019-06-14 https://sqlite.org/src/info/ce8717f0885af975
         **    2019-09-03 https://sqlite.org/src/info/0f0428096f17252a
+        **    2026-10-28 https://sqlite.org/bugs/info/e85ab73aa1483325
         */
         if( pLeft->op!=TK_COLUMN
          || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT
@@ -291,20 +348,16 @@ static int isLikeOrGlob(
              && ALWAYS(pLeft->y.pTab)
              && IsVirtual(pLeft->y.pTab))  /* Might be numeric */
         ){
-          int isNum;
-          double rDummy;
+          int bHasSpace = iTo < (int)strlen((const char*)z);
+          int x;
           assert( zNew[iTo]==0 );
-          isNum = sqlite3AtoF(zNew, &rDummy);
-          if( isNum<=0 ){
-            if( iTo==1 && zNew[0]=='-' ){
-              isNum = +1;
-            }else{
-              zNew[iTo-1]++;
-              isNum = sqlite3AtoF(zNew, &rDummy);
-              zNew[iTo-1]--;
-            }
+          x = isNumericPrefix(zNew, iTo, bHasSpace); /* start boundary */
+          if( x==0 ){
+            zNew[iTo-1]++;
+            x = isNumericPrefix(zNew, iTo, bHasSpace); /* end boundary */
+            zNew[iTo-1]--;
           }
-          if( isNum>0 ){
+          if( x!=0 ){
             sqlite3ExprDelete(db, pPrefix);
             sqlite3ValueFree(pVal);
             return 0;
@@ -569,7 +622,13 @@ static void whereCombineDisjuncts(
   int idxNew;            /* Index in pWC of the next virtual term */
   Expr *pA, *pB;         /* Expressions associated with pOne and pTwo */
 
-  if( (pOne->wtFlags | pTwo->wtFlags) & TERM_VNULL ) return;
+  if( (pOne->wtFlags | pTwo->wtFlags) & (TERM_VNULL|TERM_LIKEOPT) ){
+    testcase( pOne->wtFlags & TERM_VNULL );
+    testcase( pOne->wtFlags & TERM_LIKEOPT );
+    testcase( pTwo->wtFlags & TERM_VNULL );
+    testcase( pTwo->wtFlags & TERM_LIKEOPT );
+    return;
+  }
   if( (pOne->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE))==0 ) return;
   if( (pTwo->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE))==0 ) return;
   if( (eOp & (WO_EQ|WO_LT|WO_LE))!=eOp
@@ -1530,7 +1589,7 @@ exprAnalyze_restart:
   ** the vector on the LHS that the virtual term represents.
   **
   ** This only works if the RHS is a simple SELECT (not a compound) that does
-  ** not use window functions.
+  ** not use window functions or a LIMIT clause.
   */
   else if( pExpr->op==TK_IN
    && pTerm->u.x.iField==0
@@ -1541,6 +1600,8 @@ exprAnalyze_restart:
    && pExpr->x.pSelect->pWin==0
 #endif
    && (pExpr->x.pSelect->selFlags & SF_MinMaxAgg)==0
+   && pExpr->x.pSelect->pLimit==0
+   /* ^-- See bug 2026-11-04T00:59:22Z */
    && pWC->op==TK_AND
    && pExpr->x.pSelect->pEList->nExpr <= UMXV(pTerm->nChild)
    /* ^-- See bug 2026-06-04T10:00:49Z */

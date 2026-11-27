@@ -73,4 +73,5 @@ do_execsql_test -db db2 1.3 {
 
 
 db2 close
+test_sqlite3_log
 finish_test

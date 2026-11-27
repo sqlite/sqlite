@@ -1724,7 +1724,13 @@ void sqlite3Fts3Offsets(
               "%d %d %d %d ", iCol, pTerm-sCtx.aTerm, iStart, iEnd-iStart
           );
           rc = fts3StringAppend(&res, aBuffer, -1);
-        }else if( rc==SQLITE_DONE && pTab->zContentTbl==0 ){
+        }else if( rc==SQLITE_DONE 
+               && pTab->zContentTbl==0 
+               && pCsr->nWrite==pTab->nWrite
+        ){
+          /* The document is shorter than the position lists indicate. This
+          ** is corruption, unless the row may have been modified since
+          ** the cursor loaded its doclists. See fts3CursorSeek().  */
           rc = FTS_CORRUPT_VTAB;
         }
       }

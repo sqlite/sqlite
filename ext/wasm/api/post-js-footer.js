@@ -25,8 +25,9 @@
   pre-js.c-pp.js and friends.
 */
 try{
-  /* We are in the closing block of Module.runSQLite3PostLoadInit(), so
-     its arguments are visible here. */
+  /* We are in the closing block of Module.runSQLite3PostLoadInit(),
+     so its arguments are visible here, as are symbols exposed by the
+     amalgamated library JS files. */
 
   /* Config options for sqlite3ApiBootstrap(). */
   const bootstrapConfig = Object.assign(
@@ -42,8 +43,8 @@ try{
            ? EmscriptenModule['wasmExports']
            : EmscriptenModule['asm']/* emscripten <=3.1.43 */)
     },
-    globalThis.sqlite3ApiBootstrap.defaultConfig, // default options
-    globalThis.sqlite3ApiConfig || {} // optional client-provided options
+    sqlite3ApiBootstrap.defaultConfig, // default options
+    globalThis.sqlite3ApiConfig ?? {} // optional client-provided options
   );
 
   sqlite3InitScriptInfo.debugModule("Bootstrapping lib config", bootstrapConfig);
@@ -54,14 +55,13 @@ try{
      but that's not practical in this particular build constellation
      because of the order everything happens in.  Clients may either
      define globalThis.sqlite3ApiConfig or modify
-     globalThis.sqlite3ApiBootstrap.defaultConfig to tweak the default
+     sqlite3ApiBootstrap.defaultConfig to tweak the default
      configuration used by a no-args call to sqlite3ApiBootstrap(),
      but must have first loaded their WASM module in order to be able
      to provide the necessary configuration state.
   */
-  const p = globalThis.sqlite3ApiBootstrap(bootstrapConfig);
-  delete globalThis.sqlite3ApiBootstrap;
-  return p /* the eventual result of globalThis.sqlite3InitModule() */;
+  const p = sqlite3ApiBootstrap(bootstrapConfig);
+  return p /* the eventual result of sqlite3InitModule() */;
 }catch(e){
   console.error("sqlite3ApiBootstrap() error:",e);
   throw e;

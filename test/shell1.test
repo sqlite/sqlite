@@ -650,6 +650,7 @@ do_test shell1-3.21.6 {
    {DROP TABLE t2;} \
    {.schema -indent t2}
 } {}
+forcedelete test7.db
 do_test shell1-3.21.7 {
   catchcmd "test7.db" {
      CREATE TABLE t7(x);

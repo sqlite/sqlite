@@ -500,7 +500,7 @@ struct Vdbe {
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
   u8 eVdbeState;          /* On of the VDBE_*_STATE values */
-  bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
+  u8 expired;             /* 1: recompile VM immediately  2: when convenient */
   bft explain:2;          /* 0: normal, 1: EXPLAIN, 2: EXPLAIN QUERY PLAN */
   bft changeCntOn:1;      /* True to update the change-counter */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
@@ -689,12 +689,14 @@ const char *sqlite3OpcodeName(int);
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeMemClearAndResize(Mem *pMem, int n);
 int sqlite3VdbeCloseStatement(Vdbe *, int);
+int sqlite3VdbeCloseStatementIfNeeded(Vdbe*,int);
 #ifdef SQLITE_DEBUG
 int sqlite3VdbeFrameIsValid(VdbeFrame*);
 #endif
 void sqlite3VdbeFrameMemDel(void*);      /* Destructor on Mem */
 void sqlite3VdbeFrameDelete(VdbeFrame*); /* Actually deletes the Frame */
 int sqlite3VdbeFrameRestore(VdbeFrame *);
+int sqlite3VdbeOtherWriter(sqlite3*, Vdbe*, Pgno, int);
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 void sqlite3VdbePreUpdateHook(
     Vdbe*,VdbeCursor*,int,const char*,Table*,i64,int,int);

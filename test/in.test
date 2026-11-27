@@ -835,13 +835,37 @@ do_execsql_test in-20.1 {
   SELECT (1 IN (2 IS TRUE));
 } {1}
 
-# Forum post: https://sqlite.org/forum/forumpost/5782619992.
+# Forum post:    2022-05-17T14:09:20Z, sqlite.org/forum/forumpost/5782619992.
+# Amended by Bug 2026-11-10T13:17:50Z, sqlite.org/bugs/info/fb2e7f646b87ede
 #
 reset_db
+db null NULL
 do_execsql_test in-21.1 {
   CREATE TABLE t0(c0);
+  INSERT INTO t0 VALUES(1),('two'),(NULL);
   SELECT COUNT(*) FROM t0 ORDER BY (t0.c0 IN ());
-} {0}
+} {3}
+do_execsql_test in-21.2 {
+  SELECT * FROM t0 ORDER BY (t0.c0 IN ());
+} {1 two NULL}
+do_execsql_test in-21.3 {
+  SELECT * FROM t0 ORDER BY (t0.c0 NOT IN ());
+} {1 two NULL}
+do_execsql_test in-21.4 {
+  SELECT typeof(0 IN ());
+} integer
+do_execsql_test in-21.5 {
+  SELECT '' IS 0;
+} 0
+do_execsql_test in-21.6 {
+  SELECT '' IS (0 IN ());
+} 0
+do_execsql_test in-21.7 {
+  SELECT 5  IS 1;
+} 0
+do_execsql_test in-21.8 {
+  SELECT 5  IS (0 NOT IN ());
+} 0
 
 # Ignore extra parentheses around a subquery on the RHS of an IN operator,
 # because that is what PostgreSQL does.
@@ -915,4 +939,3 @@ do_execsql_test in-24.2 {
 }
 
 finish_test
-

@@ -16,6 +16,8 @@
 #   ./sqlite3 test/complete_sql.sql
 #
 #
+.open :memory:
+.mode -reset test
 .testcase 100
 .mode line --limits off
 SELECT shell_complete_sql('CREATE TABLE t1(a) /*') AS out;
@@ -112,4 +114,52 @@ END
 SELECT shell_complete_sql('SELECT (((/*',3) AS out;
 .check <<END
 out: */)));
+END
+
+# Flag 0x08 keeps only the first statement.  The trailing ";" is omitted
+# unless the 0x01 flag is also set.
+#
+.testcase 400
+SELECT shell_complete_sql('CREATE TABLE t1(a); DROP TABLE t2',8) AS out;
+.check <<END
+out: CREATE TABLE t1(a)
+END
+
+.testcase 410
+SELECT shell_complete_sql('CREATE TABLE t1(a); DROP TABLE t2',9) AS out;
+.check <<END
+out: CREATE TABLE t1(a);
+END
+
+.testcase 420
+SELECT shell_complete_sql('CREATE TABLE t1(a DEFAULT '';'', b /* ; */)',8) AS out;
+.check <<END
+out: CREATE TABLE t1(a DEFAULT ';', b /* ; */)
+END
+
+.testcase 430
+SELECT shell_complete_sql(
+  'CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT 1; SELECT 2; END; DROP TABLE t1',8
+) AS out;
+.check <<END
+out: CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT 1; SELECT 2; END
+END
+
+.testcase 440
+SELECT shell_complete_sql('CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT 1; SELECT 2; END',9) AS out;
+.check <<END
+out: CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT 1; SELECT 2; END;
+END
+
+.testcase 450
+SELECT shell_complete_sql('CREATE TABLE t1(a) -- ; DROP TABLE t2',9) AS out;
+.check <<END
+out: CREATE TABLE t1(a) -- ; DROP TABLE t2
+     ;
+END
+
+.testcase 460
+SELECT shell_complete_sql('CREATE TABLE t1(a); DROP TABLE t2',10) AS out;
+.check <<END
+out:
 END

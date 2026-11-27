@@ -1130,7 +1130,7 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
   struct vxworksFileId *pCandidate;   /* For looping over existing file IDs */
   int n;                              /* Length of zAbsoluteName string */
 
-  if( zAbsoluteName==0 || zAbsoluteName[0]=='/' );
+  assert( zAbsoluteName!=0 && zAbsoluteName[0]=='/' );
   n = (int)strlen(zAbsoluteName);
   pNew = sqlite3_malloc64( sizeof(*pNew) + (n+1) );
   if( pNew==0 ) return 0;
@@ -2365,11 +2365,12 @@ static int unixClose(sqlite3_file *id){
   */
   assert( pFile->pInode->nLock>0 || pFile->pInode->bProcessLock==0 );
   sqlite3_mutex_enter(pInode->pLockMutex);
-  if( pInode->nLock ){
+  if( pInode->nLock && pFile->h>=0 ){
     /* If there are outstanding locks, do not actually close the file just
     ** yet because that would clear those locks.  Instead, add the file
     ** descriptor to pInode->pUnused list.  It will be automatically closed
-    ** when the last lock is cleared.
+    ** when the last lock is cleared.  Skip this if the file descriptor
+    ** was already closed by SQLITE_FCNTL_NULL_IO.
     */
     setPendingFd(pFile);
   }
@@ -4845,7 +4846,7 @@ static void unixShmPurge(unixFile *pFd){
 #endif
     for(i=0; i<p->nRegion; i+=nShmPerMap){
       if( p->hShm>=0 ){
-        osMunmap(p->apRegion[i], p->szRegion);
+        osMunmap(p->apRegion[i], (i64)p->szRegion*nShmPerMap);
       }else{
         sqlite3_free(p->apRegion[i]);
       }
@@ -6552,7 +6553,7 @@ static int findCreateFileMode(
     ** that file.  */
     const char *z = sqlite3_uri_parameter(zPath, "modeof");
     if( z ){
-      rc = getFileMode(z, pMode, pUid, pGid);
+      (void)getFileMode(z, pMode, pUid, pGid);
     }
   }
   return rc;

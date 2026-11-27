@@ -1500,6 +1500,11 @@ static int walIndexRecover(Wal *pWal){
       goto finished;
     }
 
+    /* If the WAL contains no committed frames, the frame checksum chain
+    ** starts from the checksum of the WAL header. */
+    aFrameCksum[0] = pWal->hdr.aFrameCksum[0];
+    aFrameCksum[1] = pWal->hdr.aFrameCksum[1];
+
     /* Verify that the version number on the WAL format is one that
     ** are able to understand */
     version = sqlite3Get4byte(&aBuf[4]);

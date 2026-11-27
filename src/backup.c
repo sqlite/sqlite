@@ -562,6 +562,11 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
         if( SQLITE_OK==rc
          && SQLITE_OK==(rc = sqlite3BtreeCommitPhaseTwo(p->pDest, 0))
         ){
+          if( p->pDest->inTrans==TRANS_READ ){
+            int nNew;
+            sqlite3PagerPagecount(pDestPager, &nNew);
+            p->pDest->pBt->nPage = (Pgno)nNew;
+          }
           rc = SQLITE_DONE;
         }
       }

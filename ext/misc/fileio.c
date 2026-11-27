@@ -412,6 +412,9 @@ static int makeDirectory(
 
   if( zCopy==0 ){
     rc = SQLITE_NOMEM;
+  }else if( zCopy[0]==0 ){
+    rc = SQLITE_ERROR;
+    sqlite3_free(zCopy);
   }else{
     int nCopy = (int)strlen(zCopy);
     int i = 1;
@@ -420,8 +423,8 @@ static int makeDirectory(
       STRUCT_STAT sStat;
       int rc2;
 
-      for(; zCopy[i]!='/' && i<nCopy; i++);
-      if( i==nCopy ) break;
+      for(; i<nCopy && zCopy[i]!='/'; i++);
+      if( i>=nCopy ) break;
       zCopy[i] = '\0';
 
       rc2 = fileStat(zCopy, &sStat);
@@ -592,7 +595,8 @@ static void writefileFunc(
 
   res = writeFile(context, zFile, argv[1], mode, mtime);
   if( res==1 && errno==ENOENT ){
-    if( makeDirectory(zFile)==SQLITE_OK ){
+    res = makeDirectory(zFile);
+    if( res==SQLITE_OK ){
       res = writeFile(context, zFile, argv[1], mode, mtime);
     }
   }
@@ -1324,6 +1328,10 @@ int sqlite3_fileio_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Unused parameter */
+
+  /* REMINDER: Changes here should be reflected in the ".safe" command
+  ** of the CLI.
+  */
   rc = sqlite3_create_function(db, "readfile", 1, 
                                SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
                                readfileFunc, 0, 0);

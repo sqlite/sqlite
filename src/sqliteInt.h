@@ -1743,7 +1743,7 @@ struct sqlite3 {
   FastPrng sPrng;               /* State of the per-connection PRNG */
   i64 nChange;                  /* Value returned by sqlite3_changes() */
   i64 nTotalChange;             /* Value returned by sqlite3_total_changes() */
-  u32 dbOptFlags;               /* Flags to enable/disable optimizations */
+  u64 dbOptFlags;               /* Flags to enable/disable optimizations */
   int aLimit[SQLITE_N_LIMIT];   /* Limits */
   int nMaxSorterMmap;           /* Maximum size of regions mapped by sorter */
   struct sqlite3InitInfo {      /* Information used during initialization */
@@ -1981,7 +1981,7 @@ struct sqlite3 {
 #define SQLITE_SeekScan       18 /* The OP_SeekScan optimization */
 #define SQLITE_OmitOrderBy    19 /* Omit pointless ORDER BY */
 #define SQLITE_BloomFilter    20 /* Use a Bloom filters */
-                          /*  21 -- Available for reuse */
+#define SQLITE_DevTest        21 /* Temporary development testing use */
 #define SQLITE_BalancedMerge  22 /* Balance multi-way merges */
 #define SQLITE_ReleaseReg     23 /* Use OP_ReleaseReg for testing */
 #define SQLITE_FlttnUnionAll  24 /* Disable the UNION ALL flattener */
@@ -1993,12 +1993,17 @@ struct sqlite3 {
 #define SQLITE_StarQuery      30 /* Heurists for star queries */
 #define SQLITE_ExistsToJoin   31 /* The EXISTS-to-JOIN optimization */
 #define SQLITE_UnionLimit     32 /* Optimizations for UNION + LIMIT */
+#define SQLITE_HavingToWhere  33 /* HAVING-to-WHERE optimization */
+#define SQLITE_OmitStmtJrnl   34 /* Try to avoid statement journals */
 
 /*
 ** Macros for testing whether or not optimizations are enabled or disabled.
 */
-#define OptimizationDisabled(D,M)  (((D)->dbOptFlags&(1ul<<((M)-1)))!=0)
-#define OptimizationEnabled(D,M)   (((D)->dbOptFlags&(1ul<<((M)-1)))==0)
+#define OptMask(M) (1ULL<<((M)-1))
+#define OptimizationDisabled(D,M)  (((D)->dbOptFlags&OptMask(M))!=0)
+#define OptimizationEnabled(D,M)   (((D)->dbOptFlags&OptMask(M))==0)
+#define OptimizationEnabled2(D,M1,M2) \
+                             ((D->dbOptFlags)&(OptMask(M1)|OptMask(M2)))==0
 
 /*
 ** Return true if it OK to factor constant expressions into the initialization
@@ -3306,6 +3311,7 @@ struct ExprList {
       unsigned bNulls :1;     /* True if explicit "NULLS FIRST/LAST" */
       unsigned bUsed :1;      /* This column used in a SF_NestedFrom subquery */
       unsigned bUsingTerm:1;  /* Term from the USING clause of a NestedFrom */
+      unsigned bStarName:1;   /* RENAME only: zEName from expanding a "*" */
       unsigned bNoExpand: 1;  /* Term is an auxiliary in NestedFrom and should
                               ** not be expanded by "*" in parent queries */
     } fg;
@@ -4020,7 +4026,6 @@ struct Parse {
 
   int aTempReg[8];        /* Holding area for temporary registers */
   Parse *pOuterParse;     /* Outer Parse object when nested */
-  Token sNameToken;       /* Token with unqualified schema object name */
   u32 oldmask;            /* Mask of old.* columns referenced */
   u32 newmask;            /* Mask of new.* columns referenced */
   union {
@@ -4049,7 +4054,8 @@ struct Parse {
   ** first field in the recursive region.
   ************************************************************************/
 
-  Token sLastToken;       /* The last token parsed */
+  Token sLastToken;         /* The last token parsed */
+  Token sNameToken;         /* Token with unqualified schema object name */
   ynVar nVar;               /* Number of '?' variables seen in the SQL so far */
   u64 aVnbmc[SQLITE_VNBMC]; /* Varible Number Bitmap Cache */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
@@ -4173,6 +4179,13 @@ struct AuthContext {
 **
 ** The "step_list" member points to the first element of a linked list
 ** containing the SQL statements specified as the trigger program.
+**
+** Trigger.nSelect is a copy of the Parse.nSelect value from when the 
+** trigger and its steps were parsed. There are no Select.selId values 
+** equal to or greater than this anywhere in the trigger program. 
+** Initializing the Parse.nSelect field to this value before coding
+** the trigger program based on these structures ensures that no duplicate
+** selId values are assigned.
 */
 struct Trigger {
   char *zName;            /* The name of the trigger                        */
@@ -4180,6 +4193,7 @@ struct Trigger {
   u8 op;                  /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
   u8 tr_tm;               /* One of TRIGGER_BEFORE, TRIGGER_AFTER */
   u8 bReturning;          /* This trigger implements a RETURNING clause */
+  int nSelect;            /* Upper bound on Select.selId in this trigger */
   Expr *pWhen;            /* The WHEN clause of the expression (may be NULL) */
   IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
                              the <column-list> is stored here */
@@ -4338,19 +4352,30 @@ typedef struct {
 #define INITFLAG_AlterDropCons 0x0004  /* Reparse after a DROP CONSTRAINT */
 
 /* Tuning parameters are set using SQLITE_TESTCTRL_TUNE and are controlled
-** on debug-builds of the CLI using ".testctrl tune ID VALUE".  Tuning
-** parameters are for temporary use during development, to help find
-** optimal values for parameters in the query planner.  The should not
-** be used on trunk check-ins.  They are a temporary mechanism available
-** for transient development builds only.
+** the SQLITE_TESTCTRL_TUNE test-control, or ".testctrl tune ID VALUE" in
+** the CLI.  Tuning is only possible on selected builds, and does not work
+** by default.  This is intended for development and testing use only.
 **
-** Tuning parameters are numbered starting with 1.
+** Tuning(D,ID) means the integer value of the ID-th tuning parameter
+** (1..SQLITE_ENABLE_TUNING) or use the default value D if tuning is
+** not enabled.
+**
+** Tuning(D,ID) is not an API and is subject to change from one checkin
+** to the next.  In particular, the IDs for the various tuning parameters
+** are very likely to change from one release to the next.
+**
+** Run the tool/tuningverify.tcl script to verify that all of the Tuning()
+** macros are correct and agree with the global sqlite3Tuning[] array.
 */
-#define SQLITE_NTUNE  6             /* Should be zero for all trunk check-ins */
-#ifdef SQLITE_DEBUG
-# define Tuning(X)  (sqlite3Config.aTune[(X)-1])
+#if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_TUNING)
+  /* Default behavior to return D */
+# define Tuning(D,ID)  (D)
 #else
-# define Tuning(X)  0
+  /* During debugging and development, use the adjustable global constant */
+# ifndef SQLITE_AMALGAMATION
+  extern int sqlite3Tuning[];  /* Forward declaration */
+# endif
+# define Tuning(D,ID)  (sqlite3Tuning[(ID)])
 #endif
 
 /*
@@ -4427,7 +4452,7 @@ struct Sqlite3Config {
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
   /* vvvv--- must be last ---vvv */
-#ifdef SQLITE_DEBUG
+#if 0
   sqlite3_int64 aTune[SQLITE_NTUNE]; /* Tuning parameters */
 #endif
 };
@@ -4673,6 +4698,7 @@ void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal);
 #ifndef SQLITE_OMIT_WINDOWFUNC
 void sqlite3WindowDelete(sqlite3*, Window*);
 void sqlite3WindowUnlinkFromSelect(Window*);
+void sqlite3WindowRemoveExprFromSelect(Select*, Expr*);
 void sqlite3WindowListDelete(sqlite3 *db, Window *p);
 Window *sqlite3WindowAlloc(Parse*, int, int, Expr*, int , Expr*, u8);
 void sqlite3WindowAttach(Parse*, Expr*, Window*);
@@ -4691,6 +4717,7 @@ Window *sqlite3WindowAssemble(Parse*, Window*, ExprList*, ExprList*, Token*);
 # define sqlite3WindowDelete(a,b)
 # define sqlite3WindowFunctions()
 # define sqlite3WindowAttach(a,b,c)
+# define sqlite3WindowRemoveExprFromSelect(a,b)
 #endif
 
 /*
@@ -5027,6 +5054,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3ShowIdList(const IdList*);
   void sqlite3ShowSrcList(const SrcList*);
   void sqlite3ShowSelect(const Select*);
+  void sqlite3ShowSelectAsSql(const Select*);
   void sqlite3ShowWith(const With*);
   void sqlite3ShowUpsert(const Upsert*);
 #ifndef SQLITE_OMIT_TRIGGER
@@ -5114,6 +5142,11 @@ void sqlite3DeleteColumnNames(sqlite3*,Table*);
 void sqlite3GenerateColumnNames(Parse *pParse, Select *pSelect);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
 void sqlite3SubqueryColumnTypes(Parse*,Table*,Select*,char);
+#ifdef SQLITE_OMIT_COMPOUND_SELECT
+# define sqlite3ConvertedOrderByColl(x,y,z)
+#else
+  void sqlite3ConvertedOrderByColl(Parse*,Select*,ExprList*);
+#endif
 Table *sqlite3ResultSetOfSelect(Parse*,Select*,char);
 void sqlite3OpenSchemaTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
@@ -5218,6 +5251,7 @@ void sqlite3ClearOnOrUsing(sqlite3*, OnOrUsing*);
 void sqlite3SrcListDelete(sqlite3*, SrcList*);
 Index *sqlite3AllocateIndexObject(sqlite3*,int,int,char**);
 int sqlite3IndexBloomable(const Index*,int);
+void sqlite3FailIfConcurrentWriter(Parse*,Table*);
 void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                           Expr*, int, int, u8);
 void sqlite3DropIndex(Parse*, SrcList*, int);
@@ -5547,7 +5581,7 @@ Expr *sqlite3ExprSkipCollate(Expr*);
 Expr *sqlite3ExprSkipCollateAndLikely(Expr*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3WritableSchema(sqlite3*);
-int sqlite3CheckObjectName(Parse*, const char*,const char*,const char*);
+int sqlite3CheckObjectName(Parse*,const char*,const char*,const char*,const char*);
 void sqlite3VdbeSetChanges(sqlite3 *, i64);
 int sqlite3AddInt64(i64*,i64);
 int sqlite3SubInt64(i64*,i64);
@@ -5782,12 +5816,12 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #endif
 int sqlite3ReadOnlyShadowTables(sqlite3 *db);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  int sqlite3ShadowTableName(sqlite3 *db, const char *zName);
+  int sqlite3ShadowTableName(sqlite3 *db, const char *zName, const char *zDb);
   int sqlite3IsShadowTableOf(sqlite3*,Table*,const char*);
   void sqlite3MarkAllShadowTablesOf(sqlite3*, Table*);
   void sqlite3VtabEponymousTableClearAll(sqlite3*);
 #else
-# define sqlite3ShadowTableName(A,B) 0
+# define sqlite3ShadowTableName(A,B,C) 0
 # define sqlite3IsShadowTableOf(A,B,C) 0
 # define sqlite3MarkAllShadowTablesOf(A,B)
 # define sqlite3VtabEponymousTableClearAll(X)
