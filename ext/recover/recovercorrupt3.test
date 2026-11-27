@@ -13,6 +13,9 @@
 source [file join [file dirname [info script]] recover_common.tcl]
 set testprefix recovercorrupt3
 
+# Start with no output databases left behind by an earlier script.
+forcedelete test.db2 test.db3
+
 #|      0: d5 d5 9b d5 d5 d5 d5 d5 d5 d5 d5 d5 d5 d5 d5 d5   ................
 #|     16: 04 00 00 00 1d 00 00 00 00 00 00 00 5f 5f 5f 5f   ............____
 #|     32: 5f 5f 5f 5f 5f 5f 5f 5f 71 5f 5f 5f 02 02 02 02   ________q___....

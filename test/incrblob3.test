@@ -310,5 +310,68 @@ do_test 8.5 {
 } {1 {no such table: nosuchdb.t1}}
 
 
+# Bug report b065e113dee5ad2d: a blob handle may not be opened for writing
+# on a column that is read only by the WHERE clause of a partial index.
+# Writing it would leave the index inconsistent with the table.
+#
+do_test 9.1 {
+  execsql {
+    CREATE TABLE t2(a, b, c);
+    CREATE INDEX t2a ON t2(a) WHERE b='y';
+    INSERT INTO t2 VALUES(1, 'n', zeroblob(10));
+    INSERT INTO t2 VALUES(2, 'y', zeroblob(10));
+  }
+  list [catch { db incrblob t2 b 1 } msg] $msg
+} {1 {cannot open indexed column for writing}}
+do_test 9.2 {
+  list [catch { db incrblob t2 a 1 } msg] $msg
+} {1 {cannot open indexed column for writing}}
+do_test 9.3 {
+  set ::blob [db incrblob t2 c 1]
+  puts -nonewline $::blob 0123456789
+  close $::blob
+  execsql { PRAGMA integrity_check }
+} {ok}
+do_test 9.4 {
+  set ::blob [db incrblob -readonly t2 b 1]
+  close $::blob
+} {}
+do_test 9.5 {
+  execsql {
+    CREATE TABLE t3(x, y, z);
+    CREATE INDEX t3x ON t3(x) WHERE y IS NOT NULL AND (z+1)>0;
+    INSERT INTO t3 VALUES(zeroblob(10), zeroblob(10), zeroblob(10));
+  }
+  list [catch { db incrblob t3 y 1 } msg] $msg \
+       [catch { db incrblob t3 z 1 } msg] $msg
+} {1 {cannot open indexed column for writing} 1 {cannot open indexed column for writing}}
+
+# CREATE INDEX must fail while an incremental BLOB write handle is open on
+# the table, since the handle would write the column without updating the
+# new index.  A read-only handle is not a problem.
+#
+do_test 10.1 {
+  execsql {
+    CREATE TABLE t4(a INTEGER PRIMARY KEY, b, c);
+    INSERT INTO t4 VALUES(1, zeroblob(10), 'one');
+  }
+  set ::blob [db incrblob t4 b 1]
+  list [catch { execsql { CREATE INDEX t4b ON t4(b) } } msg] $msg
+} {1 {database table is locked}}
+do_test 10.2 {
+  puts -nonewline $::blob 0123456789
+  close $::blob
+  execsql { CREATE UNIQUE INDEX t4b ON t4(b); PRAGMA integrity_check }
+} {ok}
+do_test 10.3 {
+  set ::blob [db incrblob -readonly t4 c 1]
+  execsql { CREATE INDEX t4c ON t4(c) }
+  read $::blob
+} {one}
+do_test 10.4 {
+  close $::blob
+  execsql { PRAGMA integrity_check }
+} {ok}
+
 db close
 finish_test

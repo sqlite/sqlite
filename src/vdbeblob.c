@@ -26,6 +26,7 @@ struct Incrblob {
   int nByte;              /* Size of open blob, in bytes */
   int iOffset;            /* Byte offset of blob in cursor data */
   u16 iCol;               /* Table column this handle is open on */
+  u8 bRetry;              /* Doing a blobReadWrite() retry */
   BtCursor *pCsr;         /* Cursor pointing at blob row */
   sqlite3_stmt *pStmt;    /* Statement holding cursor open */
   sqlite3 *db;            /* The associated database */
@@ -113,6 +114,20 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
 
   *pzErr = zErr;
   return rc;
+}
+
+/*
+** Expression-walker callback used by sqlite3_blob_open().  Set
+** pWalker->eCode to 1 and abort the walk if the expression is a reference
+** to column pWalker->u.n of the table.  A WHERE clause on a partial index
+** refers only to columns of the indexed table.
+*/
+static int blobColumnRef(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN && pExpr->iColumn==pWalker->u.n ){
+    pWalker->eCode = 1;
+    return WRC_Abort;
+  }
+  return WRC_Continue;
 }
 
 /*
@@ -236,6 +251,16 @@ int sqlite3_blob_open(
           if( pIdx->aiColumn[j]==iCol || pIdx->aiColumn[j]==XN_EXPR ){
             zFault = "indexed";
           }
+        }
+        if( pIdx->pPartIdxWhere ){
+          /* A column read by a partial index WHERE clause determines which
+          ** rows belong in the index, so it cannot be changed either. */
+          Walker w;
+          memset(&w, 0, sizeof(w));
+          w.xExprCallback = blobColumnRef;
+          w.u.n = iCol;
+          sqlite3WalkExpr(&w, pIdx->pPartIdxWhere);
+          if( w.eCode ) zFault = "indexed";
         }
       }
       if( zFault ){
@@ -375,6 +400,67 @@ int sqlite3_blob_close(sqlite3_blob *pBlob){
   return rc;
 }
 
+/* Forward reference */
+static int blobReadWrite(
+  sqlite3_blob *pBlob, 
+  void *z, 
+  int n, 
+  int iOffset, 
+  int (*xCall)(BtCursor*, u32, u32, void*)
+);
+
+/*
+** The b-tree cursor for blob handle p was restored to its saved position by
+** sqlite3BtreePayloadChecked(), which then returned SQLITE_MOVED.  The
+** position is saved, for example, by a ROLLBACK, and that might have changed
+** the content of the row.  So the iOffset and nByte values computed when the
+** handle was opened or last moved cannot be trusted.  A ROLLBACK can change
+** the size of a column that precedes the blob, which moves the blob within
+** the row.
+**
+** Recompute iOffset and nByte in the same way that sqlite3_blob_reopen()
+** does.  Then retry the blobReadWrite().
+*/
+static SQLITE_NOINLINE int blobReadWriteRetry(
+  Incrblob *p,
+  void *z, 
+  int n, 
+  int iOffset, 
+  int (*xCall)(BtCursor*, u32, u32, void*)
+){
+  int rc;
+  sqlite3_int64 iRow;
+  char *zErr = 0;
+  sqlite3 *db = p->db;
+
+  sqlite3BtreeEnterCursor(p->pCsr);
+  iRow = sqlite3BtreeIntegerKey(p->pCsr);
+  sqlite3BtreeLeaveCursor(p->pCsr);
+  ((Vdbe*)p->pStmt)->rc = SQLITE_OK;
+  if( NEVER(p->bRetry) || sqlite3FaultSim(210) ){
+    /* It should not be possible for blobReadWrite() and blobReadWriteRetry()
+    ** to get into a loop, but we check anyway, for safety. */
+    rc = SQLITE_ABORT;
+    sqlite3VdbeFinalize((Vdbe*)p->pStmt);
+    p->pStmt = 0;
+  }else{
+    rc = blobSeekToRow(p, iRow, &zErr);
+  }
+  assert( rc==SQLITE_OK || p->pStmt==0 );
+  if( rc==SQLITE_OK ){
+    sqlite3DbFree(db, zErr);
+    p->bRetry = 1;
+    rc = blobReadWrite((sqlite3_blob*)p,z,n,iOffset,xCall);
+    p->bRetry = 0;
+  }else{
+    sqlite3ErrorWithMsg(db, rc, (zErr ? "%s" : (char*)0), zErr);
+    sqlite3DbFree(db, zErr);
+    rc = sqlite3ApiExit(db, rc);
+  }
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
+
 /*
 ** Perform a read or write operation on a blob
 */
@@ -452,11 +538,21 @@ static int blobReadWrite(
 #endif
 
     sqlite3BtreeLeaveCursor(p->pCsr);
-    if( rc==SQLITE_ABORT ){
-      sqlite3VdbeFinalize(v);
-      p->pStmt = 0;
+    if( rc==SQLITE_OK ){
+      v->rc = SQLITE_OK;
     }else{
-      v->rc = rc;
+      if( rc==SQLITE_MOVED ){
+        /* The cursor was restored and no data was read.  Refresh the
+        ** handle and try the read again. */
+        return blobReadWriteRetry(p,z,n,iOffset,xCall);
+      }
+      if( rc==SQLITE_ABORT ){
+        assert( p->pStmt );
+        sqlite3VdbeFinalize(v);
+        p->pStmt = 0;
+      }else{
+        v->rc = rc;
+      }
     }
   }
   sqlite3Error(db, rc);

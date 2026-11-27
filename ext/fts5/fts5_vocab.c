@@ -51,6 +51,7 @@ struct Fts5VocabTable {
   Fts5Global *pGlobal;            /* FTS5 global object for this database */
   int eType;                      /* FTS5_VOCAB_COL, ROW or INSTANCE */
   unsigned bBusy;                 /* True if busy */
+  int bUtf8;                      /* True if the database encoding is UTF-8 */
 };
 
 struct Fts5VocabCursor {
@@ -98,6 +99,27 @@ struct Fts5VocabCursor {
 
 #define FTS5_VOCAB_COLUSED_MASK 0xFF
 
+
+/*
+** Return true if the main database encoding of db is known to be UTF-8.
+** Return false if it is some other encoding or if it cannot be determined.
+**
+** Terms are stored in the FTS5 index in UTF-8 and are visited in memcmp()
+** order of that representation.  That is the same as the order of the
+** BINARY collation only if the database encoding is UTF-8.
+*/
+static int fts5VocabIsUtf8(sqlite3 *db){
+  sqlite3_stmt *pStmt = 0;
+  int bRet = 0;
+  if( sqlite3_prepare_v2(db, "PRAGMA encoding", -1, &pStmt, 0)==SQLITE_OK ){
+    if( sqlite3_step(pStmt)==SQLITE_ROW ){
+      const char *z = (const char*)sqlite3_column_text(pStmt, 0);
+      bRet = (z && sqlite3_stricmp(z, "UTF-8")==0);
+    }
+  }
+  sqlite3_finalize(pStmt);
+  return bRet;
+}
 
 /*
 ** Translate a string containing an fts5vocab table type to an 
@@ -214,6 +236,7 @@ static int fts5VocabInitVtab(
       pRet->pGlobal = (Fts5Global*)pAux;
       pRet->eType = eType;
       pRet->db = db;
+      pRet->bUtf8 = fts5VocabIsUtf8(db);
       pRet->zFts5Tbl = (char*)&pRet[1];
       pRet->zFts5Db = &pRet->zFts5Tbl[nTab];
       memcpy(pRet->zFts5Tbl, zTab, nTab);
@@ -274,17 +297,16 @@ static int fts5VocabIsBinary(sqlite3_index_info *pInfo, int iCons){
 ** identically, as are greater-than and greater-than-or-equal.
 */
 static int fts5VocabBestIndexMethod(
-  sqlite3_vtab *pUnused,
+  sqlite3_vtab *pVTab,
   sqlite3_index_info *pInfo
 ){
+  Fts5VocabTable *pTab = (Fts5VocabTable*)pVTab;
   int i;
   int iTermEq = -1;
   int iTermGe = -1;
   int iTermLe = -1;
   int idxNum = (int)pInfo->colUsed;
   int nArg = 0;
-
-  UNUSED_PARAM(pUnused);
 
   assert( (pInfo->colUsed & FTS5_VOCAB_COLUSED_MASK)==pInfo->colUsed );
 
@@ -293,10 +315,12 @@ static int fts5VocabBestIndexMethod(
     if( p->usable==0 ) continue;
     if( p->iColumn==0 && fts5VocabIsBinary(pInfo, i) ){    /* term column */
       if( p->op==SQLITE_INDEX_CONSTRAINT_EQ ) iTermEq = i;
-      if( p->op==SQLITE_INDEX_CONSTRAINT_LE ) iTermLe = i;
-      if( p->op==SQLITE_INDEX_CONSTRAINT_LT ) iTermLe = i;
-      if( p->op==SQLITE_INDEX_CONSTRAINT_GE ) iTermGe = i;
-      if( p->op==SQLITE_INDEX_CONSTRAINT_GT ) iTermGe = i;
+      if( pTab->bUtf8 ){
+        if( p->op==SQLITE_INDEX_CONSTRAINT_LE ) iTermLe = i;
+        if( p->op==SQLITE_INDEX_CONSTRAINT_LT ) iTermLe = i;
+        if( p->op==SQLITE_INDEX_CONSTRAINT_GE ) iTermGe = i;
+        if( p->op==SQLITE_INDEX_CONSTRAINT_GT ) iTermGe = i;
+      }
     }
   }
 
@@ -322,8 +346,11 @@ static int fts5VocabBestIndexMethod(
   ** the "term" column (column 0). So if the user has requested this
   ** specifically - "ORDER BY term" or "ORDER BY term ASC" - set the
   ** sqlite3_index_info.orderByConsumed flag to tell the core the results
-  ** are already in sorted order.  */
-  if( pInfo->nOrderBy==1 
+  ** are already in sorted order.  This is only true for BINARY order
+  ** if the database encoding is UTF-8.  Otherwise, range constraints
+  ** and sorting are left to the SQLite core.  */
+  if( pTab->bUtf8
+   && pInfo->nOrderBy==1 
    && pInfo->aOrderBy[0].iColumn==0 
    && pInfo->aOrderBy[0].desc==0
   ){

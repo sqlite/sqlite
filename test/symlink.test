@@ -103,6 +103,7 @@ do_test 2.0 {
   catch { db close }
   catch { db2 close }
   forcedelete test.db test.db2 test.db3
+  forcedelete test.db2-journal test.db3-journal test.db2-wal test.db3-wal
   sqlite3 db test.db
   execsql { CREATE TABLE t1(x) }
   file link test.db2 test.db
@@ -123,7 +124,7 @@ foreach {tn f} {1 test.db2 2 test.db3} {
     file exists test.db-journal
   } [expr [atomic_batch_write test.db]==0]
   do_test 2.$tn.3 {
-    list [file exists test2.db-journal] [file exists test3.db-journal]
+    list [file exists test.db2-journal] [file exists test.db3-journal]
   } {0 0}
   do_test 2.$tn.4 {
     execsql {
@@ -134,7 +135,7 @@ foreach {tn f} {1 test.db2 2 test.db3} {
     file exists test.db-wal
   } 1
   do_test 2.$tn.5 {
-    list [file exists test2.db-wal] [file exists test3.db-wal]
+    list [file exists test.db2-wal] [file exists test.db3-wal]
   } {0 0}
   do_execsql_test 2.$tn.6 {
     SELECT * FROM t1;
@@ -233,6 +234,8 @@ do_execsql_test -db db2 5.2 {
 } {1 2 3}
 forcedelete test.db2
 
-
+# Remove the directories created by test 4.1 and 4.2.
+#
+forcedelete x y z w
 
 finish_test

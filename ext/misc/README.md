@@ -13,11 +13,6 @@ as follows:
      for reading 
      [Comma-Separated-Value (CSV) files](https://en.wikipedia.org/wiki/Comma-separated_values).
 
-  *  **dbdump.c** &mdash;  This is not actually a loadable extension, but
-     rather a library that implements an approximate equivalent to the
-     ".dump" command of the
-     [command-line shell](https://sqlite.org/cli.html).
-
   *  **json1.c** &mdash;  Various SQL functions and table-valued functions
      for processing JSON.  This extension is already built into the
      [SQLite amalgamation](https://sqlite.org/amalgamation.html).  See

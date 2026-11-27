@@ -1,0 +1,108 @@
+# 2026-11-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# sqlite3_backup_step() writes pages into the destination through the
+# pager.  If other statements on the destination connection are still
+# reading, the commit of the backup leaves the btree layer holding the
+# page count from before the backup.  The next write transaction must
+# not store that stale count in the database header.
+#
+#   https://sqlite.org/bugs/info/01be4f6c6a7ac184
+#
+# This is a TCL test because it needs two statements to be active on the
+# destination connection while the backup runs.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix backupnpage
+
+forcedelete test.db2 test.db3 test.db4
+
+# test.db3 is the backup source.  It has four pages.
+#
+sqlite3 src test.db3
+src eval {
+  CREATE TABLE s0(a INTEGER PRIMARY KEY, b);
+  INSERT INTO s0 VALUES(1,'src');
+  CREATE TABLE s1(x);
+  CREATE TABLE s2(y);
+}
+src close
+
+# proc backup_with_readers WAL DEST SQL FINISH
+#
+# Create the database files test.db2 (main, in WAL mode if WAL is true)
+# and test.db4 (aux), hold two statements open reading SQL, restore test.db3 into
+# schema DEST, and then run the script FINISH while the two statements
+# are still open.
+#
+proc backup_with_readers {wal dest sql finish} {
+  forcedelete test.db2 test.db4 test.db2-wal
+  sqlite3 db2 test.db2
+  if {$wal} { db2 eval {PRAGMA journal_mode = wal} }
+  db2 eval {
+    CREATE TABLE t0(a INTEGER PRIMARY KEY, b);
+    WITH RECURSIVE c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<20)
+      INSERT INTO t0 SELECT i, randomblob(3000) FROM c;
+    ATTACH 'test.db4' AS aux;
+    CREATE TABLE aux.ta(x);
+    INSERT INTO aux.ta VALUES(1),(2);
+  }
+  db2 eval $sql {
+    db2 eval $sql {
+      db2 restore $dest test.db3
+      uplevel #0 [list db2 eval $finish]
+      break
+    }
+    break
+  }
+  db2 close
+}
+
+proc check_integrity {file} {
+  sqlite3 chk $file
+  set res [catch {chk eval {PRAGMA integrity_check}} msg]
+  chk close
+  list $res $msg
+}
+
+# 1.0: The destination is an attached database, smaller than the source.
+# 2.0: The destination is main, larger than the source.
+# 3.0: As 2.0, but in WAL mode, with a normal write after the backup.
+#
+do_test 1.0 {
+  backup_with_readers 0 aux {SELECT a FROM main.t0} {BEGIN IMMEDIATE; COMMIT}
+  check_integrity test.db4
+} {0 ok}
+
+do_test 2.0 {
+  backup_with_readers 0 main {SELECT x FROM aux.ta} {BEGIN IMMEDIATE; COMMIT}
+  check_integrity test.db2
+} {0 ok}
+
+do_test 3.0 {
+  backup_with_readers 1 main {SELECT x FROM aux.ta} {
+    CREATE TABLE t9(x); INSERT INTO t9 VALUES(1);
+  }
+  check_integrity test.db2
+} {0 ok}
+
+# The restored content must also be readable afterwards.
+#
+do_test 4.0 {
+  sqlite3 chk test.db2
+  set res [chk eval {SELECT a, b FROM s0}]
+  chk close
+  set res
+} {1 src}
+
+finish_test

@@ -13,6 +13,9 @@
 source [file join [file dirname [info script]] recover_common.tcl]
 set testprefix recovercorrupt2
 
+# Start with no output database left behind by an earlier script.
+forcedelete test.db2
+
 do_execsql_test 1.0 {
   PRAGMA page_size = 512;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);

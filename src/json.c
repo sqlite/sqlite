@@ -381,7 +381,11 @@ struct JsonParse {
 #define JEDIT_AINS  5   /* array_insert() */
 
 /*
-** Maximum nesting depth of JSON for this implementation.
+** The approximate maximum nesting depth of JSON for this implementation.
+**
+** Applications should say well clear of this maximum.  Depending on
+** implementation quirks, the limit might not reached one or two before
+** or one or two after the published limit.
 **
 ** This limit is needed to avoid a stack overflow in the recursive
 ** descent parser.  A depth of 1000 is far deeper than any sane JSON
@@ -1400,6 +1404,7 @@ static u32 jsonbValidityCheck(
         if( sz<2 ) return i+1;
       }
       k = i+n+sz;
+      if( z[j]=='0' && j<k-1 ) return j+1;
       while( j<k ){
         if( sqlite3Isdigit(z[j]) ){
           j++;
@@ -1460,7 +1465,7 @@ static u32 jsonbValidityCheck(
           continue;
         }
         if( z[j]=='e' || z[j]=='E' ){
-          if( seen==2 ) return j+1;
+          if( seen==2 || j==i+n ) return j+1;
           if( j==k-1 ) return j+1;
           if( z[j+1]=='+' || z[j+1]=='-' ){
             j++;
@@ -1607,6 +1612,7 @@ json_parse_restart:
           if( pParse->nBlob!=(u32)iStart ) pParse->hasNonstd = 1;
           break;
         }
+      json_parse_label_identifier:
         j += json5Whitespace(&z[j]);
         op = JSONB_TEXT;
         if( sqlite3JsonId1(z[j]) 
@@ -1630,6 +1636,13 @@ json_parse_restart:
       if( pParse->oom ) return -1;
       t = pParse->aBlob[iBlob] & 0x0f;
       if( t<JSONB_TEXT || t>JSONB_TEXTRAW ){
+        if( sqlite3JsonId1(z[j + json5Whitespace(&z[j])]) ){
+          /* JSON5 unquoted label that spells a keyword or special number:
+          ** true, false, null, NaN, Infinity. */
+          pParse->nBlob = iBlob;
+          x = 0;
+          goto json_parse_label_identifier;
+        }
         pParse->iErr = j;
         return -1;
       }
@@ -1874,6 +1887,7 @@ json_parse_restart:
         }
       }else{
         if( !sqlite3Isdigit(z[i+1]) ){
+          assert( z[i]=='-' || z[i]=='+' );
           /* JSON5 allows for "+Infinity" and "-Infinity" using exactly
           ** that case.  SQLite also allows these in any case and it allows
           ** "+inf" and "-inf". */
@@ -1893,6 +1907,18 @@ json_parse_restart:
             t |= 0x01;
             goto parse_number_2;
           }
+#if 0
+          /* Full JSON5 compliance requires support for +NaN and -NaN, even
+          ** though the extra prefix is not used for anything.  Enable this
+          ** block of code to get SQLite to do the same thing.  It never
+          ** has in an official release, and the only accomplishment of
+          ** enabling it would be to take up a few bytes more code space. */
+          if( sqlite3StrNICmp(&z[i+1],"NaN",3)==0 ){
+            pParse->hasNonstd = 1;
+            jsonBlobAppendOneByte(pParse, JSONB_NULL);
+            return i+4;
+          }
+#endif
           pParse->iErr = i;
           return -1;
         }
@@ -2072,6 +2098,7 @@ static int jsonConvertTextToBlob(
     if( zJson[i] ){
       i += json5Whitespace(&zJson[i]);
       if( zJson[i] ){
+        pParse->iErr = i;
         if( pCtx ) sqlite3_result_error(pCtx, "malformed JSON", -1);
         jsonParseReset(pParse);
         return 1;
@@ -2346,6 +2373,94 @@ static SQLITE_INLINE u32 jsonbPayloadSizeSemiInline(
 #endif
 
 /*
+** Convert a JSONB integer literal into either an integer (if it is small
+** enough) or into a double.  Include the sign.  Return:
+**
+**     0     Value is an integer, results written into *pI.
+**     1     Value is a double, results written into *pR.
+**     2     Syntax error
+*/
+static int jsonConvertInteger(const char *zIn, u32 sz, i64 *pI, double *pR){
+  u32 k = 0;
+  int bNeg = 0;
+  sqlite3_uint64 u = 0;
+  double rOverflow = 1.0;
+  if( sz==0 ) return 2;
+  if( zIn[0]=='-' ){
+    bNeg = 1;
+    k = 1;
+  }else if( zIn[0]=='+' ){
+    k = 1;
+  }
+  if( k+2<sz && zIn[k]=='0' && (zIn[k+1]=='x' || zIn[k+1]=='X') ){
+    k += 2;
+    do{
+      if( !sqlite3Isxdigit(zIn[k]) ){
+        return 2;
+      }else if( (u>>60)!=0 ){
+        rOverflow *= 16.0;
+      }else{
+        u = u*16 + sqlite3HexToInt(zIn[k]);
+      }
+      k++;
+    }while( k<sz );
+  }else if( k>=sz ){
+    return 2;
+  }else{
+    do{
+      if( zIn[k]<'0' || zIn[k]>'9' ){
+        return 2;
+      }else if( (u>>60)!=0 ){
+        rOverflow *= 10.0;
+      }else{
+        u = u*10 + zIn[k] - '0';
+      }
+      k++;
+    }while( k<sz );
+  }
+  if( rOverflow>1.0
+   || (u>0x7fffffffffffffffULL && (!bNeg || u>0x8000000000000000ULL))
+  ){
+    *pR = rOverflow * (double)u;
+    if( bNeg ) *pR = -*pR;
+    return 1;
+  }else{
+    memcpy(pI, &u, sizeof(u));
+    if( bNeg && u!=0x8000000000000000ULL ) *pI = -*pI;
+    return 0;
+  }
+}
+
+/*
+** Tail recursive code to implement the JSON_INT5 case of of
+** jsonTranslateBlobInt5ToText().  This is split out because
+** the resulting reduction in the stack frame size helps the
+** caller to run faster.
+*/
+static SQLITE_NOINLINE u32 jsonTranslateBlobInt5ToText(
+  JsonParse *pParse,             /* the complete parse of the JSON */
+  u32 i,                         /* Start rendering at this index */
+  JsonString *pOut,              /* Write JSON here */
+  u32 sz,                        /* Payload size */
+  u32 n                          /* Header size */
+){
+  int k;
+  const char *zIn = (const char*)&pParse->aBlob[i+n];
+  i64 ival;
+  double rval;
+  k = jsonConvertInteger(zIn, sz, &ival, &rval);
+  if( k==0 ){
+    jsonPrintf(100, pOut, "%lld", ival);
+  }else if( k==1 ){
+    jsonPrintf(100, pOut, "%!0.17g", rval);
+  }else{
+    pOut->eErr |= JSTRING_MALFORMED;
+  }
+  return i+n+sz;
+}
+
+
+/*
 ** Translate the binary JSONB representation of JSON beginning at
 ** pParse->aBlob[i] into a JSON text string.  Append the JSON
 ** text onto the end of pOut.  Return the index in pParse->aBlob[]
@@ -2390,29 +2505,7 @@ static u32 jsonTranslateBlobToText(
       break;
     }
     case JSONB_INT5: {  /* Integer literal in hexadecimal notation */
-      u32 k = 2;
-      sqlite3_uint64 u = 0;
-      const char *zIn = (const char*)&pParse->aBlob[i+n];
-      int bOverflow = 0;
-      if( sz==0 ) goto malformed_jsonb;
-      if( zIn[0]=='-' ){
-        jsonAppendChar(pOut, '-');
-        k++;
-      }else if( zIn[0]=='+' ){
-        k++;
-      }
-      for(; k<sz; k++){
-        if( !sqlite3Isxdigit(zIn[k]) ){
-          pOut->eErr |= JSTRING_MALFORMED;
-          break;
-        }else if( (u>>60)!=0 ){
-          bOverflow = 1;
-        }else{
-          u = u*16 + sqlite3HexToInt(zIn[k]);
-        }
-      }
-      jsonPrintf(100,pOut,bOverflow?"9.0e999":"%llu", u);
-      break;
+      return jsonTranslateBlobInt5ToText(pParse, i, pOut, sz, n);
     }
     case JSONB_FLOAT5: { /* Float literal missing digits beside "." */
       u32 k = 0;
@@ -2669,7 +2762,6 @@ static u32 jsonTranslateBlobToPrettyText(
         if( pPretty->nIndent >= JSON_MAX_DEPTH ){
           jsonStringTooDeep(pOut);
         }
-        pParse->iDepth = pPretty->nIndent;
         while( pOut->eErr==0 ){
           jsonPrettyIndent(pPretty);
           j = jsonTranslateBlobToText(pParse, j, pOut);
@@ -3171,7 +3263,7 @@ static u32 jsonLookupStep(
         /* Already exists, so json_insert() is a no-op */
       }else if( pParse->eEdit==JEDIT_AINS ){
         /* json_array_insert() */
-        if( zPath[-1]!=']' ){
+        if( zPath[-1]!=']' || iLabel ){
           return JSON_LOOKUP_NOTARRAY;
         }else{
           jsonBlobEdit(pParse, iRoot, 0, pParse->aIns, pParse->nIns);
@@ -3428,43 +3520,26 @@ static void jsonReturnFromBlob(
     }
     case JSONB_INT5:
     case JSONB_INT: {
-      sqlite3_int64 iRes = 0;
-      char *z;
-      int bNeg = 0;
-      char x;
-      if( sz==0 ) goto returnfromblob_malformed;
-      x = (char)pParse->aBlob[i+n];
-      if( x=='-' ){
-        if( sz<2 ) goto returnfromblob_malformed;
-        n++;
-        sz--;
-        bNeg = 1;
-      }
-      z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
-      if( z==0 ) goto returnfromblob_oom;
-      rc = sqlite3DecOrHexToI64(z, &iRes);
-      sqlite3DbFree(db, z);
-      if( rc==0 ){
-        if( iRes<0 ){
-          /* A hexadecimal literal with 16 significant digits and with the
-          ** high-order bit set is a negative integer in SQLite (and hence
-          ** iRes comes back as negative) but should be interpreted as a
-          ** positive value if it occurs within JSON.  The value is too
-          ** large to appear as an SQLite integer so it must be converted
-          ** into floating point. */
-          double r;
-          r = (double)*(sqlite3_uint64*)&iRes;
-          sqlite3_result_double(pCtx, bNeg ? -r : r);
-        }else{
-          sqlite3_result_int64(pCtx, bNeg ? -iRes : iRes);
+      sqlite3_int64 ival;
+      double rval;
+      int k;
+      k = jsonConvertInteger((const char*)&pParse->aBlob[i+n], sz,&ival,&rval);
+      if( k==0 ){
+        sqlite3_result_int64(pCtx, ival);
+      }else if( k==1 ){
+        const char *zInt = (const char*)&pParse->aBlob[i+n];
+        int iX = (zInt[0]=='-' || zInt[0]=='+');
+        if( zInt[iX]!='0' || (zInt[iX+1]!='x' && zInt[iX+1]!='X') ){
+          /* A decimal integer too big for 64 bits.  Convert it the same
+          ** way as CAST(x AS REAL), with a single rounding. */
+          char *z = sqlite3DbStrNDup(db, zInt, (int)sz);
+          if( z==0 ) goto returnfromblob_oom;
+          sqlite3AtoF(z, &rval);
+          sqlite3DbFree(db, z);
         }
-      }else if( rc==3 && bNeg ){
-        sqlite3_result_int64(pCtx, SMALLEST_INT64);
-      }else if( rc==1 ){
-        goto returnfromblob_malformed;
+        sqlite3_result_double(pCtx, rval);
       }else{
-        if( bNeg ){ n--; sz++; }
-        goto to_double;
+        goto returnfromblob_malformed;
       }
       break;
     }
@@ -3473,7 +3548,6 @@ static void jsonReturnFromBlob(
       double r;
       char *z;
       if( sz==0 ) goto returnfromblob_malformed;
-    to_double:
       z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
       if( z==0 ) goto returnfromblob_oom;
       rc = sqlite3AtoF(z, &r);
@@ -3741,8 +3815,11 @@ static void jsonInsertIntoBlob(
     if( zPath[1]==0 ){
       if( eEdit==JEDIT_REPL || eEdit==JEDIT_SET ){
         jsonBlobEdit(p, 0, p->nBlob, ax.aBlob, ax.nBlob);
+      }else if( eEdit==JEDIT_AINS ){
+        rc = JSON_LOOKUP_NOTARRAY;
+      }else{
+        rc = 0;
       }
-      rc = 0;
    }else{
       p->eEdit = eEdit;
       p->nIns = ax.nBlob;
@@ -5428,7 +5505,20 @@ static void jsonAppendPathName(JsonEachCursor *p){
       }
     }
     if( needQuote ){
-      jsonPrintf(sz+4,&p->path,".\"%.*s\"", sz, z);
+      u8 eLabel = p->sParse.aBlob[p->i] & 0x0f;
+      jsonAppendRaw(&p->path, ".\"", 2);
+      for(i=0; i<sz; i++){
+        char c = z[i];
+        if( c=='\\' && eLabel!=JSONB_TEXTRAW && i+1<sz ){
+          jsonAppendChar(&p->path, c);
+          c = z[++i];
+        }else if( c=='"' || c=='\\' ){
+          jsonAppendChar(&p->path, '\\');
+        }
+        jsonAppendChar(&p->path, c);
+      }
+      jsonAppendChar(&p->path, '"');
+      jsonStringTerminate(&p->path);
     }else{
       jsonPrintf(sz+2,&p->path,".%.*s", sz, z);
     }
@@ -5562,10 +5652,11 @@ static int jsonEachColumn(
       }
       if( p->eType==JSONB_OBJECT ){
         jsonReturnFromBlob(&p->sParse, p->i, ctx, 1);
-      }else{
-        assert( p->eType==JSONB_ARRAY );
+      }else if( p->eType==JSONB_ARRAY ){
         sqlite3_result_int64(ctx, p->aParent[p->nParent-1].iKey);
-      }
+      }else{
+        sqlite3_result_error(ctx, "malformed JSON", -1);
+      }    
       break;
     }
     case JEACH_VALUE: {
@@ -5602,9 +5693,13 @@ static int jsonEachColumn(
     case JEACH_FULLKEY: {
       u64 nBase = p->path.nUsed;
       if( p->nParent ) jsonAppendPathName(p);
-      sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
-                            SQLITE_TRANSIENT, SQLITE_UTF8);
-      p->path.nUsed = nBase;
+      if( p->path.eErr ){
+        sqlite3_result_error_nomem(ctx);
+      }else{
+        sqlite3_result_text64(ctx, p->path.zBuf, p->path.nUsed,
+                              SQLITE_TRANSIENT, SQLITE_UTF8);
+        p->path.nUsed = nBase;
+      }
       break;
     }
     case JEACH_PATH: {

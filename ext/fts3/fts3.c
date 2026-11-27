@@ -308,12 +308,6 @@
 */
 #define FTS3_MAX_BTREE_HEIGHT 48
 
-typedef struct Fts3HashWrapper Fts3HashWrapper;
-struct Fts3HashWrapper {
-  Fts3Hash hash;                  /* Hash table */
-  int nRef;                       /* Number of pointers to this object */
-};
-
 static int fts3EvalNext(Fts3Cursor *pCsr);
 static int fts3EvalStart(Fts3Cursor *pCsr);
 static int fts3TermSegReaderCursor(
@@ -533,6 +527,17 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
 
   assert( p->nPendingData==0 );
   assert( p->pSegments==0 );
+
+  /* Remove this table from the list of connected tables, if it was ever
+  ** added to it.  */
+  if( p->pWrapper ){
+    Fts3Table **pp;
+    for(pp=&p->pWrapper->pTabList; *pp!=p; pp=&(*pp)->pNextTab){
+      assert( *pp );
+    }
+    *pp = p->pNextTab;
+    p->pWrapper = 0;
+  }
 
   /* Free any prepared statements held */
   sqlite3_finalize(p->pSeekStmt);
@@ -896,6 +901,7 @@ static char *fts3ReadExprList(Fts3Table *p, const char *zFunc, int *pRc){
       zFunction = "";
     }else{
       zFree = zFunction = fts3QuoteId(zFunc);
+      if( zFunction==0 ) *pRc = SQLITE_NOMEM;
     }
     fts3Appendf(pRc, &zRet, "docid");
     for(i=0; i<p->nColumn; i++){
@@ -952,6 +958,7 @@ static char *fts3WriteExprList(Fts3Table *p, const char *zFunc, int *pRc){
     zFunction = "";
   }else{
     zFree = zFunction = fts3QuoteId(zFunc);
+    if( zFunction==0 ) *pRc = SQLITE_NOMEM;
   }
   fts3Appendf(pRc, &zRet, "?");
   for(i=0; i<p->nColumn; i++){
@@ -1548,7 +1555,11 @@ fts3_init_out:
       pTokenizer->pModule->xDestroy(pTokenizer);
     }
   }else{
+    Fts3HashWrapper *pWrapper = (Fts3HashWrapper*)pAux;
     assert( p->pSegments==0 );
+    p->pWrapper = pWrapper;
+    p->pNextTab = pWrapper->pTabList;
+    pWrapper->pTabList = p;
     *ppVTab = &p->base;
   }
   return rc;
@@ -1855,10 +1866,14 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
       }else{
         pTab->bLock--;
         rc = sqlite3_reset(pCsr->pStmt);
-        if( rc==SQLITE_OK && ((Fts3Table *)pCsr->base.pVtab)->zContentTbl==0 ){
-          /* If no row was found and no error has occurred, then the %_content
-          ** table is missing a row that is present in the full-text index.
-          ** The data structures are corrupt.  */
+        if( rc==SQLITE_OK 
+         && pTab->zContentTbl==0 
+         && pCsr->nWrite==pTab->nWrite 
+        ){
+          /* Unless the table has been written since the query started, if no
+          ** row was found and no error has occurred, then the %_content table
+          ** is missing a row that is present in the full-text index. 
+          ** Corruption.  */
           rc = FTS_CORRUPT_VTAB;
           pCsr->isEof = 1;
         }
@@ -3352,6 +3367,7 @@ static int fts3FilterMethod(
 
   /* In case the cursor has been used before, clear it now. */
   fts3ClearCursor(pCsr);
+  pCsr->nWrite = p->nWrite;
 
   /* Set the lower and upper bounds on docids to return */
   pCsr->iMinDocid = fts3DocidRange(pDocidGe, SMALLEST_INT64);
@@ -4093,13 +4109,39 @@ static void hashDestroy(void *p){
   Fts3HashWrapper *pHash = (Fts3HashWrapper *)p;
   pHash->nRef--;
   if( pHash->nRef<=0 ){
+    assert( pHash->pTabList==0 );
     sqlite3Fts3HashClear(&pHash->hash);
     sqlite3_free(pHash);
   }
 }
 
 /*
-** The fts3 built-in tokenizers - "simple", "porter" and "icu"- are 
+** Register an SQL function that uses the tokenizer hash table pHash as its
+** user-data pointer. The new function holds a reference to the hash table,
+** which is released by hashDestroy() when the function is deleted or if
+** this call fails.
+**
+** The Fts3Hash object passed as the fifth argument must be the "hash" member
+** of an Fts3HashWrapper object. Since it is the first member of that
+** structure, the pointer may be cast to (Fts3HashWrapper*).
+*/
+int sqlite3Fts3CreateHashFunction(
+  sqlite3 *db,                    /* Database connection */
+  const char *zName,              /* Name of SQL function */
+  int nArg,                       /* Number of arguments */
+  int eTextRep,                   /* Text encoding and function flags */
+  Fts3Hash *pHash,                /* Tokenizer hash table */
+  void (*xFunc)(sqlite3_context*,int,sqlite3_value**)  /* Implementation */
+){
+  Fts3HashWrapper *pWrapper = (Fts3HashWrapper*)pHash;
+  pWrapper->nRef++;
+  return sqlite3_create_function_v2(
+      db, zName, nArg, eTextRep, (void*)pWrapper, xFunc, 0, 0, hashDestroy
+  );
+}
+
+/*
+** The fts3 built-in tokenizers - "simple", "porter" and "icu"- are
 ** implemented in files fts3_tokenizer1.c, fts3_porter.c and fts3_icu.c
 ** respectively. The following three forward declarations are for functions
 ** declared in these files used to retrieve the respective implementations.
@@ -4146,19 +4188,18 @@ int sqlite3Fts3Init(sqlite3 *db){
   if( rc!=SQLITE_OK ) return rc;
 #endif
 
-  rc = sqlite3Fts3InitAux(db);
-  if( rc!=SQLITE_OK ) return rc;
-
   sqlite3Fts3SimpleTokenizerModule(&pSimple);
   sqlite3Fts3PorterTokenizerModule(&pPorter);
 
-  /* Allocate and initialize the hash-table used to store tokenizers. */
+  /* Allocate and initialize the hash-table used to store tokenizers. The
+  ** reference held by this function is released before it returns. */
   pHash = sqlite3_malloc(sizeof(Fts3HashWrapper));
   if( !pHash ){
     rc = SQLITE_NOMEM;
   }else{
     sqlite3Fts3HashInit(&pHash->hash, FTS3_HASH_STRING, 1);
-    pHash->nRef = 0;
+    pHash->nRef = 1;
+    pHash->pTabList = 0;
   }
 
   /* Load the built-in tokenizers into the hash table */
@@ -4209,16 +4250,27 @@ int sqlite3Fts3Init(sqlite3 *db){
       pHash->nRef++;
       rc = sqlite3Fts3InitTok(db, (void *)pHash, hashDestroy);
     }
-    return rc;
+    if( rc==SQLITE_OK ){
+      pHash->nRef++;
+      rc = sqlite3Fts3InitAux(db, pHash, hashDestroy);
+    }
   }
 
-
-  /* An error has occurred. Delete the hash table and return the error code. */
-  assert( rc!=SQLITE_OK );
-  if( pHash ){
-    sqlite3Fts3HashClear(&pHash->hash);
-    sqlite3_free(pHash);
+  /* If an error has occurred, remove any modules and functions registered
+  ** above. If this is a loadable extension, the shared library may be unloaded
+  ** as soon as this function returns, so they must not be left in place. */
+  if( rc!=SQLITE_OK ){
+    sqlite3_create_module(db, "fts3", 0, 0);
+    sqlite3_create_module(db, "fts4", 0, 0);
+    sqlite3_create_module(db, "fts3tokenize", 0, 0);
+    sqlite3_create_module(db, "fts4aux", 0, 0);
+    sqlite3_create_function(db, "fts3_tokenizer", 1, SQLITE_UTF8, 0, 0, 0, 0);
+    sqlite3_create_function(db, "fts3_tokenizer", 2, SQLITE_UTF8, 0, 0, 0, 0);
   }
+
+  /* Release the reference held by this function. If nothing else still holds
+  ** a reference, this deletes the hash table. */
+  if( pHash ) hashDestroy(pHash);
   return rc;
 }
 
@@ -5792,6 +5844,7 @@ static void fts3EvalRestart(
       pPhrase->doclist.pNextDocid = 0;
       pPhrase->doclist.iDocid = 0;
       pPhrase->pOrPoslist = 0;
+      pPhrase->iOrDocid = 0;
     }
 
     pExpr->iDocid = 0;

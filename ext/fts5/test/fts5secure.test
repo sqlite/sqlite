@@ -408,5 +408,138 @@ foreach_detail_mode $::testprefix-8 {
   } {ok}
 }
 
-finish_test
+#-------------------------------------------------------------------------
+# https://sqlite.org/forum/forumpost/fb16d28d58
+#
+# When secure-delete removes the first term on a leaf page, the %_idx key
+# for the page (a prefix of the removed term) must be replaced so that it
+# does not leak the removed term. If all terms are removed from a leaf
+# page, its %_idx entry must be removed altogether.
+#
+foreach {tn detail nq} {
+  1 full   60
+  2 column 60
+  3 none   55
+} {
+  reset_db
+  do_execsql_test 9.$tn.0 "
+    CREATE VIRTUAL TABLE t USING fts5(x, detail=$detail);
+  "
 
+  # Set up a database for which 'mysecretpassword' is the first term
+  # on a leaf page. The number of 'mysecq' terms required for this
+  # depends on the detail mode.
+  do_execsql_test 9.$tn.1 {
+    INSERT INTO t(t, rank) VALUES('secure-delete', 1);
+    INSERT INTO t(t, rank) VALUES('pgsz', 64);
+    WITH RECURSIVE n(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i<CAST($nq AS INT)
+    )
+    INSERT INTO t(rowid, x) SELECT i, printf('mysecq%03d', i) FROM n;
+    INSERT INTO t(rowid, x) VALUES(1000, 'mysecretpassword');
+    WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i<60)
+      INSERT INTO t(rowid, x) SELECT 2000+i, printf('zulu%03d', i) FROM n;
+    INSERT INTO t(t) VALUES('optimize');
+    SELECT CAST(term AS TEXT) FROM t_idx
+     WHERE term >= CAST('0mysecr' AS BLOB) AND term < CAST('0mysecs' AS BLOB);
+  } {0mysecr}
+
+  # Delete the first term on the leaf page. Neither the %_data nor %_idx
+  # tables may contain any trace of it afterwards.
+  do_execsql_test 9.$tn.2 {
+    DELETE FROM t WHERE rowid = 1000;
+    SELECT rowid FROM t WHERE t MATCH 'mysecretpassword' OR t MATCH 'mysecr*';
+  } {}
+  do_execsql_test 9.$tn.3 {
+    SELECT count(*) FROM t_data WHERE instr(block, CAST('mysecr' AS BLOB));
+    SELECT count(*) FROM t_idx WHERE instr(term, CAST('mysecr' AS BLOB));
+  } {0 0}
+  do_execsql_test 9.$tn.4 {
+    INSERT INTO t(t, rank) VALUES('integrity-check', 0);
+    SELECT count(*) FROM t('mysecq*') UNION ALL SELECT count(*) FROM t('zulu*');
+  } [list $nq 60]
+
+  # Delete all remaining terms from the same leaf. Its %_idx entry
+  # should be removed altogether. The leaf is the one with the smallest
+  # key greater than all 'mysecq' terms. Its terms are those less than
+  # the key of the following leaf.
+  set pg [db one {
+    SELECT pgno/2 FROM t_idx WHERE term > CAST('0mysecr' AS BLOB)
+    ORDER BY term LIMIT 1
+  }]
+  set nextkey [db one {
+    SELECT term FROM t_idx WHERE term > (
+      SELECT term FROM t_idx WHERE pgno/2=$pg
+    ) ORDER BY term LIMIT 1
+  }]
+  set nDel [db one {
+    WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i<60)
+    SELECT count(*) FROM n
+    WHERE CAST(printf('0zulu%03d', i) AS BLOB) < $nextkey
+  }]
+  do_execsql_test 9.$tn.5 {
+    DELETE FROM t WHERE rowid IN (
+      WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i<60)
+      SELECT 2000+i FROM n
+      WHERE CAST(printf('0zulu%03d', i) AS BLOB) < $nextkey
+    );
+    SELECT count(*) FROM t_idx WHERE pgno/2 = $pg;
+  } {0}
+  do_execsql_test 9.$tn.6 {
+    INSERT INTO t(t, rank) VALUES('integrity-check', 0);
+    SELECT count(*) FROM t('mysecq*') UNION ALL SELECT count(*) FROM t('zulu*');
+  } [list $nq [expr 60-$nDel]]
+}
+
+# The new first term on the page shares a long prefix with the removed
+# term. The new key must still be a valid separator.
+reset_db
+do_execsql_test 9.4.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x);
+  INSERT INTO t(t, rank) VALUES('secure-delete', 1);
+  INSERT INTO t(t, rank) VALUES('pgsz', 64);
+  WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i<60)
+    INSERT INTO t(rowid, x) SELECT i, printf('mysecq%03d', i) FROM n;
+  INSERT INTO t(rowid, x) VALUES(1000, 'mysecretpassword');
+  INSERT INTO t(rowid, x) VALUES(1001, 'mysecretz');
+  WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i<60)
+    INSERT INTO t(rowid, x) SELECT 2000+i, printf('zulu%03d', i) FROM n;
+  INSERT INTO t(t) VALUES('optimize');
+  DELETE FROM t WHERE rowid = 1000;
+  SELECT count(*) FROM t_data WHERE instr(block, CAST('password' AS BLOB));
+  SELECT count(*) FROM t_idx WHERE instr(term, CAST('mysecretp' AS BLOB));
+} {0 0}
+do_execsql_test 9.4.1 {
+  INSERT INTO t(t, rank) VALUES('integrity-check', 0);
+  SELECT rowid FROM t('mysecretz');
+  SELECT count(*) FROM t('mysecq*') UNION ALL SELECT count(*) FROM t('zulu*');
+} {1001 60 60}
+
+# The removed first term is a prefix of the new first term.
+reset_db
+do_execsql_test 9.5.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x);
+  INSERT INTO t(t, rank) VALUES('secure-delete', 1);
+  INSERT INTO t(t, rank) VALUES('pgsz', 64);
+  WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i<60)
+    INSERT INTO t(rowid, x) SELECT i, printf('mysecq%03d', i) FROM n;
+  INSERT INTO t(rowid, x) VALUES(1000, 'mysecret');
+  INSERT INTO t(rowid, x) VALUES(1001, 'mysecretz');
+  WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i<60)
+    INSERT INTO t(rowid, x) SELECT 2000+i, printf('zulu%03d', i) FROM n;
+  INSERT INTO t(t) VALUES('optimize');
+  SELECT CAST(term AS TEXT) FROM t_idx
+   WHERE term >= CAST('0mysecr' AS BLOB) AND term < CAST('0mysecs' AS BLOB);
+} {0mysecr}
+do_execsql_test 9.5.1 {
+  DELETE FROM t WHERE rowid = 1000;
+  SELECT CAST(term AS TEXT) FROM t_idx
+   WHERE term >= CAST('0mysecr' AS BLOB) AND term < CAST('0mysecs' AS BLOB);
+} {0mysecretz}
+do_execsql_test 9.5.2 {
+  INSERT INTO t(t, rank) VALUES('integrity-check', 0);
+  SELECT rowid FROM t('mysecretz');
+  SELECT count(*) FROM t('mysecq*') UNION ALL SELECT count(*) FROM t('zulu*');
+} {1001 60 60}
+
+finish_test

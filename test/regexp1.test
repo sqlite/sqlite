@@ -356,4 +356,32 @@ do_execsql_test regexp1-8.6 {
   SELECT rowid FROM t2 WHERE a REGEXP '\-';
 } {1}
 
+# Bug 3be6ff5c623b978a: A leading "^" anchors only the first alternative
+# of a top-level "|", not all of them.
+#
+do_execsql_test regexp1-9.1 {
+  SELECT 'xb' REGEXP '^a|b',  'xb' REGEXP 'b|^a',
+         'xb' REGEXP '(^a)|b', 'xc' REGEXP '^(a|b)|c';
+} {1 1 1 1}
+do_execsql_test regexp1-9.2 {
+  SELECT 'ab' REGEXP '^a|b', 'xa' REGEXP '^a|b', 'xa' REGEXP '^a|^b',
+         'b' REGEXP '^a|^b', 'xb' REGEXP '^a|^b';
+} {1 0 0 1 0}
+do_execsql_test regexp1-9.3 {
+  SELECT 'http://x' REGEXP '^https?:|\.pdf$',
+         'a.pdf' REGEXP '^https?:|\.pdf$',
+         'a.pdfx' REGEXP '^https?:|\.pdf$',
+         'x http:' REGEXP '^https?:|\.pdf$';
+} {1 1 0 0}
+
+# Patterns anchored by "^" with no top-level "|"
+do_execsql_test regexp1-9.4 {
+  SELECT 'abc' REGEXP '^ab', 'xabc' REGEXP '^ab', 'abc' REGEXP '^(ab|x)c',
+         'xc' REGEXP '^(ab|x)c', 'yxc' REGEXP '^(ab|x)c', '' REGEXP '^',
+         'b' REGEXP '^a*b', 'xb' REGEXP '^a*b', 'ab' REGEXP '^+a';
+} {1 0 1 1 0 1 1 0 1}
+do_execsql_test regexp1-9.5 {
+  SELECT regexpi('^a|b', 'XB'), regexpi('^a|b', 'XA'), regexpi('^a', 'AX');
+} {1 0 1}
+
 finish_test

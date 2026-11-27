@@ -762,6 +762,7 @@ static SQLITE_NOINLINE void codeINTerm(
                          sizeof(pLevel->u.in.aInLoop[0])*pLevel->u.in.nIn);
   pIn = pLevel->u.in.aInLoop;
   if( pIn ){
+    int lblNull = sqlite3VdbeMakeLabel(pParse);
     int iMap = 0;               /* Index in aiMap[] */
     pIn += i;
     for(i=iEq; i<pLoop->nLTerm; i++){
@@ -773,9 +774,10 @@ static SQLITE_NOINLINE void codeINTerm(
           int iCol = aiMap ? aiMap[iMap++] : 0;
           pIn->addrInTop = sqlite3VdbeAddOp3(v,OP_Column,iTab, iCol, iOut);
         }
-        sqlite3VdbeAddOp1(v, OP_IsNull, iOut); VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_IsNull, iOut, lblNull); VdbeCoverage(v);
         if( i==iEq ){
           pIn->iCur = iTab;
+          pIn->lblNull = lblNull;
           pIn->eEndLoopOp = bRev ? OP_Prev : OP_Next;
           if( iEq>0 ){
             pIn->iBase = iTarget - i;
@@ -1623,6 +1625,7 @@ static int findNoMatchContinuation(
   pParent = &pWInfo->a[iParent];
   if( (pParent->pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0
    && (mKey & (mKey-1))==0
+   && !sqlite3WhereMightRerunAfterWrite(pWInfo)
   ){
     for(i=0; i<pLoop->nLTerm; i++){
       Expr *pX = pLoop->aLTerm[i]->pExpr;
@@ -1749,6 +1752,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int addrNotFound;
     int nConstraint = pLoop->nLTerm;
 
+    sqlite3MayAbort(pParse);
     iReg = sqlite3GetTempRange(pParse, nConstraint+2);
     addrNotFound = pLevel->addrBrk;
     for(j=0; j<nConstraint; j++){
@@ -2122,6 +2126,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** For DESC, NULL entries are scanned first.
     */
     if( (pLoop->wsFlags & (WHERE_TOP_LIMIT|WHERE_BTM_LIMIT))==0
+     && (pLoop->wsFlags & WHERE_IN_SEEKSCAN)==0
      && (pLoop->wsFlags & WHERE_BIGNULL_SORT)!=0
     ){
       assert( bSeekPastNull==0 && nExtraReg==0 && nBtm==0 && nTop==0 );

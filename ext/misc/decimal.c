@@ -269,10 +269,11 @@ static void decimal_result(sqlite3_context *pCtx, Decimal *p){
     sqlite3_result_error_nomem(pCtx);
     return;
   }
-  i = 0;
-  if( p->nDigit==0 || (p->nDigit==1 && p->a[0]==0) ){
-    p->sign = 0;
+  if( p->sign ){
+    for(i=0; i<p->nDigit && p->a[i]==0; i++){}
+    if( i==p->nDigit ) p->sign = 0;
   }
+  i = 0;
   if( p->sign ){
     z[0] = '-';
     i = 1;

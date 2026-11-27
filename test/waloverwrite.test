@@ -159,4 +159,6 @@ foreach {tn xtra} {
   db2 close
 }
 
+forcedelete test.db2 test.db2-wal
+
 finish_test

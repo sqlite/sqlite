@@ -254,6 +254,7 @@ int sqlite3Fts5HashWrite(
   Fts5HashEntry *p;
   u8 *pPtr;
   int nIncr = 0;                  /* Amount to increment (*pHash->pnByte) by */
+  i64 nNew;                       /* New value for (*pHash->pnByte) */
   int bNew;                       /* If non-delete entry should be written */
   
   bNew = (pHash->eDetail==FTS5_DETAIL_FULL);
@@ -323,12 +324,13 @@ int sqlite3Fts5HashWrite(
     **     + 5 bytes for the new position offset (32-bit max).
     */
     if( (p->nAlloc - p->nData) < (9 + 4 + 1 + 3 + 5) ){
-      sqlite3_int64 nNew = (i64)p->nAlloc * 2;
+      sqlite3_int64 nNewSz = (i64)p->nAlloc * 2;
       Fts5HashEntry *pNew;
       Fts5HashEntry **pp;
-      pNew = (Fts5HashEntry*)sqlite3_realloc64(p, nNew);
+      pNew = (Fts5HashEntry*)sqlite3_realloc64(p, nNewSz);
       if( pNew==0 ) return SQLITE_NOMEM;
-      pNew->nAlloc = (int)nNew;
+      assert( nNewSz<=0x7fffffff ); /* Otherwise realloc() would have failed */
+      pNew->nAlloc = (int)nNewSz;
       for(pp=&pHash->aSlot[iHash]; *pp!=p; pp=&(*pp)->pHashNext);
       *pp = pNew;
       p = pNew;
@@ -385,7 +387,8 @@ int sqlite3Fts5HashWrite(
   }
 
   nIncr += p->nData;
-  *pHash->pnByte += nIncr;
+  nNew = (i64)*pHash->pnByte + nIncr;
+  *pHash->pnByte = (int)(nNew>0x7FFFFFFF ? 0x7FFFFFFF : nNew);
   return SQLITE_OK;
 }
 

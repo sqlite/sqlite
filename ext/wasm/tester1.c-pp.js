@@ -146,7 +146,7 @@ const reportFinalTestStatus = function(pass){
     let e = document.querySelector('#color-target');
     e.classList.add(pass ? 'tests-pass' : 'tests-fail');
     e = document.querySelector('title');
-    e.innerText = (pass ? 'PASS' : 'FAIL') + ': ' + e.innerText;
+    e.innerText = (pass ? '✅PASS' : '🔥FAIL') + ': ' + e.innerText;
   }else{
     postMessage({type:'test-result', payload:{pass}});
   }
@@ -790,7 +790,9 @@ T.g('C/WASM Utilities')
       T.assert(ip(0))
         .assert(!ip(-1))
         .assert(!ip(1.1))
-        .assert(!ip(0xffffffff))
+        .assert(ip(0xffffffff))
+        /* 4GB is okay, but 4GB+1 is not */
+        .assert(!ip(0x100000000))
         .assert(ip(0x7fffffff))
         .assert(!ip())
         .assert(!ip(null)/*might change: under consideration*/)
@@ -848,8 +850,12 @@ T.g('C/WASM Utilities')
     {
       const scope = w.scopedAllocPush();
       try {
-        let cStr = w.scopedAllocCString("hello");
+        let cStr = w.scopedAllocCString("");
+        T.assert(0===w.cstrlen(cStr))
+          .assert(null===w.cstrlen(3.1));
+        cStr = w.scopedAllocCString("hello");
         const n = w.cstrlen(cStr);
+        T.assert( 5===n );
         const nPtr = w.ptr.coerce(n);
         let cpy = w.scopedAlloc(n+10);
         let rc = w.cstrncpy(cpy, cStr, n+10);
@@ -895,47 +901,51 @@ T.g('C/WASM Utilities')
       const alloc = w.alloc, dealloc = w.dealloc;
       w.alloc = w.dealloc = null;
       T.assert(!w.scopedAlloc.level)
-        .mustThrowMatching(()=>w.scopedAlloc(1), /^No scopedAllocPush/)
+        .mustThrowMatching(()=>w.scopedAlloc(1), /No scopedAllocPush/)
         .mustThrowMatching(()=>w.scopedAllocPush(), /missing alloc/);
       w.alloc = alloc;
       T.mustThrowMatching(()=>w.scopedAllocPush(), /missing alloc/);
       w.dealloc = dealloc;
-      T.mustThrowMatching(()=>w.scopedAllocPop(), /^Invalid state/)
-        .mustThrowMatching(()=>w.scopedAlloc(1), /^No scopedAllocPush/)
+      T.mustThrowMatching(()=>w.scopedAllocPop(), /Invalid state/)
+        .mustThrowMatching(()=>w.scopedAlloc(1), /No scopedAllocPush/)
         .mustThrowMatching(()=>w.scopedAlloc.level=0, /read-only/);
       const asc = w.scopedAllocPush();
-      let asc2;
+      let asc2, reachedEnd = false;
       try {
         const p1 = w.scopedAlloc(16),
               p2 = w.scopedAlloc(16);
         T.assert(1===w.scopedAlloc.level)
           .assert(looksLikePtr(p1))
           .assert(looksLikePtr(p2))
-          .assert(asc[0] === p1)
-          .assert(asc[1]===p2);
+          .assert(asc.ptr[0] === p1/*API internals*/)
+          .assert(asc.ptr[1]===p2/*API internals*/);
         asc2 = w.scopedAllocPush();
         const p3 = w.scopedAlloc(16);
         T.assert(2===w.scopedAlloc.level)
           .assert(looksLikePtr(p3))
-          .assert(2===asc.length)
-          .assert(p3===asc2[0]);
+          .assert(2===asc.ptr.length/*API internals*/)
+          .assert(p3===asc2.ptr[0]/*API internals*/);
 
         const [z1, z2, z3] = w.scopedAllocPtr(3);
         T.assert(typeof w.ptr.null===typeof z1).assert(z2>z1).assert(z3>z2)
           .assert(w.ptr.null===w.peekPtr(z1), 'allocPtr() must zero the targets')
           .assert(w.ptr.null===w.peekPtr(z3));
+        reachedEnd = true;
       }finally{
         // Pop them in "incorrect" order to make sure they behave:
         w.scopedAllocPop(asc);
-        T.assert(0===asc.length);
+        T.assert(!asc.ptr/*API internals*/);
         T.mustThrowMatching(()=>w.scopedAllocPop(asc),
-                            /^Invalid state object/);
+                            /Invalid state object/);
         if(asc2){
-          T.assert(2===asc2.length,'Should be p3 and z1');
+          if( reachedEnd ){
+            T.assert(2===asc2.ptr.length/*API internals*/,
+                     'Should be p3 and z1');
+          }
           w.scopedAllocPop(asc2);
-          T.assert(0===asc2.length);
+          T.assert(!asc2.ptr/*API internals*/);
           T.mustThrowMatching(()=>w.scopedAllocPop(asc2),
-                              /^Invalid state object/);
+                              /Invalid state object/);
         }
       }
       T.assert(0===w.scopedAlloc.level);
@@ -971,12 +981,12 @@ T.g('C/WASM Utilities')
 
 
       { // 'string:static' argAdapter() sanity checks...
-        let argAd = w.xWrap.argAdapter('string:static');
-        let p0 = argAd('foo'), p1 = argAd('bar');
+        const argAd = w.xWrap.argAdapter('string:static');
+        const p0 = argAd('foo'), p1 = argAd('bar');
         T.assert(w.isPtr(p0) && w.isPtr(p1))
           .assert(p0 !== p1)
-          .assert(p0 === argAd('foo'))
-          .assert(p1 === argAd('bar'));
+          .assert(p0 === argAd(['f','o','o'].join('')))
+          .assert(p1 === argAd('bar'.split('').join('')));
       }
 
       // 'string:flexible' argAdapter() sanity checks...
@@ -998,7 +1008,7 @@ T.g('C/WASM Utilities')
           .assert( 3 === fw.length )
           .assert( 6 === fw(1,2,3) );
         T.mustThrowMatching( ()=>w.jsFuncToWasm('x()', function(){}),
-                             'Invalid signature letter: x');
+                             /Invalid signature letter: x/);
       }
 
       // xWrap(Function,...)
@@ -1111,7 +1121,7 @@ T.g('C/WASM Utilities')
       //K.debugFlags(0x03);
       T.mustThrowMatching(()=>K(), /via 'new'/).
         mustThrowMatching(()=>new K('hi'), (err)=>{
-          return /^Invalid pointer/.test(err.message)/*32-bit*/
+          return /Invalid pointer/.test(err.message)/*32-bit*/
             || /.*bigint.*/i.test(err.message)/*64-bit*/;
         });
       const k1 = new K(), k2 = new K();
@@ -1147,7 +1157,7 @@ T.g('C/WASM Utilities')
         T.assert(Array.isArray(k1.ondispose)).
           assert(k1.ondispose[0] === k1.$cstr).
           assert(looksLikePtr(k1.$cstr)).
-          assert('A C-string.' === k1.memberToJsString('cstr'));
+          assert('A C-string.' === k1.memberToJsString('$cstr'));
         k1.$pP = k2;
         T.assert(k1.$pP === k2.pointer);
         k1.$pP = null/*null is special-cased to 0.*/;
@@ -1237,7 +1247,7 @@ T.g('C/WASM Utilities')
         /** The 3rd call to wtsFunc throw from JS, which is called
             from C, which is called from JS. Let's ensure that
             that exception propagates back here... */
-        T.mustThrowMatching(()=>testFunc(wts.pointer),/^Testing/);
+        T.mustThrowMatching(()=>testFunc(wts.pointer),/Testing/);
         W.uninstallFunction(wts.$xFunc);
         wts.$xFunc = 0;
         wts.$ppV = 0;
@@ -1550,10 +1560,21 @@ T.g('sqlite3.oo1')
           T.assert( q.step(), "step()" )
             .assert( !q.step(), "!step()" );
         }finally{
-          if( pStmt ) capi.sqlite3_finalize(pStmt)
-          if( q ) q.finalize();
+          if( pStmt ){
+            capi.sqlite3_finalize(pStmt);
+            T.assert( !q?.pointer, "Expecting !q?.pointer" );
+          }else if( q ){
+            T.assert( q.pointer, "Expecting q.pointer" );
+            //console.warn("sqlite3_finalize(",q,")");
+            capi.sqlite3_finalize(
+              q
+              /* legal with sqlite3_finalize() as of the
+                 [disposal-notification] branch. Will properly
+                 clean up q. */
+            );
+            T.assert(!q.pointer, "Expecting !q.pointer after finalize");
+          }
         }
-
       }finally{
         wasm.pstack.restore(stack);
         if( pDb ){ capi.sqlite3_close_v2(pDb); }
@@ -2463,7 +2484,7 @@ T.g('sqlite3.oo1')
                 /* Strange but true. */);
       T.mustThrowMatching(()=>{
         db.exec({sql:'', returnValue: 'nope'});
-      }, /^Invalid returnValue/);
+      }, /Invalid returnValue/);
 
       db.exec("DROP TABLE twin");
     }
@@ -3096,14 +3117,27 @@ T.g('sqlite3.oo1')
   })/*custom collation*/
 
 ////////////////////////////////////////////////////////////////////////
-  .t('Close db', function(){
+  .t('Close db', function(sqlite3){
     T.assert(this.db).assert(wasm.isPtr(this.db.pointer));
     //wasm.sqlite3__wasm_db_reset(this.db); // will leak virtual tables!
-    const strayStmt = this.db.prepare("select 1");
-    T.assert( strayStmt.pointer );
-    this.db.close();
-    T.assert(!this.db.pointer)
-      .assert(!strayStmt.pointer, "Stmt should have been finalized");
+    /* Leave some stray resources open... */
+    const stmtStray = this.db.prepare("select 1");
+    T.assert( stmtStray.pointer );
+    const stmtDupe = sqlite3.oo1.Stmt.wrapHandle(this.db, stmtStray.pointer);
+    T.assert( stmtStray.pointer === stmtDupe.pointer );
+    const dw = sqlite3.oo1.DB.wrapHandle(this.db.pointer);
+    T.assert( dw.pointer === this.db.pointer );
+    //console.debug("this.db =",this.db.pointer,this.db);
+
+    /* Close db... */
+    if( 0 ) this.db.close();
+    else capi.sqlite3_close_v2(this.db)/*as of [disposal-notification] branch*/;
+    /* Ensure the strays have been disconnected. */
+    //console.debug("this.db =",this.db.pointer,this.db);
+    T.assert(!this.db.pointer, "Expecting !db.pointer")
+      .assert(!stmtStray.pointer, "Stmt should have been finalized")
+      .assert(!stmtDupe.pointer, "Stmt should have been finalized")
+      .assert(!dw.pointer, "shared-handle wrapper should have been disconnected");
   })
 ;/* end of oo1 checks */
 
@@ -4123,8 +4157,9 @@ T.g('@vfsName@: @label@',
 ;/* end OPFS tests */
 //#/query
 ////////////////////////////////////////////////////////////////////////
-T.g('OPFS SyncAccessHandle Pool VFS',
-    (sqlite3)=>((isWorker() && !!sqlite3.installOpfsSAHPoolVfs) || "requires OPFS SAH Pool APIs"))
+T.g('"opfs-sahpool" VFS',
+    (sqlite3)=>((isWorker() && !!sqlite3.installOpfsSAHPoolVfs)
+                || 'requires "opfs-sahpool" VFS'))
   .t({
     name: 'SAH sanity checks',
     test: async function(sqlite3){
@@ -4193,7 +4228,7 @@ T.g('OPFS SyncAccessHandle Pool VFS',
           ()=>u1.pauseVfs(),
           (err)=>{
             return capi.SQLITE_MISUSE===err.resultCode
-              && /^SQLITE_MISUSE: Cannot pause VFS /.test(err.message);
+              && /SQLITE_MISUSE: Cannot pause VFS /.test(err.message);
           },
           "Cannot pause VFS with opened db."
         );
@@ -4304,7 +4339,7 @@ T.g('OPFS SyncAccessHandle Pool VFS',
   }/*OPFS SAH Pool sanity checks*/)
 //#if enable-see
   .t({
-    name: 'OPFS SAHPool with SEE encryption',
+    name: '"opfs-sahpool" VFS with SEE encryption',
     test: async function(sqlite3){
       const inst = sqlite3.installOpfsSAHPoolVfs,
             catcher = (e)=>{
@@ -4396,7 +4431,7 @@ T.g('Misc. APIs')
             }
           }
         });
-      }, /^Operation is illegal when statement is locked.*/)
+      }, /Operation is illegal when statement is locked.*/)
     };
     try{
       checkOp('bind');
@@ -4444,7 +4479,7 @@ T.g('Misc. APIs')
         .assert( !stmt.isBusy() );
 
       if( wasm.exports.sqlite3_column_origin_name ){
-        log("Column metadata APIs enabled");
+        //log("Column metadata APIs enabled");
         T.assert( "t" === capi.sqlite3_column_table_name(stmt, 0))
           .assert("a" === capi.sqlite3_column_origin_name(stmt, 0))
           .assert("main" === capi.sqlite3_column_database_name(stmt, 0))
@@ -4474,13 +4509,98 @@ T.g('Misc. APIs')
     }
   })
 
+  ////////////////////////////////////////////////////////////////////
+  .t("sqlite3_js_on_pointer_dispose()", function(sqlite3){
+    /* Added in 3.55.0 */
+    const jopd = sqlite3.capi.sqlite3_js_on_pointer_dispose;
+    const seenD = new Set() /* distinct pointers passed to onDispose() */;
+    const onDispose = function callee(p){
+      ++callee.nCall;
+      seenD.add(p);
+    };
+    onDispose.nCall = 0;
+    /* A second onDispose which we manually convert to wasm to test
+       jopd's handling of these. We "could" just install a wasm
+       wrapper for onDispose but we want a separate per-invocation
+       state for test purposes. */
+    const onDispose2 = function callee(p){
+      ++callee.nCall;
+      seenD.add(p);
+    };
+    onDispose2.nCall = 0;
+    let wOnDispose = wasm.installFunction("v(p)", onDispose2);
+    const udf = function callee(pCx,a){++callee.nCall;};
+    udf.nCall = 0;
+    const db = new sqlite3.oo1.DB();
+    T.assert( jopd('sqlite3*', db.pointer, wOnDispose) );
+    T.assert( jopd('sqlite3*', db.pointer, ()=>{
+      wasm.uninstallFunction(wOnDispose);
+      wOnDispose = null
+    }) );
+    const db2 = sqlite3.oo1.DB.wrapHandle(
+      db.pointer
+      /* This object must also be disconnected when db is closed. */
+    );
+    let q2;
+    try{
+      T.assert( wOnDispose )
+        .assert( jopd('sqlite3*', db.pointer, onDispose) )
+        .assert( jopd('sqlite3*', db.pointer, onDispose2) )
+      /* jopd returns "an unespecified falsy value" for arg validation
+         errors, but for the sake of testing we can differentiate
+         them... */
+        .assert( false===jopd('nope', db.pointer, onDispose),
+                 "Type ID validation failed." )
+        .assert( null===jopd('sqlite3*', 'nope', onDispose),
+                 "Pointer validation failed" )
+        .assert( undefined===jopd('sqlite3*', db.pointer, 'nope'),
+                 "Callback validation failed." );
+      db.exec(["create table t(a);",
+               "insert into t(a) values(1),(2),(3)"]);
+      db.createFunction("foo", udf);
+      const q = db.prepare("select foo(1), foo(a) from t");
+      T.assert( jopd('sqlite3_stmt*', q.pointer, onDispose) )
+        .assert( jopd('sqlite3_stmt*', db.pointer, onDispose2) )
+      q2 = sqlite3.oo1.Stmt.wrapHandle(
+        /* This object must also be disconnected when db is closed. */
+        db, q.pointer, false
+      );
+      while( q2.step() );
+      T.assert( db.isOpen() )
+        .assert( db2.isOpen() );
+      /*
+        Do not finalize() q or q2, for test purposes. q will be
+        cleaned up when a jopd event triggers for db (when it's
+        closed), and q2 will be unplugged when that happens. We assert
+        that below.
+      */
+    }finally{
+      sqlite3.capi.sqlite3_close_v2(
+        /* As of 3.55.0 this will cleanly disconnect the oo1 db object
+           instead of leaving it pointing to a stale pointer. */
+        db
+      );
+    }
+    T.assert( !db.isOpen(), "Expecting db to be disconnected" )
+      .assert( !db2.isOpen(), "Expecting db2 to be disconnected" )
+      .assert( !q2.pointer, "Lingering q2.pointer" )
+      .assert( !wOnDispose, "Lingering wasm func installation")
+      .assert( seenD.size  === 2, "db + stmt" )
+      .assert( udf.nCall   === 6, "2 UDF call points, 3 rows" )
+      .assert( onDispose.nCall  === seenD.size, "db + stmt" )
+      .assert( onDispose2.nCall === seenD.size, "db + stmt" );
+  })
+
 ////////////////////////////////////////////////////////////////////
   .t("interrupt", function(sqlite3){
     const db = new sqlite3.oo1.DB();
-    T.assert( 0===capi.sqlite3_is_interrupted(db) );
-    capi.sqlite3_interrupt(db);
-    T.assert( 0!==capi.sqlite3_is_interrupted(db) );
-    db.close();
+    try {
+      T.assert( 0===capi.sqlite3_is_interrupted(db) );
+      capi.sqlite3_interrupt(db);
+      T.assert( 0!==capi.sqlite3_is_interrupted(db) );
+    }finally{
+      db.close();
+    }
   })
 
 ////////////////////////////////////////////////////////////////////
@@ -4508,7 +4628,7 @@ T.g('Misc. APIs')
       db.close();
     }
   });
-;
+
 
 ////////////////////////////////////////////////////////////////////
 T.g('Bug Reports')
@@ -4554,7 +4674,7 @@ T.g('Bug Reports')
   })
   .t({
     name: 'r/o connection recovery from write op error',
-    predicate: ()=>hasOpfs() || "Requires OPFS to reproduce",
+    predicate: ()=>hasOpfs() || 'requires "opfs" VFS',
     //predicate: ()=>false,
     test: async function(sqlite3){
       /* https://sqlite.org/forum/forumpost/cf37d5ff1182c31081
@@ -4609,6 +4729,7 @@ T.g('Bug Reports')
       const stack = wasm.pstack.pointer;
       const pAux = wasm.pstack.alloc(4);
       let pAuxDestructed = 0;
+      const cxSeen = new Set;
       const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
         //log("freeing auxdata");
         ++pAuxDestructed;
@@ -4626,20 +4747,20 @@ T.g('Bug Reports')
         db.createFunction("auxtest",{
           xFunc: function(pCx, x, y){
             T.assert(wasm.isPtr(pCx));
+            cxSeen.add(pCx);
             const localAux = capi.sqlite3_get_auxdata(pCx, 0);
             if( !localAux ){
               //log("setting auxdata");
               /**
-                 We do not currently an automated way to clean up
-                 auxdata finalizer functions (the 4th argument to
+                 We do provide an automated way to clean up auxdata
+                 finalizer functions (the 4th argument to
                  sqlite3_set_auxdata()) which get automatically
-                 converted from JS to WASM. Because of that, enabling
-                 automated conversions here would lead to leaks more
-                 often than not. Instead, follow the pattern show in
-                 this function: use wasm.installFunction() to create
-                 the function, then pass the resulting function
-                 pointer this function, and cleanup (at some point)
-                 using wasm.uninstallFunction().
+                 converted from JS to WASM because it's prohibitively
+                 expensive. Instead, follow the pattern show in this
+                 function: use wasm.installFunction() to create the
+                 function, then pass the resulting function pointer
+                 this function, and cleanup (at some point) using
+                 wasm.uninstallFunction().
               */
               ++nAuxSet;
               capi.sqlite3_set_auxdata(pCx, 0, pAux, pAuxDtor);
@@ -4651,19 +4772,22 @@ T.g('Bug Reports')
             return x;
           }
         });
+        //console.error("Before 2x UDF w/ aux data for 4 rows");
         db.exec([
           "create table t(a);",
-          "insert into t(a) values(1),(2),(1);",
+          "insert into t(a) values(1),(2),(-1),(-2);",
           "select auxtest(1,a), auxtest(1,a) from t order by a"
         ]);
+        T.assert( 2===cxSeen.size, "Else my understanding here is wrong:",
+                  cxSeen.size );
+        //console.error("After 2x UDF w/ aux data for 4 rows");
       }finally{
         db.close();
         wasm.pstack.restore(stack);
       }
-      T.assert(nAuxSet>0).assert(nAuxReused>0)
-        .assert(6===nAuxReused+nAuxSet);
-      T.assert(pAuxDestructed>0);
-      T.assert(pAuxDtorDestructed);
+      T.assert(2==nAuxSet)
+        .assert(6===nAuxReused)
+        .assert(pAuxDestructed===nAuxSet);
     }
   })
 ;/*end of Bug Reports group*/;

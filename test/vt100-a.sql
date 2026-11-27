@@ -3,6 +3,7 @@
 ** test test formatting of output text that contains
 ** vt100 escape sequences.
 */
+.open :memory:
 .mode box -escape off
 CREATE TEMP TABLE t1(a,b,c);
 INSERT INTO t1 VALUES

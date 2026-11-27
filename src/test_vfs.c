@@ -1327,6 +1327,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
         { "undeletable_when_open", SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN },
         { "powersafe_overwrite",   SQLITE_IOCAP_POWERSAFE_OVERWRITE   },
         { "immutable",             SQLITE_IOCAP_IMMUTABLE             },
+        { "batch_atomic",          SQLITE_IOCAP_BATCH_ATOMIC          },
         { 0, 0 }
       };
       Tcl_Obj *pRet;

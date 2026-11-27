@@ -125,5 +125,27 @@ do_test 4.1 {
   }
 } {}
 
+#-------------------------------------------------------------------------
+# A secure-delete flush may update the %_idx table. Inside a transaction
+# the UPDATE opens a statement journal, which invokes xSavepoint on the
+# same FTS5 table. That used to re-enter the flush and recurse until the
+# stack overflowed.
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE ft1 USING fts5(a);
+  INSERT INTO ft1(ft1, rank) VALUES('secure-delete', 1);
+  WITH s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<2000)
+  INSERT INTO ft1(rowid, a)
+    SELECT i, 'w'||printf('%05d',i)||' x'||printf('%05d',i) FROM s;
+}
+do_execsql_test 5.1 {
+  BEGIN;
+    DELETE FROM ft1 WHERE rowid<1500 AND rowid%2=0;
+    DELETE FROM ft1 WHERE rowid<1000;
+  COMMIT;
+  SELECT count(*) FROM ft1;
+  INSERT INTO ft1(ft1) VALUES('integrity-check');
+} {751}
+
 finish_test
 

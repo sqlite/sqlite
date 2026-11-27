@@ -401,5 +401,26 @@ do_execsql_test 7.1 {
   SELECT * FROM t3;
 } {11 11 22 22 33 33 44 44 55 55}
 
+ifcapable update_delete_limit {
+  # 2026-10-29 - verify that generateOutputSubroutine() can be
+  # called with pDest->eDest==SRT_Table under UPDATE_DELETE_LIMIT.
+  #
+  reset_db
+  do_execsql_test 8.0 {
+    CREATE TABLE a(x,y);
+    CREATE TABLE b(x,y);
+    CREATE TABLE t(k,v);
+    INSERT INTO a VALUES(1,'a1'),(3,'a3');
+    INSERT INTO b VALUES(2,'b2'),(4,'b4');
+    INSERT INTO t VALUES(1,'one'),(2,'two'),(3,'three'),(4,'four');
+    CREATE VIEW v AS SELECT x, y FROM a UNION ALL SELECT x, y FROM b;
+    CREATE TABLE log(x,y,newy);
+    CREATE TRIGGER vtr INSTEAD OF UPDATE ON v BEGIN
+      INSERT INTO log VALUES(old.x, old.y, new.y);
+    END;
+    UPDATE v SET y=t.v FROM t WHERE t.k=v.x ORDER BY v.x DESC LIMIT 3;
+    SELECT * FROM log;
+  } {4 b4 four 3 a3 three 2 b2 two}
+}
 
 finish_test

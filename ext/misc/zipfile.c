@@ -429,6 +429,18 @@ static void zipfileEntryFree(ZipfileEntry *p){
 static void zipfileCleanupTransaction(ZipfileTab *pTab){
   ZipfileEntry *pEntry;
   ZipfileEntry *pNext;
+  ZipfileCsr *pCsr;
+
+  /* A cursor that is not reading from a file or from a blob steps through
+  ** the pTab->pFirstEntry list, which is about to be deleted.  Such a
+  ** cursor has nothing left to return, so leave it at EOF rather than
+  ** pointing at freed memory. */
+  for(pCsr=pTab->pCsrList; pCsr; pCsr=pCsr->pCsrNext){
+    if( pCsr->pFile==0 && pCsr->pFreeEntry==0 ){
+      pCsr->pCurrent = 0;
+      pCsr->bEof = 1;
+    }
+  }
 
   if( pTab->pWriteFd ){
     fclose(pTab->pWriteFd);
@@ -481,11 +493,15 @@ static void zipfileResetCursor(ZipfileCsr *pCsr){
 
   pCsr->bEof = 0;
   if( pCsr->pFile ){
+    /* File mode: pCurrent is a private copy owned by this cursor. */
     fclose(pCsr->pFile);
     pCsr->pFile = 0;
     zipfileEntryFree(pCsr->pCurrent);
-    pCsr->pCurrent = 0;
   }
+  /* In the other modes pCurrent belongs to pFreeEntry or to the table.
+  ** It must not be left dangling, since a later xFilter() that switches
+  ** this cursor to file mode would free it. */
+  pCsr->pCurrent = 0;
 
   for(p=pCsr->pFreeEntry; p; p=pNext){
     pNext = p->pNext;
@@ -786,6 +802,15 @@ static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mUnixTime){
   int yr, mon, day;
   int hr, min, sec;
 
+  if( mUnixTime<=315532800 ){
+    /* Experimentally, I find that Win11 will not report the modification
+    ** time for any ZIP file entry with a date before 1980-01-01 00:00:01.
+    ** So make that the minimum date-time value. */
+    pCds->mDate = 0x0021;
+    pCds->mTime = 0x0001;
+    return;
+  }
+
   A = (int)((JD - 1867216.25)/36524.25);
   A = (int)(JD + 1 + A - (A/4));
   B = A + 1524;
@@ -801,17 +826,11 @@ static void zipfileMtimeToDos(ZipfileCDS *pCds, u32 mUnixTime){
   min = (mUnixTime % (60*60)) / 60;
   sec = (mUnixTime % 60);
 
-  if( yr>=1980 ){
-    pCds->mDate = (u16)(day + (mon << 5) + ((yr-1980) << 9));
-    pCds->mTime = (u16)(sec/2 + (min<<5) + (hr<<11));
-  }else{
-    pCds->mDate = pCds->mTime = 0;
-  }
+  pCds->mDate = (u16)(day + (mon << 5) + ((yr-1980) << 9));
+  pCds->mTime = (u16)(sec/2 + (min<<5) + (hr<<11));
 
-  assert( mUnixTime<315507600 
-       || mUnixTime==zipfileMtime(pCds) 
+  assert( mUnixTime==zipfileMtime(pCds) 
        || ((mUnixTime % 2) && mUnixTime-1==zipfileMtime(pCds)) 
-       /* || (mUnixTime % 2) */
   );
 }
 
@@ -976,7 +995,7 @@ static int zipfileNext(sqlite3_vtab_cursor *cur){
       pCsr->pCurrent = p;
     }
   }else{
-    if( !pCsr->bNoop ){
+    if( !pCsr->bNoop && !pCsr->bEof ){
       pCsr->pCurrent = pCsr->pCurrent->pNext;
     }
     if( pCsr->pCurrent==0 ){
@@ -1096,8 +1115,13 @@ static int zipfileColumn(
   int i                       /* Which column to return */
 ){
   ZipfileCsr *pCsr = (ZipfileCsr*)cur;
-  ZipfileCDS *pCDS = &pCsr->pCurrent->cds;
+  ZipfileCDS *pCDS;
   int rc = SQLITE_OK;
+  if( pCsr->pCurrent==0 ){
+    /* The transaction ended while this row was being processed. */
+    return SQLITE_OK;
+  }
+  pCDS = &pCsr->pCurrent->cds;
   switch( i ){
     case 0:   /* name */
       sqlite3_result_text(ctx, pCDS->zFile, -1, SQLITE_TRANSIENT);
@@ -1942,7 +1966,7 @@ static void zipfileFunctionCds(
   assert( argc>0 );
 
   pCsr = zipfileFindCursor(pTab, sqlite3_value_int64(argv[0]));
-  if( pCsr ){
+  if( pCsr && pCsr->pCurrent ){
     ZipfileCDS *p = &pCsr->pCurrent->cds;
     char *zRes = sqlite3_mprintf("{"
         "\"version-made-by\" : %u, "
@@ -2289,6 +2313,9 @@ static int zipfileRegister(sqlite3 *db){
     0                          /* xIntegrity */
   };
 
+  /* REMINDER: Changes here should also be reflected in the ".safe"
+  ** command of the CLI
+  */
   int rc = sqlite3_create_module(db, "zipfile"  , &zipfileModule, 0);
   if( rc==SQLITE_OK ) rc = sqlite3_overload_function(db, "zipfile_cds", -1);
   if( rc==SQLITE_OK ){

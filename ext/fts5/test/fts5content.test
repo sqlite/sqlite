@@ -364,5 +364,71 @@ do_catchsql_test 9.6 {
   SELECT rowid, fts5_columntext(ft, 0) FROM ft('two');
 } {1 SQLITE_CORRUPT_VTAB}
 
+#-------------------------------------------------------------------------
+# Check that an external content table named by the schema is subject to
+# the same restrictions as a virtual table named by a view in the schema.
+#
+# With trusted_schema=off, the content table may not be a virtual table
+# that is not SQLITE_VTAB_INNOCUOUS. This applies to all statements that
+# read from the content table: scans in either direction and rowid lookups.
+#
+reset_db
+set unsafe {1 {unsafe use of virtual table "pragma_table_list"}}
+do_execsql_test 10.0 {
+  PRAGMA trusted_schema = on;
+  CREATE VIEW v1 AS SELECT rowid, name FROM pragma_table_list;
+  CREATE VIRTUAL TABLE ft USING fts5(
+    name, content='pragma_table_list', content_rowid='rowid'
+  );
+  SELECT count(*)>0 FROM v1;
+  SELECT count(*)>0 FROM ft;
+} {1 1}
+
+do_execsql_test 10.1 { PRAGMA trusted_schema = off; }
+do_catchsql_test 10.2 { SELECT * FROM v1 } $unsafe
+do_catchsql_test 10.3 { SELECT * FROM ft } $unsafe
+do_catchsql_test 10.4 { SELECT * FROM ft ORDER BY rowid DESC } $unsafe
+do_catchsql_test 10.5 { SELECT * FROM ft WHERE rowid=1 } $unsafe
+
+# A table declared SQLITE_VTAB_DIRECTONLY may not be used as the content
+# table regardless of the trusted_schema setting.
+#
+reset_db
+if {[db one {SELECT count(*) FROM pragma_module_list WHERE name='sqlite_dbpage'}]} {
+  set unsafe {1 {unsafe use of virtual table "sqlite_dbpage"}}
+  do_execsql_test 10.6 {
+    CREATE TABLE secret(x);
+    INSERT INTO secret VALUES('private data');
+    CREATE VIEW v2 AS SELECT pgno, data FROM sqlite_dbpage;
+    CREATE VIRTUAL TABLE ft2 USING fts5(
+      data, content='sqlite_dbpage', content_rowid='pgno'
+    );
+  }
+
+  foreach {tn ts} {1 on 2 off} {
+    do_execsql_test 10.7.$tn.0 "PRAGMA trusted_schema = $ts"
+    do_catchsql_test 10.7.$tn.1 { SELECT * FROM v2 } $unsafe
+    do_catchsql_test 10.7.$tn.2 { SELECT * FROM ft2 } $unsafe
+    do_catchsql_test 10.7.$tn.3 { SELECT * FROM ft2 ORDER BY rowid DESC } $unsafe
+    do_catchsql_test 10.7.$tn.4 { SELECT * FROM ft2 WHERE rowid=1 } $unsafe
+  }
+}
+
+# An ordinary external content table continues to work with
+# trusted_schema=off.
+#
+reset_db
+do_execsql_test 10.8.0 {
+  PRAGMA trusted_schema = off;
+  CREATE TABLE src(a INTEGER PRIMARY KEY, b);
+  INSERT INTO src VALUES(1, 'one two'), (2, 'two three');
+  CREATE VIRTUAL TABLE ft3 USING fts5(b, content='src', content_rowid='a');
+  INSERT INTO ft3(ft3) VALUES('rebuild');
+}
+do_execsql_test 10.8.1 { SELECT rowid, b FROM ft3('three') } {2 {two three}}
+do_execsql_test 10.8.2 { SELECT b FROM ft3 WHERE rowid=1 } {{one two}}
+do_execsql_test 10.8.3 { SELECT rowid FROM ft3('two') ORDER BY rank } {1 2}
+do_execsql_test 10.8.4 { INSERT INTO ft3(ft3) VALUES('integrity-check') }
+
 finish_test
 

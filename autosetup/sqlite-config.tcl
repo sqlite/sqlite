@@ -622,7 +622,7 @@ proc sqlite-affirm-have-math {featureName} {
     set lfl [get-define lib_log ""]
     undefine lib_log
     if {"" ne $lfl} {
-      user-notice "Forcing requirement of $lfl for $featureName"
+      msg-result "Forcing requirement of $lfl for $featureName"
     }
     define LDFLAGS_MATH $lfl
   }
@@ -881,7 +881,9 @@ proc sqlite-handle-debug {} {
   msg-checking "SQLITE_DEBUG build? "
   proj-if-opt-truthy debug {
     define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -O0 -Wall}
-    sqlite-add-feature-flag -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE
+    sqlite-add-feature-flag -DSQLITE_ENABLE_SELECTTRACE \
+                            -DSQLITE_ENABLE_WHERETRACE \
+                            -DSQLITE_ENABLE_BYTECODE_VTAB
     proj-opt-set memsys5
     msg-result yes
   } {
@@ -1211,7 +1213,7 @@ proc sqlite-check-line-editing {} {
     sqlite-add-shell-opt -DHAVE_LINENOISE=$lnVal
     if {$::sqliteConfig(use-jim-for-codegen) && 2 == $lnVal} {
       define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
-      user-notice "Adding linenoise support to jimsh."
+      msg-result "Adding linenoise support to jimsh."
     } else {
       msg-result "Using linenoise at [file-normalize $dirLn]"
     }

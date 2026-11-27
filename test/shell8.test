@@ -270,4 +270,28 @@ if {$tcl_platform(os) ne "Windows NT"} {
 
 }
 
+# https://sqlite.org/bugs/info/b122d65577
+# The -A command-line option should return a non-zero exit code when
+# the archive command fails.  Merge stderr into stdout so that only
+# the exit status, and not error output, makes [exec] fail.
+#
+proc ar_exit_code {args} {
+  global CLI
+  if {[catch {exec {*}$CLI {*}$args << "" 2>@1} msg opts]} {
+    return [lindex [dict get $opts -errorcode] 2]
+  }
+  return 0
+}
+forcedelete shell8.db nosuch.db
+populate_dir ar5 {
+  file1 "abcd"
+}
+do_test 4.1 { ar_exit_code -A --bad-option } 1
+do_test 4.2 { ar_exit_code -A -f nosuch.db -t } 14
+do_test 4.3 { ar_exit_code -A --help } 0
+do_test 4.4 { ar_exit_code -A -cf shell8.db ar5 } 0
+do_test 4.5 { ar_exit_code -A -tf shell8.db } 0
+do_test 4.6 { ar_exit_code -A -xf shell8.db nosuch } 1
+forcedelete ar5
+
 finish_test

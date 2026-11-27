@@ -245,8 +245,9 @@ static VLogLog *allLogs = 0;
 static void vlogLogClose(VLogLog *p){
   if( p ){
     sqlite3_mutex *pMutex;
+    if( p->zFilename==0 ) p--;   /* Journal half: use the pair's count */
     p->nRef--;
-    if( p->nRef>0 || p->zFilename==0 ) return;
+    if( p->nRef>0 ) return;
     pMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
     sqlite3_mutex_enter(pMutex);
     *p->ppPrev = p->pNext;
@@ -318,8 +319,10 @@ static VLogLog *vlogLogOpen(const char *zFilename){
     vlogLogPrint(pLog, tNow, 0, "IDENT", getpid(), -1, zHost, 0);
 #endif
   }
-  if( pLog && isJournal ) pLog++;
-  pLog->nRef++;
+  if( pLog ){
+    pLog->nRef++;
+    if( isJournal ) pLog++;
+  }
   return pLog;
 }
 

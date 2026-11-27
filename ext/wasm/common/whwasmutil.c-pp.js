@@ -20,16 +20,33 @@
 
   and SQLite:
 
-  https://sqlite.org
+  https://sqlite.org/src/dir/ext/wasm/common
 
   This file is kept in sync between both of those trees.
 
   This build was generated using:
 
-  ./c-pp -o js/whwasmutil.js -@policy=error wasmutil/whwasmutil.c-pp.js
+//#@ push policy error delimiter "@" "@"
+  @c-pp::argv@
 
-  by libcmpp 2.x 2fc4afc31f6505c27b9c34988973a2bd9b157d559247cdd26868ae75632c3a5e @ 2025-11-16 23:03:27.352 UTC
+  by libcmpp @cmpp::version@
 */
+//#savepoint begin
+//#define ? esm 0
+//#define ? no-export 0
+//#define ? lexical-scoped 0
+//#if defined canonical-sqlite3
+//#  // The sqlite3 wasm build.
+//#  define no-export 1
+//#  define lexical-scoped 1
+//#  if defined target:es6-module
+//#    define esm 1
+//#  /if
+//#  define omit-yawl
+//#/if
+//#if esm
+//#  define lexical-scoped 1
+//#/if
 /**
    The primary goal of this function is to provide JS/WASM utility
    code similar to some of that provided by Emscripten-generated
@@ -38,30 +55,42 @@
    that end, it populates the given object with various WASM-specific
    APIs. These APIs work with both 32- and 64-bit WASM builds.
 
+   This function is intended to be called after a WASM module has been
+   loaded, passed some of that module's state as described in the
+   following docs. Its arugment is both a configuration object and
+   a target which gets filled out with many new members.
+
    Forewarning: this API explicitly targets only browser environments.
    If a given non-browser environment has the capabilities needed for
    a given feature (e.g. TextEncoder), great, but it does not go out
    of its way to account for them and does not provide compatibility
    crutches for them. That said: no specific incompatibilities with,
-   e.g., node.js are known (whereas it is known that some folks
-   use this with node.js).
+   e.g., node.js are known (whereas it is known that some folks use
+   this with node.js via the sqlite3.org JS/WASM bindings).
 
    Intended usage:
 
    ```
-   const target = {}; // ... some object ...
+   const target = { ...see config options below... };
+//#if esm
+   import {default as whw} from "./whwasmutil.mjs";
+   whw(target);
+//#else
    globalThis.WhWasmUtilInstaller(target);
    delete globalThis.WhWasmUtilInstaller;
+//#/if
    ```
 
    The `target` object then holds the APIs. The caller may set certain
    properties on it, before calling this, to configure it, as
    documented below.
 
+//#if not esm
    The global-scope symbol for this function is intended only to
    provide an easy way to make it available to 3rd-party scripts and
    "should" be deleted after calling it. That symbol is _not_ used
    within the library.
+//#/if
 
    It currently offers alternatives to the following
    Emscripten-generated APIs:
@@ -103,11 +132,15 @@
 
    How to install...
 
-   Passing an object to this function will install this library's
-   functionality into that object. It returns its argument.
+   Passing an object to this function both pulls the configuration
+   from that object and installs this library's functionality into
+   that object. It returns its argument.  It throws for various error
+   conditions, such as missing required config info (see below).
 
+//#if not esm
    After installation, client code "should" delete this function's
    global symbol (if any).
+//#/if
 
    This code requires that the target object have the following
    properties, though they needn't be available until the first time
@@ -119,8 +152,10 @@
      contain the symbols exported by the WASM module associated with
      this code. In an Enscripten environment it must be set to
      `Module['asm']` (versions <=3.1.43) or `wasmExports` (versions
-     >=3.1.44). The exports object must contain a minimum of the
-     following symbols:
+     >=3.1.44). For WASI-SDK (or similar) builds, assigning
+     (target.instance=X.instance) suffices, where X is the result of
+     WebAssembly.instantiate(). The exports object must contain a
+     minimum of the following symbols:
 
      - `memory`: a WebAssembly.Memory object representing the WASM
        memory. _Alternately_, the `memory` property can be set as
@@ -134,10 +169,15 @@
        `installFunction()` is called and the table cannot grow.
 
    - `functionTable`: WebAssembly.Table object holding the indirect
-     function call table.  If not set then
-     `exports.__indirect_function_table` is assumed. Achtung: this
-     property gets replaced by a function with the same name (because
-     this API used that name before this config option was added).
+     function call table or a function which must return one. If not
+     set then `exports.__indirect_function_table` is assumed (and must
+     be set). If it is set and is not a function, it is replaced by a
+     function with the same name, and which returns that object,
+     because this API used that name before this config option was
+     added. If it is set to a function then it MUST return a
+     WebAssembly.Table object and MUST return the same instance on
+     each call (but it may defer any fetching/initialization until its
+     first call and may throw on error).
 
    In order to simplify downstream usage, if `target.exports` is not
    set when this is called then a property access interceptor
@@ -156,6 +196,7 @@
    the BigInt type is not sufficient for full int64 integration with
    WASM: the target WASM file must also have been built with that
    support. In Emscripten that's done using the `-sWASM_BIGINT` flag.
+   On WASI-SDK use --target-wasm64-wasi.
 
    Some optional APIs require that the target have the following
    methods:
@@ -171,6 +212,11 @@
      null/0 (for which it must be a no-op). In Emscripten this is
      conventionally made available via `Module['_free']`.
 
+   These are commonly injected by exporting the C library's malloc()
+   and free(). With WASI-SDK that's (--export=malloc --export=free) and
+   in Emscripten it's -SEXPORTED_FUNCTIONS=_malloc,_free.  However,
+   any compliant allocators will do.
+
    APIs which require allocation routines are explicitly documented as
    such and/or have "alloc" in their names.
 
@@ -182,7 +228,9 @@
       set, it gets set to whatever this code thinks the pointer size
       is.  Modifying it after this call has no effect. A reliable
       way to get this value is (typeof X()), where X is a function
-      from target.exports which returns an innocuous pointer.
+      from target.exports which returns an innocuous const pointer.
+      The typeof will be 'number' on 32-bit builds and 'bigint'
+      on 64-bit.
 
    - `pointerSize`: if set, it must be one of 4 or 8 and must
       correspond to the value of `pointerIR`. If not set, it gets set
@@ -190,8 +238,13 @@
       `pointerIR` is 'i64'). If `pointerSize` is set but `pointerIR`
       is not, `pointerIR` gets set appropriately, and vice versa.
 
-   When building with Emscripten's -sMEMORY64=1, `pointerIR` must be
-   set to 'i64' and/or `pointerSize` must be set to 8.
+   - `logger`: optional object with `debug`, `warn`, and/or `error`
+      properties which behave like their same-named counterparts in
+      the global console object. The default uses the console API
+      with a file-local prefix on each message.
+
+   When building with Emscripten's --target=wasm64, `pointerIR` must
+   be set to 'i64' and/or `pointerSize` must be set to 8.
 
    After calling this, the pointerIR and pointerSize properties are
    replaced with a read-only Object member named target.ptr. It
@@ -212,8 +265,8 @@
    - `add(...args)` = performs "pointer arithmetic" (`wasmPtr+offset`
      does not work in 64-bit builds unless all operands are of type
      BigInt). Adds up all of its arguments, accounting for whether
-     each is a Number of BigInt, and returns either a Number or
-     BigInt.
+     each is a Number of BigInt, and returns either a value of the
+     same type as `this.null`.
 
    - `addn(...args)` = like `add()` but always returns its result as a
      Number. Equivalent to Number(add(...)).
@@ -225,17 +278,25 @@
      newly-created (or config-provided) target. The current approach
      seemed better at the time.
 */
-'use strict';
-globalThis.WhWasmUtilInstaller =
-function WhWasmUtilInstaller(target){
+const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
+//#if not esm
   'use strict';
+//#/if
   if(undefined===target.bigIntEnabled){
     target.bigIntEnabled = !!globalThis['BigInt64Array'];
   }
+  const LOGPREFIX = "@__FILE__@:";
 
   /** Throws a new Error, the message of which is the concatenation of
-      all args with a space between each. */
-  const toss = (...args)=>{throw new Error(args.join(' '))};
+      a file-local prefix and all args with a space between each. */
+  const toss = (...args)=>{
+    throw new Error(LOGPREFIX+" "+args.join(' '))
+  };
+
+  const warn = target.logger?.warn
+        || ((...args)=>console.warn(LOGPREFIX,...args));
+  const debug = target.logger?.debug
+        || ((...args)=>console.debug(LOGPREFIX,...args));
 
   if( !target.pointerSize && !target.pointerIR
       && target.alloc && target.dealloc ){
@@ -268,7 +329,7 @@ function WhWasmUtilInstaller(target){
       throws complaining that BigInt is not enabled. */
   const __BigInt = target.bigIntEnabled
         ? (v)=>BigInt(v || 0)
-        : (v)=>toss("BigInt support is disabled in this build.");
+        : toss("BigInt support is disabled in this build.");
 
   const __Number = (v)=>Number(v||0)/*treat undefined the same as null*/;
 
@@ -300,11 +361,21 @@ function WhWasmUtilInstaller(target){
      addition/subtraction expressions (which we frequently need for
      calculating pointer offsets).
   */
-  const __ptrAdd = function(...args){
-    let rc = __asPtrType(0);
-    for(const v of args) rc += __asPtrType(v);
-    return rc;
-  };
+  const __ptrAdd = (4 === __ptrSize)
+        ? function(a, b){
+          if(2 === arguments.length) return (Number(a || 0) + Number(b || 0)) | 0;
+          let rc = 0;
+          for(let i = 0; i < arguments.length; ++i) rc += Number(arguments[i] || 0);
+          return rc | 0;
+        }
+        : function(a, b){
+          if(2 === arguments.length) return BigInt(a || 0) + BigInt(b || 0);
+          let rc = 0n;
+          for(let i = 0; i < arguments.length; ++i) rc += BigInt(arguments[i] || 0);
+          return rc;
+        };
+
+  const nu = (...args)=>Object.assign(Object.create(null),...args);
 
   /** Set up target.ptr... */
   {
@@ -321,19 +392,13 @@ function WhWasmUtilInstaller(target){
         set: ()=>toss("ptr["+name+"] is read-only.")
       });
       return f;
-    })(
-      'null', __NullPtr
-    )(
-      'size', __ptrSize
-    )(
-      'ir', __ptrIR
-    )(
-      'coerce', __asPtrType
-    )(
-      'add', __ptrAdd
-    )(
-      'addn', (4===__ptrIR) ? __ptrAdd : (...args)=>Number(__ptrAdd(...args))
-    );
+    })
+    ('null', __NullPtr)
+    ('size', __ptrSize)
+    ('ir', __ptrIR)
+    ('coerce', __asPtrType)
+    ('add', __ptrAdd)
+    ('addn', (4===__ptrIR) ? __ptrAdd : (...args)=>Number(__ptrAdd(...args)));
   }
 
   if(!target.exports){
@@ -345,12 +410,9 @@ function WhWasmUtilInstaller(target){
 
   /** Stores various cached state. */
   const cache = Object.create(null);
-  /** Previously-recorded size of cache.memory.buffer, noted so that
-      we can recreate the view objects if the heap grows. */
-  cache.heapSize = 0;
   /** WebAssembly.Memory object extracted from target.memory or
-      target.exports.memory the first time heapWrappers() is
-      called. */
+      target.exports.memory the first time __HEAPx() is called is used
+      (see __HEAP8, __HEAP32, etc.). */
   cache.memory = null;
   /** uninstallFunction() puts table indexes in here for reuse and
       installFunction() extracts them. */
@@ -360,15 +422,25 @@ function WhWasmUtilInstaller(target){
   */
   cache.scopedAlloc = [];
 
-  /** Push the pointer ptr to the current cache.scopedAlloc list
-      (which must already exist) and return ptr. */
-  cache.scopedAlloc.pushPtr = (ptr)=>{
-    cache.scopedAlloc[cache.scopedAlloc.length-1].push(ptr);
+  /** Push the non-function pointer ptr to the current
+      cache.scopedAlloc list (which must already exist) and return
+      ptr. */
+  cache.scopedAlloc.pushPtr = (ptr) => {
+    const top = cache.scopedAlloc[cache.scopedAlloc.length - 1];
+    if( top ) top.ptr.push(ptr);
     return ptr;
   };
 
+  /** Push the given indirect function table pointer to the current
+      cache.scopedAlloc object (which must already exist) and return
+      it. */
+  cache.scopedAlloc.pushFuncPtr = (indirectFuncPtr) => {
+    const top = cache.scopedAlloc[cache.scopedAlloc.length - 1];
+    if( top ) top.func.push(indirectFuncPtr);
+    return indirectFuncPtr;
+  };
   cache.utf8Decoder = new TextDecoder();
-  cache.utf8Encoder = new TextEncoder('utf-8');
+  cache.utf8Encoder = new TextEncoder();
 
   /**
      For the given IR-like string in the set ('i8', 'i16', 'i32',
@@ -390,51 +462,128 @@ function WhWasmUtilInstaller(target){
   };
 
   /**
-     If (cache.heapSize !== cache.memory.buffer.byteLength), i.e. if
-     the heap has grown since the last call, updates cache.HEAPxyz.
-     Returns the cache object.
+     The first time this is invoked, it sets up cache.memory, throwing
+     if neither target.memory nor target.exports.memory are a
+     WebAssembly.Memory object. It replaces itself with a function
+     which simply returns cache.memory then returns cache.memory.
+
+     i.e. throws on the first call (only) if no Memory is available,
+     else returns that Memory object.
   */
-  const heapWrappers = function(){
-    if(!cache.memory){
+  let __Memory = ()=>{
+    if( !cache.memory ){
       cache.memory = (target.memory instanceof WebAssembly.Memory)
         ? target.memory : target.exports.memory;
-    }else if(cache.heapSize === cache.memory.buffer.byteLength){
-      return cache;
-    }
-    // heap is newly-acquired or has been resized....
-    const b = cache.memory.buffer;
-    cache.HEAP8 = new Int8Array(b); cache.HEAP8U = new Uint8Array(b);
-    cache.HEAP16 = new Int16Array(b); cache.HEAP16U = new Uint16Array(b);
-    cache.HEAP32 = new Int32Array(b); cache.HEAP32U = new Uint32Array(b);
-    cache.HEAP32F = new Float32Array(b); cache.HEAP64F = new Float64Array(b);
-    if(target.bigIntEnabled){
-      if( 'undefined'!==typeof BigInt64Array ){
-        cache.HEAP64 = new BigInt64Array(b); cache.HEAP64U = new BigUint64Array(b);
-      }else{
-        toss("BigInt support is enabled, but the BigInt64Array type is missing.");
+      if( !(cache.memory instanceof WebAssembly.Memory) ){
+        toss("Missing target.memory or target.exports.memory",
+             "WebAssembly.Memory object.");
       }
     }
-    cache.heapSize = b.byteLength;
-    return cache;
-  };
+    //warn("cache.memory =",cache.memory);
+    __Memory = ()=>cache.memory;
+    return cache.memory;
+  }
 
-  /** Convenience equivalent of this.heapForSize(8,false). */
-  target.heap8 = ()=>heapWrappers().HEAP8;
+  /* True if TypedArray view needs to be created or reinitialized. */
+  const memoryViewNeedsUpdate = (view)=>
+        view?.byteLength !== __Memory().buffer.byteLength;
 
-  /** Convenience equivalent of this.heapForSize(8,true). */
-  target.heap8u = ()=>heapWrappers().HEAP8U;
+  /*
+    __HEAPx each return a TypeArray view of cache.memory.  These
+    lazily initialize both cache.memory and cache._viewX, and update
+    the view if cache.memory grows. Don't use these in a loop: get a
+    handle before the loop.
 
-  /** Convenience equivalent of this.heapForSize(16,false). */
-  target.heap16 = ()=>heapWrappers().HEAP16;
+    __HEAPx.shift is the number of bits which pointers must be
+    right-shifted when using them as an index for this heap.
+  */
+  const __HEAP8 = ()=>(memoryViewNeedsUpdate(cache._view8)
+                       ? (cache._view8=new Int8Array(cache.memory.buffer))
+                       : cache._view8);
+  const __HEAP8U = ()=>(memoryViewNeedsUpdate(cache._view8u)
+                        ? (cache._view8u=new Uint8Array(cache.memory.buffer))
+                        : cache._view8u);
+  __HEAP8.shift = __HEAP8U.shift = 0;
 
-  /** Convenience equivalent of this.heapForSize(16,true). */
-  target.heap16u = ()=>heapWrappers().HEAP16U;
+  const __HEAP16 = ()=>(memoryViewNeedsUpdate(cache._view16)
+                        ? (cache._view16=new Int16Array(cache.memory.buffer))
+                        : cache._view16);
+  const __HEAP16U = ()=>(memoryViewNeedsUpdate(cache._view16u)
+                         ? (cache._view16u=new Uint16Array(cache.memory.buffer))
+                         : cache._view16u);
+  __HEAP16.shift = __HEAP16U.shift = 1;
 
-  /** Convenience equivalent of this.heapForSize(32,false). */
-  target.heap32 = ()=>heapWrappers().HEAP32;
+  const __HEAP32 = ()=>(memoryViewNeedsUpdate(cache._view32)
+                        ? (cache._view32=new Int32Array(cache.memory.buffer))
+                        : cache._view32);
+  const __HEAP32U = ()=>(memoryViewNeedsUpdate(cache._view32u)
+                         ? (cache._view32u=new Uint32Array(cache.memory.buffer))
+                         : cache._view32u);
+  __HEAP32.shift = __HEAP32U.shift = 2;
 
-  /** Convenience equivalent of this.heapForSize(32,true). */
-  target.heap32u = ()=>heapWrappers().HEAP32U;
+  const __HEAP64 = (target.bigIntEnabled && ('undefined'!==typeof BigInt64Array))
+        ? ()=>(memoryViewNeedsUpdate(cache._view64)
+               ? (cache._view64=new BigInt64Array(cache.memory.buffer))
+               : cache._view64)
+        : ()=>toss("BigInt64Array is not available.")
+  const __HEAP64U = (target.bigIntEnabled && ('undefined'!==typeof BigUint64Array))
+    ? ()=>(memoryViewNeedsUpdate(cache._view64u)
+           ? (cache._view64u=new BigUint64Array(cache.memory.buffer))
+           : cache._view64u)
+        : ()=>toss("BigUint64Array is not available.");
+  __HEAP64.shift = __HEAP64U.shift = 3;
+
+  const __HEAP32F = ()=>(memoryViewNeedsUpdate(cache._view32f)
+                         ? (cache._view32f=new Float32Array(cache.memory.buffer))
+                         : cache._view32f);
+  __HEAP32F.shift = 2;
+  const __HEAP64F = ('undefined'!==typeof Float64Array)
+        ? ()=>(memoryViewNeedsUpdate(cache._view64f)
+               ? (cache._view64f=new Float64Array(cache.memory.buffer))
+               : cache._view64f)
+        : ()=>toss("Float64Array is not available.");
+  __HEAP64F.shift = 3;
+
+  /* Map of IR (and internal pseudo-IR) values to __HEAPx funcs. */
+  const __typeToHeap = function(type){
+    return this[type] || toss("Unknown type ID:",type);
+  }.bind(Object.freeze(Object.seal(
+    nu({
+      i1: __HEAP8, i8: __HEAP8,
+      //i1u: __HEAP8,  u8: __HEAP8U,
+      i16: __HEAP16, //u16: __HEAP16U,
+      i32: __HEAP32, //u32: __HEAP32U,
+      i64: __HEAP64, //u64: __HEAP64U,
+      f32: __HEAP32F,
+      f64: __HEAP64F,
+      double: __HEAP64F
+    })
+  )));
+
+  /** Convenience (and faster) equivalent of this.heapForSize(8,false). */
+  target.heap8 = __HEAP8;
+  /** Convenience (and faster) equivalent of this.heapForSize(8,true). */
+  target.heap8u = __HEAP8U;
+  /** Convenience (and faster) equivalent of this.heapForSize(16,false). */
+  target.heap16 = __HEAP16;
+  /** Convenience (and faster) equivalent of this.heapForSize(16,true). */
+  target.heap16u = __HEAP16U;
+  /** Convenience (and faster) equivalent of this.heapForSize(32,false). */
+  target.heap32 = __HEAP32;
+  /** Convenience (and faster) equivalent of this.heapForSize(32,true). */
+  target.heap32u = __HEAP32U;
+  /** Convenience (and faster) equivalent of this.heapForSize(64,false).
+      Throws if BigInt support is not enabled. */
+  target.heap64 = __HEAP64;
+  /** Convenience (and faster) equivalent of this.heapForSize(64,true).
+      Throws if BigInt support is not enabled. */
+  target.heap64u = __HEAP64U;
+  /** Convenience (and faster) equivalent of
+   * this.heapForSize(Float32Array). */
+  target.heap32f = __HEAP32F;
+  /** Convenience (and faster) equivalent of
+   * this.heapForSize(Float64Array). */
+  target.heap64f = __HEAP64F;
 
   /**
      Requires n to be one of:
@@ -463,38 +612,33 @@ function WhWasmUtilInstaller(target){
      Throws if passed an invalid n.
   */
   target.heapForSize = function(n,unsigned = true){
-    let ctor;
-    const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
-          ? cache : heapWrappers();
     switch(n){
-        case Int8Array: return c.HEAP8; case Uint8Array: return c.HEAP8U;
-        case Int16Array: return c.HEAP16; case Uint16Array: return c.HEAP16U;
-        case Int32Array: return c.HEAP32; case Uint32Array: return c.HEAP32U;
-        case 8:  return unsigned ? c.HEAP8U : c.HEAP8;
-        case 16: return unsigned ? c.HEAP16U : c.HEAP16;
-        case 32: return unsigned ? c.HEAP32U : c.HEAP32;
-        case 64:
-          if(c.HEAP64) return unsigned ? c.HEAP64U : c.HEAP64;
-          break;
-        default:
-          if(target.bigIntEnabled){
-            if(n===globalThis['BigUint64Array']) return c.HEAP64U;
-            else if(n===globalThis['BigInt64Array']) return c.HEAP64;
-            break;
-          }
+      case 8:  return unsigned ? __HEAP8U() : __HEAP8();
+      case 16: return unsigned ? __HEAP16U() : __HEAP16();
+      case 32: return unsigned ? __HEAP32U() : __HEAP32();
+      case 64: return unsigned ? __HEAP64U() : __HEAP64();
+      case Int8Array: return __HEAP8();
+      case Uint8Array: return __HEAP8U();
+      case Int16Array: return __HEAP16();
+      case Uint16Array: return __HEAP16U();
+      case Int32Array: return __HEAP32();
+      case Uint32Array: return __HEAP32U();
+      default:
+        if(n===globalThis['BigUint64Array']) return __HEAP64U();
+        else if(n===globalThis['BigInt64Array']) return __HEAP64();
+        else if(n===globalThis['Float32Array']) return __HEAP32F();
+        else if(n===globalThis['Float64Array']) return __HEAP64F();
+        toss("Invalid heapForSize() size: expecting 8, 16, 32,",
+             "or (if BigInt is enabled) 64, or a TypedArray constructor.");
     }
-    toss("Invalid heapForSize() size: expecting 8, 16, 32,",
-         "or (if BigInt is enabled) 64.");
   };
-
-  const __funcTable = target.functionTable;
-  delete target.functionTable;
 
   /**
      Returns the WASM-exported "indirect function table".
   */
-  target.functionTable = __funcTable
-    ? ()=>__funcTable
+  if( !(target.functionTable instanceof Function) ){
+    target.functionTable = target.functionTable
+      ? ((origFuncTable)=>{return ()=>origFuncTable})(target.functionTable)
     : ()=>target.exports.__indirect_function_table
     /** -----------------^^^^^ "seems" to be a standardized export name.
         From Emscripten release notes from 2020-09-10:
@@ -504,6 +648,7 @@ function WhWasmUtilInstaller(target){
         We must delay access to target.exports until after the library
         is bootstrapped.
     */;
+  }
 
   /**
      Given a function pointer, returns the WASM function table entry
@@ -512,7 +657,7 @@ function WhWasmUtilInstaller(target){
   */
   target.functionEntry = function(fptr){
     const ft = target.functionTable();
-    //console.debug("functionEntry(",arguments,")", __asPtrType(fptr));
+    //debug("functionEntry(",arguments,")", __asPtrType(fptr));
     //-sMEMORY64=1: we get a BigInt fptr and ft.get() wants a BigInt.
     //-sMEMORY64=2: we get a Number fptr and ft.get() wants a Number.
     return fptr < ft.length ? ft.get(__asPtrType(fptr)) : undefined;
@@ -696,7 +841,7 @@ function WhWasmUtilInstaller(target){
       /*this will only work if func is a WASM-exported function*/
       ft.set(ptr, func);
       if(scoped){
-        cache.scopedAlloc.pushPtr(ptr);
+        cache.scopedAlloc.pushFuncPtr(ptr);
       }
       return ptr;
     }catch(e){
@@ -710,7 +855,7 @@ function WhWasmUtilInstaller(target){
       const fptr = target.jsFuncToWasm(func, sig);
       ft.set(ptr, fptr);
       if(scoped){
-        cache.scopedAlloc.pushPtr(ptr);
+        cache.scopedAlloc.pushFuncPtr(ptr);
       }
     }catch(e){
       if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen);
@@ -840,38 +985,27 @@ function WhWasmUtilInstaller(target){
      ACHTUNG #2: ptr may be a BigInt (and generally will be in 64-bit
      builds) but this function must coerce it into a Number in order
      to access the heap's contents. Ergo: BitInts outside of the
-     (extrardinarily genereous) address range exposed to browser-side
+     (extrardinarily generous) address range exposed to browser-side
      WASM may cause misbehavior.
 
      See also: poke()
   */
-  target.peek = function f(ptr, type='i8'){
-    if(type.endsWith('*')) type = __ptrIR;
-    const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
-          ? cache : heapWrappers();
-    const list = Array.isArray(ptr) ? [] : undefined;
-    let rc;
-    do{
-      if(list) ptr = arguments[0].shift();
-      switch(type){
-          case 'i1':
-          case 'i8': rc = c.HEAP8[Number(ptr/*tag:64bit*/)>>0]; break;
-          case 'i16': rc = c.HEAP16[Number(ptr/*tag:64bit*/)>>1]; break;
-          case 'i32': rc = c.HEAP32[Number(ptr/*tag:64bit*/)>>2]; break;
-          case 'float': case 'f32': rc = c.HEAP32F[Number(ptr/*tag:64bit*/)>>2]; break;
-          case 'double': case 'f64': rc = Number(c.HEAP64F[Number(ptr/*tag:64bit*/)>>3]); break;
-          case 'i64':
-            if(c.HEAP64){
-              rc = __BigInt(c.HEAP64[Number(ptr/*tag:64bit*/)>>3]);
-              break;
-            }
-            /* fallthru */
-          default:
-            toss('Invalid type for peek():',type);
+  target.peek = function(ptr, type = 'i8') {
+    if( type.endsWith('*') ) type = __ptrIR;
+    const heaper = __typeToHeap(type), heap = heaper();
+    if( Array.isArray(ptr) ){
+      const res = new Array(ptr.length);
+      for (let i = 0; i < ptr.length; ++i) {
+        const p = Number(ptr[i]);
+        res[i] = (__HEAP64===heaper)
+          ? __BigInt(heap[p >> heaper.shift])
+          : Number(heap[p >> heaper.shift]);
       }
-      if(list) list.push(rc);
-    }while(list && arguments[0].length);
-    return list || rc;
+      return res;
+    }
+    return (__HEAP64===heaper)
+          ? __BigInt(heap[Number(ptr) >> heaper.shift])
+          : Number(heap[Number(ptr) >> heaper.shift]);
   };
 
   /**
@@ -893,25 +1027,14 @@ function WhWasmUtilInstaller(target){
   */
   target.poke = function(ptr, value, type='i8'){
     if (type.endsWith('*')) type = __ptrIR;
-    const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
-          ? cache : heapWrappers();
-    for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
-      switch (type) {
-          case 'i1':
-          case 'i8': c.HEAP8[Number(p/*tag:64bit*/)>>0] = value; continue;
-          case 'i16': c.HEAP16[Number(p/*tag:64bit*/)>>1] = value; continue;
-          case 'i32': c.HEAP32[Number(p/*tag:64bit*/)>>2] = value; continue;
-          case 'float': case 'f32': c.HEAP32F[Number(p/*tag:64bit*/)>>2] = value; continue;
-          case 'double': case 'f64': c.HEAP64F[Number(p/*tag:64bit*/)>>3] = value; continue;
-          case 'i64':
-            if(c.HEAP64){
-              c.HEAP64[Number(p/*tag:64bit*/)>>3] = __BigInt(value);
-              continue;
-            }
-            /* fallthru */
-          default:
-            toss('Invalid type for poke(): ' + type);
+    const heaper = __typeToHeap(type), heap = heaper();
+    if( __HEAP64===heaper && 'bigint'!==typeof value ) value = __BigInt(value);
+    if( Array.isArray(ptr) ){
+      for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
+        heap[Number(ptr/*tag:64bit*/) >> heaper.shift] = value;
       }
+    }else{
+      heap[Number(ptr) >> heaper.shift] = value;
     }
     return this;
   };
@@ -951,16 +1074,33 @@ function WhWasmUtilInstaller(target){
   /** i16 variant of poke8(). */
   target.poke16 = (ptr, value)=>target.poke(ptr, value, 'i16');
   /** i32 variant of peek8(). */
-  target.peek32 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i32' );
+  target.peek32 = function(ptr){
+    if( 'number' === typeof ptr && 1 === arguments.length ) {
+      /* Fast-path common case. */
+      return __HEAP32()[ptr >> 2];
+    }
+    return target.peek(1 === arguments.length
+                       ? ptr
+                       : Array.from(arguments), 'i32');
+  };
   /** i32 variant of poke8(). */
-  target.poke32 = (ptr, value)=>target.poke(ptr, value, 'i32');
+  target.poke32 = (ptr, value)=>{
+    /* Fast-path common case. */
+    if( 'number' === typeof ptr ){
+      __HEAP32()[ptr >> 2] = value;
+      return target;
+    }
+    return target.poke(ptr, value, 'i32');
+  };
   /** i64 variant of peek8(). Will throw if this build is not
       configured for BigInt support. */
-  target.peek64 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i64' );
+  target.peek64 = (ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i64' );
+
   /** i64 variant of poke8(). Will throw if this build is not
       configured for BigInt support. Note that this returns
       a BigInt-type value, not a Number-type value. */
   target.poke64 = (ptr, value)=>target.poke(ptr, value, 'i64');
+
   /** f32 variant of peek8(). */
   target.peek32f = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f32' );
   /** f32 variant of poke8(). */
@@ -980,8 +1120,8 @@ function WhWasmUtilInstaller(target){
   target.setPtrValue = target.pokePtr;
 
   /**
-     Returns true if the given value appears to be legal for use as
-     a WASM pointer value. Its _range_ of values is not (cannot be)
+     Returns true if the given value appears to be legal for use as a
+     WASM pointer value. Its _range_ of values is not (cannot be)
      validated except to ensure that it is a 32-bit integer with a
      value of 0 or greater. Likewise, it cannot verify whether the
      value actually refers to allocated memory in the WASM heap.
@@ -992,7 +1132,7 @@ function WhWasmUtilInstaller(target){
      integer arguments.
   */
   target.isPtr32 = (ptr)=>(
-    'number'===typeof ptr && ptr>=0 && ptr===(ptr|0)
+    'number'===typeof ptr && ptr===(ptr>>>0)
   );
 
   /** 64-bit counterpart of isPtr32() and falls back to that function
@@ -1012,16 +1152,14 @@ function WhWasmUtilInstaller(target){
      refers to a NUL-terminated C-style string encoded as UTF-8.
      Returns the length, in bytes, of the string, as for `strlen(3)`.
      As a special case, if !ptr or if it's not a pointer then it
-     returns `null`. Throws if ptr is out of range for
-     target.heap8u().
+     returns `null`. Results are undefined if no NUL is found. Throws
+     if ptr is out of range for target.heap8u().
   */
   target.cstrlen = function(ptr){
-    if(!ptr || !target.isPtr/*64*/(ptr)) return null;
-    ptr = Number(ptr) /*tag:64bit*/;
-    const h = heapWrappers().HEAP8U;
-    let pos = ptr;
-    for( ; h[pos] !== 0; ++pos ){}
-    return pos - ptr;
+    if(!ptr || !target.isPtr(ptr)) return null;
+    ptr = Number(ptr);
+    const end = __HEAP8U().indexOf(0, ptr);
+    return end < 0 ? null : end - ptr;
   };
 
   /** Internal helper to use in operations which need to distinguish
@@ -1088,7 +1226,7 @@ function WhWasmUtilInstaller(target){
   target.cstrToJs = function(ptr){
     const n = target.cstrlen(ptr);
     return n
-      ? typedArrayToString(heapWrappers().HEAP8U, Number(ptr), Number(ptr)+n)
+      ? typedArrayToString(__HEAP8U(), Number(ptr), Number(ptr)+n)
       : (null===n ? n : "");
   };
 
@@ -1222,7 +1360,7 @@ function WhWasmUtilInstaller(target){
     if(!tgtPtr || !srcPtr) toss("cstrncpy() does not accept NULL strings.");
     if(n<0) n = target.cstrlen(strPtr)+1;
     else if(!(n>0)) return 0;
-    const heap = target.heap8u();
+    const heap = __HEAP8U();
     let i = 0, ch;
     const tgtNumber = Number(tgtPtr), srcNumber = Number(srcPtr)/*tag:64bit*/;
     for(; i < n && (ch = heap[srcNumber+i]); ++i){
@@ -1256,7 +1394,7 @@ function WhWasmUtilInstaller(target){
           ptr = allocator(u.length+1);
     let toFree = ptr;
     try{
-      const heap = heapWrappers().HEAP8U;
+      const heap = __HEAP8U();
       heap.set(u, Number(ptr));
       heap[__ptrAdd(ptr, u.length)] = 0;
       toFree = __NullPtr;
@@ -1318,7 +1456,7 @@ function WhWasmUtilInstaller(target){
    */
   target.scopedAllocPush = function(){
     __affirmAlloc(target, 'scopedAllocPush');
-    const a = [];
+    const a = nu({ptr:[], func:[]});
     cache.scopedAlloc.push(a);
     return a;
   };
@@ -1352,17 +1490,17 @@ function WhWasmUtilInstaller(target){
     const n = arguments.length
           ? cache.scopedAlloc.indexOf(state)
           : cache.scopedAlloc.length-1;
-    if(n<0) toss("Invalid state object for scopedAllocPop().");
-    if(0===arguments.length) state = cache.scopedAlloc[n];
-    cache.scopedAlloc.splice(n,1);
-    for(let p; (p = state.pop()); ){
-      if(target.functionEntry(p)){
-        //console.warn("scopedAllocPop() uninstalling function",p);
-        target.uninstallFunction(p);
-      }else{
-        target.dealloc(p);
-      }
+    if(n<0) toss('Invalid state object for scopedAllocPop().');
+    if(0 === arguments.length) state = cache.scopedAlloc[n];
+    cache.scopedAlloc.splice(n, 1);
+    let li = state.func;
+    while( li.length ){
+      try{target.uninstallFunction(li.pop())}
+      catch(e){/*ignored*/}
     }
+    li = state.ptr;
+    while( li.length ) target.dealloc(li.pop());
+    state.ptr = state.func = null;
   };
 
   /**
@@ -1683,6 +1821,12 @@ function WhWasmUtilInstaller(target){
      Internal-use-only base class for FuncPtrAdapter and potentially
      additional stateful argument adapter classes.
 
+     By "internal" we mean "within the sqlite project" (where this
+     code originated and where it continues to serve). That is: this
+     API exists to suit that project's internal needs, with no
+     consideration for its use elsewhere. Client-level code must not
+     rely on this interface.
+
      Its main interface (convertArg()) is strictly internal, not to be
      exposed to client code, as it may still need re-shaping. Only the
      constructors of concrete subclasses should be exposed to clients,
@@ -1712,7 +1856,7 @@ function WhWasmUtilInstaller(target){
        and that context invariably lies in the LHS arguments of v.
        Examples of how this is useful can be found in FuncPtrAdapter.
     */
-    convertArg(v,argv,argIndex){
+    convertArg(/*v,argv,argIndex*/){
       toss("AbstractArgAdapter must be subclassed.");
     }
   };
@@ -1832,9 +1976,9 @@ function WhWasmUtilInstaller(target){
     constructor(opt) {
       super(opt);
       if(xArg.FuncPtrAdapter.warnOnUse){
-        console.warn('xArg.FuncPtrAdapter is an internal-only API',
-                     'and is not intended to be invoked from',
-                     'client-level code. Invoked with:',opt);
+        warn('xArg.FuncPtrAdapter is an internal-only API',
+             'and is not intended to be invoked from',
+             'client-level code. It was invoked with:',opt);
       }
       this.name = opt.name || "unnamed";
       this.signature = opt.signature;
@@ -1852,7 +1996,7 @@ function WhWasmUtilInstaller(target){
       this.isContext = 'context'===this.bindScope;
       this.isPermanent = 'permanent'===this.bindScope;
       this.singleton = ('singleton'===this.bindScope) ? [] : undefined;
-      //console.warn("FuncPtrAdapter()",opt,this);
+      //warn("FuncPtrAdapter()",opt,this);
       this.callProxy = (opt.callProxy instanceof Function)
         ? opt.callProxy : undefined;
     }
@@ -1864,7 +2008,7 @@ function WhWasmUtilInstaller(target){
     */
 
     /* Dummy impl. Overwritten per-instance as needed. */
-    contextKey(argv,argIndex){
+    contextKey(/*argv,argIndex*/){
       return this;
     }
 
@@ -1950,7 +2094,7 @@ function WhWasmUtilInstaller(target){
                  function. We're relying very much here on xWrap()
                  having pushed an alloc scope.
               */
-              cache.scopedAlloc.pushPtr(pair[1]);
+              cache.scopedAlloc.pushFuncPtr(pair[1]);
             }
             catch(e){/*ignored*/}
           }
@@ -1965,7 +2109,7 @@ function WhWasmUtilInstaller(target){
             FuncPtrAdapter.debugOut("FuncPtrAdapter uninstalling", this,
                                     this.contextKey(argv,argIndex), '@'+pair[1], v);
           }
-          try{cache.scopedAlloc.pushPtr(pair[1]);/*see notes above*/}
+          try{cache.scopedAlloc.pushFuncPtr(pair[1]);/*see notes above*/}
           catch(e){/*ignored*/}
           pair[0] = pair[1] = (v || __NullPtr);
         }
@@ -1988,13 +2132,13 @@ function WhWasmUtilInstaller(target){
   xArg.FuncPtrAdapter.warnOnUse = false;
 
   /** If true, convertArg() will call FuncPtrAdapter.debugOut() when
-      it (un)installs a function binding to/from WASM. Note that
-      deinstallation of bindScope=transient bindings happens via
-      scopedAllocPop() so will not be output. */
+      it (un)installs a function binding to/from WASM. Deinstallation
+      of bindScope=transient bindings happens via scopedAllocPop() so
+      will not be output. */
   xArg.FuncPtrAdapter.debugFuncInstall = false;
 
   /** Function used for debug output. */
-  xArg.FuncPtrAdapter.debugOut = console.debug.bind(console);
+  xArg.FuncPtrAdapter.debugOut = debug;
 
   /**
      List of legal values for the FuncPtrAdapter bindScope config
@@ -2017,12 +2161,18 @@ function WhWasmUtilInstaller(target){
      passing in all remaining arguments, and returns the result.
      Throws if t is not mapped to an argument converter.
   */
-  cache.xWrap.convertArg = (t,...args)=>__xArgAdapterCheck(t)(...args);
+  cache.xWrap.convertArg =
+    (t, v, argv, argIndex)=> __xArgAdapterCheck(t)(v, argv, argIndex);
   /**
      Identical to convertArg() except that it does not perform
      an is-defined check on the mapping to t before invoking it.
   */
-  cache.xWrap.convertArgNoCheck = (t,...args)=>xArg.get(t)(...args);
+  cache.xWrap.convertArgNoCheck =
+    (t, v, argv, argIndex)=> xArg.get(t)(v, argv, argIndex);
+
+  /* Internal code de-duplifier. True if xWrap type id t is
+     null or 'null'. */
+  const __typeIsNull = (t)=>(null===t || 'null'===t);
 
   /**
      Fetches the xWrap() result adapter mapped to t, calls it, passing
@@ -2030,13 +2180,13 @@ function WhWasmUtilInstaller(target){
      argument converter.
   */
   cache.xWrap.convertResult =
-    (t,v)=>(null===t ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
+    (t,v)=>(__typeIsNull(t) ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
   /**
      Identical to convertResult() except that it does not perform an
      is-defined check on the mapping to t before invoking it.
   */
   cache.xWrap.convertResultNoCheck =
-    (t,v)=>(null===t ? v : (t ? xResult.get(t)(v) : undefined));
+    (t,v)=>(__typeIsNull(t) ? v : (t ? xResult.get(t)(v) : undefined));
 
   /**
      Creates a wrapper for another function which converts the arguments
@@ -2223,16 +2373,19 @@ function WhWasmUtilInstaller(target){
     const fIsFunc = (fArg instanceof Function);
     const xf = fIsFunc ? fArg : target.xGet(fArg);
     if(fIsFunc) fArg = xf.name || 'unnamed function';
-    if(argTypes.length!==xf.length) __argcMismatch(fArg, xf.length);
-    if( 0===xf.length
-        && (null===resultType || 'null'===resultType) ){
+    if(argTypes.length!==xf.length){
+      __argcMismatch(fArg, xf.length) /* throws */;
+    }
+    if( 0===xf.length && __typeIsNull(resultType) ){
       /* Func taking no args with an as-is return. We don't need a wrapper. */
       return xf;
     }
     /*Verify the arg type conversions are valid...*/;
     __xResultAdapterCheck(resultType);
     for(const t of argTypes){
-      if(t instanceof AbstractArgAdapter) xArg.set(t, (...args)=>t.convertArg(...args));
+      if(t instanceof AbstractArgAdapter){
+        xArg.set(t, (v, argv, argIndex)=> t.convertArg(v, argv, argIndex));
+      }
       else __xArgAdapterCheck(t);
     }
     const cxw = cache.xWrap;
@@ -2242,10 +2395,19 @@ function WhWasmUtilInstaller(target){
                          ? __argcMismatch(fArg, xf.length)
                          : cxw.convertResult(resultType, xf.call(null)));
     }
-    return function(...args){
-      if(args.length!==xf.length) __argcMismatch(fArg, xf.length);
+    const resConverter =
+          /* Result conversion: null/'null'==> do nothing,
+             undefined==>void, else do the installed conversion */
+          __typeIsNull(resultType)
+          ? null
+          : (resultType
+             ? __xResultAdapterCheck(resultType)
+             : undefined);
+
+    return function(...args) {
+      if( args.length !== xf.length ) __argcMismatch(fArg, xf.length);
       const scope = target.scopedAllocPush();
-      try{
+      try {
         /*
           Maintenance reminder re. arguments passed to convertArg():
           The public interface of argument adapters is that they take
@@ -2269,15 +2431,19 @@ function WhWasmUtilInstaller(target){
         */
         let i = 0;
         if( callee.debug ){
-          console.debug("xWrap() preparing: resultType ",resultType, 'xf',xf,"argTypes",argTypes,"args",args);
+          debug('xWrap() preparing: resultType ', resultType,
+                'xf', xf,
+                'argTypes', argTypes, 'args', args);
         }
-        for(; i < args.length; ++i) args[i] = cxw.convertArgNoCheck(
-          argTypes[i], args[i], args, i
-        );
+        for(; i < args.length; ++i){
+          args[i] = cxw.convertArgNoCheck(argTypes[i], args[i], args, i);
+        }
         if( callee.debug ){
-          console.debug("xWrap() calling: resultType ",resultType, 'xf',xf,"argTypes",argTypes,"args",args);
+          debug('xWrap() calling: resultType ', resultType,
+                'xf', xf,'argTypes', argTypes, 'args', args);
         }
-        return cxw.convertResultNoCheck(resultType, xf.apply(null,args));
+        const rawRes = xf.apply(null, args);
+        return resConverter ? resConverter(rawRes) : rawRes;
       }finally{
         target.scopedAllocPop(scope);
       }
@@ -2442,14 +2608,20 @@ function WhWasmUtilInstaller(target){
   return target;
 };
 
+//#if not defined omit-yawl
 /**
    yawl (Yet Another Wasm Loader) provides very basic wasm loader.
    It requires a config object:
 
    - `uri`: required URI of the WASM file to load.
 
-   - `onload(loadResult)`: optional callback. Its argument is an
-     object described in more detail below.
+   - `fetchOpt`: Optional object to pass as the second argument to
+     `fetch(config.uri,X)`. This function always includes
+     `{credentials:'same-origin'}` unless the caller provides a
+     different credentials value.
+
+   - `onload(loadResult)`: optional on-success callback. Its argument
+     is an object described in more detail below.
 
    - `imports`: optional imports object for
      WebAssembly.instantiate[Streaming]().  The default is an empty
@@ -2489,17 +2661,20 @@ function WhWasmUtilInstaller(target){
    }
    ```
 
-   (The initial `then()` attached to the promise gets only that
-   object, and not the `config` object, thus the potential need for a
-   `config.onload` handler.)
+   The resulting Promise resolves to that same value.
 
-   Error handling is up to the caller, who may attach a `catch()` call
-   to the promise.
+   Error handling for the returned function is up to the caller, who
+   may attach a `catch()` call to its returned Promise.
 */
-globalThis.WhWasmUtilInstaller
-.yawl = function yawl(config){
+WhWasmUtilInstaller.yawl = function yawl(config){
+//#if not esm
   'use strict';
-  const wfetch = ()=>fetch(config.uri, {credentials: 'same-origin'});
+//#/if
+  const wfetch = ()=>fetch(
+    config.uri, Object.assign(Object.create(null),{
+      credentials: 'same-origin'
+    }, config.fetchOpt)
+  );
   const wui = this;
   const finalThen = function(arg){
     //log("finalThen()",arg);
@@ -2528,7 +2703,7 @@ globalThis.WhWasmUtilInstaller
       wui(tgt);
     }
     arg.config = config;
-    if(config.onload) config.onload(arg);
+    if(config.onload instanceof Function) config.onload(arg);
     return arg /* for any then() handler attached to
                   yetAnotherWasmLoader()'s return value */;
   };
@@ -2542,6 +2717,18 @@ globalThis.WhWasmUtilInstaller
         .then(finalThen)
   ;
   return loadWasm;
-}.bind(
-globalThis.WhWasmUtilInstaller
-)/*yawl()*/;
+}.bind(WhWasmUtilInstaller)/*yawl()*/;
+//#/if not defined omit-yawl
+//#if esm
+//#  if not no-export
+//#    if amalgamation
+export {WhWasmUtilInstaller};
+//#    elif not defined no-export-default
+export default WhWasmUtilInstaller;
+//#    /if
+//#  /if
+//#else if not lexical-scoped
+globalThis.WhWasmUtilInstaller = WhWasmUtilInstaller;
+//#/if
+//#savepoint rollback
+//#@ pop policy delimiter

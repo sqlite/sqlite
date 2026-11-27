@@ -259,7 +259,12 @@ static int dbpageFilter(
   pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
   pCsr->mxPgno = sqlite3BtreeLastPage(pBt);
   if( idxNum & 1 ){
-    i64 iPg = sqlite3_value_int64(argv[idxNum>>1]);
+    i64 iPg;
+    if( sqlite3_value_numeric_type(argv[idxNum>>1])==SQLITE_INTEGER ){
+      iPg = sqlite3_value_int64(argv[idxNum>>1]);
+    }else{
+      iPg = 0;
+    }
     assert( argc>(idxNum>>1) );
     if( iPg<1 || iPg>pCsr->mxPgno ){
       pCsr->pgno = 1;

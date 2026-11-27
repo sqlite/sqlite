@@ -165,7 +165,11 @@ do_test 3.5 {
   B finish
 } {SQLITE_ERROR}
 
-
-
+# Remove the database files created by this script.
+#
+catch {db close}
+catch {db2 close}
+forcedelete test2.db test3.db test4.db test5.db test6.db test7.db test8.db
+forcedelete test.db2 test.db3
 
 finish_test

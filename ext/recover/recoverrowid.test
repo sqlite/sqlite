@@ -44,6 +44,106 @@ do_test 1.2 {
 } {2 2 2 4 4 4}
 db2 close
 
+#-------------------------------------------------------------------------
+# Bug 2026-10-20T02:57:07Z: A column declared "INTEGER PRIMARY KEY DESC"
+# is not an alias for the rowid, and so must not be recovered as one.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE invoice(id INTEGER PRIMARY KEY DESC, customer TEXT);
+  INSERT INTO invoice VALUES(1001, 'alice'), (1002, 'bob'), (2001, 'carol');
+  CREATE TABLE w(v, id INTEGER PRIMARY KEY DESC);
+  INSERT INTO w VALUES('x', 42), ('y', 43);
+  DELETE FROM w WHERE v='x';
+
+  -- These are all rowid aliases, or are not rowid tables
+  CREATE TABLE a1(id INTEGER PRIMARY KEY, c);
+  INSERT INTO a1 VALUES(77, 'ipk');
+  CREATE TABLE a2(id INTEGER, c, PRIMARY KEY(id DESC));
+  INSERT INTO a2 VALUES(88, 'tblpk');
+  CREATE TABLE a3(id INTEGER PRIMARY KEY DESC, c) WITHOUT ROWID;
+  INSERT INTO a3 VALUES(99, 'wor');
+}
+
+foreach {tn bRowids wres} {
+  1 0 {1 y 43}
+  2 1 {2 y 43}
+} {
+  do_test 2.$tn {
+    recover db $bRowids test.db2
+    sqlite3 db2 test.db2
+    set res [execsql {
+      SELECT rowid, id, customer FROM invoice ORDER BY rowid;
+      SELECT rowid, v, id FROM w;
+      SELECT rowid, id, c FROM a1;
+      SELECT rowid, id, c FROM a2;
+      SELECT id, c FROM a3;
+    } db2]
+    db2 close
+    set res
+  } [list 1 1001 alice 2 1002 bob 3 2001 carol {*}$wres \
+          77 77 ipk 88 88 tblpk 99 wor]
+}
+
+#-------------------------------------------------------------------------
+# Bug 2026-10-20T02:57:35Z: If a table has a column named "_rowid_",
+# the recovered rowid must be written using some other name. If the
+# names "_rowid_", "rowid" and "oid" are all used by columns, the rowid
+# is not preserved.
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(_rowid_ TEXT, v TEXT);
+  INSERT INTO t1(oid, _rowid_, v) VALUES(10, 'ext-7f3a', 'first');
+  INSERT INTO t1(oid, _rowid_, v) VALUES(20, 'ext-91c2', 'second');
+  CREATE TABLE t2(_ROWID_, Rowid);
+  INSERT INTO t2(oid, _rowid_, rowid) VALUES(7, 'u', 'r');
+  CREATE TABLE t3(rowid, _rowid_, oid);
+  INSERT INTO t3 VALUES('r', 'u', 'o');
+  CREATE TABLE t4(a, rowid, b);
+  INSERT INTO t4(oid, a, rowid, b) VALUES(5, 'a', 'r', 'b');
+}
+
+proc rowidname_contents {db} {
+  execsql {
+    SELECT oid, _rowid_, v FROM t1 ORDER BY oid;
+    SELECT oid, _rowid_, rowid FROM t2;
+    SELECT rowid, _rowid_, oid FROM t3;
+    SELECT _rowid_, a, rowid, b FROM t4;
+  } $db
+}
+
+foreach {tn bRowids res} {
+  1 1 {10 ext-7f3a first 20 ext-91c2 second 7 u r r u o 5 a r b}
+  2 0 {1 ext-7f3a first 2 ext-91c2 second 1 u r r u o 1 a r b}
+} {
+  do_test 3.$tn {
+    recover db $bRowids test.db2
+    sqlite3 db2 test.db2
+    set res [rowidname_contents db2]
+    db2 close
+    set res
+  } $res
+}
+
+proc my_sql_hook {sql} {
+  lappend ::sqlhook $sql
+  return 0
+}
+do_test 3.3 {
+  set ::sqlhook [list]
+  set R [sqlite3_recover_init_sql db main my_sql_hook]
+  $R config rowids 1
+  $R run
+  $R finish
+  forcedelete test.db2
+  sqlite3 db2 test.db2
+  db2 eval [join $::sqlhook ";"]
+  set res [rowidname_contents db2]
+  db2 close
+  set res
+} {10 ext-7f3a first 20 ext-91c2 second 7 u r r u o 5 a r b}
+
 
 
 

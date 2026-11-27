@@ -1,0 +1,99 @@
+# 2026 November 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# Test that an incremental merge in FTS3/4 reports corruption, instead of
+# overflowing a signed integer, if the %_segdir.start_block or
+# %_segdir.end_block of a segment that is being appended to is out of range.
+#
+# TCL is used because the test needs to edit the %_segdir table of a
+# database that is built up over several transactions.
+#
+# Bug reports 332935c94e9b31c0 and 038eb2c97410a909.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/fts3_common.tcl
+set testprefix fts3corrupt8
+
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+sqlite3_fts3_may_be_corrupt 1
+database_may_be_corrupt
+sqlite3_db_config db DEFENSIVE 0
+
+# Create table t1 with four level-0 segments. Then run one incremental
+# merge step, which creates a partial segment at level 1 that a second
+# merge step can append to.
+#
+proc make_table {} {
+  catch { db eval { DROP TABLE t1 } }
+  db eval { CREATE VIRTUAL TABLE t1 USING fts4(x) }
+  for {set j 0} {$j<4} {incr j} {
+    db eval BEGIN
+    for {set i 0} {$i<60} {incr i} {
+      db eval { INSERT INTO t1 VALUES(hex(randomblob(40)) || ' a b c') }
+    }
+    db eval COMMIT
+  }
+  db eval { INSERT INTO t1(t1) VALUES('merge=1,2') }
+}
+
+do_test 1.0 {
+  make_table
+  catchsql { INSERT INTO t1(t1) VALUES('merge=1,2') }
+} {0 {}}
+
+# The number of bytes in end_block is the most negative 64-bit integer.
+#
+do_test 1.1 {
+  make_table
+  db eval {
+    UPDATE t1_segdir SET end_block = '792 -9223372036854775808' WHERE level=1;
+  }
+  catchsql { INSERT INTO t1(t1) VALUES('merge=1,2') }
+} {1 {database disk image is malformed}}
+
+# The start_block is the most negative 64-bit integer and the end block is 0.
+#
+do_test 1.2 {
+  make_table
+  db eval {
+    UPDATE t1_segdir
+       SET start_block=-9223372036854775808, end_block='0 -1026'
+     WHERE level=1;
+    INSERT INTO t1_segments(blockid, block) VALUES(0, NULL);
+  }
+  catchsql { INSERT INTO t1(t1) VALUES('merge=1,2') }
+} {1 {database disk image is malformed}}
+
+# The end_block is the most positive 64-bit integer.
+#
+do_test 1.3 {
+  make_table
+  db eval {
+    UPDATE t1_segdir SET end_block='9223372036854775807 -1026' WHERE level=1;
+    INSERT INTO t1_segments(blockid, block) VALUES(9223372036854775807, NULL);
+  }
+  catchsql { INSERT INTO t1(t1) VALUES('merge=1,2') }
+} {1 {database disk image is malformed}}
+
+# The end_block is less than the start_block.
+#
+do_test 1.4 {
+  make_table
+  db eval { UPDATE t1_segdir SET start_block=1000 WHERE level=1 }
+  catchsql { INSERT INTO t1(t1) VALUES('merge=1,2') }
+} {1 {database disk image is malformed}}
+
+finish_test
