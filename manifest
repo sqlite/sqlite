@@ -1,5 +1,5 @@
-C Merge\sall\srecent\strunk\schanges\sinto\sthe\swal2\sbranch.\s\sThere\sis\sa\stest\sfailure\nin\sthe\scheck-in\sbecause\sthe\sread-only\sWAL\srecovery\sfix\sof\n[57976197f6c39491]\sis\snot\sworking\safter\sthe\smerge.
-D 2026-11-27T11:12:15.555
+C Fix\sthe\sread-only\sWAL\srecovery\sproblem.
+D 2026-11-27T11:23:22.671
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -672,7 +672,7 @@ F ext/wasm/api/post-js-header.js b6bc2e199abe8f8e740f362e9c0902549159846b86d8ed1
 F ext/wasm/api/pre-js.c-pp.js 10029d9f9ae3141a4f2193937bc0f7d4cec41ea1b2e7310380e8ca76fb61b01f
 F ext/wasm/api/sqlite3-api-glue.c-pp.js 7f5ec15e4970a11b9919e86d3a234b0a601ab025b71cda15df47d3dc87033655
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js bc7adae01c8e74d999654b4f75ed9e3224e4c35f42247c6c55f56b6b2afc5aea
-F ext/wasm/api/sqlite3-api-prologue.c-pp.js bbdf93805a34e78e23a4a3c192858f496e3baf19eef74e160970a3aedfc2c564 w ext/wasm/api/sqlite3-api-prologue.js
+F ext/wasm/api/sqlite3-api-prologue.c-pp.js bbdf93805a34e78e23a4a3c192858f496e3baf19eef74e160970a3aedfc2c564
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js f3e97f66b138331c1122bebba2102194453fc04dcafe113aac12edc1aa43edd6
 F ext/wasm/api/sqlite3-license-version-header.js 98d90255a12d02214db634e041c8e7f2f133d9361a8ebf000ba9c9af4c6761cc
 F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js 3f85af55609f1452b29c476e59893cbeed417c59560795f50911318e916083b1
@@ -688,7 +688,7 @@ F ext/wasm/api/sqlite3-worker1.c-pp.js d274d5eb7f43f4f3b35a4d1f9213a1e34aa5ae27d
 F ext/wasm/common/SqliteTestUtil.js dae753b95e72248c4395d8de8359e0d055cd9928488e8dd84aef89e46d23b32e
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.c-pp.js 2e0704e54af9895c4837e0e5070ceafe179008b69429d4137d031630b1cf8b1a w ext/wasm/common/whwasmutil.js
+F ext/wasm/common/whwasmutil.c-pp.js 2e0704e54af9895c4837e0e5070ceafe179008b69429d4137d031630b1cf8b1a
 F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -705,7 +705,7 @@ F ext/wasm/fiddle/fiddle.js 2a0984cc4a35e6889c0d84ee9bf853317d5545ddb3966dfb995b
 F ext/wasm/fiddle/index.c-pp.html 72c7e5517217960b3809648429ea396a7cbad0ffb2c92f6a2f5703abecb27317
 F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73607dc54d290
 F ext/wasm/index.html 7b27bb7518558c58c518ac3b47220226f635fa11331bac98f4aaf0d63fc4b283
-F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js d426f0332a0e1fdc71fef3d32add2d80f9d51deae4c284790207147a3356f5a8 w ext/wasm/jaccwabyt/jaccwabyt.js
+F ext/wasm/jaccwabyt/jaccwabyt.c-pp.js d426f0332a0e1fdc71fef3d32add2d80f9d51deae4c284790207147a3356f5a8
 F ext/wasm/jaccwabyt/jaccwabyt.md 4140e42e52b2108fb5b5e6e05f05d4609d42771943f86cd95969cf16457637de
 F ext/wasm/libcmpp.c 6d6aa8ad0fea4a7e75d538f69c77ff491857f09f1801b5d0fe0d9c44a6e0bdac
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
@@ -891,7 +891,7 @@ F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b
 F src/vdbevtab.c c169e332f0e7756f5a98835c09efd4a0e1cd5cde7b2586eec99c4c9ffba8a90b
 F src/vtab.c cc362b8e1ed9bd93cf229ef2a069662483e8b0da90a47a835bc58111c3c10c5b
 F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
-F src/wal.c 739a5f29a818ad0ed9c5ee1826111bb664e662f1eb139c8affbf1404c028ebca
+F src/wal.c e218d3b5fe7adb1cc255342c44b94b760dbbf55cdadf02ce1700306368612620
 F src/wal.h 82de00f9d889ccf0e899aae61fb0a3efe8078e4a030ede8ce45e499c6062ee63
 F src/walker.c 7af241c7394be7c72f1ad1e8f95f3eca00fd04c77b9b0d62cbbd2726abae1ae3
 F src/where.c b2b06d5a5a27384fe34f671f8ee0e77ab8dbb07a3a62020529a8bff54502404b
@@ -1223,7 +1223,7 @@ F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
 F test/fork-test.c 9ac2e6423a1d38df3d6be0e8ac15608b545de21e2b19d9d876254c5931b63edb
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
-F test/fossildelta.clitest 0040d1807fb4742b89679b22ca6827c48dc32500c91f14cccd4fafba21fe656e w test/fossildelta.sql
+F test/fossildelta.clitest 0040d1807fb4742b89679b22ca6827c48dc32500c91f14cccd4fafba21fe656e
 F test/fp-speed-1.c 34a2fe8dc30d0b24bb3e7c16efca0a30452287da6caff7dde86eef882db155a4
 F test/fp-speed-2.c 15830b061832bb51f68f0985cf7a06f4f5d49eb25cc399854f1ff60d6a878ee9
 F test/fpconv1.test 400d7f7525839592290d643726baf199d8df1b4eb05716674eeea28268582ec2
@@ -1680,7 +1680,7 @@ F test/rowvaluefault.test 963ae9cdaed30a85a29668dd514e639f3556cae903ee9f172ea972
 F test/rowvaluevtab.test cd9747bb3f308086944c07968f547ad6b05022e698d80b9ffbdfe09ce0b8da6f
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
-F test/safemode.clitest 8373efb03c49a9ceae81fa6d9216c69d7e8573351b273b3f82ae2c5ad9305f99 w test/safemode.sql
+F test/safemode.clitest 8373efb03c49a9ceae81fa6d9216c69d7e8573351b273b3f82ae2c5ad9305f99
 F test/savepoint.test 63a120ec4fbbd5025b238c259d12ed0516fbf4bca6384041cb995ade9a5f00d2
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
@@ -1735,8 +1735,8 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell-parse.clitest 63094b15913bc2a83abdb85e26fdc46253ef46b77a18c0e76ad6b71ea0fcbd52 w test/cliparse.sql
-F test/shell-prompt.clitest 8a320a78812d75349bd5e1a95178f7ff1f2194bb4cceee572865d127c51684b3 w test/shell-prompt.sql
+F test/shell-parse.clitest 63094b15913bc2a83abdb85e26fdc46253ef46b77a18c0e76ad6b71ea0fcbd52
+F test/shell-prompt.clitest 8a320a78812d75349bd5e1a95178f7ff1f2194bb4cceee572865d127c51684b3
 F test/shell1.test c838dd9c6c034ece9eda530a7097c9b49a52ac6e76e356c10486e6ee7d6acf03
 F test/shell2.test 598f17feda8de7c6c7cec522a6eafbbfafee6766f85229a93f71f97c78b883b6
 F test/shell3.test 91efdd545097a61a1f72cf79c9ad5b49da080f3f10282eaf4c3c272cd1012db2
@@ -1829,7 +1829,7 @@ F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
-F test/temptrigfault.test a52cf8e33e32af8bfff7b2554488c450412fde9870118de05619470a482b18d0 w test/temptrigfault.tes
+F test/temptrigfault.test a52cf8e33e32af8bfff7b2554488c450412fde9870118de05619470a482b18d0
 F test/temptrigger.test a00f258ed8d21a0e8fd4f322f15e8cfb5cef2e43655670e07a753e3fb4769d61
 F test/tester.tcl fdaee8b81973aca0d455a2137dd06d60dd9f0bfcb22258bf036be7cf50477e02
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
@@ -2336,8 +2336,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4bc8fdd581089509674796ecb20d1864f3a3a8ab62260749be77340e37605888 7678941a784ee0ea8432b7d40f1596f235285c9f8f6a814352370f445dd49af4
-R 1a3c4b052751a2ee999fedbba2c10c2f
+P d296736a788d8f886ce97219059c411e0ea37a3360401a6c607a0ffc47fd9c22
+R b2142a03e50ddb7f78cb99e0115b2e61
 U drh
-Z be9ac6a06edd68732e88c6719d7e9ff9
+Z 91c00518b29f8a43b01f29eb4d7d842f
 # Remove this line to create a well-formed Fossil manifest.
