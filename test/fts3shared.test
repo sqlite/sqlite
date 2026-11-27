@@ -132,6 +132,14 @@ do_test 2.3.8 { execsql COMMIT dbR } {}
 # Test that once a connection has read from the FTS or fts4aux table, 
 # another connection may not write to the FTS table.
 #
+# The write fails when its OP_TableLock tries to lock an FTS shadow
+# table, so the error message may include the name of that table.
+# Strip it before comparing.
+#
+proc locked_noname {res} {
+  list [lindex $res 0] [regsub {: \w+$} [lindex $res 1] {}]
+}
+
 foreach {tn sql} {
   1 "SELECT * FROM t1 WHERE rowid=1"
   2 "SELECT * FROM t1 WHERE t1 MATCH 'a'" 
@@ -144,7 +152,7 @@ foreach {tn sql} {
     execsql BEGIN dbR
     execsql $::sql dbR
     execsql BEGIN dbW
-    catchsql "INSERT INTO t1 VALUES('p q r')" dbW
+    locked_noname [catchsql "INSERT INTO t1 VALUES('p q r')" dbW]
   } $LOCKED
 
   execsql ROLLBACK dbR 
@@ -163,7 +171,9 @@ foreach {tn sql} {
     execsql BEGIN dbR
     execsql $::sql dbR
     execsql BEGIN dbW
-    catchsql "INSERT INTO t2(rowid, a, b) VALUES(3, 's t u', 'v w x')" dbW
+    locked_noname [
+      catchsql "INSERT INTO t2(rowid, a, b) VALUES(3, 's t u', 'v w x')" dbW
+    ]
   } $LOCKED
 
   execsql ROLLBACK dbR 

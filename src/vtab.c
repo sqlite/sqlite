@@ -1227,6 +1227,35 @@ FuncDef *sqlite3VtabOverloadFunction(
   return pNew;
 }
 
+#ifndef SQLITE_OMIT_SHARED_CACHE
+/*
+** Virtual table pTab is about to be written by the statement being
+** compiled. If pTab is in a shared-cache database, arrange for the
+** statement to take a write-lock on each of pTab's shadow tables (as
+** identified by the module's xShadowName method) before it runs.
+**
+** Without this, the module's xUpdate method might fail with SQLITE_LOCKED
+** partway through, after it has already written some of its shadow tables.
+*/
+static void vtabLockShadowTables(Parse *pParse, Table *pTab){
+  sqlite3 *db = pParse->db;
+  int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  HashElem *k;
+
+  if( iDb==1 || !sqlite3BtreeSharable(db->aDb[iDb].pBt) ) return;
+  for(k=sqliteHashFirst(&pTab->pSchema->tblHash); k; k=sqliteHashNext(k)){
+    Table *pOther = sqliteHashData(k);
+    if( IsOrdinaryTable(pOther)
+     && sqlite3IsShadowTableOf(db, pTab, pOther->zName)
+    ){
+      sqlite3TableLock(pParse, iDb, pOther->tnum, 1, pOther->zName);
+    }
+  }
+}
+#else
+# define vtabLockShadowTables(x,y)
+#endif
+
 /*
 ** Make sure virtual table pTab is contained in the pParse->apVirtualLock[]
 ** array so that an OP_VBegin will get generated for it.  Add pTab to the
@@ -1242,6 +1271,7 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
   for(i=0; i<pToplevel->nVtabLock; i++){
     if( pTab==pToplevel->apVtabLock[i] ) return;
   }
+  vtabLockShadowTables(pParse, pTab);
   n = (pToplevel->nVtabLock+1)*sizeof(pToplevel->apVtabLock[0]);
   apVtabLock = sqlite3Realloc(pToplevel->apVtabLock, n);
   if( apVtabLock ){
