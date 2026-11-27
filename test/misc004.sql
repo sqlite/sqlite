@@ -1050,3 +1050,28 @@ INSERT INTO g(_shape)
 SELECT geopoly_json(_shape) FROM g;
 .check [[9.0e+999,0.0],[0.0,9.0e+999],[-9.0e+999,0.0],[0.0,-9.0e+999],[9.0e+999,0.0]]
 .endif
+
+#------------------------------------------------------------------------------
+# Bug 2026-11-27T14:15:41Z sqlite.org/bugs/info/d93fc2b55977c3b2
+# Values near infinity can cause floating-point overflow in the
+# median() and similar functions.
+#
+.open :memory:
+.mode -reset list -colsep ,
+.testcase 2000
+CREATE TABLE t1(x REAL);
+INSERT INTO t1 VALUES(-1e308),(+1e308);
+SELECT percentile(x,0) FROM t1;
+.check -1.0e+308
+.testcase 2001
+SELECT percentile(x,100) FROM t1;
+.check 1.0e+308
+.testcase 2002
+SELECT percentile(x,51) FROM t1;
+.check -allglob 2.0*e+306
+.testcase 2003
+SELECT percentile(x,50) FROM t1;
+.check 0.0
+.testcase 2004
+SELECT percentile(x,49) FROM t1;
+.check -allglob -2.0*e+306

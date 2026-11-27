@@ -3180,7 +3180,6 @@ static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
   Percentile *p;
   int settings = SQLITE_PTR_TO_INT(sqlite3_user_data(pCtx))&1; /* Discrete? */
   unsigned i1, i2;
-  double v1, v2;
   double ix, vx;
   p = (Percentile*)sqlite3_aggregate_context(pCtx, 0);
   if( p==0 ) return;
@@ -3200,10 +3199,13 @@ static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
     if( settings & 1 ){
       vx = p->a[i1];
     }else{
-      i2 = ix==(double)i1 || i1==p->nUsed-1 ? i1 : i1+1;
-      v1 = p->a[i1];
-      v2 = p->a[i2];
-      vx = v1 + (v2-v1)*(ix-i1);
+      i2 = (ix==(double)i1 || i1==p->nUsed-1) ? i1 : i1+1;
+      if( i1==i2 ){
+        vx = p->a[i1];
+      }else{
+        double f = ix - (double)i1;
+        vx = (1.0-f)*p->a[i1] + f*p->a[i2];
+      }
     }
     sqlite3_result_double(pCtx, vx);
   }
