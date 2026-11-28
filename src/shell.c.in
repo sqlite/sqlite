@@ -11104,6 +11104,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     if( nArg>1 && ii==ArraySize(aDbConfig) ){
       dotCmdError(p, 1, "unknown dbconfig",
          "Enter \".dbconfig\" with no arguments for a list");
+      rc = 1;
     }
   }else
 
@@ -12175,6 +12176,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     /* If no command name matches, show a syntax error */
     parameter_syntax_error:
     showHelp(p->out, "parameter");
+    rc = 1;
   }else
 
   if( c=='p' && n>=3 && cli_strncmp(azArg[0], "print", n)==0 ){
@@ -12484,7 +12486,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     int ii;
     sqlite3_str *pSql;
     sqlite3_stmt *pStmt = 0;
- 
+
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
     data.mode.spec.bTitles = QRF_No;
