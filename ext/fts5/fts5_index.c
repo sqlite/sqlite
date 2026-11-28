@@ -5226,7 +5226,8 @@ static void fts5SecureUpdateIdxEntry(
   assert( iPgno!=1 );
   if( p->rc==SQLITE_OK && p->pIdxKeyUpdate==0 ){
     fts5IndexPrepareStmt(p, &p->pIdxKeyUpdate, sqlite3_mprintf(
-        "UPDATE '%q'.'%q_idx' SET term=?1 WHERE (segid, (pgno/2)) = (?2, ?3)",
+        "UPDATE OR FAIL '%q'.'%q_idx' SET term=?1 "
+        "WHERE (segid, (pgno/2)) = (?2, ?3)",
         p->pConfig->zDb, p->pConfig->zName
     ));
   }

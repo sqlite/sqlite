@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sfts5\ssecure-delete\smode\striggered\sby\sdeleting\sall\sentries\sfor\sa\sterm\swith\sa\sdoclist-index\swhen\sthat\sterm\sis\snot\sthe\sfirst\sterm\son\sits\sleaf\spage.\sReport\s[bugs:/info/2026-11-27T17:50:30Z\s|\s2026-11-27T17:50:30Z].
-D 2026-11-28T17:25:29.533
+C In\sfts5,\savoid\srunning\san\sUPDATE\sstatement\sthat\suses\sa\ssavepoint\swhen\sflushing\sa\shash\stable\sto\sdisk.\sReport\s[bugs:/info/2026-11-27T17:47:15Z\s|\s2026-11-27T17:47:15Z].
+D 2026-11-28T18:10:12.000
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -115,7 +115,7 @@ F ext/fts5/fts5_buffer.c dcc3f0352339fe79c9d8abbc1c2009bc3469206467880bf43558447
 F ext/fts5/fts5_config.c 2ad35f7fb979aeeca1a53f7328362655f628c2ddb3ce23a48b215a0a1b7830e9
 F ext/fts5/fts5_expr.c 77e1a5e4aa11209d38f488afeb7ee8a96b92c782154d67dedd5ec3c8a36f45aa
 F ext/fts5/fts5_hash.c 587541a3c13c126cfcc52f9b591fc89212f335a6979e4c70ade8613f28a48ed0
-F ext/fts5/fts5_index.c 6fcdd74d49f23bd2f5f4fb50375e451fe10acba8fa871e95632ee5fff0785a41
+F ext/fts5/fts5_index.c b9d090f6ca995fe003b251da35c60a65353c18d37d1c5413517e3a749bb76eb8
 F ext/fts5/fts5_main.c f70153840fc0d4651e8f88921f51931a10093ea971def40c98829213c207ca54
 F ext/fts5/fts5_storage.c 07bc0308bfc633e24d3d65051d65c113f03837160e137c285248ffe506d45493
 F ext/fts5/fts5_tcl.c aed8905b1a3c6ecc94da15e9cc54d889045b9eacecc7a17b6fcc1294225f7716
@@ -167,7 +167,7 @@ F ext/fts5/test/fts5corrupt.test 43caae97bc7c9c7d7b5ec777f8782b9cf61a132c2aa72c1
 F ext/fts5/test/fts5corrupt2.test 4a03a158c2cb617c9f76d26b35c1ef2534124bc0bbddcea38dfd5b170ebea27b
 F ext/fts5/test/fts5corrupt3.test d9fcac588e8362eadbb51f504c619ce124d1d96d750dde13f86d34a382f6ff0b
 F ext/fts5/test/fts5corrupt4.test dc08d19f5b8943e95a7778a7d8da592042504faf18dd93f68f7d7a0d7d7dd733
-F ext/fts5/test/fts5corrupt5.test 69298b9023dc161ff4c58b5e64ca0c48c0125cf0e08e5c1d253edca301c785ff
+F ext/fts5/test/fts5corrupt5.test 49777321d719d7a65630241c7f7f7e789e9c3af7e3596d0f8884093063c0f741
 F ext/fts5/test/fts5corrupt6.test 2d72db743db7b5d9c9a6d0cfef24d799ed1aa5e8192b66c40e871a37ed9eed06
 F ext/fts5/test/fts5corrupt7.test c6d86370bb156bec5f7ac366a6acec1c6262bbba5d74ed3c78748bcf59fee3ce
 F ext/fts5/test/fts5corrupt8.test 0b10750caf8aa23fa1c379ca4caf6130d41454505e4d5315590f4061eedcbe44
@@ -243,7 +243,7 @@ F ext/fts5/test/fts5rebuild.test dc09779fbbe151ab68206a0931c10a611912a7a12c7a85d
 F ext/fts5/test/fts5restart.test 9af2084b8e065130037b95f05f3f220bb7973903a7701e2c5fb916dff7cf80c5
 F ext/fts5/test/fts5rowid.test 8632829fec04996832a4cfb4f0bd89721ba65b7e398c1731741bdb63f070e1a3
 F ext/fts5/test/fts5savepoint.test 06161e54d67317dfa6c79f6ef9ef3887c3f4c74eac40a76b4e01fe800dbfa556
-F ext/fts5/test/fts5secure.test 334dc681110df65f466800aadb63aeea4569f5b71493a9bc011b237c0aabd4dd
+F ext/fts5/test/fts5secure.test 01c1e07004c763089b1bf4727bbd3e541d3213d7f996b6d528fab59312d5f6a8
 F ext/fts5/test/fts5secure2.test 2e961d7eef939f294c56b5d895cac7f1c3a60b934ee2cfd5e5e620bdf1ba6bbc
 F ext/fts5/test/fts5secure3.test 6d066828d225b0dbe5db818d4d6165df7bb70210e68a577e858e8762400d5a23
 F ext/fts5/test/fts5secure4.test 0d10a80590c07891478700af7793b232962042677432b9846cf7fc8337b67c97
@@ -2323,8 +2323,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ce06fb61f1d04e39a5f574ae0b1017a7c13e27c7fcf005e8b85d45ef75aa513e
-R b8e0d1089f51f564373b198769e9afbd
+P bb458794a275bda818e0609d4a51da23fb8576b0b5764aa9205deb9a2c2a3247
+R bb6dd8a52755247efa9fbf8794fb005b
 U dan
-Z 73e86b7d3b1c7333b02a83150f8a7540
+Z b327e2424d4994423f8c12fad5cb0edb
 # Remove this line to create a well-formed Fossil manifest.

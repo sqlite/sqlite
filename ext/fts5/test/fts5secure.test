@@ -542,4 +542,29 @@ do_execsql_test 9.5.2 {
   SELECT count(*) FROM t('mysecq*') UNION ALL SELECT count(*) FROM t('zulu*');
 } {1001 60 60}
 
+#-------------------------------------------------------------------------
+# Secure-delete flush of the in-memory hash table re-entering
+# sqlite3Fts5IndexBeginWrite() with a smaller rowid, causing a nested
+# flush that frees the hash table while still in use.
+#
+reset_db
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(a);
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 64);
+  INSERT INTO ft(ft, rank) VALUES('secure-delete', 1);
+  WITH RECURSIVE s(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<20)
+    INSERT INTO ft(rowid, a) SELECT i, printf('term%02d_abcdefghijklmnop', i)
+    FROM s;
+}
+do_execsql_test 10.1 {
+  BEGIN;
+    DELETE FROM ft WHERE rowid IN (19, 20);
+    DELETE FROM ft WHERE rowid = 1;
+  COMMIT;
+  SELECT count(*) FROM ft;
+} {17}
+do_execsql_test 10.2 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
 finish_test
