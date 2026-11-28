@@ -359,4 +359,68 @@ four   eight  twelve
 | fourteen |
 +----------+}
 
+# Ticket f68e278f49: A second ".mode --once" before the next SQL
+# statement must not keep the mode from reverting.
+#
+do_test shellA-7.1 {
+  exec {*}$CLI -noinit :memory: \
+      {.mode list} \
+      {.mode --once csv} \
+      {.mode --once json} \
+      {SELECT 1 AS a} \
+      {SELECT 2 AS a} \
+      {.mode}
+} {[{"a":1}]
+2
+.mode list}
+do_test shellA-7.2 {
+  exec {*}$CLI -noinit :memory: \
+      {.mode list} \
+      {.mode --once --once csv --title off} \
+      {SELECT 1 AS a} \
+      {.mode}
+} {1
+.mode list}
+
+# SQL run by -cmd ends a ".mode --once" or a ".once".
+#
+do_test shellA-7.3 {
+  exec {*}$CLI -noinit -cmd {.mode --once json} -cmd {SELECT 1 AS a} \
+      :memory: {SELECT 2 AS a}
+} {[{"a":1}]
+2}
+do_test shellA-7.4 {
+  forcedelete shellA-out.txt
+  set res [exec {*}$CLI -noinit -cmd {.once shellA-out.txt} \
+      -cmd {SELECT 1} -cmd {SELECT 2} :memory: << {}]
+  set fd [open shellA-out.txt]
+  lappend res [string trim [read $fd]]
+  close $fd
+  set res
+} {2 1}
+
+# Unterminated SQL at the end of a ".read" file ends a ".mode --once".
+#
+do_test shellA-7.5 {
+  set fd [open shellA-read.sql w]
+  puts -nonewline $fd {SELECT 1 AS a}
+  close $fd
+  exec {*}$CLI -noinit :memory: \
+      {.mode list} \
+      {.mode --once json} \
+      {.read shellA-read.sql} \
+      {SELECT 2 AS a}
+} {[{"a":1}]
+2}
+forcedelete shellA-out.txt shellA-read.sql
+
+# At most MODE_N_USER (25) modes may be saved with --tag.
+#
+do_test shellA-7.6 {
+  set cmd {}
+  for {set i 1} {$i<=26} {incr i} {lappend cmd ".mode --tag t$i"}
+  catch {exec {*}$CLI -noinit :memory: {*}$cmd} res
+  set res
+} {/t26.*cannot add more modes/}
+
 finish_test
