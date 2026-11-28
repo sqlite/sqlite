@@ -1107,3 +1107,34 @@ SELECT * FROM rt;
 SELECT rtreecheck('rt');
 .check 'ok'
 .endif
+
+# Bug 2026-11-27T18:01:07Z sqlite.org/bugs/info/24eddaab200d59d6
+# An empty b-tree page on a database with 65536-byte pages and no reserved
+# bytes stores 0 as the offset to its cell content, which means 65536.
+# DROP TABLE of a table whose sqlite_schema entry is on a child page of the
+# sqlite_schema root failed with SQLITE_CORRUPT in editPage().  The same
+# misreading in copyNodeContent() then overwrote the database header.
+#
+.open :memory:
+.mode --reset list
+PRAGMA page_size=65536;
+SELECT tryeval(format('CREATE TABLE t_big(x TEXT DEFAULT ''%.65400c'')','x'));
+.testcase 2200
+SELECT count(*) FROM sqlite_schema;
+.check '1'
+.testcase 2210
+PRAGMA integrity_check;
+.check 'ok'
+.testcase 2220
+DROP TABLE t_big;
+SELECT count(*) FROM sqlite_schema;
+.check '0'
+.testcase 2230
+PRAGMA integrity_check;
+.check 'ok'
+.testcase 2240
+CREATE TABLE t2(a);
+INSERT INTO t2 VALUES(1),(2);
+SELECT sum(a) FROM t2;
+PRAGMA integrity_check;
+.check '3' 'ok'

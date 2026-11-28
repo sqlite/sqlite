@@ -7954,7 +7954,7 @@ static int editPage(
     nCell -= nTail;
   }
 
-  pData = &aData[get2byte(&aData[hdr+5])];
+  pData = &aData[get2byteNotZero(&aData[hdr+5])];
   if( pData<pBegin ) goto editpage_fail;
   if( NEVER(pData>pPg->aDataEnd) ) goto editpage_fail;
 
@@ -8224,7 +8224,7 @@ static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
     assert( get2byte(&aFrom[iFromHdr+5]) <= (int)pBt->usableSize );
  
     /* Copy the b-tree node content from page pFrom to page pTo. */
-    iData = get2byte(&aFrom[iFromHdr+5]);
+    iData = get2byteNotZero(&aFrom[iFromHdr+5]);
     memcpy(&aTo[iData], &aFrom[iData], pBt->usableSize-iData);
     memcpy(&aTo[iToHdr], &aFrom[iFromHdr], pFrom->cellOffset + 2*pFrom->nCell);
  
