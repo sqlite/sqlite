@@ -1138,3 +1138,45 @@ INSERT INTO t2 VALUES(1),(2);
 SELECT sum(a) FROM t2;
 PRAGMA integrity_check;
 .check '3' 'ok'
+
+# 2026-11-28 https://sqlite.org/bugs/info/ce48820b7df53cea
+# A subquery nested inside a RETURNING subquery that reads the target table
+# must be re-evaluated for each row.
+#
+.open :memory:
+.mode --reset list
+.testcase 2300
+CREATE TABLE t(a INTEGER);
+INSERT INTO t VALUES(1),(2),(3);
+UPDATE t SET a=a+100
+ RETURNING (SELECT (SELECT sum(a) FROM t));
+.check '106' '206' '306'
+.testcase 2310
+DELETE FROM t;
+INSERT INTO t VALUES(1),(2),(3);
+UPDATE t SET a=a+100
+ RETURNING (SELECT sum(a) FROM t UNION ALL SELECT -1);
+.check '106' '206' '306'
+.testcase 2320
+DELETE FROM t;
+INSERT INTO t VALUES(1),(2),(3);
+UPDATE t SET a=a+100
+ RETURNING (SELECT (SELECT (SELECT sum(a) FROM t)));
+.check '106' '206' '306'
+.testcase 2330
+DELETE FROM t;
+INSERT INTO t VALUES(1),(2),(3);
+UPDATE t SET a=a+100
+ RETURNING (SELECT x FROM (SELECT sum(a) AS x FROM t));
+.check '106' '206' '306'
+.testcase 2340
+DELETE FROM t;
+INSERT INTO t VALUES(1),(2),(3);
+UPDATE t SET a=a+100
+ RETURNING (SELECT (SELECT 5)), a, (SELECT (SELECT sum(a) FROM t));
+.check '5|101|106' '5|102|206' '5|103|306'
+.testcase 2350
+CREATE TABLE u(b);
+INSERT INTO u VALUES(1),(2),(3);
+DELETE FROM t RETURNING (SELECT (SELECT sum(b) FROM u));
+.check '6' '6' '6'

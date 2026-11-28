@@ -978,13 +978,17 @@ static int sqlite3ReturningSubqueryVarSelect(Walker *NotUsed, Expr *pExpr){
 
 
 /*
-** If the SELECT references the table pWalker->u.pTab, then do two things:
+** If the SELECT directly references the table pWalker->u.pTab, then do
+** two things:
 **
 **    (1) Mark the SELECT as as SF_Correlated.
 **    (2) Set pWalker->eCode to non-zero so that the caller will know
 **        that (1) has happened.
 */
-static int sqlite3ReturningSubqueryCorrelated(Walker *pWalker, Select *pSelect){
+static int sqlite3ReturningSubqueryCorrelated1(
+  Walker *pWalker,
+  Select *pSelect
+){
   int i;
   SrcList *pSrc;
   assert( pSelect!=0 );
@@ -997,6 +1001,27 @@ static int sqlite3ReturningSubqueryCorrelated(Walker *pWalker, Select *pSelect){
       pWalker->eCode = 1;
       break;
     }
+  }
+  return WRC_Continue;
+}
+
+/*
+** Mark the SELECT as SF_Correlated if it, or any subquery nested inside
+** it, references the table pWalker->u.pTab.  This way, an outer subquery
+** that merely contains a correlated subquery is not treated as constant.
+*/
+static int sqlite3ReturningSubqueryCorrelated(
+  Walker *pWalker,
+  Select *pSelect
+){
+  Walker w2;
+  w2 = *pWalker;
+  w2.eCode = 0;
+  w2.xSelectCallback = sqlite3ReturningSubqueryCorrelated1;
+  sqlite3WalkSelect(&w2, pSelect);
+  if( w2.eCode ){
+    pSelect->selFlags |= SF_Correlated;
+    pWalker->eCode = 1;
   }
   return WRC_Continue;
 }
