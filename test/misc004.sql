@@ -1321,3 +1321,39 @@ SELECT strftime('%F %Y %G %g', '2026-11-28'),
        strftime('%F %Y %G %g', '0000-01-01', '+3 days'),
        strftime('%F %Y', '0099-06-15');
 .check '2026-11-28 2026 2026 26|0000-01-04 0000 0000 00|0099-06-15 0099'
+
+#------------------------------------------------------------------------------
+# Bug 2026-11-27T14:46:31Z sqlite.org/bugs/info/52724e5de4db4cd8
+# The key of the first row of json_tree(X,ROOT) must be the array index or
+# the decoded object label that ROOT resolves to.
+#
+.open :memory:
+.mode --reset list
+.testcase 2700
+SELECT key, typeof(key), value FROM json_tree('[10,20,30]', '$[#-1]');
+.check '2|integer|30'
+.testcase 2710
+SELECT key, typeof(key), value FROM jsonb_tree('[10,20,30]', '$[#-2]');
+.check '1|integer|20'
+.testcase 2720
+SELECT path, key, value FROM json_tree('[[10,20,30]]', '$[0][#-1]');
+.check '$[0]|2|30'
+.testcase 2730
+SELECT key, value FROM json_tree('{"a\"b": 1}', '$."a\"b"');
+.check 'a"b|1'
+.testcase 2740
+SELECT key, value FROM json_tree('{"aAb": 1}', '$."aAb"');
+.check 'aAb|1'
+.testcase 2750
+SELECT key, value FROM json_tree('[10,[20,21],30]', '$[1]');
+.check '1|[20,21]' '0|20' '1|21'
+.testcase 2760
+SELECT key, value, fullkey FROM json_tree('{"a":[5,6,{"b":7}]}', '$.a[#-1]');
+.check '2|{"b":7}|$.a[#-1]' 'b|7|$.a[#-1].b'
+.testcase 2770
+SELECT key, typeof(key), value FROM json_tree('{"a":1}', '$');
+.check '|null|{"a":1}' 'a|text|1'
+.testcase 2780
+SELECT key, typeof(key), value FROM json_each('[10,20,30]', '$[#-1]');
+SELECT key, typeof(key), value FROM json_each('{"a":1}', '$.a');
+.check '|null|30' '|null|1'

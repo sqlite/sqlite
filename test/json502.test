@@ -59,9 +59,10 @@ do_execsql_test 3.4 {
 } 456
 
 ifcapable vtab {
+  # The key of the root row is the decoded label, not the text of the path.
   do_execsql_test 4.1 {
     SELECT * FROM json_tree('{"\u0017":1}','$."\x17"');
-  } {{\x17} 1 integer 1 1 null {$."\x17"} {$}}
+  } [list \u0017 1 integer 1 1 null {$."\x17"} {$}]
 }
 
 # JSON PATH parsing bug involving backslash escapes, reported via

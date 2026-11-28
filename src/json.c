@@ -370,6 +370,7 @@ struct JsonParse {
   int delta;         /* Size change due to the edit */
   u32 nIns;          /* Number of bytes to insert */
   u32 iLabel;        /* Location of label if search landed on an object value */
+  u32 iArrayIdx;     /* Index if search landed on an array element */
   u8 *aIns;          /* Content to be inserted */
 };
 
@@ -3375,6 +3376,7 @@ static u32 jsonLookupStep(
     }
   }else if( zPath[0]=='[' ){
     u64 kk = 0;
+    u64 iElem;
     x = pParse->aBlob[iRoot] & 0x0f;
     if( x!=JSONB_ARRAY )  return JSON_LOOKUP_NOTFOUND;
     n = jsonbPayloadSize(pParse, iRoot, &sz);
@@ -3408,6 +3410,7 @@ static u32 jsonLookupStep(
         return JSON_LOOKUP_PATHERROR;
       }
     }
+    iElem = kk;
     j = iRoot+n;
     iEnd = j+sz;
     while( j<iEnd ){
@@ -3415,6 +3418,7 @@ static u32 jsonLookupStep(
         if( ++pParse->iDepth >= JSON_MAX_DEPTH ){
           return JSON_LOOKUP_TOODEEP;
         }
+        pParse->iArrayIdx = (u32)iElem;
         rc = jsonLookupStep(pParse, j, &zPath[i+1], 0);
         pParse->iDepth--;
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
@@ -5344,6 +5348,7 @@ struct JsonEachCursor {
   u32 i;                     /* Index in sParse.aBlob[] of current row */
   u32 iEnd;                  /* EOF when i equals or exceeds this value */
   u32 nRoot;                 /* Size of the root path in bytes */
+  u32 iRootKey;              /* Array index of the root, if it is an element */
   u8 eType;                  /* Type of the container for element i */
   u8 bRecursive;             /* True for json_tree().  False for json_each() */
   u8 eMode;                  /* 1 for json_each().  2 for jsonb_each() */
@@ -5633,20 +5638,14 @@ static int jsonEachColumn(
   switch( iColumn ){
     case JEACH_KEY: {
       if( p->nParent==0 ){
-        u32 n, j;
-        if( p->nRoot==1 ) break;
-        j = jsonEachPathLength(p);
-        n = p->nRoot - j;
-        if( n==0 ){
-          break;
-        }else if( p->path.zBuf[j]=='[' ){
-          i64 x;
-          sqlite3Atoi64(&p->path.zBuf[j+1], &x, n-1, SQLITE_UTF8);
-          sqlite3_result_int64(ctx, x);
-        }else if( p->path.zBuf[j+1]=='"' ){
-          sqlite3_result_text(ctx, &p->path.zBuf[j+2], n-3, SQLITE_TRANSIENT);
+        /* The root row of json_tree() with a ROOT path argument.  Use the
+        ** key found by the path lookup rather than reparsing the path. */
+        if( p->nRoot==1 || !p->bRecursive ) break;
+        if( p->eType==JSONB_OBJECT ){
+          jsonReturnFromBlob(&p->sParse, p->i, ctx, 1);
         }else{
-          sqlite3_result_text(ctx, &p->path.zBuf[j+1], n-1, SQLITE_TRANSIENT);
+          assert( p->eType==JSONB_ARRAY );
+          sqlite3_result_int64(ctx, p->iRootKey);
         }
         break;
       }
@@ -5868,6 +5867,7 @@ static int jsonEachFilter(
       }else{
         p->i = i;
         p->eType = JSONB_ARRAY;
+        p->iRootKey = p->sParse.iArrayIdx;
       }
     }
     jsonAppendRaw(&p->path, zRoot, p->nRoot);
