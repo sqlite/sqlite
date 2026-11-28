@@ -294,4 +294,26 @@ do_test 4.5 { ar_exit_code -A -tf shell8.db } 0
 do_test 4.6 { ar_exit_code -A -xf shell8.db nosuch } 1
 forcedelete ar5
 
+# https://sqlite.org/bugs/info/ae6d08be58
+# The --remove command should work on a ZIP archive, whether it is
+# named by --file or opened as the main database.
+#
+forcedelete shell8.zip
+populate_dir ar6 {
+  file1 "abcd"
+  file2 "efgh"
+  file3 "ijkl"
+}
+do_test 5.1 {
+  catchcmd :memory: {.ar -C ar6 -c -f shell8.zip file1 file2 file3}
+  catchcmd :memory: {.ar -r -f shell8.zip file1}
+} {0 {}}
+do_test 5.2 {
+  catchcmd shell8.zip {.ar -r file2}
+} {0 {}}
+do_test 5.3 {
+  catchcmd :memory: {.ar -t -f shell8.zip}
+} {0 file3}
+forcedelete shell8.zip ar6
+
 finish_test

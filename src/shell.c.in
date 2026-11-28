@@ -7957,8 +7957,29 @@ static int arDotCommand(
       eDbType = pState->openMode;
     }
     if( eDbType==SHELL_OPEN_ZIPFILE ){
-      if( cmd.eCmd==AR_CMD_EXTRACT || cmd.eCmd==AR_CMD_LIST ){
-        if( cmd.zFile==0 ){
+      if( cmd.eCmd==AR_CMD_REMOVE && cmd.zFile ){
+        /* The zipfile() table-valued function is read-only, so remove
+        ** entries via a writable "zip" table in a private database. */
+        char *zSql = sqlite3_mprintf(
+            "CREATE VIRTUAL TABLE zip USING zipfile(%Q)", cmd.zFile);
+        shell_check_oom(zSql);
+        cmd.db = 0;
+        rc = sqlite3_open(":memory:", &cmd.db);
+        if( rc==SQLITE_OK ){
+          sqlite3_zipfile_init(cmd.db, 0, 0);
+          rc = sqlite3_exec(cmd.db, zSql, 0, 0, 0);
+        }
+        sqlite3_free(zSql);
+        if( rc!=SQLITE_OK ){
+          cli_printf(stderr, "cannot open file: %s (%s)\n",
+                     cmd.zFile, sqlite3_errmsg(cmd.db));
+          goto end_ar_command;
+        }
+      }
+      if( cmd.eCmd==AR_CMD_EXTRACT || cmd.eCmd==AR_CMD_LIST
+       || cmd.eCmd==AR_CMD_REMOVE
+      ){
+        if( cmd.zFile==0 || cmd.eCmd==AR_CMD_REMOVE ){
           cmd.zSrcTable = sqlite3_mprintf("zip");
         }else{
           cmd.zSrcTable = sqlite3_mprintf("zipfile(%Q)", cmd.zFile);
