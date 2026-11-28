@@ -495,12 +495,12 @@ static double geopolyArea(GeoPoly *p){
   double rArea = 0.0;
   int ii;
   for(ii=0; ii<p->nVertex-1; ii++){
-    rArea += (GeoX(p,ii) - GeoX(p,ii+1))           /* (x0 - x1) */
-              * (GeoY(p,ii) + GeoY(p,ii+1))        /* (y0 + y1) */
+    rArea += ((double)GeoX(p,ii) - GeoX(p,ii+1))   /* (x0 - x1) */
+              * ((double)GeoY(p,ii) + GeoY(p,ii+1))  /* (y0 + y1) */
               * 0.5;
   }
-  rArea += (GeoX(p,ii) - GeoX(p,0))                /* (xN - x0) */
-           * (GeoY(p,ii) + GeoY(p,0))              /* (yN + y0) */
+  rArea += ((double)GeoX(p,ii) - GeoX(p,0))        /* (xN - x0) */
+           * ((double)GeoY(p,ii) + GeoY(p,0))      /* (yN + y0) */
            * 0.5;
   return rArea;
 }
@@ -933,7 +933,7 @@ static void geopolyAddOneSegment(
   }
   pSeg = p->aSegment + p->nSegment;
   p->nSegment++;
-  pSeg->C = (y1-y0)/(x1-x0);
+  pSeg->C = ((double)y1-y0)/((double)x1-x0);
   pSeg->B = y1 - x1*pSeg->C;
   pSeg->y0 = y0;
   pSeg->side = side;

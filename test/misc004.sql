@@ -1246,3 +1246,53 @@ DELETE FROM c3;
 COMMIT;
 PRAGMA defer_foreign_keys=OFF;
 .check '' '1'
+
+#------------------------------------------------------------------------------
+# Bug 2026-11-27T14:08:29Z sqlite.org/bugs/info/9339356082c2140b
+# The coordinates of a geopoly are floats.  Differences between them can
+# be larger than FLT_MAX and must be computed using doubles.
+#
+.if capable('geopoly')
+.open :memory:
+.mode --reset list
+.testcase 2500
+WITH p(b) AS (
+  SELECT '[[-2e38,-2e38],[2e38,-2e38],[2e38,2e38],[-2e38,-2e38]]'
+)
+SELECT geopoly_area(b) BETWEEN 7.9e76 AND 8.1e76,
+       geopoly_overlap(b, b)
+  FROM p;
+.check '1|4'
+.testcase 2510
+WITH p(a, b) AS (
+  SELECT '[[-1e38,-1e38],[1e38,-1e38],[1e38,1e38],[-1e38,1e38],[-1e38,-1e38]]',
+         '[[-2e38,-2e38],[2e38,-2e38],[2e38,2e38],[-2e38,-2e38]]'
+)
+SELECT geopoly_overlap(a, b), geopoly_overlap(b, a), geopoly_within(a, b)
+  FROM p;
+.check '1|1|0'
+.testcase 2520
+WITH p(a, b) AS (
+  SELECT '[[-1e38,-1e38],[1e38,-1e38],[1e38,1e38],[-1e38,1e38],[-1e38,-1e38]]',
+         '[[-3e38,-3e38],[3e38,-3e38],[3e38,3e38],[-3e38,3e38],[-3e38,-3e38]]'
+)
+SELECT geopoly_area(a) BETWEEN 3.9e76 AND 4.1e76,
+       geopoly_area(b) BETWEEN 3.5e77 AND 3.7e77,
+       geopoly_within(a, b), geopoly_overlap(a, b)
+  FROM p;
+.check '1|1|1|2'
+.testcase 2530
+WITH p(b) AS (
+  SELECT '[[2e38,2e38],[-2e38,2e38],[-2e38,-2e38],[2e38,-2e38],[2e38,2e38]]'
+)
+SELECT geopoly_area(b) BETWEEN 1.5e77 AND 1.7e77
+  FROM p;
+.check '1'
+.testcase 2540
+WITH p(b) AS (
+  SELECT '[[-1e38,2e38],[-1e38,-2e38],[1e38,-2e38],[1e38,2e38],[-1e38,2e38]]'
+)
+SELECT geopoly_area(b) BETWEEN 7.9e76 AND 8.1e76
+  FROM p;
+.check '1'
+.endif
