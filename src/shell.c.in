@@ -12968,6 +12968,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     int bSeparate = 0;       /* Hash each table separately */
     int iSize = 224;         /* Hash algorithm to use */
     int bDebug = 0;          /* Only show the query that would have run */
+    int bAny = 0;            /* True if at least one table is hashed */
     sqlite3_stmt *pStmt;     /* For querying tables names */
     char *zSql;              /* SQL to be run */
     char *zSep;              /* Separator */
@@ -13051,25 +13052,40 @@ static int do_meta_command(const char *zLine, ShellState *p){
       appendText(&sSql, ",", 0);
       appendText(&sSql, zTab, '\'');
       zSep = "),(";
+      bAny = 1;
     }
     sqlite3_finalize(pStmt);
-    if( bSeparate ){
+    if( !bAny ){
+      /* No tables matched.  An empty VALUES clause is a syntax error, so
+      ** compute the hash of empty content directly, or show nothing at
+      ** all if each matching table would have been hashed separately. */
+      if( bSeparate ){
+        zSql = 0;
+      }else{
+        zSql = sqlite3_mprintf("SELECT lower(hex(sha3('',%d))) AS hash",
+                               iSize);
+        shell_check_oom(zSql);
+      }
+    }else if( bSeparate ){
       zSql = sqlite3_mprintf(
           "%s))"
           " SELECT lower(hex(sha3_query(a,%d))) AS hash, b AS label"
           "   FROM [sha3sum$query]",
           sSql.zTxt, iSize);
+      shell_check_oom(zSql);
     }else{
       zSql = sqlite3_mprintf(
           "%s))"
           " SELECT lower(hex(sha3_query(group_concat(a,''),%d))) AS hash"
           "   FROM [sha3sum$query]",
           sSql.zTxt, iSize);
+      shell_check_oom(zSql);
     }
-    shell_check_oom(zSql);
     freeText(&sQuery);
     freeText(&sSql);
-    if( bDebug ){
+    if( zSql==0 ){
+      /* Nothing to hash */
+    }else if( bDebug ){
       cli_printf(p->out, "%s\n", zSql);
     }else{
       shell_exec(p, zSql, 0);
@@ -13084,7 +13100,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
         "ORDER BY 1 collate nocase";
       zRevText = sqlite3_mprintf(zRevText, zLike? " AND name LIKE $tspec" : "");
       zRevText = sqlite3_mprintf(
-          /* lower-case query is first run, producing upper-case query. */
+          /* lower-case query is first run, producing upper-case query.
+          ** It returns no row if there are no tables to check. */
           "with tabcols as materialized(\n"
           "select tname, cname\n"
           "from ("
@@ -13097,7 +13114,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
           "FROM '||tname||' WHERE '\n"
           "||group_concat('CAST(CAST('||cname||' AS BLOB) AS TEXT)<>'||cname\n"
           "|| ' AND typeof('||cname||')=''text'' ',\n"
-          "' OR ') as query, tname from tabcols group by tname)"
+          "' OR ') as query, tname from tabcols group by tname)\n"
+          "having count(*)>0"
           , zRevText);
       shell_check_oom(zRevText);
       if( bDebug ) cli_printf(p->out, "%s\n", zRevText);
@@ -13128,8 +13146,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
             }
             sqlite3_finalize(pCheckStmt);
           }
-          sqlite3_finalize(pStmt);
         }
+        sqlite3_finalize(pStmt);
       }
       if( rc ) eputz(".sha3sum failed.\n");
       sqlite3_free(zRevText);

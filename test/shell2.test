@@ -349,6 +349,26 @@ do_test shell2-1.4.12 {
 .sha3sum}]]
 } {0 ca08bc02b7e95c7df431a3a4b1cc0f8d8743914793473f55b5558e03}
 
+# Ticket fa8dd87499: .sha3sum failed on databases with no ordinary
+# tables, and on a LIKE pattern that matched no tables.
+do_test shell2-1.4.13 {
+  catchcmd :memory: {.sha3sum}
+} {0 6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7}
+do_test shell2-1.4.14 {
+  catchcmd :memory: {.sha3sum --schema}
+} {0 0639733bd5a874a9d5450bfb6162356c198b5502eea4940ab303c94c}
+do_test shell2-1.4.15 {
+  catchcmd :memory: [string trim {
+CREATE VIEW v AS SELECT 1;
+.sha3sum --schema}]
+} {0 21a4ca197a2b0cbfba5773da3b760d3c4b28fce4bb93fbf123872ebf}
+do_test shell2-1.4.16 {
+  catchcmd :memory: [string trim {
+CREATE TABLE t1(a);
+.sha3sum xyz
+.sha3sum sqlite_schema}]
+} {0 2d3266dccdac33db9afc473e09ec911b829398c9d059d495771e265c|sqlite_schema}
+
 #-------------------------------------------------------------------------
 
 foreach {tn hexdump expect} {
