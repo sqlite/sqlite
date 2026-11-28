@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sassociated\swith\scheckin\s[068a53865a17d4c2]\sso\sthat\sit\nworks\son\sWindows.
-D 2026-11-28T12:20:01.299
+C Enhance\sthe\sstrfime()\sSQL\sfunction\sto\swork\sbetter\swith\syears\sbefore\s1AD.\n[bugs:/info/2026-11-27T14:33:07Z|Bug\s2026-11-27T14:33:07Z]
+D 2026-11-28T12:47:01.019
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -758,7 +758,7 @@ F src/build.c 9ced25388a5fab29d371d0f05c894ceec9885f1cd1c534c553d0d1b27b9b40f8
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 7e922b672ea82f83822baad092a0d4fd9b0074d1be2fa7d15cceeb8792212b2c
 F src/complete.c f68f545b9c6c19e2e848672dc0e4da230072fedc335d8980b55242cc4cfa60da
-F src/date.c 98dadb15c9d32e78f2d1e6b12a61c86b5428e4742a60727825b580805f505aaa
+F src/date.c fceb17849c0da223206bf7acaa833fafcba10e46fd4037a05e3da9aed495062f
 F src/dbpage.c b6430aee463c8899363baad61e7623c1299dd135619d6002345c5050b02ce04a
 F src/dbstat.c 6f7cc28b7c5e9b5def15a2a54f0b910168e3edcc814f279eb5e7084e7efc2f34
 F src/delete.c f3f07c1fb6ac87fac2425d48fd40ecb2f24a4495a9966f5a939668d3576916c8
@@ -1536,7 +1536,7 @@ F test/minmax4.test 272ca395257f05937dc96441c9dde4bc9fbf116a8d4fa02baeb0d13d50e3
 F test/misc001.sql fd0012dfad0385437c8b979a4723a8525eb1cc82cdf3b77a0d6edcfd2b9b2513
 F test/misc002.sql c9bfcd7282e9c2888bf498a755bf9b7c165f730c9b56bbb489dd512ab088f720
 F test/misc003.sql 913d7ed1773d2452f2154e1633f05672d3561f5d35d42b27cd0710e934d70cd6
-F test/misc004.sql 3ae763f7bffeb913b1c6d95354bd21a92aa82302a9eb76c46ffa548acbb84626
+F test/misc004.sql 62af0ce6e226660fbe40ca4a9d4c3795c63c4bca0f97c53cc551968eb1c3adf4
 F test/misc1.test e3e36262aff1bd9b8b9bf1eeb3af04adb3fc1e23f0a92dbff708bba9e939ace1
 F test/misc2.test a1a3573cc02662becd967766021d6f16c54684d56df5f227481c7ef0d9df0bd0
 F test/misc3.test 252118219f59672835c93da66679500f251e474f43e6aaecdc59a0794bb9c65b
@@ -2323,8 +2323,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 908cd82d1164880f168d0df4a3de491efa9d46de60432e342acc18535c1dc7b3
-R b86748784ad3c3ff77861a6b4a7ab62a
+P f4281126899f397668d2298e74edd750658d83fcf4e988c23b9073e147ad3935
+R 1d0bb80194a682add3c11890231ecd34
 U drh
-Z 571d1003d57caa3a782b79d8b25e228c
+Z 7b1080768752b49a4d27a5f3c7d715db
 # Remove this line to create a well-formed Fossil manifest.

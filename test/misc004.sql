@@ -1296,3 +1296,28 @@ SELECT geopoly_area(b) BETWEEN 7.9e76 AND 8.1e76
   FROM p;
 .check '1'
 .endif
+
+#------------------------------------------------------------------------------
+# Bug 2026-11-27T14:33:07Z sqlite.org/bugs/info/e67f8e3c1adf1b8d
+# The strftime() %F, %G, %g and %Y formats must write negative years in the
+# same format as date() does.
+#
+.open :memory:
+.mode --reset list
+.testcase 2600
+SELECT strftime('%F', '0000-01-01', '-1 day'),
+       strftime('%Y', '0000-01-01', '-1 day'),
+       date(strftime('%F', '0000-01-01', '-1 day')),
+       date('0000-01-01', '-1 day');
+.check '-0001-12-31|-0001|-0001-12-31|-0001-12-31'
+.testcase 2610
+SELECT strftime('%G-%g-%V', '0000-01-01');
+.check '-0001-01-52'
+.testcase 2620
+SELECT strftime('%G-%g %F %Y', '-0123-06-15');
+.check '-0123-23 -0123-06-15 -0123'
+.testcase 2630
+SELECT strftime('%F %Y %G %g', '2026-11-28'),
+       strftime('%F %Y %G %g', '0000-01-01', '+3 days'),
+       strftime('%F %Y', '0099-06-15');
+.check '2026-11-28 2026 2026 26|0000-01-04 0000 0000 00|0099-06-15 0099'

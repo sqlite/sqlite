@@ -1472,6 +1472,19 @@ static int daysAfterSunday(DateTime *pDate){
 }
 
 /*
+** Append the year Y to pStr as at least 4 digits, preceded by "-" if
+** the year is negative.  This is the same format used by date() and
+** datetime().
+*/
+static void appendYear(sqlite3_str *pStr, int Y){
+  if( Y<0 ){
+    sqlite3_str_appendf(pStr, "-%04d", -Y);
+  }else{
+    sqlite3_str_appendf(pStr, "%04d", Y);
+  }
+}
+
+/*
 **    strftime( FORMAT, TIMESTRING, MOD, MOD, ...)
 **
 ** Return a string described by FORMAT.  Conversions as follows:
@@ -1544,7 +1557,8 @@ static void strftimeFunc(
         break;
       }
       case 'F': {
-        sqlite3_str_appendf(pRes, "%04d-%02d-%02d", x.Y, x.M, x.D);
+        appendYear(pRes, x.Y);
+        sqlite3_str_appendf(pRes, "-%02d-%02d", x.M, x.D);
         break;
       }
       case 'G': /* Fall thru */
@@ -1556,9 +1570,9 @@ static void strftimeFunc(
         y.validYMD = 0;
         computeYMD(&y);
         if( cf=='g' ){
-          sqlite3_str_appendf(pRes, "%02d", y.Y%100);
+          sqlite3_str_appendf(pRes, "%02d", (y.Y<0 ? -y.Y : y.Y)%100);
         }else{
-          sqlite3_str_appendf(pRes, "%04d", y.Y);
+          appendYear(pRes, y.Y);
         }
         break;
       }
@@ -1650,7 +1664,7 @@ static void strftimeFunc(
         break;
       }
       case 'Y': {
-        sqlite3_str_appendf(pRes,"%04d",x.Y);
+        appendYear(pRes, x.Y);
         break;
       }
       case '%': {
