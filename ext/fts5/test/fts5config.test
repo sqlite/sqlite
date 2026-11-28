@@ -189,6 +189,16 @@ do_execsql_test 9.2.4 {
   INSERT INTO abc(abc, rank) VALUES('automerge', 1);
 } {}
 
+# The maximum value for 'automerge' is 64. See forum post
+# https://sqlite.org/bugs/forumpost/776965940a.
+do_catchsql_test 9.2.5 {
+  INSERT INTO abc(abc, rank) VALUES('automerge', 65);
+} {1 {SQL logic error}}
+do_execsql_test 9.2.6 {
+  INSERT INTO abc(abc, rank) VALUES('automerge', 64);
+  SELECT v FROM abc_config WHERE k='automerge';
+} {64}
+
 do_catchsql_test 9.3.1 {
   INSERT INTO abc(abc, rank) VALUES('crisismerge', -5);
 } {1 {SQL logic error}}
@@ -201,6 +211,9 @@ do_execsql_test 9.3.3 {
 do_execsql_test 9.3.4 {
   INSERT INTO abc(abc, rank) VALUES('crisismerge', 50000000);
 } {}
+do_catchsql_test 9.3.5 {
+  INSERT INTO abc(abc, rank) VALUES('crisismerge', -1);
+} {1 {SQL logic error}}
 
 do_catchsql_test 9.4.1 {
   INSERT INTO abc(abc, rank) VALUES('nosuchoption', 1);

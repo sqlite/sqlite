@@ -1,5 +1,5 @@
-C CLI\sshell:\shave\s-deserialize\shonor\sthe\s-readonly\sflag.\s[bugs:3362a0a00d|Bug\sreport\s2026-11-28T09:42:17Z].
-D 2026-11-28T14:04:54.275
+C Add\stests\sto\sverify\sthat\sthe\smaximum\sacceptable\svalue\sfor\sfts5\sparamter\s'automerge'\sis\s64,\snot\s16.\sReport\s[bugs:/info/2026-11-27T11:20:26Z\s|\s2026-11-27T11:20:26Z].
+D 2026-11-28T14:31:18.953
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -154,7 +154,7 @@ F ext/fts5/test/fts5cat.test bf67dd335f964482ee658287521b81e2b88697b45eb7f73933e
 F ext/fts5/test/fts5circref.test 7b04009dc03b5abe004f1a7a2e3a034fb92566b7e0cbd444fa076c67c40c60d6
 F ext/fts5/test/fts5colset.test 17d244174266b7724296f793ac721a5477f999c6f437c06608dfbb54c0f88746
 F ext/fts5/test/fts5columnsize.test 0af91d63985afdf663455d4b572b935238380140d74079eac362760866d3297b
-F ext/fts5/test/fts5config.test 017daf10d2642496e97402baa0134de8b5b46b9c37e53c229cd9ab711d21522c
+F ext/fts5/test/fts5config.test 1e72f3a70e3988fdc439d5eed781b5d3c4a2d82c60d46f2cdf6866d4c75fe49b
 F ext/fts5/test/fts5conflict.test bf6030a77dbb1bedfcc42e589ed7980846c995765d77460551e448b56d741244
 F ext/fts5/test/fts5connect.test 08030168fc96fc278fa81f28654fb7e90566f33aff269c073e19b3ae9126b2f4
 F ext/fts5/test/fts5content.test 1d1b0739f5569648c72e5b2fce1c8742797aaf64b44b37bd8256a558ebd9d494
@@ -2323,8 +2323,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f0c50b972ea2c2b48b706f9130ea80b3c74b1d7b90c745238b54ea1f3ff17bf7
-R 2f5def89c728b3c3cb4355741a8cf320
-U stephan
-Z 1b6a66596cf8dc79b933dc263bee77f0
+P 5d9393a0692aab101e9c3ed423ce321d59c5f41701a2f801a57fbb68cb535d97
+R 18497d7ba8a6952a686425cb96487815
+U dan
+Z 25c55f212a44a7193d274f9c6646f901
 # Remove this line to create a well-formed Fossil manifest.
