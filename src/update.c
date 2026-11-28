@@ -904,7 +904,8 @@ void sqlite3Update(
     if( nChangeFrom==0 ){
       sqlite3ExprCode(pParse, pRowidExpr, regNewRowid);
     }else{
-      sqlite3VdbeAddOp3(v, OP_Column, iEph, iRowidExpr, regNewRowid);
+      int nOff = (isView ? pTab->nCol : 0);
+      sqlite3VdbeAddOp3(v, OP_Column, iEph, nOff+iRowidExpr, regNewRowid);
     }
     sqlite3VdbeAddOp1(v, OP_MustBeInt, regNewRowid); VdbeCoverage(v);
     sqlite3MayAbort(pParse);

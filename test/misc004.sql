@@ -1357,3 +1357,39 @@ SELECT key, typeof(key), value FROM json_tree('{"a":1}', '$');
 SELECT key, typeof(key), value FROM json_each('[10,20,30]', '$[#-1]');
 SELECT key, typeof(key), value FROM json_each('{"a":1}', '$.a');
 .check '|null|30' '|null|1'
+
+#------------------------------------------------------------------------------
+# Bug 2026-11-27T14:35:03Z sqlite.org/bugs/info/9a659623806514ee
+# UPDATE ... FROM on a view that sets "rowid" must read the new rowid from
+# the correct column of the ephemeral table.
+#
+.open :memory:
+.mode --reset list --colsep ','
+.testcase 2800
+CREATE TABLE t1(a TEXT);
+INSERT INTO t1(rowid, a) VALUES(1, 'hello');
+CREATE TABLE t2(id INTEGER, new_id INTEGER, val TEXT);
+INSERT INTO t2 VALUES(1, 99, 'world');
+CREATE VIEW v AS SELECT a, rowid AS rid FROM t1;
+CREATE TRIGGER v_upd INSTEAD OF UPDATE ON v BEGIN
+  UPDATE t1 SET a = NEW.a WHERE rowid = OLD.rid;
+END;
+CREATE VIEW v3 AS SELECT rowid AS rid, a FROM t1;
+CREATE TRIGGER v3_upd INSTEAD OF UPDATE ON v3 BEGIN
+  UPDATE t1 SET a = NEW.a WHERE rowid = OLD.rid;
+END;
+.check
+.testcase 2801
+UPDATE v SET rowid = t2.new_id, a = t2.val FROM t2 WHERE v.rid = t2.id;
+SELECT rowid, a FROM t1;
+.check 1,world
+.testcase 2810
+UPDATE v3 SET rowid = t2.val, a = 'zzz' FROM t2 WHERE v3.rid = t2.id;
+.check --glob datatype mismatch
+.testcase 2811
+SELECT rowid, a FROM t1;
+.check 1,world
+.testcase 2820
+UPDATE t1 SET rowid = t2.new_id, a = t2.val||'2' FROM t2 WHERE t1.rowid=t2.id;
+SELECT rowid, a FROM t1;
+.check 99,world2
