@@ -5691,7 +5691,10 @@ static void open_db(ShellState *p, int openFlags){
       }
       rc = sqlite3_deserialize(p->db, "main", aData, nData, nData,
                    SQLITE_DESERIALIZE_RESIZEABLE |
-                   SQLITE_DESERIALIZE_FREEONCLOSE);
+                   SQLITE_DESERIALIZE_FREEONCLOSE |
+                   ((p->openFlags & SQLITE_OPEN_READONLY)!=0
+                    ? SQLITE_DESERIALIZE_READONLY
+                    : SQLITE_DESERIALIZE_RESIZEABLE));
       if( rc ){
         cli_printf(stderr,"Error: sqlite3_deserialize() returns %d\n", rc);
       }
