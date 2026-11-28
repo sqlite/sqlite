@@ -1180,3 +1180,69 @@ CREATE TABLE u(b);
 INSERT INTO u VALUES(1),(2),(3);
 DELETE FROM t RETURNING (SELECT (SELECT sum(b) FROM u));
 .check '6' '6' '6'
+
+# 2026-11-28 https://sqlite.org/bugs/info/afcf40411e128731
+# ALTER TABLE DROP CONSTRAINT must not strand the deferred FK counters.
+# The tryeval() function ignores errors, so check the schema instead.
+#
+.open :memory:
+.mode --reset list
+PRAGMA foreign_keys=ON;
+CREATE TABLE p(id INTEGER PRIMARY KEY);
+CREATE TABLE c(
+  id INTEGER PRIMARY KEY,
+  pid INT CONSTRAINT fk_pid REFERENCES p(id) DEFERRABLE INITIALLY DEFERRED,
+  z INT CONSTRAINT ck_z CHECK( z IS NULL OR z>0 )
+);
+.testcase 2400
+BEGIN;
+INSERT INTO c VALUES(1,999,1);
+SELECT tryeval('ALTER TABLE c DROP CONSTRAINT fk_pid');
+SELECT sql LIKE '%fk_pid%' FROM sqlite_schema WHERE name='c';
+.check '' '1'
+.testcase 2410
+SELECT tryeval('ALTER TABLE c DROP CONSTRAINT ck_z');
+SELECT sql LIKE '%ck_z%', sql LIKE '%fk_pid%' FROM sqlite_schema WHERE name='c';
+.check '' '0|1'
+.testcase 2420
+DELETE FROM c;
+COMMIT;
+SELECT count(*) FROM c;
+.check '0'
+.testcase 2430
+BEGIN;
+INSERT INTO c VALUES(1,999,NULL);
+INSERT INTO p VALUES(999);
+SELECT tryeval('ALTER TABLE c DROP CONSTRAINT fk_pid');
+COMMIT;
+SELECT sql LIKE '%fk_pid%' FROM sqlite_schema WHERE name='c';
+.check '' '0'
+.testcase 2440
+CREATE TABLE c2(
+  id INTEGER PRIMARY KEY,
+  pid INT,
+  CONSTRAINT fk2 FOREIGN KEY(pid) REFERENCES p(id) DEFERRABLE INITIALLY DEFERRED
+);
+BEGIN;
+INSERT INTO c2 VALUES(1,5);
+SELECT tryeval('ALTER TABLE c2 DROP CONSTRAINT fk2');
+SELECT sql LIKE '%fk2%' FROM sqlite_schema WHERE name='c2';
+DELETE FROM c2;
+SELECT tryeval('ALTER TABLE c2 DROP CONSTRAINT fk2');
+SELECT sql LIKE '%fk2%' FROM sqlite_schema WHERE name='c2';
+COMMIT;
+.check '' '1' '' '0'
+.testcase 2450
+CREATE TABLE c3(
+  id INTEGER PRIMARY KEY,
+  pid INT CONSTRAINT fk3 REFERENCES p(id)
+);
+BEGIN;
+PRAGMA defer_foreign_keys=ON;
+INSERT INTO c3 VALUES(1,5);
+SELECT tryeval('ALTER TABLE c3 DROP CONSTRAINT fk3');
+SELECT sql LIKE '%fk3%' FROM sqlite_schema WHERE name='c3';
+DELETE FROM c3;
+COMMIT;
+PRAGMA defer_foreign_keys=OFF;
+.check '' '1'

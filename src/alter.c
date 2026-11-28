@@ -2872,6 +2872,14 @@ static void dropConstraintFunc(
             errorMPrintf(ctx, "constraint may not be dropped: %s", zCons);
             return;
           }
+          db = sqlite3_context_db_handle(ctx);
+          if( (t==TK_REFERENCES || t==TK_FOREIGN)
+           && (db->nDeferredCons>0 || db->nDeferredImmCons>0)
+          ){
+            errorMPrintf(ctx, "cannot drop foreign key %s: deferred foreign "
+                              "key violations are pending", zCons);
+            return;
+          }
           iEnd = iOff;
           break;
         }
