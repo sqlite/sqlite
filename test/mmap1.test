@@ -346,13 +346,16 @@ do_test 7.1 {
 do_test 7.2 {
   sqlite3_finalize $::stmt
 } {SQLITE_OK}
+# Windows cannot shrink a file while another connection has it mapped, and
+# winTruncate() silently skips the truncation in that case.  So the file
+# size is only checked on other platforms.
 do_test 7.3 {
   db2 eval {
     DELETE FROM t1;
     PRAGMA page_size = 512;
     VACUUM;
   }
-  expr {[file size test.db] < 8192}
+  expr {$::tcl_platform(platform)=="windows" || [file size test.db] < 8192}
 } {1}
 do_execsql_test 7.4 {
   SELECT count(*) FROM t1;

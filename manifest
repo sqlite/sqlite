@@ -1,5 +1,5 @@
-C Use\s64-bit\sdoubles\sto\simprove\saccuracy\sof\ssome\sfloating\spoint\scomputations\nin\sthe\sgeopoly\sextension.\n[bugs:/info/2026-11-27T14:08:29Z|Bug\s2026-11-27T14:08:29Z].
-D 2026-11-28T11:59:37.867
+C Fix\sa\stest\scase\sassociated\swith\scheck-in\s[3e54fa96ab6c5925]\sso\sthat\sit\nworks\son\sWindows.
+D 2026-11-28T12:07:02.529
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1547,7 +1547,7 @@ F test/misc7.test 4be3797297148024ff0fec6d84ac9981975ac1f956ff007c15a41eb0f635ba
 F test/misc8.test 1c5e3fad1224f7bd67dbeb7dbf69cded89f6f846075805a72c7bfc6a1b1ed786
 F test/misuse.test 859f37014d9824ca66bd90c36372c08c80c51c9593a7cfa8a31d4f92cd4d5b7f
 F test/mjournal.test c4fb43abcfd1c32229b2481c25138da1ab87e2101cffb961d333512dc75fe484
-F test/mmap1.test 4a6701314228cc3a03861fa64f430a671df54c0746ff15117d2ee168f86d6843
+F test/mmap1.test b6a0e5907d695b818ecd1d22126972bf24571f9e9be2b7b67ba1c8e18ddb0125
 F test/mmap2.test dba452dc7db91e9df10f70bdd73dc4190c7b8ee7b5133b4684f04277ada0b9ac
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
 F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
@@ -2323,8 +2323,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 58e8515bc838cfcf9dc3e338a24ae64553e73c845dd0dbfdf1399cee24c80d93
-R 85a7ea989627b11df99d4687f08316ba
+P ed76cc0c2ee8665ce9d8cf8576948abf94a332fb212dadba9bb0c36860d9bd23
+R e1203f8735b92eae09a1b47105fbe0e4
 U drh
-Z 2e598bfeea892a41ecb9473536192158
+Z 03027c557a605bc6dba9794b21363d2f
 # Remove this line to create a well-formed Fossil manifest.
