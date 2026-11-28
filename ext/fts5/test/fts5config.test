@@ -275,4 +275,103 @@ foreach {tn val} {
   do_catchsql_test 13.$tn $sql {1 {SQL logic error}}
 }
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/forumpost/192a8c9f35
+#
+# Rolling back a transaction or savepoint that set the 'rank',
+# 'secure-delete' or 'insttoken' options must also roll back the
+# in-memory copies of those options.
+#
+reset_db
+do_execsql_test 14.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x);
+  INSERT INTO t VALUES('hello world'),('hello hello');
+  BEGIN;
+    INSERT INTO t(t, rank) VALUES('rank', 'nonexistent_func()');
+  ROLLBACK;
+}
+do_execsql_test 14.1 {
+  SELECT rowid FROM t WHERE t MATCH 'hello' ORDER BY rank;
+} {2 1}
+
+do_execsql_test 14.2 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x);
+  INSERT INTO t2 VALUES('hello');
+  SAVEPOINT sp;
+    INSERT INTO t2(t2, rank) VALUES('rank', 'bm25(10.0)');
+  ROLLBACK TO sp;
+  RELEASE sp;
+}
+do_execsql_test 14.3 {
+  SELECT rank = bm25(t2) FROM t2 WHERE t2 MATCH 'hello';
+} {1}
+
+# With secure-delete disabled, a DELETE adds a new segment containing
+# a delete marker to the %_data table. With it enabled, the existing
+# segment is rewritten in place.
+#
+reset_db
+do_execsql_test 15.0 {
+  CREATE VIRTUAL TABLE t3 USING fts5(x);
+  INSERT INTO t3 VALUES('a b c'), ('d e f'), ('g h i');
+  SELECT count(*) FROM t3_data;
+} {3}
+do_execsql_test 15.1 {
+  BEGIN;
+    INSERT INTO t3(t3, rank) VALUES('secure-delete', 1);
+  ROLLBACK;
+  SELECT * FROM t3_config;
+} {version 4}
+do_execsql_test 15.2 {
+  DELETE FROM t3 WHERE rowid=2;
+  SELECT count(*) FROM t3_data;
+} {4}
+do_execsql_test 15.3 {
+  INSERT INTO t3(t3) VALUES('integrity-check');
+}
+
+# With insttoken disabled, calling xInstToken() for a prefix query
+# term requires a second scan of the index, and so more reads.
+#
+reset_db
+sqlite3_fts5_register_origintext db
+proc tokens {cmd} {
+  set ret [list]
+  for {set i 0} {$i < [$cmd xInstCount]} {incr i} {
+    lappend ret [string map [list "\0" "."] [$cmd xInstToken $i 0]]
+  }
+  set ret
+}
+sqlite3_fts5_create_function db tokens tokens
+proc prefix_reads {} {
+  set r1 [db one {SELECT ft FROM ft('*reads')}]
+  db eval {SELECT tokens(ft) FROM ft('hel*')}
+  set r2 [db one {SELECT ft FROM ft('*reads')}]
+  expr {$r2 - $r1}
+}
+do_execsql_test 16.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, 
+    tokendata=1, tokenize="origintext unicode61"
+  );
+  INSERT INTO ft VALUES('Hello Help');
+  INSERT INTO ft VALUES('Hello Help');
+}
+prefix_reads
+set nDefault [prefix_reads]
+do_execsql_test 16.1 {
+  BEGIN;
+    INSERT INTO ft(ft, rank) VALUES('insttoken', 1);
+  ROLLBACK;
+  SELECT * FROM ft_config;
+} {version 4}
+prefix_reads
+do_test 16.2 { prefix_reads } $nDefault
+
+# Check that setting insttoken really does change the number of reads.
+do_execsql_test 16.3 {
+  INSERT INTO ft(ft, rank) VALUES('insttoken', 1);
+}
+prefix_reads
+do_test 16.4 { expr {[prefix_reads] < $nDefault} } 1
+
 finish_test

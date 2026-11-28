@@ -247,7 +247,7 @@ struct Fts5Config {
   char *zContentExprlist;
   Fts5TokenizerConfig t;
   int bLock;                      /* True when table is preparing statement */
-  
+  int bInsttokenQuery;            /* Current query uses fts5_insttoken() */
 
   /* Values loaded from the %_config table */
   int iVersion;                   /* fts5 file format 'version' */
@@ -261,7 +261,7 @@ struct Fts5Config {
   char *zRankArgs;                /* Arguments to rank function */
   int bSecureDelete;              /* 'secure-delete' */
   int nDeleteMerge;               /* 'deletemerge' */
-  int bPrefixInsttoken;           /* 'prefix-insttoken' */
+  int bInsttoken;                 /* 'insttoken' */
 
   /* If non-NULL, points to sqlite3_vtab.base.zErrmsg. Often NULL. */
   char **pzErrmsg;

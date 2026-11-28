@@ -1046,7 +1046,7 @@ int sqlite3Fts5ConfigSetValue(
     if( bVal<0 ){
       bBadkey = 1;
     }else{
-      pConfig->bPrefixInsttoken = (bVal ? 1 : 0);
+      pConfig->bInsttoken = (bVal ? 1 : 0);
     }
 
   }else{
@@ -1074,6 +1074,12 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   pConfig->nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
   pConfig->nHashSize = FTS5_DEFAULT_HASHSIZE;
   pConfig->nDeleteMerge = FTS5_DEFAULT_DELETE_AUTOMERGE;
+  sqlite3_free(pConfig->zRank);
+  sqlite3_free(pConfig->zRankArgs);
+  pConfig->zRank = 0;
+  pConfig->zRankArgs = 0;
+  pConfig->bSecureDelete = 0;
+  pConfig->bInsttoken = 0;
 
   zSql = sqlite3Fts5Mprintf(&rc, zSelect, pConfig->zDb, pConfig->zName);
   if( zSql ){

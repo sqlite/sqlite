@@ -6912,7 +6912,7 @@ static void fts5SetupPrefixIter(
   s.nBuf = 32;
   if( iIdx==0 
    && p->pConfig->eDetail==FTS5_DETAIL_FULL 
-   && p->pConfig->bPrefixInsttoken 
+   && (p->pConfig->bInsttoken || p->pConfig->bInsttokenQuery)
   ){
     s.pTokendata = &s2;
     s2.pT = (Fts5TokenDataIter*)fts5IdxMalloc(p, SZ_FTS5TOKENDATAITER(1));

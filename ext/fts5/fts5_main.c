@@ -1487,7 +1487,6 @@ static int fts5FilterMethod(
   sqlite3_value *pRowidGe = 0;    /* rowid >= ? expression (or NULL) */
   int iCol;                       /* Column on LHS of MATCH operator */
   char **pzErrmsg = pConfig->pzErrmsg;
-  int bPrefixInsttoken = pConfig->bPrefixInsttoken;
   int i;
   int iIdxStr = 0;
   Fts5Expr *pExpr = 0;
@@ -1526,7 +1525,7 @@ static int fts5FilterMethod(
         if( rc!=SQLITE_OK ) goto filter_out;
         if( zText==0 ) zText = "";
         if( sqlite3_value_subtype(apVal[i])==FTS5_INSTTOKEN_SUBTYPE ){
-          pConfig->bPrefixInsttoken = 1;
+          pConfig->bInsttokenQuery = 1;
         }
 
         iCol = 0;
@@ -1668,7 +1667,7 @@ static int fts5FilterMethod(
  filter_out:
   sqlite3Fts5ExprFree(pExpr);
   pConfig->pzErrmsg = pzErrmsg;
-  pConfig->bPrefixInsttoken = bPrefixInsttoken;
+  pConfig->bInsttokenQuery = 0;
   return rc;
 }
 
