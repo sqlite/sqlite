@@ -357,6 +357,35 @@ do_test shell5-1.10.1 {
   db eval {SELECT b, c FROM t1 ORDER BY rowid}
 } {column2 column3 x2\"x3 x3\"data\"3}
 
+# An escape character at end-of-input must not append a 0xFF byte.
+# Bug report 2026-11-27T16:22:11Z.
+#
+do_test shell5-1.10.2 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation binary
+  puts -nonewline $out "a\\"
+  close $out
+  forcedelete test.db
+  catchcmd test.db {
+    CREATE TABLE t1(x);
+.import --csv --esc \\ shell5.csv t1
+    SELECT hex(x) FROM t1;
+  }
+} {0 61}
+do_test shell5-1.10.3 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation binary
+  puts -nonewline $out "\"a\\"
+  close $out
+  forcedelete test.db
+  catchcmd test.db {
+    CREATE TABLE t1(x);
+.import --csv --qesc \\ shell5.csv t1
+    SELECT hex(x) FROM t1;
+  }
+} {1 {61
+shell5.csv:1: unterminated "-quoted field}}
+
 # Blank last column with \r\n line endings.
 do_test shell5-1.11 {
   set out [open shell5.csv w]

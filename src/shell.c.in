@@ -6109,9 +6109,12 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
       if( c==rSep ) p->nLine++;
       if( c==cEsc && cEsc!=0 ){
         c = import_getc(p);
-        import_append_char(p, c);
         ppc = pc = 0;
-        continue;
+        if( c!=EOF ){
+          import_append_char(p, c);
+          continue;
+        }
+        /* An escape at EOF falls through to the unterminated-field error */
       }
       if( c==cQuote ){
         if( pc==cQuote ){
@@ -6160,7 +6163,10 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
       }
     }
     while( c!=EOF && c!=cSep && c!=rSep ){
-      if( c==cEsc && cEsc!=0 ) c = import_getc(p);
+      if( c==cEsc && cEsc!=0 ){
+        c = import_getc(p);
+        if( c==EOF ) continue;  /* Drop an escape that ends the input */
+      }
       import_append_char(p, c);
       c = import_getc(p);
     }
