@@ -860,14 +860,17 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p){
   int rc;
 
   p->bTotalsValid = 0;
+  rc = sqlite3Fts5IndexReadCookie(p->pIndex, &pConfig->iCookie);
 
   /* Delete the contents of the %_data and %_docsize tables. */
-  rc = fts5ExecPrintf(pConfig->db, 0,
-      "DELETE FROM %Q.'%q_data';" 
-      "DELETE FROM %Q.'%q_idx';",
-      pConfig->zDb, pConfig->zName,
-      pConfig->zDb, pConfig->zName
-  );
+  if( rc==SQLITE_OK ){
+    rc = fts5ExecPrintf(pConfig->db, 0,
+        "DELETE FROM %Q.'%q_data';" 
+        "DELETE FROM %Q.'%q_idx';",
+        pConfig->zDb, pConfig->zName,
+        pConfig->zDb, pConfig->zName
+    );
+  }
   if( rc==SQLITE_OK && pConfig->bColumnsize ){
     rc = fts5ExecPrintf(pConfig->db, 0,
         "DELETE FROM %Q.'%q_docsize';", pConfig->zDb, pConfig->zName
@@ -881,8 +884,10 @@ int sqlite3Fts5StorageDeleteAll(Fts5Storage *p){
   }
 
   /* Reinitialize the %_data table. This call creates the initial structure
-  ** and averages records.  */
+  ** and averages records. The cookie value is incremented first so that the
+  ** new structure record contains a new cookie value.  */
   if( rc==SQLITE_OK ){
+    pConfig->iCookie++;
     rc = sqlite3Fts5IndexReinit(p->pIndex);
   }
   if( rc==SQLITE_OK ){

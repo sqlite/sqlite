@@ -586,6 +586,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index*, u64 cksum, int bUseCksum);
 int sqlite3Fts5IndexInit(sqlite3*);
 
 int sqlite3Fts5IndexSetCookie(Fts5Index*, int);
+int sqlite3Fts5IndexReadCookie(Fts5Index*, int*);
 
 /*
 ** Return the total number of entries read from the %_data table by 

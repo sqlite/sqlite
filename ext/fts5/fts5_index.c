@@ -8086,6 +8086,36 @@ int sqlite3Fts5IndexSetCookie(Fts5Index *p, int iNew){
   return rc;
 }
 
+/*
+** Attempt to read the 32-bit cookie value from the first 4 bytes of the
+** structure record into output variable (*piCookie). If the structure
+** record does not exist, it is not an error and (*piCookie) is left
+** unmodified.
+**
+** If an error occurs, return an SQLite error code. Otherwise, SQLITE_OK.
+*/
+int sqlite3Fts5IndexReadCookie(Fts5Index *p, int *piCookie){
+  Fts5Config *pConfig = p->pConfig;    /* Configuration object */
+  int rc = SQLITE_OK;                  /* Return code */
+  sqlite3_blob *pBlob = 0;             /* Blob handle */
+
+  rc = sqlite3_blob_open(pConfig->db, pConfig->zDb, p->zDataTbl, 
+      "block", FTS5_STRUCTURE_ROWID, 0, &pBlob
+  );
+  if( rc==SQLITE_ERROR ){
+    rc = SQLITE_OK;
+  }else if( rc==SQLITE_OK ){
+    u8 aCookie[4];
+    if( sqlite3_blob_bytes(pBlob)>=sizeof(aCookie) ){
+      rc = sqlite3_blob_read(pBlob, aCookie, sizeof(aCookie), 0);
+      if( rc==SQLITE_OK ) *piCookie = sqlite3Fts5Get32(aCookie);
+    }
+    sqlite3_blob_close(pBlob);
+  }
+
+  return rc;
+}
+
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
   Fts5Structure *pStruct;
   pStruct = fts5StructureRead(p);

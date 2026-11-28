@@ -1,5 +1,5 @@
-C In\sfts5,\savoid\srunning\san\sUPDATE\sstatement\sthat\suses\sa\ssavepoint\swhen\sflushing\sa\shash\stable\sto\sdisk.\sReport\s[bugs:/info/2026-11-27T17:47:15Z\s|\s2026-11-27T17:47:15Z].
-D 2026-11-28T18:10:12.000
+C Ensure\sthat\sthe\sfts5\sconfiguration\scookie\sis\supdated\swhenever\sa\s'rebuild'\sor\s'delete-all'\scommand\sis\srun.\sReport\s[bugs:/info/2026-11-27T17:59:21Z\s|\s2026-11-27T17:59:21Z].
+D 2026-11-28T19:18:07.464
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -109,15 +109,15 @@ F ext/fts3/unicode/mkunicode.tcl cbf5f7b5c8ce8014bad731f246f2e520eece908465de477
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
 F ext/fts5/fts5.h ff5d3cc88b29e41612bfb29eb723e29e38973de62ca75ba3e8f94ccb67f5b5f2
-F ext/fts5/fts5Int.h 054e68a1e1ad455770c34a9561f0410040af15bbb4c868cd578221bcda49d69e
+F ext/fts5/fts5Int.h 154c9bce19fb4c4b756a9f40f2bebb500ff8c47d5c4128bb30724660ad850b8e
 F ext/fts5/fts5_aux.c 022066fe72bc15357cd3c3e620b6c566d7e030df859bae65bfc4649591b69d35
 F ext/fts5/fts5_buffer.c dcc3f0352339fe79c9d8abbc1c2009bc3469206467880bf43558447ef4f846fb
 F ext/fts5/fts5_config.c 2ad35f7fb979aeeca1a53f7328362655f628c2ddb3ce23a48b215a0a1b7830e9
 F ext/fts5/fts5_expr.c 77e1a5e4aa11209d38f488afeb7ee8a96b92c782154d67dedd5ec3c8a36f45aa
 F ext/fts5/fts5_hash.c 587541a3c13c126cfcc52f9b591fc89212f335a6979e4c70ade8613f28a48ed0
-F ext/fts5/fts5_index.c b9d090f6ca995fe003b251da35c60a65353c18d37d1c5413517e3a749bb76eb8
+F ext/fts5/fts5_index.c d9160a10bbdfe45d705ce0fcc7a485f6fcf6c7af7301fe21b57a9f50a3300216
 F ext/fts5/fts5_main.c f70153840fc0d4651e8f88921f51931a10093ea971def40c98829213c207ca54
-F ext/fts5/fts5_storage.c 07bc0308bfc633e24d3d65051d65c113f03837160e137c285248ffe506d45493
+F ext/fts5/fts5_storage.c 02b93a4ca44b02c98623894a0ac523ef48795d9340faa7760b137c29f7c228c1
 F ext/fts5/fts5_tcl.c aed8905b1a3c6ecc94da15e9cc54d889045b9eacecc7a17b6fcc1294225f7716
 F ext/fts5/fts5_test_mi.c 3074a25cb661b2301143022ef96a950618452a5b082abd9ba7b9daaf29d01537
 F ext/fts5/fts5_test_tok.c 6021033bd4f4feffe8579efb6e1f58156ed462256bf99a2acdbd629246529204
@@ -251,6 +251,7 @@ F ext/fts5/test/fts5secure5.test 3827e6611c43726fea7004a6cc47bf417f8744a6be6e111
 F ext/fts5/test/fts5secure6.test 74bf04733cc523bccca519bb03d3b4e2ed6f6e3db7c59bf6be82c88a0ac857fd
 F ext/fts5/test/fts5secure7.test fd03d0868d64340a1db8615b02e5508fea409de13910114e4f19eaefc120777a
 F ext/fts5/test/fts5secure8.test 991310ffa7106b69cc87cf2404208d481079411e39e192499c524115714b33b3
+F ext/fts5/test/fts5secure9.test a7a38d67b34d8e1e36aca5cc7eee3ed81d35fc4b6f24c90a25c0d505c4f5fc43
 F ext/fts5/test/fts5securefault.test c34a28c7cd2f31a8b8907563889e1329a97da975c08df2d951422bcef8e2ebc5
 F ext/fts5/test/fts5simple.test 33ccf2a396ef66f2206cb7f2e312d0418689456b6f7ff83cc4356a748beb27f5
 F ext/fts5/test/fts5simple2.test d10d963a357b8ec77b99032e4c816459b4dbdb1f6eee25eada7ef3ed245cb2dc
@@ -2323,8 +2324,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bb458794a275bda818e0609d4a51da23fb8576b0b5764aa9205deb9a2c2a3247
-R bb6dd8a52755247efa9fbf8794fb005b
+P 96a2f5da96e7b79847e8ec6c17561b7066c004703841fc9905b1a845a7a1cb32
+R ca5e9c8bdc3d4dfe7ffa9572626145b2
 U dan
-Z b327e2424d4994423f8c12fad5cb0edb
+Z 6b50bc4dcb2ed2cb35165ba001cf209d
 # Remove this line to create a well-formed Fossil manifest.
