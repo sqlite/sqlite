@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sassociated\swith\scheck-in\s[3e54fa96ab6c5925]\sso\sthat\sit\nworks\son\sWindows.
-D 2026-11-28T12:07:02.529
+C Fix\sa\stest\scase\sassociated\swith\scheckin\s[068a53865a17d4c2]\sso\sthat\sit\nworks\son\sWindows.
+D 2026-11-28T12:20:01.299
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1740,7 +1740,7 @@ F test/shell1.test c838dd9c6c034ece9eda530a7097c9b49a52ac6e76e356c10486e6ee7d6ac
 F test/shell2.test 598f17feda8de7c6c7cec522a6eafbbfafee6766f85229a93f71f97c78b883b6
 F test/shell3.test 91efdd545097a61a1f72cf79c9ad5b49da080f3f10282eaf4c3c272cd1012db2
 F test/shell4.test 931c7555d5a0dcac255561a936fcf1f54c12dd66f668e27e8b0d9ed0d4b9fe22
-F test/shell5.test 678886a3712185597ac9ad693b3564c5abdd020e7cf8a5895d7aa507eab423b0
+F test/shell5.test b0417f633954fc928ece00f72670cef26bf60a02d5f8680b14616d8bef763c6b
 F test/shell6.test 596f2eb385a1097d4e9130b4d4f663a24cba294b35f13b774b8f13553dec307d
 F test/shell7.test fcb3642e4a7750bb3571456299f39b723bcb3281f6310745a5cdd3dff7316b98
 F test/shell8.test 70571e6a2f1fc12ad6efa59c7d3b3030233734a7955562aedc97a6f1d9197ecb
@@ -2323,8 +2323,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ed76cc0c2ee8665ce9d8cf8576948abf94a332fb212dadba9bb0c36860d9bd23
-R e1203f8735b92eae09a1b47105fbe0e4
+P 908cd82d1164880f168d0df4a3de491efa9d46de60432e342acc18535c1dc7b3
+R b86748784ad3c3ff77861a6b4a7ab62a
 U drh
-Z 03027c557a605bc6dba9794b21363d2f
+Z 571d1003d57caa3a782b79d8b25e228c
 # Remove this line to create a well-formed Fossil manifest.

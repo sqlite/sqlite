@@ -360,6 +360,7 @@ do_test shell5-1.10.1 {
 # An escape character at end-of-input must not append a 0xFF byte.
 # Bug report 2026-11-27T16:22:11Z.
 #
+catch {db close}
 do_test shell5-1.10.2 {
   set out [open shell5.csv w]
   fconfigure $out -translation binary
