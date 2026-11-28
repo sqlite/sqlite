@@ -380,6 +380,7 @@ struct Fts5Index {
 
   sqlite3_stmt *pDeleteFromIdx;
   sqlite3_stmt *pIdxKeyUpdate;    /* UPDATE %_idx SET term WHERE (segid,pgno) */
+  sqlite3_stmt *pIdxClearDlidx;   /* UPDATE %_idx SET pgno=pgno&~1 WHERE ... */
 
   sqlite3_stmt *pDataVersion;
   i64 iStructVersion;             /* data_version when pStruct read */
@@ -5240,6 +5241,32 @@ static void fts5SecureUpdateIdxEntry(
 }
 
 /*
+** Execute the SQL statement:
+**
+**    UPDATE %_idx SET pgno=(pgno & ~1) 
+**    WHERE (segid, (pgno/2)) = ($iSegid, $iPgno);
+*/
+static void fts5SecureClearDlidxFlag(
+  Fts5Index *p,                   /* FTS5 backend object */
+  int iSegid,                     /* Id of segment */
+  int iPgno                       /* Page number within segment */
+){
+  if( p->rc==SQLITE_OK && p->pIdxClearDlidx==0 ){
+    fts5IndexPrepareStmt(p, &p->pIdxClearDlidx, sqlite3_mprintf(
+        "UPDATE '%q'.'%q_idx' SET pgno=(pgno & ~1) "
+        "WHERE (segid, (pgno/2)) = (?1, ?2)",
+        p->pConfig->zDb, p->pConfig->zName
+    ));
+  }
+  if( p->rc==SQLITE_OK ){
+    sqlite3_bind_int(p->pIdxClearDlidx, 1, iSegid);
+    sqlite3_bind_int(p->pIdxClearDlidx, 2, iPgno);
+    sqlite3_step(p->pIdxClearDlidx);
+    p->rc = sqlite3_reset(p->pIdxClearDlidx);
+  }
+}
+
+/*
 ** This is called when a secure-delete operation removes a position-list
 ** that overflows onto segment page iPgno of segment pSeg. This function
 ** rewrites node iPgno, and possibly one or more of its right-hand peers,
@@ -5483,8 +5510,8 @@ static void fts5DoSecureDelete(
   if( pSeg->bDel==0 ){
     if( iNextOff!=iPgIdx ){
       /* Loop through the page-footer. If iNextOff (offset of the
-      ** entry following the one we are removing) is equal to the 
-      ** offset of a key on this page, then the entry is the last 
+      ** entry following the one we are removing) is equal to the
+      ** offset of a key on this page, then the entry is the last
       ** in its doclist. */
       int iKeyOff = 0;
       for(iIdx=0; iIdx<nIdx; /* no-op */){
@@ -5506,9 +5533,15 @@ static void fts5DoSecureDelete(
   }
 
   if( pSeg->bDel ){
+    /* This branch is taken if the position-list has the delete flag set. In
+    ** this case, instead of the entry being entirely removed, it is replaced
+    ** with an entry with the delete-flag set but no positions. 
+    */
     iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta);
     aPg[iOff++] = bDetailNone ? 0x00 : 0x01;
   }else if( bLastInDoclist==0 ){
+    /* This position list is not the final one in its doclist. So it will 
+    ** simply be removed.  */
     if( iNextOff!=iPgIdx ){
       u64 iNextDelta = 0;
       iNextOff += fts5GetVarint(&aPg[iNextOff], &iNextDelta);
@@ -5519,12 +5552,13 @@ static void fts5DoSecureDelete(
       }
       iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta + iNextDelta);
     }
-  }else if( 
-      pSeg->iLeafPgno==pSeg->iTermLeafPgno 
-   && iStart==pSeg->iTermLeafOffset 
+  }else if( pSeg->iLeafPgno==pSeg->iTermLeafPgno 
+         && iStart==pSeg->iTermLeafOffset
   ){
-    /* The entry being removed was the only position list in its
-    ** doclist. Therefore the term needs to be removed as well. */
+    /* This happens when this is the last entry in the doclist, and also
+    ** the first - since the position list is on the same page as the term and
+    ** immediately follows it. The term will be removed entirely. */
+
     int iKey = 0;
     int iKeyOff = 0;
 
@@ -5542,6 +5576,13 @@ static void fts5DoSecureDelete(
       FTS5_CORRUPT_IDX(p);
       sqlite3_free(aIdx);
       return;
+    }
+
+    /* If the term being removed has a doclist-index, it is the last term
+    ** on the page. Clear the doclist-index flag in the %_idx entry so
+    ** that the doclist-index is not used for the new last term. */
+    if( pSeg->pDlidx ){
+      fts5SecureClearDlidxFlag(p, iSegid, pSeg->iTermLeafPgno);
     }
 
     /* Set iDelKeyOff to the value of the footer entry to remove from 
@@ -5623,6 +5664,10 @@ static void fts5DoSecureDelete(
       }
     }
   }else if( iStart==4 ){
+    /* This branch is taken when the entry being removed is the final one
+    ** in its doclist, and also the first thing on its leaf page. So it
+    ** is possible that a term on the previous leaf page needs to be 
+    ** removed as well. */
     int iPgno;
 
     assert_nc( pSeg->iLeafPgno>pSeg->iTermLeafPgno );
@@ -5666,6 +5711,12 @@ static void fts5DoSecureDelete(
           memmove(&pTerm->p[iTermOff], &pTerm->p[pTerm->szLeaf], nTermIdx);
           fts5PutU16(&pTerm->p[2], iTermOff);
           fts5DataWrite(p, iId, pTerm->p, iTermOff+nTermIdx);
+          if( pSeg->pDlidx ){
+            /* The term just removed owned a doclist-index. Clear the
+            ** doclist-index flag so that it is not used for whatever
+            ** term is now the last on page iTermLeafPgno.  */
+            fts5SecureClearDlidxFlag(p, iSegid, pSeg->iTermLeafPgno);
+          }
           if( nTermIdx==0 ){
             fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iTermLeafPgno);
           }
@@ -7131,6 +7182,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p){
     sqlite3_finalize(p->pDataVersion);
     sqlite3_finalize(p->pDeleteFromIdx);
     sqlite3_finalize(p->pIdxKeyUpdate);
+    sqlite3_finalize(p->pIdxClearDlidx);
     sqlite3Fts5HashFree(p->pHash);
     sqlite3_free(p->zDataTbl);
     sqlite3_free(p);

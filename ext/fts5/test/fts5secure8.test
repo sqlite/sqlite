@@ -168,6 +168,83 @@ foreach {tn bSecure} {
 
 
 
+#-------------------------------------------------------------------------
+# Bug sqlite.org/bugs/forumpost/e4821bd7cb
+# With secure-delete enabled, deleting every entry of a term whose doclist
+# spans several leaf pages (and so has a doclist-index) must not leave a
+# stale doclist-index behind. Otherwise AND queries miss rows and DESC
+# scans fail an assert() in fts5SegIterNextFrom().
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t USING fts5(a);
+  INSERT INTO t(t, rank) VALUES('pgsz', 64);
+  INSERT INTO t(t, rank) VALUES('secure-delete', 1);
+  INSERT INTO t(rowid, a) VALUES(1, 'bbb');
+  WITH RECURSIVE s(i) AS (SELECT 10 UNION ALL SELECT i+1 FROM s WHERE i<200)
+    INSERT INTO t(rowid, a) SELECT i, 'ccc' FROM s;
+  INSERT INTO t(rowid, a) VALUES(250, 'yyy zzz');
+  INSERT INTO t(rowid, a) VALUES(500, 'bbb zzz');
+  INSERT INTO t(t) VALUES('optimize');
+  SELECT rowid FROM t WHERE t MATCH 'bbb AND zzz';
+} {500}
+
+do_execsql_test 5.1 {
+  DELETE FROM t WHERE rowid BETWEEN 10 AND 200;
+  SELECT rowid FROM t WHERE t MATCH 'bbb';
+} {1 500}
+do_execsql_test 5.2 {
+  SELECT rowid FROM t WHERE t MATCH 'zzz';
+} {250 500}
+do_execsql_test 5.3 {
+  SELECT rowid FROM t WHERE t MATCH 'bbb AND zzz';
+} {500}
+do_execsql_test 5.4 {
+  SELECT count(*) FROM t_idx WHERE (pgno & 1);
+} {0}
+do_execsql_test 5.5 {
+  SELECT rowid FROM t WHERE t MATCH 'bbb AND zzz' ORDER BY rowid DESC;
+} {500}
+do_execsql_test 5.6 {
+  SELECT rowid FROM t WHERE t MATCH 'bbb AND yyy' ORDER BY rowid DESC;
+} {}
+
+do_execsql_test 5.7 {
+  INSERT INTO t(t) VALUES('integrity-check');
+}
+
+# As above, but empty the trailing pages of the 'ccc' doclist first, so
+# that the final delete removes the term while positioned on the term's
+# own leaf page.
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE t USING fts5(a);
+  INSERT INTO t(t, rank) VALUES('pgsz', 64);
+  INSERT INTO t(t, rank) VALUES('secure-delete', 1);
+  INSERT INTO t(rowid, a) VALUES(1, 'bbb');
+  WITH RECURSIVE s(i) AS (SELECT 10 UNION ALL SELECT i+1 FROM s WHERE i<200)
+    INSERT INTO t(rowid, a) SELECT i, 'ccc' FROM s;
+  INSERT INTO t(rowid, a) VALUES(250, 'yyy zzz');
+  INSERT INTO t(rowid, a) VALUES(500, 'bbb zzz');
+  INSERT INTO t(t) VALUES('optimize');
+  DELETE FROM t WHERE rowid BETWEEN 24 AND 200;
+  DELETE FROM t WHERE rowid BETWEEN 10 AND 23;
+}
+do_execsql_test 6.1 {
+  SELECT count(*) FROM t_idx WHERE (pgno & 1);
+} {0}
+do_execsql_test 6.2 {
+  SELECT rowid FROM t WHERE t MATCH 'bbb AND zzz';
+} {500}
+do_execsql_test 6.3 {
+  SELECT rowid FROM t WHERE t MATCH 'bbb AND zzz' ORDER BY rowid DESC;
+} {500}
+do_execsql_test 6.4 {
+  SELECT rowid FROM t WHERE t MATCH 'bbb AND yyy' ORDER BY rowid DESC;
+} {}
+do_execsql_test 6.5 {
+  INSERT INTO t(t) VALUES('integrity-check');
+}
+
 finish_test
-
-
